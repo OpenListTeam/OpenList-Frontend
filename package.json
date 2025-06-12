@@ -1,19 +1,19 @@
 {
-  "name": "alist-web",
+  "name": "openlist-frontend",
   "version": "0.0.0",
   "author": {
-    "name": "Xhofe",
-    "email": "i@nn.ci",
-    "url": "https://www.nn.ci"
+    "name": "The OpenList Developers",
+    "email": "",
+    "url": "https://github.com/OpenListTeam"
   },
-  "description": "The front end of Alist V3",
+  "description": "A new AList Fork to Anti Trust Crisis",
   "packageManager": "pnpm@9.9.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alist-org/alist-web.git"
+    "url": "git+https://github.com/xyamzw/OpenList-Frontend.git"
   },
   "bugs": {
-    "url": "https://github.com/alist-org/alist/issues"
+    "url": "https://github.com/OpenListTeam/OpenList/issues"
   },
   "files": [
     "dist"
