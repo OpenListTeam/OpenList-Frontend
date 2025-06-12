@@ -1,24 +1,24 @@
 {
-  "name": "alist-web",
+  "name": "openlist-frontend",
   "version": "0.0.0",
   "author": {
     "name": "Xhofe",
     "email": "i@nn.ci",
     "url": "https://www.nn.ci"
   },
-  "description": "The front end of Alist V3",
+  "description": "A new AList Fork to Anti Trust Crisis",
   "packageManager": "pnpm@9.9.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alist-org/alist-web.git"
+    "url": "git+https://github.com/xyamzw/OpenList-Frontend.git"
   },
   "bugs": {
-    "url": "https://github.com/alist-org/alist/issues"
+    "url": "https://github.com/OpenListTeam/OpenList/issues"
   },
   "files": [
     "dist"
   ],
-  "homepage": "https://alist.nn.ci",
+  "homepage": "https://oplist.8mi.tech/docs",
   "scripts": {
     "crowdin:upload": "crowdin upload sources --auto-update",
     "crowdin:download": "crowdin download --verbose",
@@ -30,7 +30,8 @@
     "build": "vite build",
     "serve": "vite preview",
     "prepare": "husky install",
-    "format": "prettier --ignore-path .gitignore -w \"src/**/*.{js,ts,json,css,tsx,jsx}\""
+    "format": "prettier --ignore-path .gitignore -w \"src/**/*.{js,ts,json,css,tsx,jsx}\"",
+    "cz": "git cz"
   },
   "license": "MIT",
   "devDependencies": {
@@ -44,6 +45,7 @@
     "@types/sha256": "^0.2.0",
     "@types/streamsaver": "^2.0.1",
     "@vitejs/plugin-legacy": "^2.0.1",
+    "cz-git": "^1.11.1",
     "husky": "^8.0.2",
     "lint-staged": "^13.0.4",
     "prettier": "3.1.1",
@@ -100,5 +102,10 @@
   },
   "lint-staged": {
     "**/*": "prettier --write"
+  },
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-git"
+    }
   }
 }
