@@ -27,7 +27,7 @@
     "ftp": "FTP",
     "traffic": "Traffic"
   },
-  "title": "AList Manage",
+  "title": "OpenList Manage",
   "not_admin": "You are not admin user, please login with admin account.",
   "logout_success": "Logout successfully",
   "send": "Send",
