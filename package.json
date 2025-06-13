@@ -18,7 +18,7 @@
   "files": [
     "dist"
   ],
-  "homepage": "https://oplist.8mi.tech/docs",
+  "homepage": "https://openlist.team/",
   "scripts": {
     "crowdin:upload": "crowdin upload sources --auto-update",
     "crowdin:download": "crowdin download --verbose",
