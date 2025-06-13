@@ -149,7 +149,7 @@
     "root_folder_path": "Root folder path",
     "url": "Url"
   },
-  "List V3": {
+  "OpenList V3": {
     "forward_archive_requests": "Forward archive requests",
     "meta_password": "Meta password",
     "pass_ua_to_upsteam": "Pass ua to upsteam",
@@ -1217,7 +1217,7 @@
     "189Cloud": "189Cloud",
     "189CloudPC": "189CloudPC",
     "AList V2": "AList V2",
-    "AList V3": "AList V3",
+    "OpenList V3": "OpenList V3",
     "Alias": "Alias",
     "Aliyundrive": "Aliyundrive",
     "AliyundriveOpen": "AliyundriveOpen",
