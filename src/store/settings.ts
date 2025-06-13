@@ -28,8 +28,8 @@ export const getSettingNumber = (key: string, defaultV?: number) => {
   return defaultV ?? 0
 }
 export const getMainColor = (): string => {
-  if (window.ALIST.main_color) {
-    return window.ALIST.main_color
+  if (window.OPENLIST.main_color) {
+    return window.OPENLIST.main_color
   }
   return getSetting("main_color") || "#1890ff"
 }

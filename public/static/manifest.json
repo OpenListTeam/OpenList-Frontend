@@ -2,7 +2,7 @@
   "display": "standalone",
   "scope": "/",
   "start_url": "/",
-  "name": "AList",
+  "name": "OpenList",
   "icons": [
     {
       "src": "https://cdn.statically.io/gh/OpenListTeam/Logo/main/OpenList.svg",

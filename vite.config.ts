@@ -33,7 +33,7 @@ export default defineConfig({
   // experimental: {
   //   renderBuiltUrl: (filename, { type, hostId, hostType }) => {
   //     if (type === "asset") {
-  //       return { runtime: `window.ALIST.cdn/${filename}` };
+  //       return { runtime: `window.OPENLIST.cdn/${filename}` };
   //     }
   //     return { relative: true };
   //   },
