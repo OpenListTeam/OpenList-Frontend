@@ -45,14 +45,22 @@ jobs:
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
 
-      - name: Read version from dist/VERSION
+      - name: Read version and determine tag name
         id: version
-        run: echo "tag_name=$(cat dist/VERSION)" >> $GITHUB_OUTPUT
+        run: |
+          version=$(cat dist/VERSION)
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag_name=rolling" >> $GITHUB_OUTPUT
+          fi
 
       - name: Upload Pre-release Assets
         uses: softprops/action-gh-release@v2
         with:
-          name: Pre-release ${{ steps.version.outputs.tag_name }}
+          name: Pre-release ${{ steps.version.outputs.version }}
           tag_name: ${{ steps.version.outputs.tag_name }}
           # Enforce the naming strategy
           files: dist/openlist-frontend-dist-v*-*.tar.gz
