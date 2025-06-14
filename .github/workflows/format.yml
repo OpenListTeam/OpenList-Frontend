@@ -29,4 +29,5 @@ jobs:
       - name: Commit and Push
         uses: stefanzweifel/git-auto-commit-action@v6
         with:
+          # TODO: GPG sign: https://github.com/stefanzweifel/git-auto-commit-action?tab=readme-ov-file#signing-commits
           commit_message: "[skip ci] style: format code with prettier"
