@@ -3,7 +3,8 @@ name: Release Build
 on:
   push:
     tags:
-      - "*"
+      - "v*.*.*"
+      - "!v*.*.*-*"
   workflow_dispatch:
     inputs:
       draft:

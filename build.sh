@@ -100,11 +100,20 @@ fi
 commit=$(git rev-parse --short HEAD)
 
 if [ "$BUILD_TYPE" == "dev" ]; then
+    # ! For dev build, update package.json version to match git tag
+    sed -i "s/\"version\": *\"[^\"]*\"/\"version\": \"${git_version_clean}\"/" package.json
+    log_success "Package.json version updated to ${git_version_clean}"
+
     version_tag="v${git_version_clean}-${commit}"
     log_build "Building DEV version ${version_tag}..."
 elif [ "$BUILD_TYPE" == "release" ]; then
+    # ! For release build, we update package.json version, 
+    # ! and then `git tag` to trigger CI release.
     version_tag="v${git_version_clean}"
     log_build "Building RELEASE version ${version_tag}..."
+else
+    log_error "Invalid build type: $BUILD_TYPE. Use --dev or --release."
+    exit 1
 fi
 
 archive_name="openlist-frontend-dist-${version_tag}"
