@@ -47,7 +47,11 @@ jobs:
           echo "Created temporary tag: ${{ inputs.version }}"
 
       - name: Generate changelog
-        run: npx changelogithub --output ${{ github.workspace }}-CHANGELOG.txt
+        run: |
+          # Remove existing tag `rolling`, since `rolling` should always point to the latest commit
+          # This is necessary to avoid conflicts with the changelog generation
+          git tag -d rolling || true
+          npx changelogithub --output ${{ github.workspace }}-CHANGELOG.txt
 
       - name: Build Release
         run: |
