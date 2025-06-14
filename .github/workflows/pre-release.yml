@@ -57,16 +57,22 @@ jobs:
             echo "tag_name=rolling" >> $GITHUB_OUTPUT
           fi
 
-      - name: Upload Pre-release Assets
-        uses: softprops/action-gh-release@v2
-        with:
-          name: Pre-release ${{ steps.version.outputs.version }}
-          tag_name: ${{ steps.version.outputs.tag_name }}
-          # Enforce the naming strategy
-          files: dist/openlist-frontend-dist-v*-*.tar.gz
-          fail_on_unmatched_files: true
-          prerelease: true
-          draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || false }}
+      - name: Remove the existing pre-release
+        run: gh release delete ${{ steps.version.outputs.tag_name }} --cleanup-tag --yes || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish pre-release on GitHub
+        run: |
+          gh release create \
+            --title "Pre-release ${{ steps.version.outputs.version }}" \
+            --notes "Pre-release build for ${{ steps.version.outputs.version }}<br>This is a development build and not intended for production use." \
+            --prerelease \
+            --draft=${{ github.event_name == 'workflow_dispatch' && inputs.draft || false }} \
+            ${{ steps.version.outputs.tag_name }} \
+            dist/openlist-frontend-dist-v*-*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 permissions:
   contents: write

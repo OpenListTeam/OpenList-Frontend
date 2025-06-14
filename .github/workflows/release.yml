@@ -74,14 +74,15 @@ jobs:
         run: echo "tag_name=$(cat dist/VERSION)" >> $GITHUB_OUTPUT
 
       - name: Upload Release Assets
-        uses: softprops/action-gh-release@v2
-        with:
-          name: Release ${{ steps.version.outputs.tag_name }}
-          tag_name: ${{ steps.version.outputs.tag_name }}
-          files: dist/openlist-frontend-dist-v*.tar.gz
-          fail_on_unmatched_files: true
-          body_path: ${{ github.workspace }}-CHANGELOG.txt
-          draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || false }}
+        run: |
+          gh release edit \
+            --title "Release ${{ steps.version.outputs.tag_name }}" \
+            --notes-file "${{ github.workspace }}-CHANGELOG.txt" \
+            --draft=${{ github.event_name == 'workflow_dispatch' && inputs.draft || false }} \
+            ${{ steps.version.outputs.tag_name }} \
+            dist/openlist-frontend-dist-v*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 permissions:
   contents: write
