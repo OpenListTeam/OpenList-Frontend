@@ -73,11 +73,12 @@ jobs:
       - name: Publish npm
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.draft) }}
         run: |
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
           if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
-            echo "NPM_TOKEN not set, skipping npm publish"
+            echo "NPM_TOKEN not set, do dry run"
+            pnpm publish --dry-run --no-git-checks --access public
           else
-            echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
-            pnpm publish --no-git-checks
+            pnpm publish --no-git-checks --access public
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
