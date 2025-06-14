@@ -48,12 +48,12 @@ jobs:
       - name: Read version and determine tag name
         id: version
         run: |
-          version=$(cat dist/VERSION)
-          echo "version=$version" >> $GITHUB_OUTPUT
-
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
             echo "tag_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           else
+            version=$(cat dist/VERSION)
+            echo "version=$version" >> $GITHUB_OUTPUT
             echo "tag_name=rolling" >> $GITHUB_OUTPUT
           fi
 
