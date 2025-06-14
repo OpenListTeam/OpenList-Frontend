@@ -51,6 +51,15 @@ jobs:
           # Remove existing tag `rolling`, since `rolling` should always point to the latest commit
           # This is necessary to avoid conflicts with the changelog generation
           git tag -d rolling || true
+
+          # Temporarily remove all pre-release tags (tags containing '-')
+          # This prevents them from interfering with changelog generation
+          PRE_RELEASE_TAGS=$(git tag -l | grep '-|+' || true)
+          if [ -n "$PRE_RELEASE_TAGS" ]; then
+            echo "Temporarily removing pre-release tags: $PRE_RELEASE_TAGS"
+            echo "$PRE_RELEASE_TAGS" | xargs -r git tag -d
+          fi
+
           npx changelogithub --output ${{ github.workspace }}-CHANGELOG.txt
 
       - name: Build Release
