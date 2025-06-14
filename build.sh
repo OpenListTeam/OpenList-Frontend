@@ -95,6 +95,7 @@ else
     # For dev build, use tag if available, otherwise fallback to v0.0.0
     git_version=$(git describe --abbrev=0 --tags 2>/dev/null || echo "v0.0.0")
     git_version_clean=${git_version#v}
+    git_version_clean=${git_version_clean%%-*}
 fi
 
 commit=$(git rev-parse --short HEAD)
