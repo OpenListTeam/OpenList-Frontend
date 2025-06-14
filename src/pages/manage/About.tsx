@@ -4,7 +4,9 @@ import { useT, useManageTitle } from "~/hooks"
 
 const fetchReadme = async () =>
   await (
-    await fetch("https://cdn.statically.io/gh/OpenListTeam/OpenList/main/README.md")
+    await fetch(
+      "https://cdn.statically.io/gh/OpenListTeam/OpenList/main/README.md",
+    )
   ).text()
 
 const About = () => {
