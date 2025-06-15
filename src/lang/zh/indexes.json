@@ -1,0 +1,17 @@
+{
+  "search_index": "搜索索引",
+  "current": "当前索引",
+  "build": "构建索引",
+  "rebuild": "重建索引",
+  "paths_to_update": "要更新的路径",
+  "max_depth": "最大深度",
+  "update": "更新索引",
+  "obj_count": "对象数量",
+  "last_done_time": "上次完成时间",
+  "unknown": "未知",
+  "stop": "停止",
+  "clear": "清除",
+  "error": "错误"
+}
+
+

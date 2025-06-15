@@ -1,0 +1,493 @@
+{
+  "115 Cloud": {
+    "cookie": "Cookie",
+    "cookie-tips": "二维码令牌和Cookie二选一",
+    "limit_rate": "限速",
+    "limit_rate-tips": "限制所有API请求速率 ([limit]r/1s)",
+    "page_size": "页大小",
+    "page_size-tips": "115网盘列表API每页大小",
+    "qrcode_source": "二维码来源",
+    "qrcode_source-tips": "选择二维码设备，默认为Linux",
+    "qrcode_sources": {
+      "alipaymini": "支付宝小程序",
+      "android": "安卓",
+      "ios": "苹果",
+      "qandroid": "Q安卓",
+      "tv": "电视",
+      "web": "网页",
+      "wechatmini": "微信小程序"
+    },
+    "qrcode_token": "二维码令牌",
+    "qrcode_token-tips": "二维码令牌和Cookie二选一",
+    "root_folder_id": "根文件夹ID"
+  },
+  "115 Open": {
+    "limit_rate": "限速",
+    "limit_rate-tips": "限制所有API请求速率 ([limit]r/1s)",
+    "order_by": "排序方式",
+    "order_bys": {
+      "file_name": "文件名",
+      "file_size": "文件大小",
+      "file_type": "文件类型",
+      "user_utime": "用户更新时间"
+    },
+    "order_direction": "排序方向",
+    "order_directions": {
+      "asc": "升序",
+      "desc": "降序"
+    },
+    "refresh_token": "刷新令牌",
+    "root_folder_id": "根文件夹ID"
+  },
+  "115 Share": {
+    "cookie": "Cookie",
+    "cookie-tips": "二维码令牌和Cookie二选一",
+    "limit_rate": "限速",
+    "limit_rate-tips": "限制所有API请求速率 (1r/[limit_rate]s)",
+    "page_size": "页大小",
+    "page_size-tips": "115网盘列表API每页大小",
+    "qrcode_source": "二维码来源",
+    "qrcode_source-tips": "选择二维码设备，默认为Linux",
+    "qrcode_sources": {
+      "alipaymini": "支付宝小程序",
+      "android": "安卓",
+      "ios": "苹果",
+      "qandroid": "Q安卓",
+      "tv": "电视",
+      "web": "网页",
+      "wechatmini": "微信小程序"
+    },
+    "qrcode_token": "二维码令牌",
+    "qrcode_token-tips": "二维码令牌和Cookie二选一",
+    "receive_code": "接收码",
+    "receive_code-tips": "115分享链接的接收码",
+    "root_folder_id": "根文件夹ID",
+    "share_code": "分享码",
+    "share_code-tips": "115分享链接的分享码"
+  },
+  "123Pan": {
+    "password": "密码",
+    "root_folder_id": "根文件夹ID",
+    "username": "用户名"
+  },
+  "123PanLink": {
+    "origin_urls": "原始URL",
+    "origin_urls-tips": "结构:文件夹名:\n  [文件大小:][修改时间:]URL",
+    "private_key": "私钥",
+    "uid": "用户ID",
+    "valid_duration": "有效期",
+    "valid_duration-tips": "分钟"
+  },
+  "123PanShare": {
+    "accesstoken": "访问令牌",
+    "root_folder_id": "根文件夹ID",
+    "sharekey": "分享密钥",
+    "sharepassword": "分享密码"
+  },
+  "139Yun": {
+    "authorization": "授权",
+    "cloud_id": "云ID",
+    "custom_upload_part_size": "自定义上传分块大小",
+    "custom_upload_part_size-tips": "0为自动",
+    "report_real_size": "报告真实大小",
+    "report_real_size-tips": "上传时启用以报告真实文件大小",
+    "root_folder_id": "根文件夹ID",
+    "type": "类型",
+    "types": {
+      "family": "家庭",
+      "group": "群组",
+      "personal": "个人",
+      "personal_new": "个人新版"
+    },
+    "use_large_thumbnail": "使用大缩略图",
+    "use_large_thumbnail-tips": "启用以使用大缩略图显示图片"
+  },
+  "189Cloud": {
+    "cookie": "Cookie",
+    "cookie-tips": "如果需要验证码，请填写Cookie",
+    "password": "密码",
+    "root_folder_id": "根文件夹ID",
+    "username": "用户名"
+  },
+  "189CloudPC": {
+    "family_id": "家庭ID",
+    "family_transfer": "家庭传输",
+    "no_use_ocr": "不使用OCR",
+    "order_by": "排序方式",
+    "order_bys": {
+      "filename": "文件名",
+      "filesize": "文件大小",
+      "lastOpTime": "最后操作时间"
+    },
+    "order_direction": "排序方向",
+    "order_directions": {
+      "asc": "升序",
+      "desc": "降序"
+    },
+    "password": "密码",
+    "rapid_upload": "极速上传",
+    "root_folder_id": "根文件夹ID",
+    "type": "类型",
+    "types": {
+      "family": "家庭",
+      "personal": "个人"
+    },
+    "upload_method": "上传方式",
+    "upload_methods": {
+      "old": "旧版",
+      "rapid": "极速",
+      "stream": "流式"
+    },
+    "upload_thread": "上传线程",
+    "upload_thread-tips": "1<=线程<=32",
+    "username": "用户名",
+    "validate_code": "验证码"
+  },
+  "AList V2": {
+    "access_token": "访问令牌",
+    "password": "密码",
+    "root_folder_path": "根文件夹路径",
+    "url": "URL"
+  },
+  "AList V3": {
+    "forward_archive_requests": "转发归档请求",
+    "meta_password": "元密码",
+    "pass_ua_to_upsteam": "将UA传递给上游",
+    "password": "密码",
+    "root_folder_path": "根文件夹路径",
+    "token": "令牌",
+    "url": "URL",
+    "username": "用户名"
+  },
+  "Alias": {
+    "download_concurrency": "下载并发",
+    "download_concurrency-tips": "需要启用代理",
+    "download_part_size": "下载分块大小",
+    "download_part_size-tips": "需要启用代理。单位: KB",
+    "paths": "路径",
+    "protect_same_name": "保护同名文件",
+    "protect_same_name-tips": "保护同名文件不被删除或重命名",
+    "writable": "可写"
+  },
+  "Aliyundrive": {
+    "internal_upload": "内部上传",
+    "order_by": "排序方式",
+    "order_bys": {
+      "created_at": "创建时间",
+      "name": "名称",
+      "size": "大小",
+      "updated_at": "更新时间"
+    },
+    "order_direction": "排序方向",
+    "order_directions": {
+      "ASC": "升序",
+      "DESC": "降序"
+    },
+    "rapid_upload": "极速上传",
+    "refresh_token": "刷新令牌",
+    "root_folder_id": "根文件夹ID"
+  },
+  "AliyundriveOpen": {
+    "client_id": "客户端ID",
+    "client_id-tips": "如果没有，请留空",
+    "client_secret": "客户端密钥",
+    "client_secret-tips": "如果没有，请留空",
+    "drive_type": "驱动器类型",
+    "drive_types": {
+      "backup": "备份",
+      "default": "默认",
+      "resource": "资源"
+    },
+    "internal_upload": "内部上传",
+    "internal_upload-tips": "如果您使用的是位于北京的阿里云ECS，可以开启此选项以提高上传速度",
+    "livp_download_format": "Livp下载格式",
+    "livp_download_formats": {
+      "jpeg": "Jpeg",
+      "mov": "Mov"
+    },
+    "oauth_token_url": "Oauth令牌URL",
+    "order_by": "排序方式",
+    "order_bys": {
+      "created_at": "创建时间",
+      "name": "名称",
+      "size": "大小",
+      "updated_at": "更新时间"
+    },
+    "order_direction": "排序方向",
+    "order_directions": {
+      "ASC": "升序",
+      "DESC": "降序"
+    },
+    "rapid_upload": "极速上传",
+    "rapid_upload-tips": "如果启用此选项，文件将首先上传到服务器，因此进度将不正确",
+    "refresh_token": "刷新令牌",
+    "remove_way": "移除方式",
+    "remove_ways": {
+      "delete": "删除",
+      "trash": "回收站"
+    },
+    "root_folder_id": "根文件夹ID"
+  },
+  "AliyundriveShare": {
+    "order_by": "排序方式",
+    "order_bys": {
+      "created_at": "创建时间",
+      "name": "名称",
+      "size": "大小",
+      "updated_at": "更新时间"
+    },
+    "order_direction": "排序方向",
+    "order_directions": {
+      "ASC": "升序",
+      "DESC": "降序"
+    },
+    "refresh_token": "刷新令牌",
+    "root_folder_id": "根文件夹ID",
+    "share_id": "分享ID",
+    "share_pwd": "分享密码"
+  },
+  "Azure Blob Storage": {
+    "access_key": "访问密钥",
+    "access_key-tips": "Azure存储的访问密钥，用于身份验证。https://learn.microsoft.com/zh-cn/azure/storage/common/storage-account-keys-manage",
+    "container_name": "容器名称",
+    "container_name-tips": "Azure存储中的容器名称（在Azure门户中创建）。https://learn.microsoft.com/zh-cn/azure/storage/blobs/blob-containers-portal",
+    "endpoint": "终结点",
+    "endpoint-tips": "例如 https://accountname.blob.core.windows.net/。Azure存储的完整终结点URL，包括唯一的存储帐户名称（仅限3~24个数字和小写字母）。",
+    "sign_url_expire": "签名URL过期时间",
+    "sign_url_expire-tips": "SAS URL的过期时间，单位为小时。"
+  },
+  "BaiduNetdisk": {
+    "client_id": "客户端ID",
+    "client_secret": "客户端密钥",
+    "custom_crack_ua": "自定义破解UA",
+    "custom_upload_part_size": "自定义上传分块大小",
+    "custom_upload_part_size-tips": "0为自动",
+    "download_api": "下载API",
+    "download_apis": {
+      "crack": "破解",
+      "crack_video": "破解视频",
+      "official": "官方"
+    },
+    "low_bandwith_upload_mode": "低带宽上传模式",
+    "only_list_video_file": "只列出视频文件",
+    "order_by": "排序方式",
+    "order_bys": {
+      "name": "名称",
+      "size": "大小",
+      "time": "时间"
+    },
+    "order_direction": "排序方向",
+    "order_directions": {
+      "asc": "升序",
+      "desc": "降序"
+    },
+    "refresh_token": "刷新令牌",
+    "root_folder_path": "根文件夹路径",
+    "upload_api": "上传API",
+    "upload_thread": "上传线程",
+    "upload_thread-tips": "1<=线程<=32"
+  },
+  "BaiduPhoto": {
+    "album_id": "相册ID",
+    "cookie": "Cookie",
+    "delete_origin": "删除原文件",
+    "show_type": "显示类型",
+    "show_types": {
+      "root": "根目录",
+      "root_only_album": "只显示根目录相册",
+      "root_only_file": "只显示根目录文件"
+    },
+    "upload_thread": "上传线程",
+    "upload_thread-tips": "1<=线程<=32"
+  },
+  "BaiduShare": {
+    "BDUSS": "BDUSS",
+    "pwd": "密码",
+    "root_folder_path": "根文件夹路径",
+    "surl": "分享URL"
+  },
+  "ChaoXingGroupDrive": {
+    "bbsid": "BBSID",
+    "cookie": "Cookie",
+    "password": "密码",
+    "root_folder_id": "根文件夹ID",
+    "user_name": "用户名"
+  },
+  "Cloudreve": {
+    "address": "地址",
+    "cookie": "Cookie",
+    "custom_ua": "自定义UA",
+    "enable_thumb_and_folder_size": "启用缩略图和文件夹大小",
+    "password": "密码",
+    "root_folder_path": "根文件夹路径",
+    "username": "用户名"
+  },
+  "Cloudreve V4": {
+    "access_token": "访问令牌",
+    "address": "地址",
+    "custom_ua": "自定义UA",
+    "enable_folder_size": "启用文件夹大小",
+    "enable_thumb": "启用缩略图",
+    "enable_version_upload": "启用版本上传",
+    "order_by": "排序方式",
+    "order_bys": {
+      "created_at": "创建时间",
+      "name": "名称",
+      "size": "大小",
+      "updated_at": "更新时间"
+    },
+    "order_direction": "排序方向",
+    "order_directions": {
+      "asc": "升序",
+      "desc": "降序"
+    },
+    "password": "密码",
+    "refresh_token": "刷新令牌",
+    "root_folder_path": "根文件夹路径",
+    "username": "用户名"
+  },
+  "Crypt": {
+    "directory_name_encryption": "目录名加密",
+    "directory_name_encryptions": {
+      "false": "否",
+      "true": "是"
+    },
+    "encrypted_suffix": "加密后缀",
+    "encrypted_suffix-tips": "仅限高级用户！加密文件将带有此后缀",
+    "filename_encoding": "文件名编码",
+    "filename_encoding-tips": "仅限高级用户！",
+    "filename_encodings": {
+      "base32": "Base32",
+      "base32768": "Base32768",
+      "base64": "Base64"
+    },
+    "filename_encryption": "文件名加密",
+    "filename_encryptions": {
+      "obfuscate": "混淆",
+      "off": "关闭",
+      "standard": "标准"
+    },
+    "password": "密码",
+    "password-tips": "主密码",
+    "remote_path": "远程路径",
+    "remote_path-tips": "加密数据存储的位置",
+    "salt": "盐",
+    "salt-tips": "如果你不知道什么是盐，就把它当作第二个密码。可选但推荐",
+    "show_hidden": "显示隐藏",
+    "show_hidden-tips": "显示隐藏的目录和文件",
+    "thumbnail": "缩略图",
+    "thumbnail-tips": "启用缩略图，缩略图预生成在.thumbnails文件夹下"
+  },
+  "Doge": {
+    "access_key_id": "访问密钥ID",
+    "add_filename_to_disposition": "将文件名添加到处置",
+    "add_filename_to_disposition-tips": "将文件名添加到Content-Disposition头。",
+    "bucket": "存储桶",
+    "custom_host": "自定义主机",
+    "enable_custom_host_presign": "启用自定义主机预签名",
+    "endpoint": "终结点",
+    "force_path_style": "强制路径样式",
+    "list_object_version": "列出对象版本",
+    "list_object_versions": {
+      "v1": "V1",
+      "v2": "V2"
+    },
+    "placeholder": "占位符",
+    "region": "区域",
+    "remove_bucket": "移除存储桶",
+    "remove_bucket-tips": "使用自定义主机时从路径中移除存储桶名称。",
+    "root_folder_path": "根文件夹路径",
+    "secret_access_key": "秘密访问密钥",
+    "session_token": "会话令牌",
+    "sign_url_expire": "签名URL过期时间"
+  },
+  "Doubao": {
+    "cookie": "Cookie",
+    "download_api": "下载API",
+    "download_apis": {
+      "get_download_info": "获取下载信息",
+      "get_file_url": "获取文件URL"
+    },
+    "root_folder_id": "根文件夹ID",
+    "upload_thread": "上传线程"
+  },
+  "DoubaoShare": {
+    "cookie": "Cookie",
+    "root_folder_path": "根文件夹路径",
+    "share_ids": "分享ID"
+  },
+  "Dropbox": {
+    "client_id": "客户端ID",
+    "client_id-tips": "如果没有，请留空",
+    "client_secret": "客户端密钥",
+    "client_secret-tips": "如果没有，请留空",
+    "oauth_token_url": "Oauth令牌URL",
+    "refresh_token": "刷新令牌",
+    "root_folder_path": "根文件夹路径"
+  },
+  "FTP": {
+    "address": "地址",
+    "encoding": "编码",
+    "password": "密码",
+    "root_folder_path": "根文件夹路径",
+    "username": "用户名"
+  },
+  "FebBox": {
+    "client_id": "客户端ID",
+    "client_secret": "客户端密钥",
+    "page_size": "页大小",
+    "page_size-tips": "FebBox驱动器列表API每页大小",
+    "root_folder_id": "根文件夹ID",
+    "sort_rule": "排序规则",
+    "sort_rules": {
+      "ext_asc": "扩展名升序",
+      "ext_desc": "扩展名降序",
+      "name_asc": "名称升序",
+      "name_desc": "名称降序",
+      "size_asc": "大小升序",
+      "size_desc": "大小降序",
+      "update_asc": "更新时间升序",
+      "update_desc": "更新时间降序"
+    },
+    "user_ip": "用户IP",
+    "user_ip-tips": "用于下载链接的用户IP地址，可以加快下载速度"
+  },
+  "FeijiPan": {
+    "ip": "IP",
+    "password": "密码",
+    "root_folder_id": "根文件夹ID",
+    "username": "用户名"
+  },
+  "GitHub API": {
+    "author_email": "作者邮箱",
+    "author_name": "作者名称",
+    "committer_email": "提交者邮箱",
+    "committer_name": "提交者名称",
+    "copy_commit_message": "复制提交消息",
+    "delete_commit_message": "删除提交消息",
+    "gh_proxy": "GitHub代理",
+    "gh_proxy-tips": "GitHub代理，例如 https://ghproxy.net/raw.githubusercontent.com 或 https://gh-proxy.com/raw.githubusercontent.com",
+    "gpg_key_passphrase": "Gpg密钥密码",
+    "gpg_private_key": "Gpg私钥",
+    "mkdir_commit_message": "创建目录提交消息",
+    "move_commit_message": "移动提交消息",
+    "owner": "所有者",
+    "put_commit_message": "放置提交消息",
+    "ref": "引用",
+    "ref-tips": "分支、标签或提交SHA，默认为主分支。",
+    "rename_commit_message": "重命名提交消息",
+    "repo": "仓库",
+    "root_folder_path": "根文件夹路径",
+    "token": "令牌"
+  },
+  "GitHub Releases": {
+    "gh_proxy": "GitHub代理",
+    "gh_proxy-tips": "GitHub代理，例如 https://ghproxy.net/github.com 或 https://gh-proxy.com/github.com ",
+    "repo_structure": "仓库结构",
+    "repo_structure-tips": "结构:[路径:]组织/仓库",
+    "root_folder_id": "根文件夹ID",
+    "show_all_version": "显示所有版本"
+  }
+}
+
+
