@@ -1,0 +1,180 @@
+{
+  "obj": {
+    "name": "名称",
+    "size": "大小",
+    "modified": "修改时间"
+  },
+  "preview": {
+    "download": "下载",
+    "failed_load_img": "加载图片失败",
+    "open_with": "用...打开",
+    "play_with": "用...播放",
+    "install": "安装",
+    "installing": "正在安装",
+    "tr-install": "TrollStore",
+    "tr-installing": "TrollStore 安装中",
+    "open_in_new_window": "在新窗口打开",
+    "auto_next": "自动播放下一张"
+  },
+  "layouts": {
+    "list": "列表视图",
+    "grid": "网格视图",
+    "image": "图片视图"
+  },
+  "no_images": "当前文件夹无图片",
+  "load_more": "加载更多",
+  "no_more": "没有更多了",
+  "input_password": "请输入密码",
+  "toolbar": {
+    "more": "更多",
+    "refresh": "刷新",
+    "toggle_theme": "切换主题",
+    "switch_lang": "切换语言",
+    "toggle_markdown_toc": "切换大纲",
+    "toggle_checkbox": "切换复选框",
+    "rename": "重命名",
+    "input_new_name": "输入新名称",
+    "move": "移动",
+    "copy": "复制",
+    "choose_dst_folder": "选择目标文件夹",
+    "delete": "删除",
+    "delete-tips": "确定删除所选对象吗？",
+    "decompress": "解压缩",
+    "decompress-pass": "解压密码：",
+    "decompress-cache-full": "缓存已满，存入临时文件",
+    "decompress-put-into-new": "解压到新的子文件夹",
+    "extract": "解压到",
+    "archive": {
+      "input_password": "请输入解压密码",
+      "incorrect_password": "密码错误",
+      "extract_header": "解压 {{path}} 到..."
+    },
+    "copy_link": "复制链接",
+    "preview_page": "预览页面",
+    "down_link": "下载链接",
+    "encode_down_link": "编码下载链接",
+    "mkdir": "新建文件夹",
+    "input_dir_name": "输入文件夹名称",
+    "new_file": "新建文件",
+    "input_filename": "输入文件名",
+    "cancel_select": "取消选择",
+    "offline_download": "离线下载",
+    "offline_download-tips": "每行一个URL",
+    "delete_policy": {
+      "delete_on_upload_succeed": "上传成功时删除",
+      "delete_on_upload_failed": "上传失败时删除",
+      "delete_never": "从不删除",
+      "delete_always": "总是删除"
+    },
+    "download": "下载",
+    "batch_download": "批量下载",
+    "package_download": "打包下载",
+    "package_download_disabled": "打包下载已禁用",
+    "send_aria2": "发送到 Aria2",
+    "aria2_not_set": "请设置 aria2 RPC 地址",
+    "send_aria2_success": "成功发送到 aria2",
+    "pre_package_download-tips": "打包下载使用浏览器中的 streamsaver 而非服务器，要求对应的存储支持 CORS，不支持的存储将失败。",
+    "package_download-tips": "正在下载，请等待，不要关闭页面",
+    "playlist_download": "播放列表下载",
+    "upload": "上传",
+    "local_settings": "本地设置",
+    "recursive_move": "递归移动",
+    "recursive_move_directory-tips": "确定要将当前文件夹及其所有子文件夹中的文件移动到指定文件夹吗？",
+    "remove_empty_directory": "移除空文件夹",
+    "remove_empty_directory-tips": "确定要删除其所有空子文件夹吗？",
+    "batch_rename": "批量重命名",
+    "regex_rename": "正则重命名",
+    "sequential_renaming": "顺序重命名",
+    "regex_rename_preview": "更改的文件",
+    "regex_rename_preview_old_name": "原名称",
+    "regex_rename_preview_new_name": "新名称",
+    "regular_rename": "正则表达式文件重命名。第一行输入源文件名正则表达式，第二行输入新文件名正则表达式。",
+    "sequential_renaming_desc": "新文件名将附加一个起始数值，并按起始值加1的顺序显示。第一行输入新文件名，第二行输入起始值。"
+  },
+  "upload": {
+    "add_as_task": "添加为任务",
+    "try_rapid": "尝试极速上传",
+    "upload-tips": "拖拽文件到此处上传，或点击：",
+    "release": "释放以上传",
+    "no_files_drag": "未拖入任何文件。",
+    "upload_files": "选择文件",
+    "upload_folder": "选择文件夹",
+    "pending": "等待中",
+    "uploading": "上传中",
+    "backending": "后台上传中",
+    "success": "成功",
+    "error": "错误",
+    "back": "返回上传",
+    "clear_done": "清除已完成"
+  },
+  "local_settings": {
+    "aria2_rpc_url": "Aria2 RPC URL",
+    "aria2_rpc_secret": "Aria2 RPC 密钥",
+    "aria2_dir": "Aria2 下载目录",
+    "show_folder_in_image_view": "在图片视图中显示文件夹",
+    "show_folder_in_image_view_options": {
+      "top": "顶部",
+      "bottom": "底部",
+      "none": "不显示"
+    },
+    "global_default_layout": "全局默认布局",
+    "global_default_layout_options": {
+      "list": "列表视图",
+      "grid": "网格视图",
+      "image": "图片视图"
+    },
+    "position_of_header_navbar": "页头和导航栏位置",
+    "position_of_header_navbar_options": {
+      "static": "普通",
+      "sticky": "固定在页面顶部",
+      "only_navbar_sticky": "仅导航栏固定"
+    },
+    "show_sidebar": "显示侧边栏",
+    "show_sidebar_options": {
+      "none": "不显示",
+      "visible": "显示"
+    },
+    "list_item_filename_overflow": "列表项文件名溢出处理",
+    "list_item_filename_overflow_options": {
+      "ellipsis": "省略号",
+      "scrollable": "可滚动",
+      "multi_line": "多行"
+    },
+    "open_item_on_checkbox": "在复选框上打开项目",
+    "open_item_on_checkbox_options": {
+      "direct": "直接打开",
+      "dblclick": "双击打开",
+      "disable_while_checked": "勾选时禁用打开"
+    }
+  },
+  "package_download": {
+    "current_status": "当前状态",
+    "initializing": "初始化中",
+    "fetching_struct": "获取文件夹结构中",
+    "fetching_struct_failed": "获取文件夹结构失败",
+    "downloading": "正在下载文件，请勿关闭或刷新页面",
+    "failed": "打包下载失败",
+    "success": "下载完成"
+  },
+  "footer": {
+    "powered_by": "由 OpenList 项目贡献者提供支持",
+    "manage": "管理"
+  },
+  "search": {
+    "search": "搜索",
+    "no_result": "暂无结果",
+    "scopes": {
+      "all": "全部",
+      "folder": "文件夹",
+      "file": "文件"
+    }
+  },
+  "fetching_settings_failed": "获取设置失败：",
+  "get_current_user_failed": "获取当前用户失败：",
+  "Loading storage, please wait": "正在加载存储，请稍候",
+  "conflict_policy": {
+    "cancel_if_exists": "文件存在则取消",
+    "overwrite_existing": "覆盖现有文件",
+    "skip_existing": "跳过现有文件"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "aria2": "Aria2",
+  "aria2_version": "Aria2 版本：",
+  "set_aria2": "设置 Aria2",
+  "copy_token": "复制令牌",
+  "reset_token": "重置令牌",
+  "reset_token_success": "重置令牌成功",
+  "unknown_type": "未知类型",
+  "set_qbit": "设置 qBittorrent",
+  "qbittorrent": "qBittorrent",
+  "transmission": "Transmission",
+  "set_transmission": "设置 Transmission",
+  "115": "115网盘",
+  "set_115": "设置 115网盘",
+  "pikpak": "PikPak",
+  "set_pikpak": "设置 PikPak",
+  "thunder": "迅雷网盘",
+  "set_thunder": "设置迅雷网盘"
+}
