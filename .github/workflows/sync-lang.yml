@@ -1,0 +1,99 @@
+name: Sync i18n files
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  pull_request:
+    paths:
+      - ".github/workflows/sync-lang.yml"
+
+jobs:
+  sync_i18n:
+    name: Generate and i18n files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Checkout backend codes
+        uses: actions/checkout@v4
+        with:
+          repository: "OpenListTeam/OpenList"
+          path: backend
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Checkout frontend codes
+        uses: actions/checkout@v4
+        with:
+          path: frontend
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Generate and update lang files
+        run: |
+          cd backend
+          go run ./main.go lang
+          cd ..
+
+      - name: Check for changes and stage
+        id: verify-changed-files
+        run: |
+          cp -f ./backend/lang/*.json ./frontend/src/lang/en/ 2>/dev/null || :
+          cd frontend
+          if [ -n "$(git status --porcelain)" ]; then
+            git add src/lang/en/*.json
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+          cd ..
+
+      - name: Import GPG key
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.BOT_GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.BOT_GPG_PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: true
+
+      - name: Setup CI Bot
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          git config user.name "The OpenList Bot"
+          git config user.email "bot@openlist.team"
+
+      - name: Commit the changes
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          cd frontend
+          git commit -S -m "chore: auto update i18n file"
+          git push
+          cd ..
+
+      - name: Setup Node
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install pnpm
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Sync to Crowdin
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          cd frontend
+          pnpm crowdin:upload
+          cd ..
+        env:
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
