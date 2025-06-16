@@ -1,11 +1,17 @@
-name: Pre Release Build
+# This workflow builds a rolling version of the OpenList frontend and publishes it on GitHub.
+#
+# This will:
+#
+# - Upload the release assets to GitHub (always git tagged `rolling`).
+#
+# This workflow can be triggered on pushes to the `main` branch, or manually via the GitHub Actions UI.
+
+name: Rolling Build
 
 on:
   push:
     branches:
       - main
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+-*"
   workflow_dispatch:
     inputs:
       draft:
@@ -15,8 +21,8 @@ on:
         type: boolean
 
 jobs:
-  pre-release:
-    name: Pre Release
+  rolling:
+    name: Rolling Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -48,14 +54,9 @@ jobs:
       - name: Read version and determine tag name
         id: version
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-            echo "tag_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          else
-            version=$(cat dist/VERSION)
-            echo "version=$version" >> $GITHUB_OUTPUT
-            echo "tag_name=rolling" >> $GITHUB_OUTPUT
-          fi
+          version=$(cat dist/VERSION)
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "tag_name=rolling" >> $GITHUB_OUTPUT
 
       - name: Remove the existing pre-release
         run: gh release delete ${{ steps.version.outputs.tag_name }} --cleanup-tag --yes || true
@@ -68,7 +69,7 @@ jobs:
             --title "Pre-release ${{ steps.version.outputs.version }}" \
             --notes "Pre-release build for ${{ steps.version.outputs.version }}<br>This is a development build and not intended for production use." \
             --prerelease \
-            --draft=${{ github.event_name == 'workflow_dispatch' && inputs.draft || false }} \
+            --draft=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.draft || false }} \
             ${{ steps.version.outputs.tag_name }} \
             dist/openlist-frontend-dist-v*-*.tar.gz
         env:

@@ -1,9 +1,27 @@
+# This workflow is used to create a (pre-)release build of the OpenList frontend.
+#
+# This will:
+#
+# - Update the `package.json` version to the specified version (when triggered
+#   by `workflow_dispatch`), commit the changes and tag it.
+# - Upload the release assets to GitHub.
+# - Publish the package to npm.
+#
+# # Usage
+#
+# This workflow can be triggered by:
+#
+# - Pushing a tag that matches the pattern `v[0-9]+.[0-9]+.[0-9]+*` (semver format).
+# - Manually via the GitHub Actions UI with a version input.
+#
+# To create (pre-)release builds, we recommend that you use the `workflow_dispatch`.
+
 name: Release Build
 
 on:
   push:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+*"
   workflow_dispatch:
     inputs:
       version:
@@ -132,10 +150,17 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
           # Delete the generated dist tarball
           rm -f dist/openlist-frontend-dist-v*.tar.gz
+
+          if ! jq -e '.name and .version' package.json > /dev/null; then
+            echo "Error: Invalid package.json"
+            exit 1
+          fi
+
           if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
-            echo "NPM_TOKEN not set, do dry run"
+            echo "NPM_TOKEN not set, performing dry run"
             pnpm publish --dry-run --no-git-checks --access public
           else
+            echo "Publishing to npm..."
             pnpm publish --no-git-checks --access public
           fi
         env:

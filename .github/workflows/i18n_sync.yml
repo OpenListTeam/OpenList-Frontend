@@ -3,9 +3,13 @@ name: Sync i18n files
 on:
   schedule:
     - cron: "0 12 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "src/lang/en/**"
   pull_request:
     paths:
-      - ".github/workflows/sync-lang.yml"
+      - ".github/workflows/i18n*.yml"
   workflow_dispatch:
 
 jobs:
@@ -78,7 +82,6 @@ jobs:
           if [ "${{ github.event_name }}" != "pull_request" ]; then
             git push
           fi
-          cd ..
 
       - name: Setup Node
         if: steps.verify-changed-files.outputs.changed == 'true'
@@ -96,9 +99,7 @@ jobs:
       - name: Sync to Crowdin
         if: steps.verify-changed-files.outputs.changed == 'true'
         run: |
-          cd frontend
           pnpm crowdin:upload
-          cd ..
         env:
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
