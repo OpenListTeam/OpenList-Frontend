@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/sync-lang.yml"
+  workflow_dispatch:
 
 jobs:
   sync_i18n:
