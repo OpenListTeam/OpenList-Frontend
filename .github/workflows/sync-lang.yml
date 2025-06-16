@@ -36,7 +36,7 @@ jobs:
       - name: Generate and update lang files
         run: |
           cd backend
-          go run ./main.go lang
+          go run ./main.go lang --frontend-path ../frontend
           cd ..
 
       - name: Check for changes and stage
@@ -58,6 +58,7 @@ jobs:
         with:
           gpg_private_key: ${{ secrets.BOT_GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.BOT_GPG_PASSPHRASE }}
+          git_config_global: true
           git_user_signingkey: true
           git_commit_gpgsign: true
           git_tag_gpgsign: true
@@ -65,8 +66,8 @@ jobs:
       - name: Setup CI Bot
         if: steps.verify-changed-files.outputs.changed == 'true'
         run: |
-          git config user.name "The OpenList Bot"
-          git config user.email "bot@openlist.team"
+          git config --global user.name "The OpenList Bot"
+          git config --global user.email "bot@openlist.team"
 
       - name: Commit the changes
         if: steps.verify-changed-files.outputs.changed == 'true'
