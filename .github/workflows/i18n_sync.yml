@@ -22,6 +22,12 @@ jobs:
         with:
           go-version: "1.21"
 
+      - name: Checkout frontend codes
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
       - name: Checkout backend codes
         uses: actions/checkout@v4
         with:
@@ -30,31 +36,22 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Checkout frontend codes
-        uses: actions/checkout@v4
-        with:
-          path: frontend
-          fetch-depth: 0
-          submodules: recursive
-
       - name: Generate and update lang files
         run: |
           cd backend
-          go run ./main.go lang --frontend-path ../frontend
+          go run ./main.go lang --frontend-path ../
           cd ..
 
       - name: Check for changes and stage
         id: verify-changed-files
         run: |
-          cp -f ./backend/lang/*.json ./frontend/src/lang/en/ 2>/dev/null || :
-          cd frontend
+          cp -f ./backend/lang/*.json ./src/lang/en/ 2>/dev/null || :
           if [ -n "$(git status --porcelain)" ]; then
             git add src/lang/en/*.json
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
-          cd ..
 
       - name: Import GPG key
         if: steps.verify-changed-files.outputs.changed == 'true'
@@ -76,7 +73,6 @@ jobs:
       - name: Commit the changes
         if: steps.verify-changed-files.outputs.changed == 'true'
         run: |
-          cd frontend
           git commit -S -m "chore: auto update i18n file"
           # Skip pushing if triggered by a pull request
           if [ "${{ github.event_name }}" != "pull_request" ]; then
@@ -94,7 +90,11 @@ jobs:
         if: steps.verify-changed-files.outputs.changed == 'true'
         uses: pnpm/action-setup@v4
         with:
+          # version: 9.9.0
           run_install: false
+
+      - name: Install dependencies
+        run: pnpm install
 
       - name: Sync to Crowdin
         if: steps.verify-changed-files.outputs.changed == 'true'
