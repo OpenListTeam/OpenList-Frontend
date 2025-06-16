@@ -21,7 +21,7 @@ jobs:
       - name: Checkout backend codes
         uses: actions/checkout@v4
         with:
-          repository: "OpenListTeam/OpenList"
+          repository: ${{ vars.SYNC_LANG_ENV_BACKEND_REPOSITORY || 'OpenListTeam/OpenList' }}
           path: backend
           fetch-depth: 0
           submodules: recursive
@@ -73,7 +73,10 @@ jobs:
         run: |
           cd frontend
           git commit -S -m "chore: auto update i18n file"
-          git push
+          # Skip pushing if triggered by a pull request
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            git push
+          fi
           cd ..
 
       - name: Setup Node
