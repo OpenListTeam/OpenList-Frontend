@@ -18,16 +18,18 @@ log_step() { echo -e "${PURPLE}$1${NC}"; }
 log_build() { echo -e "${BLUE}$1${NC}"; }
 
 # CI Build Script
-# Usage: ./build.sh [--dev|--release] [--compress|--no-compress]
+# Usage: ./build.sh [--dev|--release] [--compress|--no-compress] [--skip-i18n]
 # Environment variables:
 #   OPENLIST_FRONTEND_BUILD_MODE=dev|release (default: dev)
 #   OPENLIST_FRONTEND_BUILD_COMPRESS=true|false (default: false)
 #   OPENLIST_FRONTEND_BUILD_ENFORCE_TAG=true|false (default: false)
+#   OPENLIST_FRONTEND_BUILD_SKIP_I18N=true|false (default: false)
 
 # Set defaults from environment variables
 BUILD_TYPE=${OPENLIST_FRONTEND_BUILD_MODE:-dev}
 COMPRESS_FLAG=${OPENLIST_FRONTEND_BUILD_COMPRESS:-false}
 ENFORCE_TAG=${OPENLIST_FRONTEND_BUILD_ENFORCE_TAG:-false}
+SKIP_I18N=${OPENLIST_FRONTEND_BUILD_SKIP_I18N:-false}
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -52,8 +54,12 @@ while [[ $# -gt 0 ]]; do
             ENFORCE_TAG="true"
             shift
             ;;
+        --skip-i18n)
+            SKIP_I18N="true"
+            shift
+            ;;
         -h|--help)
-            echo "Usage: $0 [--dev|--release] [--compress|--no-compress] [--enforce-tag]"
+            echo "Usage: $0 [--dev|--release] [--compress|--no-compress] [--enforce-tag] [--skip-i18n]"
             echo ""
             echo "Options (will overwrite environment setting):"
             echo "  --dev         Build development version"
@@ -61,11 +67,13 @@ while [[ $# -gt 0 ]]; do
             echo "  --compress    Create compressed archive"
             echo "  --no-compress Skip compression"
             echo "  --enforce-tag Force git tag requirement for both dev and release builds"
+            echo "  --skip-i18n   Skip i18n build step"
             echo ""
             echo "Environment variables:"
             echo "  OPENLIST_FRONTEND_BUILD_MODE=dev|release (default: dev)"
             echo "  OPENLIST_FRONTEND_BUILD_COMPRESS=true|false (default: false)"
             echo "  OPENLIST_FRONTEND_BUILD_ENFORCE_TAG=true|false (default: false)"
+            echo "  OPENLIST_FRONTEND_BUILD_SKIP_I18N=true|false (default: false)"
             exit 0
             ;;
         *)
@@ -126,7 +134,11 @@ log_step "==== Installing dependencies ===="
 pnpm install
 
 log_step "==== Building i18n ===="
-pnpm i18n:release || log_warning "i18n build failed, continuing..."
+if [ "$SKIP_I18N" == "false" ]; then
+    pnpm i18n:release
+else
+    log_warning "Skipping i18n build step"
+fi
 
 log_step "==== Building project ===="
 pnpm build
