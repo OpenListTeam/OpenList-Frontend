@@ -124,8 +124,10 @@ log_info "Archive name will be: ${archive_name}.tar.gz"
 # build
 log_step "==== Installing dependencies ===="
 pnpm install
+
 log_step "==== Building i18n ===="
 pnpm i18n:release || log_warning "i18n build failed, continuing..."
+
 log_step "==== Building project ===="
 pnpm build
 
