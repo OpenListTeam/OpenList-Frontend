@@ -8,12 +8,15 @@ on:
 
 jobs:
   build-check:
-    strategy:
-      matrix:
-        platform: [ubuntu-latest]
     name: Build Check
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -24,15 +27,7 @@ jobs:
         name: Install pnpm
         id: pnpm-install
         with:
-          version: 9
           run_install: false
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-          submodules: recursive
 
       - name: Build Development Version
         run: |
