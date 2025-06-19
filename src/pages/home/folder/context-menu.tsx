@@ -110,6 +110,7 @@ export const ContextMenu = () => {
         >
           <ItemContent name="download" />
         </Item>
+        <Item onClick={sendToAria2}>{t("home.toolbar.send_aria2")}</Item>
         <Submenu
           hidden={({ props }) => {
             return props.type !== ObjType.VIDEO
