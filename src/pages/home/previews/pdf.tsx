@@ -189,7 +189,9 @@ const PDFViewerApp = () => {
               onKeyDown={handlePageNumberKeyDown}
             />
           </form>
-          <Text size="sm">/ {store.numPages}</Text>
+          <Text size="sm" minW="$full">
+            / {store.numPages}
+          </Text>
         </HStack>
 
         <IconButton
