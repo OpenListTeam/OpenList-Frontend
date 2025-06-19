@@ -116,6 +116,12 @@ const previews: Preview[] = [
     prior: true,
   },
   {
+    name: "PDF Preview",
+    exts: ["pdf"],
+    component: lazy(() => import("./pdf")),
+    prior: true,
+  },
+  {
     name: "Asciinema",
     exts: ["cast"],
     component: lazy(() => import("./asciinema")),
