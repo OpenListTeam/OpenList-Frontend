@@ -1,11 +1,16 @@
 import { BoxWithFullScreen } from "~/components"
-import { usePDFSlick } from "@pdfslick/solid"
+import {
+  PDFSlickState,
+  TPDFDocumentOutline,
+  usePDFSlick,
+} from "@pdfslick/solid"
 import { objStore } from "~/store"
 import "@pdfslick/solid/dist/pdf_viewer.css"
 import {
   Button,
   Divider,
   HStack,
+  VStack,
   IconButton,
   Menu,
   MenuContent,
@@ -16,47 +21,42 @@ import {
   Text,
   Input,
   ButtonGroup,
+  Box,
+  createDisclosure,
+  Tooltip,
 } from "@hope-ui/solid"
-import { createSignal, createEffect, onCleanup } from "solid-js"
-import { VsChevronUp, VsChevronDown, VsAdd, VsRemove } from "solid-icons/vs"
+import {
+  createSignal,
+  createEffect,
+  onCleanup,
+  For,
+  Show,
+  createMemo,
+} from "solid-js"
+import {
+  VsChevronUp,
+  VsChevronDown,
+  VsLayoutSidebarLeft,
+  VsLayoutSidebarLeftOff,
+  VsTriangleRight,
+  VsClose,
+  VsTriangleDown,
+  VsZoomIn,
+  VsZoomOut,
+} from "solid-icons/vs"
+import { useT } from "~/hooks"
 
 const PDFViewerApp = () => {
+  const t = useT()
   const {
     viewerRef,
     pdfSlickStore: store,
     PDFSlickViewer,
   } = usePDFSlick(objStore.raw_url)
-
-  let pageNumberRef!: HTMLInputElement
   const [wantedPageNumber, setWantedPageNumber] = createSignal<number | string>(
     1,
   )
-
-  const presets = new Map([
-    ["auto", "Auto"],
-    ["page-actual", "Actual Size"],
-    ["page-fit", "Page Fit"],
-    ["page-width", "Page Width"],
-  ])
-
-  const zoomVals = new Map([
-    [0.5, "50%"],
-    [0.75, "75%"],
-    [1, "100%"],
-    [1.25, "125%"],
-    [1.5, "150%"],
-    [2, "200%"],
-  ])
-
-  const getCurrentZoomLabel = () => {
-    if (store.scaleValue && presets.has(store.scaleValue)) {
-      return presets.get(store.scaleValue)
-    }
-    return `${Math.floor(store.scale * 100)}%`
-  }
-
-  const updatePageNumber = ({ pageNumber }: any) =>
-    setWantedPageNumber(pageNumber)
+  const { isOpen, onToggle, onClose } = createDisclosure()
 
   const handlePageNumberSubmit = (e: Event) => {
     e.preventDefault()
@@ -72,148 +72,356 @@ const PDFViewerApp = () => {
     }
   }
 
-  const handlePageNumberKeyDown = (e: KeyboardEvent) => {
-    switch (e.key) {
-      case "Down":
-      case "ArrowDown":
-        store.pdfSlick?.gotoPage(Math.max(1, (store.pageNumber ?? 0) - 1))
-        break
-      case "Up":
-      case "ArrowUp":
-        store.pdfSlick?.gotoPage(
-          Math.min(store.numPages ?? 0, (store.pageNumber ?? 0) + 1),
-        )
-        break
-      default:
-        return
-    }
-  }
+  const updatePageNumber = ({ pageNumber }: any) =>
+    setWantedPageNumber(pageNumber)
 
   createEffect(() => {
-    store.pdfSlick && store.pdfSlick?.on("pagechanging", updatePageNumber)
+    if (store.pdfSlick) {
+      store.pdfSlick.on("pagechanging", updatePageNumber)
+    }
   })
 
   onCleanup(() => {
-    store.pdfSlick?.off("pagechanging", updatePageNumber)
+    if (store.pdfSlick) {
+      store.pdfSlick.off("pagechanging", updatePageNumber)
+    }
   })
 
   return (
-    <BoxWithFullScreen w="$full" h="70vh" pos="relative">
-      {/* toolbar */}
-      <HStack
-        bottom="$2"
-        // center
-        left="50%"
-        transform="translateX(-50%)"
-        spacing="$4"
-        w="auto"
-        pos="absolute"
+    <Box w="$full" h="70vh" pos="relative" display="flex">
+      <Sidebar store={store} isOpen={isOpen()} onClose={onClose} />
+
+      <BoxWithFullScreen w="$full" h="$full" pos="relative" flex={1}>
+        <Toolbar
+          store={store}
+          isOpen={isOpen()}
+          onToggle={onToggle}
+          wantedPageNumber={wantedPageNumber}
+          onPageNumberChange={setWantedPageNumber}
+          onPageNumberSubmit={handlePageNumberSubmit}
+        />
+
+        <PDFSlickViewer {...{ store, viewerRef }} />
+      </BoxWithFullScreen>
+    </Box>
+  )
+}
+
+const OutlineItem = (props: {
+  item: TPDFDocumentOutline[number]
+  level: number
+  store: PDFSlickState
+}) => {
+  const [isOpen, setIsOpen] = createSignal(true)
+  const hasChildren = () => props.item.items && props.item.items.length > 0
+
+  const handleClick = () => {
+    if (props.item.dest && props.store.pdfSlick?.linkService) {
+      props.store.pdfSlick.linkService.goToDestination(props.item.dest)
+    }
+  }
+
+  return (
+    <Box mb="$1">
+      <HStack spacing="$1" alignItems="center">
+        <Show when={hasChildren()} fallback={<Box w="16px" />}>
+          <IconButton
+            size="xs"
+            variant="ghost"
+            aria-label="Toggle"
+            icon={isOpen() ? <VsTriangleDown /> : <VsTriangleRight />}
+            minW="16px"
+            h="16px"
+            onClick={() => setIsOpen(!isOpen())}
+          />
+        </Show>
+        <Button
+          variant="ghost"
+          size="sm"
+          justifyContent="flex-start"
+          flex={1}
+          fontSize="$sm"
+          fontWeight="$normal"
+          py="$1"
+          px="$2"
+          h="auto"
+          minH="$6"
+          textAlign="left"
+          overflow="hidden"
+          onClick={handleClick}
+          _hover={{ backgroundColor: "$neutral3" }}
+          title={props.item.title}
+          color="$neutral12"
+        >
+          {props.item.title}
+        </Button>
+      </HStack>
+      <Show when={hasChildren() && isOpen()}>
+        <Box pl={`${(props.level + 1) * 16}px`}>
+          <OutlineItems
+            items={props.item.items}
+            level={props.level + 1}
+            store={props.store}
+          />
+        </Box>
+      </Show>
+    </Box>
+  )
+}
+
+const OutlineItems = (props: {
+  items: TPDFDocumentOutline | null
+  level?: number
+  store: PDFSlickState
+}) => {
+  if (!props.items || props.items.length === 0) return null
+
+  return (
+    <For each={props.items}>
+      {(item) => (
+        <OutlineItem item={item} level={props.level || 0} store={props.store} />
+      )}
+    </For>
+  )
+}
+
+const Sidebar = (props: {
+  store: PDFSlickState
+  isOpen: boolean
+  onClose: () => void
+}) => {
+  const t = useT()
+  return (
+    <Show when={props.isOpen}>
+      <Box
+        w="280px"
+        h="$full"
         bgColor="$neutral1"
-        p="$2"
-        rounded="$lg"
-        // top
-        zIndex="999"
+        borderRight="1px solid $neutral6"
+        display="flex"
+        flexDirection="column"
+        transition="all 0.3s ease"
+        zIndex="10"
       >
-        {/* Zoom */}
-        <ButtonGroup colorScheme="neutral" attached>
-          <IconButton
-            size="sm"
-            aria-label="Zoom Out"
-            disabled={!store.pdfSlick || store.scale <= 0.25}
-            onClick={() => store.pdfSlick?.viewer?.decreaseScale()}
-            icon={<VsRemove />}
-          />
-
-          <Menu>
-            <MenuTrigger as={Button} size="sm" minW="60px">
-              <Text size="sm">
-                {store.pdfSlick ? getCurrentZoomLabel() : "Loading..."}
-              </Text>
-            </MenuTrigger>
-            <MenuContent>
-              <MenuGroup>
-                <MenuLabel>Zoom Presets</MenuLabel>
-                {Array.from(presets.entries()).map(([value, label]) => (
-                  <MenuItem
-                    onSelect={() => {
-                      if (store.pdfSlick) {
-                        store.pdfSlick.currentScaleValue = value
-                      }
-                    }}
-                  >
-                    {label}
-                  </MenuItem>
-                ))}
-              </MenuGroup>
-              <Divider role="presentation" my="$1" />
-              <MenuGroup>
-                <MenuLabel>Zoom Levels</MenuLabel>
-                {Array.from(zoomVals.entries()).map(([value, label]) => (
-                  <MenuItem
-                    onSelect={() => {
-                      if (store.pdfSlick) {
-                        store.pdfSlick.currentScale = value
-                      }
-                    }}
-                  >
-                    {label}
-                  </MenuItem>
-                ))}
-              </MenuGroup>
-            </MenuContent>
-          </Menu>
-
-          <IconButton
-            size="sm"
-            aria-label="Zoom In"
-            disabled={!store.pdfSlick || store.scale >= 5}
-            onClick={() => store.pdfSlick?.viewer?.increaseScale()}
-            icon={<VsAdd />}
-          />
-        </ButtonGroup>
-
-        <Divider orientation="vertical" h="24px" />
-
-        {/* Page */}
-        <HStack spacing="$2" alignItems="center">
-          <form onSubmit={handlePageNumberSubmit}>
-            <Input
-              size="sm"
-              ref={pageNumberRef}
-              type="text"
-              value={wantedPageNumber()}
-              width="60px"
-              textAlign="center"
-              onFocus={() => pageNumberRef!.select()}
-              onChange={(e) => setWantedPageNumber(e.currentTarget.value)}
-              onKeyDown={handlePageNumberKeyDown}
-            />
-          </form>
-          <Text size="sm" minW="$full">
-            / {store.numPages}
+        <HStack
+          spacing="$2"
+          p="$3"
+          borderBottom="1px solid $neutral6"
+          bgColor="$neutral2"
+        >
+          <Text fontWeight="$semibold" color="$neutral12">
+            {t("home.preview.pdf.document_outline")}
           </Text>
+          <Box flex={1} />
+          <IconButton
+            size="sm"
+            aria-label={t("home.preview.pdf.close_sidebar")}
+            icon={<VsClose />}
+            onClick={props.onClose}
+          />
         </HStack>
+        <Box flex={1} overflow="auto" p="$3">
+          <VStack spacing="$2" alignItems="stretch">
+            <Show
+              when={
+                props.store.documentOutline &&
+                props.store.documentOutline.length > 0
+              }
+              fallback={
+                <Text size="sm" color="$neutral11" textAlign="center" mt="$4">
+                  {t("home.preview.pdf.no_outline")}
+                </Text>
+              }
+            >
+              <OutlineItems
+                items={props.store.documentOutline}
+                store={props.store}
+              />
+            </Show>
+          </VStack>
+        </Box>
+      </Box>
+    </Show>
+  )
+}
 
+const Toolbar = (props: {
+  store: PDFSlickState
+  isOpen: boolean
+  onToggle: () => void
+  wantedPageNumber: () => number | string
+  onPageNumberChange: (value: string) => void
+  onPageNumberSubmit: (e: Event) => void
+}) => {
+  const t = useT()
+  let pageNumberRef!: HTMLInputElement
+
+  const zoomPresets = [
+    ["auto", t("home.preview.pdf.zoom_auto")],
+    ["page-actual", t("home.preview.pdf.zoom_actual")],
+    ["page-fit", t("home.preview.pdf.zoom_fit")],
+    ["page-width", t("home.preview.pdf.zoom_width")],
+  ] as const
+  const zoomLevels = [
+    [0.5, t("home.preview.pdf.zoom_50")],
+    [0.75, t("home.preview.pdf.zoom_75")],
+    [1, t("home.preview.pdf.zoom_100")],
+    [1.25, t("home.preview.pdf.zoom_125")],
+    [1.5, t("home.preview.pdf.zoom_150")],
+    [2, t("home.preview.pdf.zoom_200")],
+  ] as const
+
+  const getCurrentZoomLabel = createMemo(() => {
+    if (props.store.scaleValue) {
+      const preset = zoomPresets.find(
+        ([value]) => value === props.store.scaleValue,
+      )
+      if (preset) return preset[1]
+    }
+    return `${Math.floor(props.store.scale * 100)}%`
+  })
+
+  const handleZoomPreset = (value: string) => {
+    if (props.store.pdfSlick) {
+      props.store.pdfSlick.currentScaleValue = value
+    }
+  }
+
+  const handleZoomLevel = (value: number) => {
+    if (props.store.pdfSlick) {
+      props.store.pdfSlick.currentScale = value
+    }
+  }
+
+  return (
+    <HStack
+      bottom="$2"
+      left="50%"
+      transform="translateX(-50%)"
+      spacing="$4"
+      w="auto"
+      pos="absolute"
+      p="$2"
+      rounded="$lg"
+      zIndex="999"
+      shadow="$lg"
+      bgColor="$neutral1"
+      opacity="0.7"
+      transition="all 0.2s ease-in-out"
+      _hover={{
+        opacity: "1",
+      }}
+    >
+      <Show
+        when={
+          props.store.documentOutline && props.store.documentOutline.length > 0
+        }
+      >
         <IconButton
           size="sm"
-          aria-label="Previous Page"
           colorScheme="neutral"
-          disabled={store.pageNumber <= 1}
-          onClick={() => store.pdfSlick?.viewer?.previousPage()}
+          aria-label={t("home.preview.pdf.toggle_sidebar")}
+          icon={
+            props.isOpen ? <VsLayoutSidebarLeftOff /> : <VsLayoutSidebarLeft />
+          }
+          onClick={props.onToggle}
+        />
+        <Divider orientation="vertical" h="24px" />
+      </Show>
+      <ButtonGroup colorScheme="neutral" attached>
+        <Tooltip withArrow label={t("home.preview.pdf.zoom_out")}>
+          <IconButton
+            size="sm"
+            aria-label={t("home.preview.pdf.zoom_out")}
+            disabled={!props.store.pdfSlick || props.store.scale <= 0.25}
+            onClick={() => props.store.pdfSlick?.viewer?.decreaseScale()}
+            icon={<VsZoomOut />}
+          />
+        </Tooltip>
+        <Menu motionPreset="scale-bottom-left">
+          <MenuTrigger as={Button} size="sm" minW="60px">
+            <Text size="sm">
+              {props.store.pdfSlick
+                ? getCurrentZoomLabel()
+                : t("home.preview.pdf.loading")}
+            </Text>
+          </MenuTrigger>
+          <MenuContent>
+            <MenuGroup>
+              <MenuLabel>{t("home.preview.pdf.zoom_presets")}</MenuLabel>
+              <For each={zoomPresets}>
+                {(item) => (
+                  <MenuItem onSelect={() => handleZoomPreset(item[0])}>
+                    {item[1]}
+                  </MenuItem>
+                )}
+              </For>
+            </MenuGroup>
+            <Divider role="presentation" my="$1" />
+            <MenuGroup>
+              <MenuLabel>{t("home.preview.pdf.zoom_levels")}</MenuLabel>
+              <For each={zoomLevels}>
+                {(item) => (
+                  <MenuItem onSelect={() => handleZoomLevel(item[0])}>
+                    {item[1]}
+                  </MenuItem>
+                )}
+              </For>
+            </MenuGroup>
+          </MenuContent>
+        </Menu>
+        <Tooltip withArrow label={t("home.preview.pdf.zoom_in")}>
+          <IconButton
+            size="sm"
+            aria-label={t("home.preview.pdf.zoom_in")}
+            disabled={!props.store.pdfSlick || props.store.scale >= 5}
+            onClick={() => props.store.pdfSlick?.viewer?.increaseScale()}
+            icon={<VsZoomIn />}
+          />
+        </Tooltip>
+      </ButtonGroup>
+      <Divider orientation="vertical" h="24px" />
+      <HStack spacing="$2" alignItems="center">
+        <form onSubmit={props.onPageNumberSubmit}>
+          <Input
+            size="sm"
+            ref={pageNumberRef}
+            type="text"
+            value={props.wantedPageNumber()}
+            w="50px"
+            textAlign="center"
+            onFocus={() => pageNumberRef!.select()}
+            onChange={(e) => props.onPageNumberChange(e.currentTarget.value)}
+          />
+        </form>
+        <Text size="sm" minW="$full">
+          / {props.store.numPages}
+        </Text>
+      </HStack>
+      <Tooltip withArrow label={t("home.preview.pdf.prev_page")}>
+        <IconButton
+          size="sm"
+          aria-label={t("home.preview.pdf.prev_page")}
+          colorScheme="neutral"
+          disabled={props.store.pageNumber <= 1}
+          onClick={() => props.store.pdfSlick?.viewer?.previousPage()}
           icon={<VsChevronUp />}
         />
-
+      </Tooltip>
+      <Tooltip withArrow label={t("home.preview.pdf.next_page")}>
         <IconButton
           size="sm"
-          aria-label="Next Page"
+          aria-label={t("home.preview.pdf.next_page")}
           colorScheme="neutral"
-          disabled={!store.pdfSlick || store.pageNumber >= store.numPages}
-          onClick={() => store.pdfSlick?.viewer?.nextPage()}
+          disabled={
+            !props.store.pdfSlick ||
+            props.store.pageNumber >= props.store.numPages
+          }
+          onClick={() => props.store.pdfSlick?.viewer?.nextPage()}
           icon={<VsChevronDown />}
         />
-      </HStack>
-      <PDFSlickViewer {...{ store, viewerRef }} />
-    </BoxWithFullScreen>
+      </Tooltip>
+    </HStack>
   )
 }
 
