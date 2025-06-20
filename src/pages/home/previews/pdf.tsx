@@ -1,4 +1,5 @@
 import { BoxWithFullScreen } from "~/components"
+import { AnnotationEditorType, AnnotationEditorParamsType } from "pdfjs-dist"
 import {
   PDFSlickState,
   TPDFDocumentOutline,
@@ -45,6 +46,7 @@ import {
   VsZoomOut,
 } from "solid-icons/vs"
 import { useT } from "~/hooks"
+import { BsEraser, BsPen, BsPenFill } from "solid-icons/bs"
 
 const PDFViewerApp = () => {
   const t = useT()
@@ -213,12 +215,14 @@ const Sidebar = (props: {
             {t("home.preview.pdf.document_outline")}
           </Text>
           <Box flex={1} />
-          <IconButton
-            size="sm"
-            aria-label={t("home.preview.pdf.close_sidebar")}
-            icon={<VsClose />}
-            onClick={props.onClose}
-          />
+          <Tooltip withArrow label={t("home.preview.pdf.close_sidebar")}>
+            <IconButton
+              size="sm"
+              aria-label={t("home.preview.pdf.close_sidebar")}
+              icon={<VsClose />}
+              onClick={props.onClose}
+            />
+          </Tooltip>
         </HStack>
         <Box flex={1} overflow="auto" p="$3">
           <VStack spacing="$2" alignItems="stretch">
@@ -293,6 +297,9 @@ const Toolbar = (props: {
     }
   }
 
+  const isInkMode = () =>
+    props.store.annotationEditorMode === AnnotationEditorType.INK
+
   return (
     <HStack
       bottom="$2"
@@ -317,17 +324,42 @@ const Toolbar = (props: {
           props.store.documentOutline && props.store.documentOutline.length > 0
         }
       >
+        <Tooltip withArrow label={t("home.preview.pdf.toggle_sidebar")}>
+          <IconButton
+            size="sm"
+            colorScheme="neutral"
+            aria-label={t("home.preview.pdf.toggle_sidebar")}
+            icon={
+              props.isOpen ? (
+                <VsLayoutSidebarLeftOff />
+              ) : (
+                <VsLayoutSidebarLeft />
+              )
+            }
+            onClick={props.onToggle}
+          />
+        </Tooltip>
+      </Show>
+      <Tooltip withArrow label={t("home.preview.pdf.toggle_pen")}>
         <IconButton
           size="sm"
-          colorScheme="neutral"
-          aria-label={t("home.preview.pdf.toggle_sidebar")}
-          icon={
-            props.isOpen ? <VsLayoutSidebarLeftOff /> : <VsLayoutSidebarLeft />
-          }
-          onClick={props.onToggle}
+          aria-label={t("home.preview.pdf.toggle_pen")}
+          colorScheme={(isInkMode() && "primary") || "neutral"}
+          onClick={() => {
+            const mode = isInkMode()
+              ? AnnotationEditorType.NONE
+              : AnnotationEditorType.INK
+            props.store.pdfSlick?.setAnnotationEditorMode(mode)
+            props.store.pdfSlick?.setAnnotationEditorParams({
+              type: AnnotationEditorParamsType.INK_COLOR,
+              value: "#ff0000",
+            })
+          }}
+          icon={(isInkMode() && <BsPenFill />) || <BsPen />}
         />
-        <Divider orientation="vertical" h="24px" />
-      </Show>
+      </Tooltip>
+      <Divider orientation="vertical" h="24px" />
+
       <ButtonGroup colorScheme="neutral" attached>
         <Tooltip withArrow label={t("home.preview.pdf.zoom_out")}>
           <IconButton
