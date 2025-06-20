@@ -41,6 +41,12 @@ export type FsGetResp = Resp<
   }
 >
 
+export type FsStrmResp = Resp<{
+  successPaths: string[]
+  failedPaths: string[]
+  deleteFiles: string[]
+}>
+
 export type EmptyResp = Resp<{}>
 
 export type PResp<T> = Promise<Resp<T>>

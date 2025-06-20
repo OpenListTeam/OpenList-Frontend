@@ -16,6 +16,7 @@ import { ModalWrapper } from "./ModalWrapper"
 import { LocalSettings } from "./LocalSettings"
 import { BackTop } from "./BackTop"
 import { Decompress } from "~/pages/home/toolbar/Decompress"
+import { GenerateStrm } from "~/pages/home/toolbar/GenerateStrm"
 
 const Upload = lazy(() => import("../uploads/Upload"))
 
@@ -23,6 +24,7 @@ export const Modal = () => {
   return (
     <>
       <Copy />
+      <GenerateStrm />
       <Move />
       <Rename />
       <Delete />

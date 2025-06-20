@@ -89,7 +89,14 @@
     "regex_rename_preview_old_name": "Old Name",
     "regex_rename_preview_new_name": "New Name",
     "regular_rename": "Regular expression file renaming. Input the source file name regular expression on the first line, and input the new file name regular expression on the second line.",
-    "sequential_renaming_desc": "The new file name will have a numerical starting value appended to it, and it will be displayed sequentially by adding 1 to the starting value. Enter the new file name on the first line and the starting value on the second line."
+    "sequential_renaming_desc": "The new file name will have a numerical starting value appended to it, and it will be displayed sequentially by adding 1 to the starting value. Enter the new file name on the first line and the starting value on the second line.",
+    "strm": {
+      "generate_strm": "generate_strm",
+      "generate_strm_tips": "Do you wish to proceed with generating a strm?",
+      "success": "Generated strm successfully",
+      "failed": " Failed to generate strm",
+      "delete_file": "Delete File"
+    }
   },
   "upload": {
     "add_as_task": "Add as task",

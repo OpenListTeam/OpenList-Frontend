@@ -8,7 +8,7 @@ import { bus } from "~/utils"
 import { operations } from "./operations"
 import { IoMagnetOutline } from "solid-icons/io"
 import { AiOutlineCloudUpload, AiOutlineSetting } from "solid-icons/ai"
-import { RiSystemRefreshLine } from "solid-icons/ri"
+import { RiSystemAddLine, RiSystemRefreshLine } from "solid-icons/ri"
 import { usePath } from "~/hooks"
 import { Motion } from "solid-motionone"
 import { isTocVisible, setTocDisabled } from "~/components"
@@ -72,6 +72,13 @@ export const Right = () => {
                 tips="new_file"
                 onClick={() => {
                   bus.emit("tool", "new_file")
+                }}
+              />
+              <RightIcon
+                as={RiSystemAddLine}
+                tips="new_strm"
+                onClick={() => {
+                  bus.emit("tool", "generate_strm")
                 }}
               />
               <RightIcon

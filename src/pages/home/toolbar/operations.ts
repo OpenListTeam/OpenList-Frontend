@@ -18,6 +18,7 @@ export interface Operations {
 }
 export const operations: Operations = {
   rename: { icon: CgRename, color: "$accent9" },
+  generate_strm: { icon: CgFileAdd, color: "$accent9" },
   copy: { icon: TbCopy, color: "$success9" },
   move: { icon: TbFileArrowRight, color: "$warning9" },
   delete: { icon: AiTwotoneDelete, color: "$danger9" },

@@ -9,6 +9,7 @@ import {
   RenameObj,
   ArchiveMeta,
   ArchiveList,
+  FsStrmResp,
 } from "~/types"
 import { r } from "."
 
@@ -49,6 +50,12 @@ export const fsList = (
       cancelToken: cancelToken,
     },
   )
+}
+
+export const fsGenerateStrm = (path: string = "/"): Promise<FsStrmResp> => {
+  return r.post("/fs/generate_strm", {
+    path,
+  })
 }
 
 export const fsDirs = (
