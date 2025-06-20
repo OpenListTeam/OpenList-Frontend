@@ -14,7 +14,31 @@
     "tr-install": "TrollStore",
     "tr-installing": "TrollStore Installing",
     "open_in_new_window": "Open in new window",
-    "auto_next": "Auto next"
+    "auto_next": "Auto next",
+    "pdf": {
+      "document_outline": "Document Outline",
+      "no_outline": "No outline available for this document",
+      "loading": "Loading...",
+      "prev_page": "Previous Page",
+      "next_page": "Next Page",
+      "toggle_sidebar": "Toggle Sidebar",
+      "close_sidebar": "Close Sidebar",
+      "toggle_pen": "Toggle Pen",
+      "zoom_presets": "Zoom Presets",
+      "zoom_levels": "Zoom Levels",
+      "zoom_auto": "Auto",
+      "zoom_actual": "Actual Size",
+      "zoom_fit": "Page Fit",
+      "zoom_width": "Page Width",
+      "zoom_50": "50%",
+      "zoom_75": "75%",
+      "zoom_100": "100%",
+      "zoom_125": "125%",
+      "zoom_150": "150%",
+      "zoom_200": "200%",
+      "zoom_in": "Zoom In",
+      "zoom_out": "Zoom Out"
+    }
   },
   "layouts": {
     "list": "List View",
