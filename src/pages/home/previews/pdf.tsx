@@ -301,159 +301,177 @@ const Toolbar = (props: {
     props.store.annotationEditorMode === AnnotationEditorType.INK
 
   return (
-    <HStack
-      bottom="$2"
+    <Box
+      pos="absolute"
       left="50%"
       transform="translateX(-50%)"
-      spacing="$4"
-      w="auto"
-      pos="absolute"
-      p="$2"
-      rounded="$lg"
-      zIndex="999"
-      shadow="$lg"
-      bgColor="$neutral1"
-      opacity="0.7"
-      transition="all 0.2s ease-in-out"
-      _hover={{
-        opacity: "1",
+      display="flex"
+      zIndex="1"
+      css={{
+        top: "$2",
+        bottom: "auto",
+        "@sm": {
+          top: "auto",
+          bottom: "$2",
+        },
       }}
     >
-      <Show
-        when={
-          props.store.documentOutline && props.store.documentOutline.length > 0
-        }
+      <HStack
+        spacing="$4"
+        w="auto"
+        p="$2"
+        rounded="$lg"
+        shadow="$lg"
+        bgColor="$neutral1"
+        opacity="0.7"
+        transition="all 0.2s ease-in-out"
+        _hover={{
+          opacity: "1",
+        }}
+        css={{
+          scale: "0.7",
+          "@sm": {
+            scale: "1",
+          },
+        }}
       >
-        <Tooltip withArrow label={t("home.preview.pdf.toggle_sidebar")}>
-          <IconButton
-            size="sm"
-            colorScheme="neutral"
-            aria-label={t("home.preview.pdf.toggle_sidebar")}
-            icon={
-              props.isOpen ? (
-                <VsLayoutSidebarLeftOff />
-              ) : (
-                <VsLayoutSidebarLeft />
-              )
-            }
-            onClick={props.onToggle}
-          />
-        </Tooltip>
-      </Show>
-      <Tooltip withArrow label={t("home.preview.pdf.toggle_pen")}>
-        <IconButton
-          size="sm"
-          aria-label={t("home.preview.pdf.toggle_pen")}
-          colorScheme={(isInkMode() && "primary") || "neutral"}
-          onClick={() => {
-            const mode = isInkMode()
-              ? AnnotationEditorType.NONE
-              : AnnotationEditorType.INK
-            props.store.pdfSlick?.setAnnotationEditorMode(mode)
-            props.store.pdfSlick?.setAnnotationEditorParams({
-              type: AnnotationEditorParamsType.INK_COLOR,
-              value: "#ff0000",
-            })
-          }}
-          icon={(isInkMode() && <BsPenFill />) || <BsPen />}
-        />
-      </Tooltip>
-      <Divider orientation="vertical" h="24px" />
-
-      <ButtonGroup colorScheme="neutral" attached>
-        <Tooltip withArrow label={t("home.preview.pdf.zoom_out")}>
-          <IconButton
-            size="sm"
-            aria-label={t("home.preview.pdf.zoom_out")}
-            disabled={!props.store.pdfSlick || props.store.scale <= 0.25}
-            onClick={() => props.store.pdfSlick?.viewer?.decreaseScale()}
-            icon={<VsZoomOut />}
-          />
-        </Tooltip>
-        <Menu motionPreset="scale-bottom-left">
-          <MenuTrigger as={Button} size="sm" minW="60px">
-            <Text size="sm">
-              {props.store.pdfSlick
-                ? getCurrentZoomLabel()
-                : t("home.preview.pdf.loading")}
-            </Text>
-          </MenuTrigger>
-          <MenuContent>
-            <MenuGroup>
-              <MenuLabel>{t("home.preview.pdf.zoom_presets")}</MenuLabel>
-              <For each={zoomPresets}>
-                {(item) => (
-                  <MenuItem onSelect={() => handleZoomPreset(item[0])}>
-                    {item[1]}
-                  </MenuItem>
-                )}
-              </For>
-            </MenuGroup>
-            <Divider role="presentation" my="$1" />
-            <MenuGroup>
-              <MenuLabel>{t("home.preview.pdf.zoom_levels")}</MenuLabel>
-              <For each={zoomLevels}>
-                {(item) => (
-                  <MenuItem onSelect={() => handleZoomLevel(item[0])}>
-                    {item[1]}
-                  </MenuItem>
-                )}
-              </For>
-            </MenuGroup>
-          </MenuContent>
-        </Menu>
-        <Tooltip withArrow label={t("home.preview.pdf.zoom_in")}>
-          <IconButton
-            size="sm"
-            aria-label={t("home.preview.pdf.zoom_in")}
-            disabled={!props.store.pdfSlick || props.store.scale >= 5}
-            onClick={() => props.store.pdfSlick?.viewer?.increaseScale()}
-            icon={<VsZoomIn />}
-          />
-        </Tooltip>
-      </ButtonGroup>
-      <Divider orientation="vertical" h="24px" />
-      <HStack spacing="$2" alignItems="center">
-        <form onSubmit={props.onPageNumberSubmit}>
-          <Input
-            size="sm"
-            ref={pageNumberRef}
-            type="text"
-            value={props.wantedPageNumber()}
-            w="50px"
-            textAlign="center"
-            onFocus={() => pageNumberRef!.select()}
-            onChange={(e) => props.onPageNumberChange(e.currentTarget.value)}
-          />
-        </form>
-        <Text size="sm" minW="$full">
-          / {props.store.numPages}
-        </Text>
-      </HStack>
-      <Tooltip withArrow label={t("home.preview.pdf.prev_page")}>
-        <IconButton
-          size="sm"
-          aria-label={t("home.preview.pdf.prev_page")}
-          colorScheme="neutral"
-          disabled={props.store.pageNumber <= 1}
-          onClick={() => props.store.pdfSlick?.viewer?.previousPage()}
-          icon={<VsChevronUp />}
-        />
-      </Tooltip>
-      <Tooltip withArrow label={t("home.preview.pdf.next_page")}>
-        <IconButton
-          size="sm"
-          aria-label={t("home.preview.pdf.next_page")}
-          colorScheme="neutral"
-          disabled={
-            !props.store.pdfSlick ||
-            props.store.pageNumber >= props.store.numPages
+        <Show
+          when={
+            props.store.documentOutline &&
+            props.store.documentOutline.length > 0
           }
-          onClick={() => props.store.pdfSlick?.viewer?.nextPage()}
-          icon={<VsChevronDown />}
-        />
-      </Tooltip>
-    </HStack>
+        >
+          <Tooltip withArrow label={t("home.preview.pdf.toggle_sidebar")}>
+            <IconButton
+              size="sm"
+              colorScheme="neutral"
+              aria-label={t("home.preview.pdf.toggle_sidebar")}
+              icon={
+                props.isOpen ? (
+                  <VsLayoutSidebarLeftOff />
+                ) : (
+                  <VsLayoutSidebarLeft />
+                )
+              }
+              onClick={props.onToggle}
+            />
+          </Tooltip>
+        </Show>
+        <Tooltip withArrow label={t("home.preview.pdf.toggle_pen")}>
+          <IconButton
+            size="sm"
+            aria-label={t("home.preview.pdf.toggle_pen")}
+            colorScheme={(isInkMode() && "primary") || "neutral"}
+            onClick={() => {
+              const mode = isInkMode()
+                ? AnnotationEditorType.NONE
+                : AnnotationEditorType.INK
+              props.store.pdfSlick?.setAnnotationEditorMode(mode)
+              props.store.pdfSlick?.setAnnotationEditorParams({
+                type: AnnotationEditorParamsType.INK_COLOR,
+                value: "#ff0000",
+              })
+            }}
+            icon={(isInkMode() && <BsPenFill />) || <BsPen />}
+          />
+        </Tooltip>
+        <Divider orientation="vertical" h="24px" />
+
+        <ButtonGroup colorScheme="neutral" attached>
+          <Tooltip withArrow label={t("home.preview.pdf.zoom_out")}>
+            <IconButton
+              size="sm"
+              aria-label={t("home.preview.pdf.zoom_out")}
+              disabled={!props.store.pdfSlick || props.store.scale <= 0.25}
+              onClick={() => props.store.pdfSlick?.viewer?.decreaseScale()}
+              icon={<VsZoomOut />}
+            />
+          </Tooltip>
+          <Menu motionPreset="scale-bottom-left">
+            <MenuTrigger as={Button} size="sm" minW="60px">
+              <Text size="sm">
+                {props.store.pdfSlick
+                  ? getCurrentZoomLabel()
+                  : t("home.preview.pdf.loading")}
+              </Text>
+            </MenuTrigger>
+            <MenuContent>
+              <MenuGroup>
+                <MenuLabel>{t("home.preview.pdf.zoom_presets")}</MenuLabel>
+                <For each={zoomPresets}>
+                  {(item) => (
+                    <MenuItem onSelect={() => handleZoomPreset(item[0])}>
+                      {item[1]}
+                    </MenuItem>
+                  )}
+                </For>
+              </MenuGroup>
+              <Divider role="presentation" my="$1" />
+              <MenuGroup>
+                <MenuLabel>{t("home.preview.pdf.zoom_levels")}</MenuLabel>
+                <For each={zoomLevels}>
+                  {(item) => (
+                    <MenuItem onSelect={() => handleZoomLevel(item[0])}>
+                      {item[1]}
+                    </MenuItem>
+                  )}
+                </For>
+              </MenuGroup>
+            </MenuContent>
+          </Menu>
+          <Tooltip withArrow label={t("home.preview.pdf.zoom_in")}>
+            <IconButton
+              size="sm"
+              aria-label={t("home.preview.pdf.zoom_in")}
+              disabled={!props.store.pdfSlick || props.store.scale >= 5}
+              onClick={() => props.store.pdfSlick?.viewer?.increaseScale()}
+              icon={<VsZoomIn />}
+            />
+          </Tooltip>
+        </ButtonGroup>
+        <Divider orientation="vertical" h="24px" />
+        <HStack spacing="$2" alignItems="center">
+          <form onSubmit={props.onPageNumberSubmit}>
+            <Input
+              size="sm"
+              ref={pageNumberRef}
+              type="text"
+              value={props.wantedPageNumber()}
+              w="50px"
+              textAlign="center"
+              onFocus={() => pageNumberRef!.select()}
+              onChange={(e) => props.onPageNumberChange(e.currentTarget.value)}
+            />
+          </form>
+          <Text size="sm" minW="$full">
+            / {props.store.numPages}
+          </Text>
+        </HStack>
+        <Tooltip withArrow label={t("home.preview.pdf.prev_page")}>
+          <IconButton
+            size="sm"
+            aria-label={t("home.preview.pdf.prev_page")}
+            colorScheme="neutral"
+            disabled={props.store.pageNumber <= 1}
+            onClick={() => props.store.pdfSlick?.viewer?.previousPage()}
+            icon={<VsChevronUp />}
+          />
+        </Tooltip>
+        <Tooltip withArrow label={t("home.preview.pdf.next_page")}>
+          <IconButton
+            size="sm"
+            aria-label={t("home.preview.pdf.next_page")}
+            colorScheme="neutral"
+            disabled={
+              !props.store.pdfSlick ||
+              props.store.pageNumber >= props.store.numPages
+            }
+            onClick={() => props.store.pdfSlick?.viewer?.nextPage()}
+            icon={<VsChevronDown />}
+          />
+        </Tooltip>
+      </HStack>
+    </Box>
   )
 }
 
