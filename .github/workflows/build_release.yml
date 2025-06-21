@@ -141,7 +141,7 @@ jobs:
             --notes-file "${{ github.workspace }}-CHANGELOG.txt" \
             --prerelease=${{ steps.check_pre_release.outputs.is_pre_release }} \
             ${{ steps.get_current_tag.outputs.current_tag }} \
-            dist/openlist-frontend-dist-v*.tar.gz
+            dist/openlist-frontend-dist-v*.tar.gz dist/i18n.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

@@ -117,7 +117,7 @@ if [ "$BUILD_TYPE" == "dev" ]; then
     version_tag="v${git_version_clean}-${commit}"
     log_build "Building DEV version ${version_tag}..."
 elif [ "$BUILD_TYPE" == "release" ]; then
-    # ! For release build, we update package.json version, 
+    # ! For release build, we update package.json version,
     # ! and then `git tag` to trigger CI release.
     version_tag="v${git_version_clean}"
     log_build "Building RELEASE version ${version_tag}..."
@@ -137,7 +137,28 @@ log_step "==== Building i18n ===="
 if [ "$SKIP_I18N" == "false" ]; then
     pnpm i18n:release
 else
-    log_warning "Skipping i18n build step"
+    log_warning "Skipping i18n build step, try to fetch from github release"
+    release_response=$(curl -s "https://api.github.com/repos/OpenListTeam/OpenList-Frontend/releases/tags/$git_version")
+    if echo -n "$release_response" | grep -q "Not Found"; then
+        log_warning "Failed to fetch release info. Skipping i18n fetch."
+    else
+        i18n_file_url=$(echo "$release_response" | grep -oP '"browser_download_url":\s*"\K[^"]*' | grep "i18n.tar.gz") || true
+
+        if [ -z "$i18n_file_url" ]; then
+            log_warning "i18n.tar.gz not found in release assets. Skipping i18n fetch."
+        else
+            log_info "Downloading i18n.tar.gz from GitHub..."
+            if curl -L -o "i18n.tar.gz" "$i18n_file_url"; then
+                if tar -xzvf i18n.tar.gz -C src/lang; then
+                    log_info "i18n files extracted to src/lang/"
+                else
+                    log_warning "Failed to extract i18n.tar.gz"
+                fi
+            else
+                log_warning "Failed to download i18n.tar.gz"
+            fi
+        fi
+    fi
 fi
 
 log_step "==== Building project ===="
@@ -153,8 +174,9 @@ if [ "$COMPRESS_FLAG" == "true" ]; then
     log_step "Creating compressed archive..."
 
     tar -czvf "${archive_name}.tar.gz" -C dist .
-    mv "${archive_name}.tar.gz" dist/
-    log_success "Compressed archive created: dist/${archive_name}.tar.gz"
+    tar -czvf "i18n.tar.gz" --exclude=en -C src/lang .
+    mv "${archive_name}.tar.gz" "i18n.tar.gz" dist/
+    log_success "Compressed archive created: dist/${archive_name}.tar.gz dist/i18n.tar.gz"
 fi
 
 log_success "Build completed."
