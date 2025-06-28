@@ -142,9 +142,9 @@ jobs:
 
       - name: Build Lite Release
         run: |
-          chmod +x lite/build.sh
-          cd lite
+          chmod +x build.sh
           ./build.sh --release --compress --lite
+        working-directory: ./lite
         env:
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
