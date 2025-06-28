@@ -132,6 +132,23 @@ jobs:
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
 
+      - name: Checkout lite version code
+        uses: actions/checkout@v4
+        with:
+          ref: lite
+          path: lite
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Build Lite Release
+        run: |
+          chmod +x lite/build.sh
+          cd lite
+          ./build.sh --release --compress --lite
+        env:
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
       - name: Upload Release Assets
         run: |
           # Delete local tag, or gh cli will complain about it.
@@ -141,7 +158,7 @@ jobs:
             --notes-file "${{ github.workspace }}-CHANGELOG.txt" \
             --prerelease=${{ steps.check_pre_release.outputs.is_pre_release }} \
             ${{ steps.get_current_tag.outputs.current_tag }} \
-            dist/openlist-frontend-dist-v*.tar.gz dist/i18n.tar.gz
+            dist/openlist-frontend-dist-v*.tar.gz lite/dist/openlist-frontend-dist-lite-v*.tar.gz dist/i18n.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -150,6 +167,10 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
           # Delete the generated dist tarball
           rm -f dist/openlist-frontend-dist-v*.tar.gz
+          rm -f lite/dist/openlist-frontend-dist-lite-v*.tar.gz
+          # Copy the lite version
+          mkdir dist/lite
+          cp lite/dist/* dist/lite/
 
           if ! jq -e '.name and .version' package.json > /dev/null; then
             echo "Error: Invalid package.json"
