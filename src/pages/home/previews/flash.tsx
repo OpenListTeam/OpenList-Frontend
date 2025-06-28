@@ -57,8 +57,8 @@ const Preview = () => {
 
     // 动态加载Ruffle脚本
     const script = document.createElement("script")
-    // script.src = "https://unpkg.com/@ruffle-rs/ruffle"
-    script.src = "/static/ruffle/ruffle.js"
+    script.src = "https://testingcf.jsdelivr.net/npm/@ruffle-rs/ruffle"
+    // script.src = "/static/ruffle/ruffle.js"
     script.async = true
     script.id = "ruffle-script"
 

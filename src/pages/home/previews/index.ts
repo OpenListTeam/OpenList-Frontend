@@ -115,12 +115,6 @@ const previews: Preview[] = [
     prior: true,
   },
   {
-    name: "HEIC",
-    exts: ["heic", "heif", "avif", "vvc", "avc", "jpeg", "jpg"],
-    component: lazy(() => import("./heic")),
-    prior: true,
-  },
-  {
     name: "Aliyun Office Previewer",
     exts: ["doc", "docx", "ppt", "pptx", "xls", "xlsx", "pdf"],
     provider: /^Aliyundrive(Share)?$/,

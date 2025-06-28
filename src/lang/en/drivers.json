@@ -153,30 +153,6 @@
     "username": "Username",
     "validate_code": "Validate code"
   },
-  "189CloudTV": {
-    "access_token": "Access token",
-    "family_id": "Family id",
-    "order_by": "Order by",
-    "order_bys": {
-      "filename": "Filename",
-      "filesize": "Filesize",
-      "lastOpTime": "LastOpTime"
-    },
-    "order_direction": "Order direction",
-    "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
-    },
-    "rapid_upload": "Rapid upload",
-    "root_folder_id": "Root folder id",
-    "type": "Type",
-    "types": {
-      "family": "Family",
-      "personal": "Personal"
-    },
-    "upload_thread": "Upload thread",
-    "upload_thread-tips": "1\u003c=thread\u003c=32"
-  },
   "Alias": {
     "download_concurrency": "Download concurrency",
     "download_concurrency-tips": "Need to enable proxy",
@@ -1162,7 +1138,6 @@
       "alert": "You can try to use 189PC driver if this driver does not work."
     },
     "189CloudPC": {},
-    "189CloudTV": {},
     "Alias": {},
     "Aliyundrive": {
       "alert": "There may be an infinite loop bug in this driver.\nDeprecated, no longer maintained and will be removed in a future version.\nWe recommend using the official driver AliyundriveOpen."
@@ -1244,7 +1219,6 @@
     "139Yun": "139Yun",
     "189Cloud": "189Cloud",
     "189CloudPC": "189CloudPC",
-    "189CloudTV": "189CloudTV",
     "Alias": "Alias",
     "Aliyundrive": "Aliyundrive",
     "AliyundriveOpen": "AliyundriveOpen",
