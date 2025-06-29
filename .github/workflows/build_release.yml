@@ -159,6 +159,7 @@ jobs:
       - name: Build Lite Release
         run: |
           rm -rf .git
+          cp -r ../.git .git
           chmod +x build.sh
           ./build.sh --release --compress --lite
         working-directory: ./lite
