@@ -30,8 +30,8 @@ importers:
         specifier: ^1.3.11
         version: 1.3.11(solid-js@1.9.7)
       '@solidjs/router':
-        specifier: ^0.9.1
-        version: 0.9.1(solid-js@1.9.7)
+        specifier: ^0.15.0
+        version: 0.15.3(solid-js@1.9.7)
       '@stitches/core':
         specifier: ^1.2.8
         version: 1.2.8
@@ -975,10 +975,10 @@ packages:
     peerDependencies:
       solid-js: ^1.6.12
 
-  '@solidjs/router@0.9.1':
-    resolution: {integrity: sha512-kRY75piOQsyoH75E/RP6lr7uVGFCjeeCCCJx7Z2D1Vc6+I1yFQjLCvE+6agXGwqDoWi6vbETP1g7gmp/L1mNLg==}
+  '@solidjs/router@0.15.3':
+    resolution: {integrity: sha512-iEbW8UKok2Oio7o6Y4VTzLj+KFCmQPGEpm1fS3xixwFBdclFVBvaQVeibl1jys4cujfAK5Kn6+uG2uBm3lxOMw==}
     peerDependencies:
-      solid-js: ^1.8.4
+      solid-js: ^1.8.6
 
   '@stitches/core@1.2.8':
     resolution: {integrity: sha512-Gfkvwk9o9kE9r9XNBmJRfV8zONvXThnm1tcuojL04Uy5uRyqg93DC83lDebl0rocZCfKSjUv+fWYtMQmEDJldg==}
@@ -3431,7 +3431,7 @@ snapshots:
     dependencies:
       solid-js: 1.9.7
 
-  '@solidjs/router@0.9.1(solid-js@1.9.7)':
+  '@solidjs/router@0.15.3(solid-js@1.9.7)':
     dependencies:
       solid-js: 1.9.7
 
