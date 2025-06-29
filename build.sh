@@ -94,9 +94,9 @@ check_git_version_and_commit() {
 
 # Enforce git tag for release builds
 enforce_git_tag() {
-    if ! git_version=$(git describe --abbrev=0 --tags origin/main 2>/dev/null); then
-        log_error "No git tags found on main branch. Release build requires a git tag."
-        log_warning "Please create a tag on main branch first, or use --dev for development builds."
+    if ! git_version=$(git describe --abbrev=0 --tags 2>/dev/null); then
+        log_error "No git tags found. Release build requires a git tag."
+        log_warning "Please create a tag first, or use --dev for development builds."
         exit 1
     fi
     validate_git_tag
@@ -115,7 +115,7 @@ validate_git_tag() {
 # Fallback to default git tag for development builds
 fallback_git_tag() {
     git tag -d rolling >/dev/null 2>&1 || true
-    git_version=$(git describe --abbrev=0 --tags origin/main 2>/dev/null || echo "v0.0.0")
+    git_version=$(git describe --abbrev=0 --tags 2>/dev/null || echo "v0.0.0")
     git_version_clean=${git_version#v}
     git_version_clean=${git_version_clean%%-*}
 }
