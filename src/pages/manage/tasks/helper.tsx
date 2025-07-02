@@ -52,18 +52,34 @@ export const getOfflineDownloadNameAnalyzer = (): TaskNameAnalyzer => {
 
 export const getOfflineDownloadTransferNameAnalyzer = (): TaskNameAnalyzer => {
   const t = useT()
+  const [underline, setUnderline] = createSignal(false)
   return {
-    regex: /^transfer \[(.*)]\((.*\/([^\/]+))\) to \[(.+)]\((.+)\)$/,
-    title: (matches) => matches[3],
+    regex: /^(transfer|upload) \[(.*)]\((.*\/([^\/]+))\) to \[(.+)]\((.+)\)$/,
+    title: (matches) => (matches[1] === "upload" ? matches[2] : matches[4]),
     attrs: {
       [t(`tasks.attr.offline_download.transfer_src`)]: (matches) => {
-        return matches[1] === "" ? undefined : getPath(matches[1], matches[2])
+        return matches[1] !== "transfer" || matches[2] === ""
+          ? undefined
+          : getPath(matches[2], matches[3])
       },
       [t(`tasks.attr.offline_download.transfer_src_local`)]: (matches) => {
-        return matches[1] === "" ? matches[2] : undefined
+        return matches[2] === "" ? matches[3] : undefined
+      },
+      [t(`tasks.attr.offline_download.url`)]: (matches) => {
+        return matches[1] === "upload" ? (
+          <a
+            style={underline() ? "text-decoration: underline" : ""}
+            onMouseOver={() => setUnderline(true)}
+            onMouseOut={() => setUnderline(false)}
+            href={matches[3]}
+            target="_blank"
+          >
+            {matches[3]}
+          </a>
+        ) : undefined
       },
       [t(`tasks.attr.offline_download.transfer_dst`)]: (matches) =>
-        getPath(matches[4], matches[5]),
+        getPath(matches[5], matches[6]),
     },
   }
 }
