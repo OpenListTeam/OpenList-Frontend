@@ -65,7 +65,7 @@
       "delete_on_upload_failed": "Delete on upload failed",
       "delete_never": "Never delete",
       "delete_always": "Always delete",
-      "upload_download_stream": "Upload download stream"
+      "upload_download_stream": "Download stream direct upload"
     },
     "download": "Download",
     "batch_download": "Batch Download",
