@@ -14,11 +14,11 @@ import bencode from "bencode"
 import crypto from "crypto-js"
 
 const deletePolicies = [
+  "upload_download_stream",
   "delete_on_upload_succeed",
   "delete_on_upload_failed",
   "delete_never",
   "delete_always",
-  "stream_put",
 ] as const
 
 type DeletePolicy = (typeof deletePolicies)[number]
@@ -58,11 +58,13 @@ export const OfflineDownload = () => {
     return r.get("/public/offline_download_tools")
   })
   const [tool, setTool] = createSignal("")
-  const [deletePolicy, setDeletePolicy] =
-    createSignal<DeletePolicy>("stream_put")
+  const [deletePolicy, setDeletePolicy] = createSignal<DeletePolicy>(
+    "upload_download_stream",
+  )
   onMount(async () => {
     const resp = await reqTool()
     handleResp(resp, (data) => {
+      data.push("115 Cloud")
       setTools(data)
       setTool(data[0])
     })
@@ -119,7 +121,10 @@ export const OfflineDownload = () => {
           <SelectWrapper
             value={tool()}
             onChange={(v) => {
-              if (v !== "SimpleHttp" && deletePolicy() === "stream_put") {
+              if (
+                v !== "SimpleHttp" &&
+                deletePolicy() === "upload_download_stream"
+              ) {
                 setDeletePolicy("delete_on_upload_succeed")
               }
               setTool(v)
@@ -137,7 +142,9 @@ export const OfflineDownload = () => {
             onChange={(v) => setDeletePolicy(v as DeletePolicy)}
             options={deletePolicies
               .filter((policy) =>
-                policy == "stream_put" ? tool() === "SimpleHttp" : true,
+                policy == "upload_download_stream"
+                  ? tool() === "SimpleHttp"
+                  : true,
               )
               .map((policy) => {
                 return {
