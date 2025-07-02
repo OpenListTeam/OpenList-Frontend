@@ -1,4 +1,7 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
-
-npx lint-staged
+if type pnpm > /dev/null 2>&1; then
+  pnpm lint-staged
+else
+  npx lint-staged
+fi

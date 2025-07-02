@@ -18,6 +18,7 @@ const deletePolicies = [
   "delete_on_upload_failed",
   "delete_never",
   "delete_always",
+  "stream_put",
 ] as const
 
 type DeletePolicy = (typeof deletePolicies)[number]
@@ -57,9 +58,8 @@ export const OfflineDownload = () => {
     return r.get("/public/offline_download_tools")
   })
   const [tool, setTool] = createSignal("")
-  const [deletePolicy, setDeletePolicy] = createSignal<DeletePolicy>(
-    "delete_on_upload_succeed",
-  )
+  const [deletePolicy, setDeletePolicy] =
+    createSignal<DeletePolicy>("stream_put")
   onMount(async () => {
     const resp = await reqTool()
     handleResp(resp, (data) => {
@@ -118,7 +118,12 @@ export const OfflineDownload = () => {
         <Box mb="$2">
           <SelectWrapper
             value={tool()}
-            onChange={(v) => setTool(v)}
+            onChange={(v) => {
+              if (v !== "SimpleHttp" && deletePolicy() === "stream_put") {
+                setDeletePolicy("delete_on_upload_succeed")
+              }
+              setTool(v)
+            }}
             options={tools().map((tool) => {
               return { value: tool, label: tool }
             })}
@@ -130,12 +135,16 @@ export const OfflineDownload = () => {
           <SelectWrapper
             value={deletePolicy()}
             onChange={(v) => setDeletePolicy(v as DeletePolicy)}
-            options={deletePolicies.map((policy) => {
-              return {
-                value: policy,
-                label: t(`home.toolbar.delete_policy.${policy}`),
-              }
-            })}
+            options={deletePolicies
+              .filter((policy) =>
+                policy == "stream_put" ? tool() === "SimpleHttp" : true,
+              )
+              .map((policy) => {
+                return {
+                  value: policy,
+                  label: t(`home.toolbar.delete_policy.${policy}`),
+                }
+              })}
           />
         </Box>
       }
