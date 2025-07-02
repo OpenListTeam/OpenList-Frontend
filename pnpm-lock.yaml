@@ -55,7 +55,7 @@ importers:
         version: 3.10.0
       axios:
         specifier: ^1.9.0
-        version: 1.9.0
+        version: 1.10.0
       bencode:
         specifier: ^4.0.0
         version: 4.0.0
@@ -1118,8 +1118,8 @@ packages:
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
 
-  axios@1.9.0:
-    resolution: {integrity: sha512-re4CqKTJaURpzbLHtIi6XpDv20/CnpXOtjRY5/CU32L8gU8ek9UIivcfvSWvmKEngmVbrUtPpdDwWDWL7DNHvg==}
+  axios@1.10.0:
+    resolution: {integrity: sha512-/1xYAC4MP/HEG+3duIhFr4ZQXR4sQXOIe+o6sdqzeykGLx6Upp/1p8MHqhINOvGeP7xyNHe7tsiJByc4SSVUxw==}
 
   babel-plugin-jsx-dom-expressions@0.39.8:
     resolution: {integrity: sha512-/MVOIIjonylDXnrWmG23ZX82m9mtKATsVHB7zYlPfDR9Vdd/NBE48if+wv27bSkBtyO7EPMUlcUc4J63QwuACQ==}
@@ -3580,7 +3580,7 @@ snapshots:
 
   asynckit@0.4.0: {}
 
-  axios@1.9.0:
+  axios@1.10.0:
     dependencies:
       follow-redirects: 1.15.9
       form-data: 4.0.3
