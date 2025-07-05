@@ -33,6 +33,11 @@ function GetDefaultValue(type: Type, value?: string) {
         return parseInt(value)
       }
       return 0
+    case Type.Float:
+      if (value) {
+        return parseFloat(value)
+      }
+      return 0
     default:
       if (value) {
         return value
