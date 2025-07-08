@@ -40,7 +40,6 @@ export interface Preview {
 export type PreviewComponent = Pick<Preview, "name" | "component">
 
 const previews: Preview[] = [
-  // ... (The array of preview definitions remains unchanged)
   {
     name: "HTML render",
     exts: ["html"],
@@ -162,8 +161,7 @@ export const getPreviews = (
     ObjType[searchParams["type"]?.toUpperCase() as keyof typeof ObjType]
   const res: PreviewComponent[] = []
   const subsequent: PreviewComponent[] = []
-
-  // Step 1: Run the original logic to find all matching previews.
+  // internal previews
   previews.forEach((preview) => {
     if (preview.provider && !preview.provider.test(file.provider)) {
       return
@@ -181,6 +179,7 @@ export const getPreviews = (
       }
     }
   })
+  // iframe previews
   const iframePreviews = getIframePreviews(file.name)
   res.push(
     ...iframePreviews.map((preview) => ({
@@ -189,10 +188,7 @@ export const getPreviews = (
     })),
   )
 
-  // ==================== NEW LOGIC START ====================
-  // This block handles the positioning of the "Download" option and other special cases.
-
-  // Define the Download component once to avoid repetition.
+  // download page
   const downloadComponent: PreviewComponent = {
     name: "Download",
     component: lazy(() => import("./download")),
@@ -207,11 +203,11 @@ export const getPreviews = (
   const isSmallFile = file.size < 1 * 1024 * 1024
 
   if (isLargeTextFile) {
-    // Case 1 (New): Large text file. Place "Download" at the very beginning.
+    // Case 1: Large text file. Place "Download" at the very beginning.
     // The standard text previews (Markdown, etc.) are already in `res` and will appear after it.
     res.unshift(downloadComponent)
   } else if (noPreviewsFound && isSmallFile) {
-    // Case 2 (Original): No other previews found for a small file.
+    // Case 2: No other previews found for a small file.
     // Add "Download" first, then suggest default text previews.
     res.push(downloadComponent)
     const textPreviewsToAdd = previews
@@ -221,12 +217,9 @@ export const getPreviews = (
       .map((p) => ({ name: p.name, component: p.component }))
     res.push(...textPreviewsToAdd)
   } else {
-    // Case 3 (Original): The "normal" case for all other files (images, videos, small text files, etc.).
+    // Case 3: The "normal" case for all other files (images, videos, small text files, etc.).
     // Add "Download" as the last fallback option in the high-priority list.
     res.push(downloadComponent)
   }
-  // ==================== NEW LOGIC END ====================
-
-  // Step 4: Return the combined list.
   return res.concat(subsequent)
 }
