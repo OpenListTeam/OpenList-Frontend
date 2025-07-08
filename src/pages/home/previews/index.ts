@@ -40,6 +40,7 @@ export interface Preview {
 export type PreviewComponent = Pick<Preview, "name" | "component">
 
 const previews: Preview[] = [
+  // ... (The array of preview definitions remains unchanged)
   {
     name: "HTML render",
     exts: ["html"],
@@ -161,7 +162,8 @@ export const getPreviews = (
     ObjType[searchParams["type"]?.toUpperCase() as keyof typeof ObjType]
   const res: PreviewComponent[] = []
   const subsequent: PreviewComponent[] = []
-  // internal previews
+
+  // Step 1: Run the original logic to find all matching previews.
   previews.forEach((preview) => {
     if (preview.provider && !preview.provider.test(file.provider)) {
       return
@@ -179,18 +181,48 @@ export const getPreviews = (
       }
     }
   })
-  // iframe previews
   const iframePreviews = getIframePreviews(file.name)
-  iframePreviews.forEach((preview) => {
-    res.push({
+  res.push(
+    ...iframePreviews.map((preview) => ({
       name: preview.key,
       component: generateIframePreview(preview.value),
+    })),
+  )
+
+  // ==================== NEW LOGIC START ====================
+  // Step 2: Check conditions for the special case.
+  const noPreviewsFound = res.length === 0 && subsequent.length === 0
+  const isSmallFile = file.size < 1 * 1024 * 1024
+
+  // Step 3: Handle the "Download" option and special case previews.
+  if (noPreviewsFound && isSmallFile) {
+    // This is the special case: no previews found for a small file.
+    // The list "res" is currently empty.
+
+    // 1. Add "Download" as the very first option.
+    res.push({
+      name: "Download",
+      component: lazy(() => import("./download")),
     })
-  })
-  // download page
-  res.push({
-    name: "Download",
-    component: lazy(() => import("./download")),
-  })
+
+    // 2. Then, add the default text previews after "Download".
+    const textPreviewsToAdd = previews
+      .filter((p) =>
+        ["Markdown", "Markdown with word wrap", "Text Editor"].includes(p.name),
+      )
+      .map((p) => ({ name: p.name, component: p.component }))
+    res.push(...textPreviewsToAdd)
+  } else {
+    // This is the normal case for all other files.
+    // "res" may contain previews for videos, documents, etc.
+    // Add "Download" as the last fallback option in the high-priority list.
+    res.push({
+      name: "Download",
+      component: lazy(() => import("./download")),
+    })
+  }
+  // ==================== NEW LOGIC END ====================
+
+  // Step 4: Return the combined list.
   return res.concat(subsequent)
 }
