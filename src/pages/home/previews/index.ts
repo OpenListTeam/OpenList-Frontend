@@ -190,22 +190,30 @@ export const getPreviews = (
   )
 
   // ==================== NEW LOGIC START ====================
-  // Step 2: Check conditions for the special case.
+  // This block handles the positioning of the "Download" option and other special cases.
+
+  // Define the Download component once to avoid repetition.
+  const downloadComponent: PreviewComponent = {
+    name: "Download",
+    component: lazy(() => import("./download")),
+  }
+
+  // Condition for the new requirement: a large text file.
+  const isLargeTextFile =
+    file.type === ObjType.TEXT && file.size >= 1 * 1024 * 1024
+
+  // Conditions from the previous logic for small, unrecognized files.
   const noPreviewsFound = res.length === 0 && subsequent.length === 0
   const isSmallFile = file.size < 1 * 1024 * 1024
 
-  // Step 3: Handle the "Download" option and special case previews.
-  if (noPreviewsFound && isSmallFile) {
-    // This is the special case: no previews found for a small file.
-    // The list "res" is currently empty.
-
-    // 1. Add "Download" as the very first option.
-    res.push({
-      name: "Download",
-      component: lazy(() => import("./download")),
-    })
-
-    // 2. Then, add the default text previews after "Download".
+  if (isLargeTextFile) {
+    // Case 1 (New): Large text file. Place "Download" at the very beginning.
+    // The standard text previews (Markdown, etc.) are already in `res` and will appear after it.
+    res.unshift(downloadComponent)
+  } else if (noPreviewsFound && isSmallFile) {
+    // Case 2 (Original): No other previews found for a small file.
+    // Add "Download" first, then suggest default text previews.
+    res.push(downloadComponent)
     const textPreviewsToAdd = previews
       .filter((p) =>
         ["Markdown", "Markdown with word wrap", "Text Editor"].includes(p.name),
@@ -213,13 +221,9 @@ export const getPreviews = (
       .map((p) => ({ name: p.name, component: p.component }))
     res.push(...textPreviewsToAdd)
   } else {
-    // This is the normal case for all other files.
-    // "res" may contain previews for videos, documents, etc.
+    // Case 3 (Original): The "normal" case for all other files (images, videos, small text files, etc.).
     // Add "Download" as the last fallback option in the high-priority list.
-    res.push({
-      name: "Download",
-      component: lazy(() => import("./download")),
-    })
+    res.push(downloadComponent)
   }
   // ==================== NEW LOGIC END ====================
 
