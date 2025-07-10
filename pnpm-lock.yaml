@@ -16,7 +16,7 @@ importers:
         version: 2.1.1
       '@hope-ui/solid':
         specifier: 0.6.7
-        version: 0.6.7(@stitches/core@1.2.8)(solid-js@1.9.7)(solid-transition-group@0.0.12(solid-js@1.9.7))
+        version: 0.6.7(@stitches/core@1.2.8)(solid-js@1.9.7)(solid-transition-group@0.3.0(solid-js@1.9.7))
       '@monaco-editor/loader':
         specifier: ^1.5.0
         version: 1.5.0
@@ -121,7 +121,7 @@ importers:
         version: 0.2.0
       solid-contextmenu:
         specifier: 0.0.2
-        version: 0.0.2(solid-js@1.9.7)(solid-transition-group@0.0.12(solid-js@1.9.7))
+        version: 0.0.2(solid-js@1.9.7)(solid-transition-group@0.3.0(solid-js@1.9.7))
       solid-icons:
         specifier: ^1.1.0
         version: 1.1.0(solid-js@1.9.7)
@@ -135,8 +135,8 @@ importers:
         specifier: ^1.0.4
         version: 1.0.4(solid-js@1.9.7)
       solid-transition-group:
-        specifier: ^0.0.12
-        version: 0.0.12(solid-js@1.9.7)
+        specifier: ^0.3.0
+        version: 0.3.0(solid-js@1.9.7)
       streamsaver:
         specifier: ^2.0.6
         version: 2.0.6
@@ -2235,10 +2235,11 @@ packages:
     peerDependencies:
       solid-js: ^1.3
 
-  solid-transition-group@0.0.12:
-    resolution: {integrity: sha512-Eu4MfNZSSxM67C+4EXaoDiWr4BFbDLg3j30JQJgQEIH9UDOfgNPfZlsFDhT/PxwJqhe6sn85W+dbmYJzBmjpAA==}
+  solid-transition-group@0.3.0:
+    resolution: {integrity: sha512-gzFbtxkEnA8Hgi7UzmEjPPRl4rodoKLs+AGIXA7kJgjOr4j4qFRw39npu+WpdNSDV7aDKr+K0LFcoT9Kbm5PBA==}
+    engines: {node: '>=20.0.0', pnpm: '>=9.0.0'}
     peerDependencies:
-      solid-js: ^1.0.0
+      solid-js: ^1.6.12
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -3327,7 +3328,7 @@ snapshots:
 
   '@github/webauthn-json@2.1.1': {}
 
-  '@hope-ui/solid@0.6.7(@stitches/core@1.2.8)(solid-js@1.9.7)(solid-transition-group@0.0.12(solid-js@1.9.7))':
+  '@hope-ui/solid@0.6.7(@stitches/core@1.2.8)(solid-js@1.9.7)(solid-transition-group@0.3.0(solid-js@1.9.7))':
     dependencies:
       '@floating-ui/dom': 0.4.4
       '@stitches/core': 1.2.8
@@ -3336,7 +3337,7 @@ snapshots:
       lodash.merge: 4.6.2
       scroll-lock: 2.1.5
       solid-js: 1.9.7
-      solid-transition-group: 0.0.12(solid-js@1.9.7)
+      solid-transition-group: 0.3.0(solid-js@1.9.7)
 
   '@hrgui/libass-wasm-ts@1.0.3': {}
 
@@ -4843,12 +4844,12 @@ snapshots:
 
   smoothscroll@0.4.0: {}
 
-  solid-contextmenu@0.0.2(solid-js@1.9.7)(solid-transition-group@0.0.12(solid-js@1.9.7)):
+  solid-contextmenu@0.0.2(solid-js@1.9.7)(solid-transition-group@0.3.0(solid-js@1.9.7)):
     dependencies:
       clsx: 1.2.1
       mitt: 3.0.1
       solid-js: 1.9.7
-      solid-transition-group: 0.0.12(solid-js@1.9.7)
+      solid-transition-group: 0.3.0(solid-js@1.9.7)
 
   solid-icons@1.1.0(solid-js@1.9.7):
     dependencies:
@@ -4898,8 +4899,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  solid-transition-group@0.0.12(solid-js@1.9.7):
+  solid-transition-group@0.3.0(solid-js@1.9.7):
     dependencies:
+      '@solid-primitives/refs': 1.1.1(solid-js@1.9.7)
+      '@solid-primitives/transition-group': 1.1.1(solid-js@1.9.7)
       solid-js: 1.9.7
 
   source-map-js@1.2.1: {}
