@@ -43,7 +43,7 @@
     "@types/sha256": "^0.2.2",
     "@types/streamsaver": "^2.0.5",
     "@vitejs/plugin-legacy": "^4.1.1",
-    "husky": "^8.0.3",
+    "husky": "^9.0.0",
     "lint-staged": "^13.3.0",
     "prettier": "3.1.1",
     "rollup-plugin-copy": "^3.5.0",
