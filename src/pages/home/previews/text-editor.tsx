@@ -58,6 +58,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
         onChange={(value) => {
           setValue(value)
         }}
+        minimap={{ autohide: true }}
       />
       <Show when={userCan("write") || objStore.write}>
         <Button loading={loading()} onClick={onSave}>
