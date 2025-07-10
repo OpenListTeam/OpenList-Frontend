@@ -44,7 +44,7 @@
     "@types/streamsaver": "^2.0.5",
     "@vitejs/plugin-legacy": "^4.1.1",
     "husky": "^9.0.0",
-    "lint-staged": "^13.3.0",
+    "lint-staged": "^16.0.0",
     "prettier": "3.6.2",
     "rollup-plugin-copy": "^3.5.0",
     "terser": "^5.42.0",
