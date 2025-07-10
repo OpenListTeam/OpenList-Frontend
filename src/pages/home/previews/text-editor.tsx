@@ -1,7 +1,7 @@
 import { Button, useColorMode, VStack } from "@hope-ui/solid"
 import { createEffect, createMemo, createSignal, on, Show } from "solid-js"
 import { EncodingSelect, MaybeLoading } from "~/components"
-import { MonacoEditorLoader } from "~/components/MonacoEditor"
+import { MonacoEditor } from "~/components/MonacoEditor"
 import { useFetch, useFetchText, useParseText, useRouter, useT } from "~/hooks"
 import { objStore, userCan } from "~/store"
 import { PEmptyResp } from "~/types"
@@ -51,7 +51,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
           referenceText={props.data}
         />
       </Show>
-      <MonacoEditorLoader
+      <MonacoEditor
         value={text(encoding())}
         theme={theme()}
         path={objStore.obj.name}

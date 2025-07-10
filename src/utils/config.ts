@@ -24,7 +24,3 @@ if (api === "/") {
 if (api.endsWith("/")) {
   api = api.slice(0, -1)
 }
-
-export const monaco_cdn =
-  window.OPENLIST_CONFIG.monaco_cdn ||
-  "https://registry.npmmirror.com/monaco-editor/0.52.2/files/min/vs"

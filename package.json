@@ -84,6 +84,7 @@
     "lightgallery": "^2.8.3",
     "mark.js": "^8.11.1",
     "mitt": "^3.0.1",
+    "monaco-editor": "^0.52.2",
     "mpegts.js": "^1.8.0",
     "pdfjs-dist": "^5.3.31",
     "qrcode": "^1.5.4",

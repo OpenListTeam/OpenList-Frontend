@@ -1,65 +1,82 @@
 import { Box } from "@hope-ui/solid"
-import { createEffect, createSignal, onCleanup, onMount } from "solid-js"
-import { MaybeLoading } from "./FullLoading"
-import loader from "@monaco-editor/loader"
-import { monaco_cdn } from "~/utils"
+import { createEffect, onCleanup, onMount, splitProps } from "solid-js"
+import * as monaco from "monaco-editor"
 
-loader.config({
-  paths: {
-    vs: monaco_cdn,
+// Configure worker for Monaco Editor
+import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker"
+import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker"
+import cssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker"
+import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker"
+import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker"
+
+self.MonacoEnvironment = {
+  getWorker(_, label) {
+    if (label === "json") {
+      return new jsonWorker()
+    }
+    if (label === "css" || label === "scss" || label === "less") {
+      return new cssWorker()
+    }
+    if (label === "html" || label === "handlebars" || label === "razor") {
+      return new htmlWorker()
+    }
+    if (label === "typescript" || label === "javascript") {
+      return new tsWorker()
+    }
+    return new editorWorker()
   },
-})
-export interface MonacoEditorProps {
+}
+export interface MonacoEditorProps
+  extends monaco.editor.IStandaloneEditorConstructionOptions {
   value: string
   onChange?: (value: string) => void
-  theme: "vs" | "vs-dark"
+  theme?: "vs" | "vs-dark" | "hc-black" | "hc-light"
   path?: string
   language?: string
-}
-let monaco: any
-
-export const MonacoEditorLoader = (props: MonacoEditorProps) => {
-  const [loading, setLoading] = createSignal(true)
-  loader.init().then((m) => {
-    monaco = m
-    setLoading(false)
-  })
-  return (
-    <MaybeLoading loading={loading()}>
-      <MonacoEditor {...props} />
-    </MaybeLoading>
-  )
 }
 
 export const MonacoEditor = (props: MonacoEditorProps) => {
   let monacoEditorDiv: HTMLDivElement
-  let monacoEditor: any /*monaco.editor.IStandaloneCodeEditor*/
-  let model: any /*monaco.editor.ITextModel*/
+  let monacoEditor: monaco.editor.IStandaloneCodeEditor
+  let model: monaco.editor.ITextModel
+
+  // Separate custom properties and Monaco options
+  const [customProps, monacoOptions] = splitProps(props, ["onChange", "path"])
+
   onMount(() => {
     monacoEditor = monaco.editor.create(monacoEditorDiv!, {
-      value: props.value,
-      theme: props.theme,
+      automaticLayout: true,
+      ...monacoOptions,
     })
+
     model = monaco.editor.createModel(
       props.value,
       props.language,
-      props.path ? monaco.Uri.parse(props.path) : undefined,
+      customProps.path ? monaco.Uri.parse(customProps.path) : undefined,
     )
     monacoEditor.setModel(model)
+
     monacoEditor.onDidChangeModelContent(() => {
-      props.onChange?.(monacoEditor.getValue())
+      customProps.onChange?.(monacoEditor.getValue())
     })
-  })
-  createEffect(() => {
-    monacoEditor.setValue(props.value)
   })
 
   createEffect(() => {
-    monaco.editor.setTheme(props.theme)
+    if (monacoEditor && props.value !== monacoEditor.getValue()) {
+      monacoEditor.setValue(props.value)
+    }
   })
+
+  createEffect(() => {
+    if (monacoEditor && props.theme) {
+      monaco.editor.setTheme(props.theme)
+    }
+  })
+
   onCleanup(() => {
-    model && model.dispose()
-    monacoEditor && monacoEditor.dispose()
+    model?.dispose()
+    monacoEditor?.dispose()
   })
+
   return <Box w="$full" h="70vh" ref={monacoEditorDiv!} />
 }
