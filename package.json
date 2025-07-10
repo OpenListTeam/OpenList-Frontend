@@ -28,7 +28,7 @@
     "dev": "vite --force",
     "build": "vite build",
     "serve": "vite preview",
-    "prepare": "husky install",
+    "prepare": "husky",
     "format": "prettier --ignore-path .gitignore -w \"src/**/*.{js,ts,json,css,tsx,jsx}\""
   },
   "license": "MIT",
