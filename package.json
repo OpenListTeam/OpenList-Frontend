@@ -49,7 +49,7 @@
     "rollup-plugin-copy": "^3.5.0",
     "terser": "^5.42.0",
     "typescript": "^4.9.5",
-    "vite": "^4.5.14",
+    "vite": "^7.0.0",
     "vite-plugin-dynamic-base": "^0.4.9",
     "vite-plugin-solid": "^2.11.6"
   },
