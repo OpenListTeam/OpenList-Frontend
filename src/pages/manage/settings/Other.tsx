@@ -24,6 +24,7 @@ const OtherSettings = () => {
   const [transmissionUrl, setTransmissionUrl] = createSignal("")
   const [transmissionSeedTime, setTransmissionSeedTime] = createSignal("")
   const [pan115TempDir, set115TempDir] = createSignal("")
+  const [pan115OpenTempDir, set115OpenTempDir] = createSignal("")
   const [pikpakTempDir, setPikPakTempDir] = createSignal("")
   const [thunderTempDir, setThunderTempDir] = createSignal("")
   const [thunderBrowserTempDir, setThunderBrowserTempDir] = createSignal("")
@@ -55,6 +56,12 @@ const OtherSettings = () => {
     (): PResp<string> =>
       r.post("/admin/setting/set_115", {
         temp_dir: pan115TempDir(),
+      }),
+  )
+  const [set115OpenLoading, set115Open] = useFetch(
+    (): PResp<string> =>
+      r.post("/admin/setting/set_115_open", {
+        temp_dir: pan115OpenTempDir(),
       }),
   )
   const [setPikPakLoading, setPikPak] = useFetch(
@@ -92,6 +99,9 @@ const OtherSettings = () => {
         data.find((i) => i.key === "transmission_seedtime")?.value || "",
       )
       set115TempDir(data.find((i) => i.key === "115_temp_dir")?.value || "")
+      set115OpenTempDir(
+        data.find((i) => i.key === "115_open_temp_dir")?.value || "",
+      )
       setPikPakTempDir(
         data.find((i) => i.key === "pikpak_temp_dir")?.value || "",
       )
@@ -209,6 +219,29 @@ const OtherSettings = () => {
         }}
       >
         {t("settings_other.set_115")}
+      </Button>
+      <Heading my="$2">{t("settings_other.115_open")}</Heading>
+      <FormControl w="$full" display="flex" flexDirection="column">
+        <FormLabel for="115_open_temp_dir" display="flex" alignItems="center">
+          {t(`settings.115_open_temp_dir`)}
+        </FormLabel>
+        <FolderChooseInput
+          id="115_open_temp_dir"
+          value={pan115OpenTempDir()}
+          onChange={(path) => set115OpenTempDir(path)}
+        />
+      </FormControl>
+      <Button
+        my="$2"
+        loading={set115OpenLoading()}
+        onClick={async () => {
+          const resp = await set115Open()
+          handleResp(resp, (data) => {
+            notify.success(data)
+          })
+        }}
+      >
+        {t("settings_other.set_115_open")}
       </Button>
       <Heading my="$2">{t("settings_other.pikpak")}</Heading>
       <FormControl w="$full" display="flex" flexDirection="column">
