@@ -92,7 +92,7 @@ export const ModalInput = (props: ModalInputProps) => {
       initialFocus="#modal-input"
     >
       <ModalOverlay />
-      <ModalContent onDrop={(e) => props.onDrop?.(e, setValue)}>
+      <ModalContent onDrop={(e: DragEvent) => props.onDrop?.(e, setValue)}>
         {/* <ModalCloseButton /> */}
         <ModalHeader>{t(props.title)}</ModalHeader>
         <ModalBody>

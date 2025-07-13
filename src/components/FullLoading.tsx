@@ -44,7 +44,7 @@ export const FullLoading = (props: {
 
 export const MaybeLoading = (props: {
   children?: JSXElement
-  loading: boolean
+  loading?: boolean
 }) => {
   return (
     <Show when={!props.loading} fallback={<FullLoading />}>

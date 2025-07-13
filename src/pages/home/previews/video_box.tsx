@@ -166,7 +166,7 @@ export const VideoBox = (props: {
             whiteSpace: "nowrap",
           }}
           defaultChecked={autoNext === "true"}
-          onChange={(e) => {
+          onChange={(e: { currentTarget: HTMLInputElement }) => {
             props.onAutoNextChange(e.currentTarget.checked)
             localStorage.setItem(
               "video_auto_next",

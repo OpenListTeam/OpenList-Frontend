@@ -78,7 +78,7 @@ export const Nav = () => {
                 href={joinBase(href)}
                 onMouseEnter={() => setPathAs(path)}
               >
-                {text}
+                {text()}
               </BreadcrumbLink>
               <Show when={!isLast()}>
                 <BreadcrumbSeparator class="nav-separator" />

@@ -1,4 +1,5 @@
 import { Box } from "@hope-ui/solid"
+// @ts-ignore
 import * as AsciinemaPlayer from "asciinema-player"
 import "asciinema-player/dist/bundle/asciinema-player.css"
 import { onMount } from "solid-js"

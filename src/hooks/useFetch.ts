@@ -5,17 +5,14 @@ export const useLoading = <T>(
   p: (...arg: any[]) => Promise<T>,
   fetch?: boolean,
   t?: boolean, // initial loading true
-): [
-  Accessor<boolean>,
-  (...arg: any[]) => Promise<unknown extends T ? any : T>,
-] => {
-  const [loading, setLoading] = createSignal<boolean>(t ?? false)
+): [Accessor<typeof t>, typeof p] => {
+  const [loading, setLoading] = createSignal(t)
   return [
     loading,
     async (...arg: any[]) => {
       setLoading(true)
       const data = await p(...arg)
-      if (!fetch || (data as unknown as EmptyResp).code !== 401) {
+      if (!fetch || (data as EmptyResp).code !== 401) {
         // why?
         // because if setLoading(false) here will rerender before navigate
         // maybe cause some bugs
@@ -29,10 +26,7 @@ export const useLoading = <T>(
 export const useFetch = <T>(
   p: (...arg: any[]) => PResp<T>,
   loading?: boolean,
-): [
-  Accessor<boolean>,
-  (...arg: Parameters<typeof p>) => PResp<unknown extends T ? any : T>,
-] => {
+): [Accessor<typeof loading>, typeof p] => {
   return useLoading(p, true, loading)
 }
 
@@ -40,13 +34,13 @@ const useListLoading = <T, K>(
   p: (key: K, ...arg: any[]) => Promise<T>,
   fetch?: boolean,
   initial?: K,
-): [Accessor<K | undefined>, (key: K, ...arg: any[]) => Promise<any>] => {
-  const [loading, setLoading] = createSignal<K | undefined>(initial)
+): [Accessor<typeof initial>, typeof p] => {
+  const [loading, setLoading] = createSignal(initial)
   return [
     loading,
     async (key: K, ...arg: any[]) => {
       setLoading(() => key)
-      const data: unknown = await p(key, ...arg)
+      const data = await p(key, ...arg)
       if (!fetch || (data as EmptyResp).code !== 401) {
         setLoading(undefined)
       }
@@ -58,6 +52,6 @@ const useListLoading = <T, K>(
 export const useListFetch = <T, K>(
   p: (key: K, ...arg: any[]) => PResp<T>,
   initial?: K,
-): [Accessor<K | undefined>, (key: K, ...arg: any[]) => Promise<any>] => {
+): [Accessor<typeof initial>, typeof p] => {
   return useListLoading(p, true, initial)
 }

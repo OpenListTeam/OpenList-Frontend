@@ -24,7 +24,7 @@ const S3Settings = () => {
   const [settings, setSettings] = createStore<SettingItem[]>([])
   const refresh = async () => {
     const resp = await getSettings()
-    handleResp(resp, setSettings)
+    handleResp<SettingItem[]>(resp, setSettings)
   }
   refresh()
   const [saveLoading, saveSettings] = useFetch(

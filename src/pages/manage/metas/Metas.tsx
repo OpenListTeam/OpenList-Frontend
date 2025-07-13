@@ -19,7 +19,7 @@ import {
   useT,
 } from "~/hooks"
 import { handleResp, notify, r } from "~/utils"
-import { Meta, PageResp } from "~/types"
+import { Meta, PEmptyResp, PPageResp } from "~/types"
 import { DeletePopover } from "../common/DeletePopover"
 import { Wether } from "~/components"
 
@@ -27,16 +27,18 @@ const Metas = () => {
   const t = useT()
   useManageTitle("manage.sidemenu.metas")
   const { to } = useRouter()
-  const [getMetasLoading, getMetas] = useFetch(() => r.get("/admin/meta/list"))
+  const [getMetasLoading, getMetas] = useFetch(
+    (): PPageResp<Meta> => r.get("/admin/meta/list"),
+  )
   const [metas, setMetas] = createSignal<Meta[]>([])
   const refresh = async () => {
-    const resp: PageResp<Meta> = await getMetas()
+    const resp = await getMetas()
     handleResp(resp, (data) => setMetas(data.content))
   }
   refresh()
 
-  const [deleting, deleteMeta] = useListFetch((id: number) =>
-    r.post(`/admin/meta/delete?id=${id}`),
+  const [deleting, deleteMeta] = useListFetch(
+    (id: number): PEmptyResp => r.post(`/admin/meta/delete?id=${id}`),
   )
   return (
     <VStack spacing="$2" alignItems="start" w="$full">

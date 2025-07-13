@@ -12,7 +12,7 @@ import { useT } from "~/hooks"
 
 export interface DeletePopoverProps {
   name: string
-  loading: boolean
+  loading?: boolean
   onClick: () => void
 }
 export const DeletePopover = (props: DeletePopoverProps) => {

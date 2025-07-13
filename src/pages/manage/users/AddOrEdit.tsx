@@ -14,7 +14,7 @@ import { handleResp, notify, r } from "~/utils"
 import { PEmptyResp, PResp, User, UserMethods, UserPermissions } from "~/types"
 import { createStore } from "solid-js/store"
 import { For, Show } from "solid-js"
-import { me, setMe } from "~/store"
+import { Me, me, setMe } from "~/store"
 import { PublicKeys } from "./PublicKeys"
 
 const Permission = (props: {
@@ -63,7 +63,7 @@ const AddOrEdit = () => {
 
   const initEdit = async () => {
     const resp = await loadUser()
-    handleResp(resp, setUser)
+    handleResp<User>(resp, setUser)
   }
   if (id) {
     initEdit()
@@ -153,7 +153,7 @@ const AddOrEdit = () => {
             handleResp(resp, async () => {
               notify.success(t("global.save_success"))
               if (user.username === me().username)
-                handleResp(await r.get("/me"), setMe)
+                handleResp(await (r.get("/me") as PResp<Me>), setMe)
               back()
             })
           }}

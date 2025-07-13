@@ -58,13 +58,7 @@ function LocalSettingEdit(props: LocalSetting) {
             </SelectTrigger>
             <SelectContent>
               <SelectListbox>
-                <For
-                  each={
-                    typeof props.options === "function"
-                      ? props.options()
-                      : props.options
-                  }
-                >
+                <For each={props.options}>
                   {(item) => (
                     <SelectOption value={item}>
                       <SelectOptionText>
@@ -81,7 +75,7 @@ function LocalSettingEdit(props: LocalSetting) {
         <Match when={props.type === "boolean"}>
           <HopeSwitch
             defaultChecked={local[props.key] === "true"}
-            onChange={(e) => {
+            onChange={(e: { currentTarget: HTMLInputElement }) => {
               setLocal(props.key, e.currentTarget.checked.toString())
             }}
           />

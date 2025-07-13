@@ -105,7 +105,7 @@ const AddOrEdit = () => {
 
   const initEdit = async () => {
     const resp = await loadMeta()
-    handleResp(resp, setMeta)
+    handleResp<Meta>(resp, setMeta)
   }
   if (id) {
     initEdit()
@@ -154,14 +154,12 @@ const AddOrEdit = () => {
               // @ts-ignore
               <Item
                 name={item.name}
-                type={item.type as "string" | "bool" | "text"}
-                value={meta[item.name as keyof Meta] as string | boolean}
-                onChange={(val: any): void =>
-                  setMeta(item.name as keyof Meta, val)
-                }
-                sub={meta[item.sub] as boolean}
-                onSub={(val: boolean): void => setMeta(item.sub, val)}
-                help={item.help}
+                type={item.type}
+                value={meta[item.name]}
+                onChange={(val: any): void => setMeta(item.name, val)}
+                sub={meta[item.sub]}
+                onSub={(val): void => setMeta(item.sub, val)}
+                help={(item as { help: boolean }).help}
               />
             )
           }}
