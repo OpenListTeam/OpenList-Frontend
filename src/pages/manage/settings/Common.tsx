@@ -27,12 +27,16 @@ const CommonSettings = (props: CommonSettingsProps) => {
   const [saveLoading, saveSettings] = useFetch(
     (): PEmptyResp => r.post("/admin/setting/save", getTarget(settings)),
   )
+  const [defaultLoading, defaultSettings] = useFetch(
+    (): PResp<SettingItem[]> =>
+      r.post(`/admin/setting/default?group=${props.group}`),
+  )
   const [loading, setLoading] = createSignal(false)
   return (
     <VStack w="$full" alignItems="start" spacing="$2">
       <ResponsiveGrid>
         <Index each={settings}>
-          {(item, _) => (
+          {(item) => (
             <Item
               {...item()}
               onChange={(val) => {
@@ -57,7 +61,7 @@ const CommonSettings = (props: CommonSettingsProps) => {
         <Button
           colorScheme="accent"
           onClick={refresh}
-          loading={settingsLoading() || loading()}
+          loading={settingsLoading() || loading() || defaultLoading()}
         >
           {t("global.refresh")}
         </Button>
@@ -69,6 +73,19 @@ const CommonSettings = (props: CommonSettingsProps) => {
           }}
         >
           {t("global.save")}
+        </Button>
+        <Button
+          colorScheme="warning"
+          loading={settingsLoading() || loading() || defaultLoading()}
+          onClick={async () => {
+            const resp = await defaultSettings()
+            handleResp(resp, (data) => {
+              notify.info(t("settings.load_default_setting_success"))
+              setSettings(data)
+            })
+          }}
+        >
+          {t("settings.load_default_setting")}
         </Button>
       </HStack>
     </VStack>

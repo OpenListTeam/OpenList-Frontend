@@ -16,39 +16,25 @@ export enum State {
   File, // File state
   NeedPassword,
 }
-
-const [objStore, setObjStore] = createStore<{
-  obj: Obj
-  raw_url: string
-  related: Obj[]
-
-  objs: StoreObj[]
-  total: number
-  write?: boolean
-
-  readme: string
-  header: string
-  provider: string
-  // pageIndex: number;
-  // pageSize: number;
-  state: State
-  err: string
-}>({
+const initialObjStore = {
   obj: {} as Obj,
   raw_url: "",
-  related: [],
+  related: [] as Obj[],
 
-  objs: [],
+  objs: [] as StoreObj[],
   total: 0,
 
   readme: "",
   header: "",
   provider: "",
-  // pageIndex: 1,
-  // pageSize: 50,
   state: State.Initial,
   err: "",
-})
+}
+const [objStore, setObjStore] = createStore<
+  typeof initialObjStore & {
+    write?: boolean
+  }
+>(initialObjStore)
 
 const setObjs = (objs: Obj[]) => {
   lastChecked.start = -1

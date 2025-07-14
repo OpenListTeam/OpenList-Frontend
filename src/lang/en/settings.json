@@ -124,5 +124,7 @@
   "version": "Version",
   "video_autoplay": "Video autoplay",
   "video_types": "Video types",
+  "load_default_setting": "Load default settings",
+  "load_default_setting_success": "Loaded successfully, Not saved",
   "webauthn_login_enabled": "Webauthn login enabled"
 }

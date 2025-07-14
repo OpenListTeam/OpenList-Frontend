@@ -26,7 +26,6 @@ import { TiDelete } from "solid-icons/ti"
 export type ItemProps = SettingItem & {
   onChange?: (value: string) => void
   onDelete?: () => void
-  // value: () => string;
   hideLabel?: boolean
   w?: string
 }
@@ -58,7 +57,6 @@ const Item = (props: ItemProps) => {
           <Input
             type={props.type === Type.Number ? "number" : ""}
             id={props.key}
-            // value={props.value()}
             value={props.value}
             onInput={(e) => props.onChange?.(e.currentTarget.value)}
             readOnly={props.flag === Flag.READONLY}
@@ -67,11 +65,9 @@ const Item = (props: ItemProps) => {
         <Match when={props.type === Type.Bool}>
           <HopeSwitch
             id={props.key}
-            defaultChecked={props.value === "true"}
-            // checked={props.value() === "true"}
-            onChange={(e: any) =>
-              // props.onChange?.(props.value() === "true" ? "false" : "true")
-              props.onChange?.(e.currentTarget.checked ? "true" : "false")
+            checked={props.value === "true"}
+            onChange={(e: { currentTarget: HTMLInputElement }) =>
+              props.onChange?.(e.currentTarget?.checked ? "true" : "false")
             }
             readOnly={props.flag === Flag.READONLY}
           />
@@ -80,7 +76,6 @@ const Item = (props: ItemProps) => {
           <Textarea
             id={props.key}
             value={props.value}
-            // value={props.value()}
             onChange={(e) => props.onChange?.(e.currentTarget.value)}
             readOnly={props.flag === Flag.READONLY}
           />
@@ -88,8 +83,7 @@ const Item = (props: ItemProps) => {
         <Match when={props.type === Type.Select}>
           <Select
             id={props.key}
-            defaultValue={props.value}
-            // value={props.value()}
+            value={props.value}
             onChange={(e) => props.onChange?.(e)}
             readOnly={props.flag === Flag.READONLY}
           >
