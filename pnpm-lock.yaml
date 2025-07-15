@@ -196,8 +196,8 @@ importers:
         specifier: ^5.43.1
         version: 5.43.1
       typescript:
-        specifier: ^4.9.5
-        version: 4.9.5
+        specifier: ^5.8.3
+        version: 5.8.3
       vite:
         specifier: ^6.3.5
         version: 6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0)
@@ -2588,9 +2588,9 @@ packages:
   typescript-natural-sort@0.7.2:
     resolution: {integrity: sha512-C8gaSIZySgJ+PchvslIJ6j5wcUIKPsGMzUm1gbFSmKjk+YkXTYPLlFc8UJHp2mvUadF80pWPgsxsAOPIP3TZ4g==}
 
-  typescript@4.9.5:
-    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
-    engines: {node: '>=4.2.0'}
+  typescript@5.8.3:
+    resolution: {integrity: sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ==}
+    engines: {node: '>=14.17'}
     hasBin: true
 
   uint8-util@2.2.5:
@@ -5526,7 +5526,7 @@ snapshots:
 
   typescript-natural-sort@0.7.2: {}
 
-  typescript@4.9.5: {}
+  typescript@5.8.3: {}
 
   uint8-util@2.2.5:
     dependencies:
