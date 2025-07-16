@@ -2,7 +2,6 @@ import { dict, i18n, languages } from "~/app/i18n"
 import { firstUpperCase } from "~/utils"
 
 export const useT = () => {
-  console.log(languages)
   const t = i18n.translator(dict)
   const tt = (key: string, params?: i18n.BaseTemplateArgs) => {
     return i18n.resolveTemplate ? i18n.resolveTemplate(key, params) : t(key)
