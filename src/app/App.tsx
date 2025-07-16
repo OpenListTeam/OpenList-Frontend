@@ -10,17 +10,15 @@ import {
   Switch,
 } from "solid-js"
 import { Portal } from "solid-js/web"
-import { useLoading, useRouter, useT } from "~/hooks"
-import { globalStyles } from "./theme"
-import { bus, r, handleRespWithoutAuthAndNotify, base_path } from "~/utils"
-import { setSettings } from "~/store"
 import { Error, FullScreenLoading } from "~/components"
+import { useLoading, useRouter, useT } from "~/hooks"
+import { setSettings } from "~/store"
+import { setArchiveExtensions } from "~/store/archive"
+import { Resp } from "~/types"
+import { base_path, bus, handleRespWithoutAuthAndNotify, r } from "~/utils"
 import { MustUser } from "./MustUser"
 import "./index.css"
-import { useI18n } from "@solid-primitives/i18n"
-import { initialLang, langMap, loadedLangs } from "./i18n"
-import { PEmptyResp, PResp, Resp } from "~/types"
-import { setArchiveExtensions } from "~/store/archive"
+import { globalStyles } from "./theme"
 
 const Home = lazy(() => import("~/pages/home/Layout"))
 const Manage = lazy(() => import("~/pages/manage"))
@@ -30,7 +28,6 @@ const Test = lazy(() => import("~/pages/test"))
 const App: Component = () => {
   const t = useT()
   globalStyles()
-  const [, { add }] = useI18n()
   const isRouting = useIsRouting()
   const { to, pathname } = useRouter()
   const onTo = (path: string) => {
@@ -48,10 +45,6 @@ const App: Component = () => {
   const [err, setErr] = createSignal<string[]>([])
   const [loading, data] = useLoading(() =>
     Promise.all([
-      (async () => {
-        add(initialLang, (await langMap[initialLang]()).default)
-        loadedLangs.add(initialLang)
-      })(),
       (async () => {
         handleRespWithoutAuthAndNotify(
           (await r.get("/public/settings")) as Resp<Record<string, string>>,

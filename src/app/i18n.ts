@@ -1,51 +1,56 @@
-import { createI18nContext } from "@solid-primitives/i18n"
-import { createSignal } from "solid-js"
+import * as i18n from "@solid-primitives/i18n"
+import { createResource, createSignal } from "solid-js"
+export { i18n }
 
-interface Language {
-  code: string
-  lang: string
-}
+// glob search by Vite
 const langs = import.meta.glob("~/lang/*/index.json", {
   eager: true,
   import: "lang",
 })
-const languages: Language[] = []
 
-for (const path in langs) {
-  const name = path.split("/")[3]
-  languages.push({
-    code: name,
-    lang: langs[path] as string,
-  })
-}
+// all available languages
+export const languages = Object.keys(langs).map((langPath) => {
+  const langCode = langPath.split("/")[3]
+  const langName = langs[langPath] as string
+  return { code: langCode, lang: langName }
+})
+
+// determine browser's default language
+const userLang = navigator.language.toLowerCase()
 const defaultLang =
+  languages.find((lang) => lang.code.toLowerCase() === userLang)?.code ||
   languages.find(
-    (lang) => lang.code.toLowerCase() === navigator.language.toLowerCase(),
-  )?.code ||
-  languages.find(
-    (lang) =>
-      lang.code.toLowerCase().split("-")[0] ===
-      navigator.language.toLowerCase().split("-")[0],
+    (lang) => lang.code.toLowerCase().split("-")[0] === userLang.split("-")[0],
   )?.code ||
   "en"
 
-export let initialLang = localStorage.getItem("lang") ?? ""
-if (!initialLang || !languages.find((lang) => lang.code === initialLang)) {
+// Get initial language from localStorage or fallback to defaultLang
+export let initialLang = localStorage.getItem("lang") ?? defaultLang
+
+if (!languages.some((lang) => lang.code === initialLang)) {
   initialLang = defaultLang
 }
 
-// store lang and import
-export const langMap: Record<string, any> = {}
-const imports = import.meta.glob("~/lang/*/entry.ts")
-for (const path in imports) {
-  const name = path.split("/")[3]
-  langMap[name] = imports[path]
+// Type imports
+// use `type` to not include the actual dictionary in the bundle
+import type * as en from "~/lang/en/entry"
+
+export type Lang = keyof typeof langs
+export type RawDictionary = typeof en.dict
+export type Dictionary = i18n.Flatten<RawDictionary>
+
+// Fetch and flatten the dictionary
+const fetchDictionary = async (locale: Lang): Promise<Dictionary> => {
+  try {
+    const dict: RawDictionary = (await import(`~/lang/${locale}/entry.ts`)).dict
+    return i18n.flatten(dict) // Flatten dictionary for easier access to keys
+  } catch (err) {
+    console.error(`Error loading dictionary for locale: ${locale}`, err)
+    throw new Error(`Failed to load dictionary for ${locale}`)
+  }
 }
 
-export const loadedLangs = new Set<string>()
+// Signals to track current language and dictionary state
+export const [currentLang, setCurrentLang] = createSignal<Lang>(initialLang)
 
-const i18n = createI18nContext({}, initialLang)
-
-const [currentLang, setLang] = createSignal(initialLang)
-
-export { languages, i18n, currentLang, setLang }
+export const [dict] = createResource(currentLang, fetchDictionary)
