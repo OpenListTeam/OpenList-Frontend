@@ -241,7 +241,7 @@ const Upload = () => {
             fallback={<Heading>{t("home.upload.release")}</Heading>}
           >
             <Heading>{t("home.upload.upload-tips")}</Heading>
-            <Box w="30%">
+            <Box w={{ "@initial": "80%", "@md": "30%" }}>
               <SelectWrapper
                 value={curUploader().name}
                 onChange={(name) => {
@@ -263,7 +263,7 @@ const Upload = () => {
                 size="xl"
                 aria-label={t("home.upload.upload_folder")}
                 colorScheme="accent"
-                icon={<RiDocumentFolderUploadFill />}
+                icon={<RiDocumentFolderUploadFill size="3em" />}
                 onClick={() => {
                   folderInput.click()
                 }}
@@ -272,13 +272,23 @@ const Upload = () => {
                 compact
                 size="xl"
                 aria-label={t("home.upload.upload_files")}
-                icon={<RiDocumentFileUploadFill />}
+                icon={<RiDocumentFileUploadFill size="3em" />}
                 onClick={() => {
                   fileInput.click()
                 }}
               />
             </HStack>
-            <HStack spacing="$4">
+            <HStack
+              spacing="$4"
+              direction={{
+                "@initial": "column",
+                "@md": "row",
+              }}
+              alignItems={{
+                "@initial": "start",
+                "@md": "center",
+              }}
+            >
               <Checkbox
                 checked={asTask()}
                 onChange={() => {
