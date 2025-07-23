@@ -11,6 +11,7 @@ import {
   ProgressIndicator,
   Button,
   Box,
+  Stack,
 } from "@hope-ui/solid"
 import { createSignal, For, Show } from "solid-js"
 import { usePath, useRouter, useT } from "~/hooks"
@@ -198,6 +199,9 @@ const Upload = () => {
           justifyContent="center"
           border={`2px dashed ${drag() ? getMainColor() : "$neutral8"}`}
           rounded="$lg"
+          spacing="$4"
+          p="$6"
+          minH="$56"
           onDragOver={(e: DragEvent) => {
             e.preventDefault()
             setDrag(true)
@@ -232,15 +236,14 @@ const Upload = () => {
             }
             handleAddFiles(res)
           }}
-          spacing="$4"
-          // py="$4"
-          h="$56"
         >
           <Show
             when={!drag()}
             fallback={<Heading>{t("home.upload.release")}</Heading>}
           >
-            <Heading>{t("home.upload.upload-tips")}</Heading>
+            <Heading size="lg" textAlign="center">
+              {t("home.upload.upload-tips")}
+            </Heading>
             <Box w={{ "@initial": "80%", "@md": "30%" }}>
               <SelectWrapper
                 value={curUploader().name}
@@ -258,36 +261,40 @@ const Upload = () => {
               />
             </Box>
             <HStack spacing="$4">
-              <IconButton
-                compact
-                size="xl"
-                aria-label={t("home.upload.upload_folder")}
-                colorScheme="accent"
-                icon={<RiDocumentFolderUploadFill size="3em" />}
-                onClick={() => {
-                  folderInput.click()
-                }}
-              />
-              <IconButton
-                compact
-                size="xl"
-                aria-label={t("home.upload.upload_files")}
-                icon={<RiDocumentFileUploadFill size="3em" />}
-                onClick={() => {
-                  fileInput.click()
-                }}
-              />
+              <VStack spacing="$2" alignItems="center">
+                <IconButton
+                  compact
+                  size="xl"
+                  aria-label={t("home.upload.upload_folder")}
+                  colorScheme="accent"
+                  icon={<RiDocumentFolderUploadFill size="1.2em" />}
+                  onClick={() => {
+                    folderInput.click()
+                  }}
+                />
+                <Text fontSize="$sm" color="$neutral11" textAlign="center">
+                  {t("home.upload.upload_folder")}
+                </Text>
+              </VStack>
+
+              <VStack spacing="$2" alignItems="center">
+                <IconButton
+                  compact
+                  size="xl"
+                  aria-label={t("home.upload.upload_files")}
+                  icon={<RiDocumentFileUploadFill size="1.2em" />}
+                  onClick={() => {
+                    fileInput.click()
+                  }}
+                />
+                <Text fontSize="$sm" color="$neutral11" textAlign="center">
+                  {t("home.upload.upload_files")}
+                </Text>
+              </VStack>
             </HStack>
-            <HStack
-              spacing="$4"
-              direction={{
-                "@initial": "column",
-                "@md": "row",
-              }}
-              alignItems={{
-                "@initial": "start",
-                "@md": "center",
-              }}
+            <Stack
+              spacing={{ "@initial": "$2", "@md": "$4" }}
+              direction={{ "@initial": "column", "@md": "row" }}
             >
               <Checkbox
                 checked={asTask()}
@@ -313,7 +320,7 @@ const Upload = () => {
               >
                 {t("home.upload.try_rapid")}
               </Checkbox>
-            </HStack>
+            </Stack>
           </Show>
         </VStack>
       </Show>
