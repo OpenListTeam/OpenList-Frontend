@@ -5,7 +5,7 @@
   "otp-tips": "Input your OTP Code",
   "remember": "Remember me",
   "forget": "Forget password?",
-  "forget_url": "https://docs.openlist.team/faq/howto.html#how-to-get-password-if-i-forget-it",
+  "forget_url": "https://doc.oplist.org/faq/howto#how-to-get-password-if-i-forget-it",
   "clear": "Clear",
   "login": "Login",
   "use_guest": "Browse as a guest",

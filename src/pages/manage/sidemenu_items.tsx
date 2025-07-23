@@ -202,7 +202,7 @@ export const side_menu_items: SideMenuItem[] = [
   {
     title: "manage.sidemenu.docs",
     icon: FaSolidBook,
-    to: "https://docs.openlist.team",
+    to: "https://doc.oplist.org",
     role: UserRole.GUEST,
     external: true,
   },
