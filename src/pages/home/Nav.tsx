@@ -12,6 +12,9 @@ import { createMemo, For, Show } from "solid-js"
 import { usePath, useRouter, useT } from "~/hooks"
 import { getSetting, local, objStore, State } from "~/store"
 import { encodePath, hoverColor, joinBase } from "~/utils"
+import CheckMarkIcon from "/images/check_mark_button_color.svg"
+import FolderIcon from "/images/file_folder_color.svg"
+import FileIcon from "/images/page_facing_up_color.svg"
 
 export const Nav = () => {
   const { pathname } = useRouter()
@@ -32,10 +35,44 @@ export const Nav = () => {
       { dir: 0, file: 0 },
     )
 
-    const parts: string[] = []
-    if (dir) parts.push(`D:${dir}`)
-    if (file) parts.push(`F:${file}`)
-    return parts.join(" ")
+    const parts: JSX.Element[] = []
+    if (dir) {
+      parts.push(
+        <span style="display: inline-flex; align-items: center;">
+          <img
+            src={FolderIcon}
+            alt="folder"
+            style="width: 1em; height: 1em; margin-right: 0.25em; vertical-align: middle;"
+          />
+          {dir}
+        </span>,
+      )
+    }
+    if (file) {
+      parts.push(
+        <span style="display: inline-flex; align-items: center;">
+          <img
+            src={FileIcon}
+            alt="file"
+            style="width: 1em; height: 1em; margin-right: 0.25em; vertical-align: middle;"
+          />
+          {file}
+        </span>,
+      )
+    }
+
+    if (parts.length === 0) return null
+
+    return (
+      <>
+        {parts.map((part, index) => (
+          <>
+            {part}
+            {index < parts.length - 1 && <span style="margin: 0 0.3em;"></span>}
+          </>
+        ))}
+      </>
+    )
   })
   const selectInfo = createMemo(() => {
     const { selected } = objStore.objs.reduce(
@@ -47,9 +84,19 @@ export const Nav = () => {
     )
 
     if (!selected) {
-      return ""
+      return null
     }
-    return `S:${selected} `
+    // return `✅ ${selected} `
+    return (
+      <span style="display: inline-flex; align-items: center;">
+        <img
+          src={CheckMarkIcon}
+          alt="check"
+          style="width: 1em; height: 1em; margin-right: 0.25em; vertical-align: middle;"
+        />
+        {selected}
+      </span>
+    )
   })
   const stickyProps = createMemo<BreadcrumbProps>(() => {
     const mask: BreadcrumbProps = {
@@ -128,10 +175,13 @@ export const Nav = () => {
           css={{
             whiteSpace: "nowrap",
             userSelect: "none",
+            display: "flex",
+            alignItems: "center",
           }}
           p="$1"
         >
           {selectInfo()}
+          {selectInfo() && <span style="margin-right: 0.5em;"></span>}
           {folderInfo()}
         </Text>
       </Show>
