@@ -49,6 +49,8 @@
   "ldap_user_search_base": "Ldap user search base",
   "ldap_user_search_filter": "Ldap user search filter",
   "link_expiration": "Link expiration",
+  "load_default_setting": "Load default settings",
+  "load_default_setting_success": "Load default settings successfully",
   "logo": "Logo",
   "main_color": "Main color",
   "max_client_download_speed": "Max client download speed",
