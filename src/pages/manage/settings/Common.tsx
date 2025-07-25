@@ -80,12 +80,12 @@ const CommonSettings = (props: CommonSettingsProps) => {
           onClick={async () => {
             const resp = await defaultSettings()
             handleResp(resp, (data) => {
-              notify.info(t("settings.load_default_setting_success"))
+              notify.info(t("manage.load_default_setting_success"))
               setSettings(data)
             })
           }}
         >
-          {t("settings.load_default_setting")}
+          {t("manage.load_default_setting")}
         </Button>
       </HStack>
     </VStack>
