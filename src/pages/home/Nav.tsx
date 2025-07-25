@@ -5,16 +5,12 @@ import {
   BreadcrumbProps,
   BreadcrumbSeparator,
   HStack,
-  Text,
 } from "@hope-ui/solid"
 import { Link } from "@solidjs/router"
 import { createMemo, For, Show } from "solid-js"
 import { usePath, useRouter, useT } from "~/hooks"
-import { getSetting, local, objStore, State } from "~/store"
+import { getSetting, local } from "~/store"
 import { encodePath, hoverColor, joinBase } from "~/utils"
-import CheckMarkIcon from "/images/check_mark_button_color.svg"
-import FolderIcon from "/images/file_folder_color.svg"
-import FileIcon from "/images/page_facing_up_color.svg"
 
 export const Nav = () => {
   const { pathname } = useRouter()
@@ -22,87 +18,11 @@ export const Nav = () => {
   const t = useT()
   const { setPathAs } = usePath()
 
-  const folderInfo = createMemo(() => {
-    const { dir, file } = objStore.objs.reduce(
-      (acc, item) => {
-        if (item.is_dir) {
-          acc.dir++
-        } else {
-          acc.file++
-        }
-        return acc
-      },
-      { dir: 0, file: 0 },
-    )
-
-    const parts: JSX.Element[] = []
-    if (dir) {
-      parts.push(
-        <span style="display: inline-flex; align-items: center;">
-          <img
-            src={FolderIcon}
-            alt="folder"
-            style="width: 1em; height: 1em; margin-right: 0.25em; vertical-align: middle;"
-          />
-          {dir}
-        </span>,
-      )
-    }
-    if (file) {
-      parts.push(
-        <span style="display: inline-flex; align-items: center;">
-          <img
-            src={FileIcon}
-            alt="file"
-            style="width: 1em; height: 1em; margin-right: 0.25em; vertical-align: middle;"
-          />
-          {file}
-        </span>,
-      )
-    }
-
-    if (parts.length === 0) return null
-
-    return (
-      <>
-        {parts.map((part, index) => (
-          <>
-            {part}
-            {index < parts.length - 1 && <span style="margin: 0 0.3em;"></span>}
-          </>
-        ))}
-      </>
-    )
-  })
-  const selectInfo = createMemo(() => {
-    const { selected } = objStore.objs.reduce(
-      (acc, item) => {
-        if (item.selected) acc.selected++
-        return acc
-      },
-      { selected: 0 },
-    )
-
-    if (!selected) {
-      return null
-    }
-    // return `✅ ${selected} `
-    return (
-      <span style="display: inline-flex; align-items: center;">
-        <img
-          src={CheckMarkIcon}
-          alt="check"
-          style="width: 1em; height: 1em; margin-right: 0.25em; vertical-align: middle;"
-        />
-        {selected}
-      </span>
-    )
-  })
   const stickyProps = createMemo<BreadcrumbProps>(() => {
     const mask: BreadcrumbProps = {
       _after: {
         content: "",
-        bgColor: "$background",
+        backgroundColor: "$background",
         position: "absolute",
         height: "100%",
         width: "99vw",
@@ -150,7 +70,7 @@ export const Nav = () => {
                     wordBreak: "break-all",
                   }}
                   color="unset"
-                  _hover={{ bgColor: hoverColor(), color: "unset" }}
+                  _hover={{ backgroundColor: hoverColor(), color: "unset" }}
                   _active={{ transform: "scale(.95)", transition: "0.1s" }}
                   cursor="pointer"
                   p="$1"
@@ -170,21 +90,6 @@ export const Nav = () => {
           }}
         </For>
       </Breadcrumb>
-      <Show when={objStore.state == State.Folder}>
-        <Text
-          css={{
-            whiteSpace: "nowrap",
-            userSelect: "none",
-            display: "flex",
-            alignItems: "center",
-          }}
-          p="$1"
-        >
-          {selectInfo()}
-          {selectInfo() && <span style="margin-right: 0.5em;"></span>}
-          {folderInfo()}
-        </Text>
-      </Show>
     </HStack>
   )
 }
