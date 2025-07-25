@@ -162,6 +162,7 @@
       "sticky": "Stick to top of page",
       "only_navbar_sticky": "Only nav bar sticky"
     },
+    "grid_item_size": "Grid item size",
     "show_sidebar": "Show sidebar",
     "show_sidebar_options": {
       "none": "None",
