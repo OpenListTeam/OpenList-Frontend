@@ -10,6 +10,8 @@
     "cache_expiration": "Cache Expiration",
     "cache_expiration-tips": "The cache expiration time for this storage(minutes)",
     "down_proxy_url": "Download proxy URL",
+    "disable_proxy_sign": "Disable proxy sign",
+    "disable_proxy_sign-tips": "Disable sign for Download proxy URL",
     "web_proxy": "Web proxy",
     "webdav_policy": "WebDAV policy",
     "proxy_range": "Proxy Range",
