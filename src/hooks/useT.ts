@@ -1,24 +1,33 @@
 import { dict, i18n, languages } from "~/app/i18n"
 import { firstUpperCase } from "~/utils"
 
-export const useT = () => {
-  const t = i18n.translator(dict)
-  const tt = (key: string, params?: i18n.BaseTemplateArgs) => {
-    return i18n.resolveTemplate ? i18n.resolveTemplate(key, params) : t(key)
+const translator = i18n.translator(dict)
+
+const resolveTranslation = (
+  key: string,
+  params?: i18n.BaseTemplateArgs,
+): string | undefined => {
+  const template = translator(key)
+  if (typeof template !== "string") {
+    return undefined
   }
+
+  if (params) {
+    return i18n.resolveTemplate(template, params) || template
+  }
+
+  return template
+}
+export const useT = () => {
   return (
     key: string,
     params?: i18n.BaseTemplateArgs | undefined,
     defaultValue?: string | undefined,
-  ) => {
-    const value = params
-      ? (tt(key, params) as string | undefined)
-      : (t(key) as string | undefined)
+  ): string => {
+    const translatedValue = resolveTranslation(key, params)
 
-    if (value) return value
-
+    if (translatedValue) return translatedValue
     if (defaultValue) return defaultValue
-
     if (import.meta.env.DEV) return key
 
     return formatKeyAsDisplay(key)
