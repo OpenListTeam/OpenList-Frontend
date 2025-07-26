@@ -35,7 +35,9 @@ const ImageLayout = (props: { images: StoreObj[] }) => {
     >
       <Show when={local["show_count_msg"] === "visible"}>
         <Box w="100%" textAlign="left" pl="$2">
-          <Text>{smartCountMsg(ObjType.IMAGE)}</Text>
+          <Text size="sm" color="$neutral11">
+            {smartCountMsg(ObjType.IMAGE)}
+          </Text>
         </Box>
       </Show>
       <Show when={local["show_folder_in_image_view"] === "top"}>

@@ -13,7 +13,9 @@ const GridLayout = () => {
     <>
       <Show when={local["show_count_msg"] === "visible"}>
         <Box w="100%" textAlign="left" pl="$2">
-          <Text>{smartCountMsg()}</Text>
+          <Text size="sm" color="$neutral11">
+            {smartCountMsg()}
+          </Text>
         </Box>
       </Show>
       <Grid
