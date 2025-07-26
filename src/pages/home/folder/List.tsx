@@ -16,6 +16,7 @@ import {
   local,
   objStore,
   selectAll,
+  selectedMsg,
   sortObjs,
 } from "~/store"
 import { OrderBy } from "~/store"
@@ -67,7 +68,11 @@ export const ListTitle = (props: {
             }}
           />
         </Show>
-        <Text {...itemProps(cols[0])}>{t(`home.obj.${cols[0].name}`)}</Text>
+        {selectedMsg() ? (
+          <Text {...itemProps(cols[0])}>{selectedMsg()}</Text>
+        ) : (
+          <Text {...itemProps(cols[0])}>{t(`home.obj.${cols[0].name}`)}</Text>
+        )}
       </HStack>
       <Text w={cols[1].w} {...itemProps(cols[1])}>
         {t(`home.obj.${cols[1].name}`)}

@@ -1,7 +1,7 @@
 import { Box, Flex, Grid, Heading, Text, VStack } from "@hope-ui/solid"
 import { For, Show, createMemo } from "solid-js"
 import { ImageItem } from "./ImageItem"
-import { countMsg, local, objStore } from "~/store"
+import { smartCountMsg, local, objStore } from "~/store"
 import { GridItem } from "./GridItem"
 import { ObjType, StoreObj } from "~/types"
 import { useT } from "~/hooks"
@@ -33,6 +33,11 @@ const ImageLayout = (props: { images: StoreObj[] }) => {
       spacing="$2"
       w="$full"
     >
+      <Show when={local["show_count_msg"] === "visible"}>
+        <Box w="100%" textAlign="left" pl="$2">
+          <Text>{smartCountMsg(ObjType.IMAGE)}</Text>
+        </Box>
+      </Show>
       <Show when={local["show_folder_in_image_view"] === "top"}>
         {folders()}
       </Show>
@@ -50,11 +55,6 @@ const ImageLayout = (props: { images: StoreObj[] }) => {
       </Show>
       <Show when={local["show_folder_in_image_view"] === "bottom"}>
         {folders()}
-      </Show>
-      <Show when={local["show_count_msg"] === "visible"}>
-        <Text size="sm" color="$neutral11">
-          {countMsg()}
-        </Text>
       </Show>
     </VStack>
   )
