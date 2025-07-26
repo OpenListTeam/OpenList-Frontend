@@ -1,5 +1,5 @@
 import { Box, Grid, Text } from "@hope-ui/solid"
-import { For } from "solid-js"
+import { For, Show } from "solid-js"
 import { GridItem } from "./GridItem"
 import "lightgallery/css/lightgallery-bundle.css"
 import { countMsg, local, objStore } from "~/store"
@@ -11,9 +11,6 @@ const GridLayout = () => {
   registerSelectContainer()
   return (
     <>
-      <Box w="100%" textAlign="left" pl="$2">
-        <Text>{countMsg()}</Text>
-      </Box>
       <Grid
         oncapture:contextmenu={captureContentMenu}
         class="viselect-container"
@@ -29,6 +26,11 @@ const GridLayout = () => {
           }}
         </For>
       </Grid>
+      <Show when={local["show_count_msg"] === "visible"}>
+        <Text size="sm" color="$neutral11">
+          {countMsg()}
+        </Text>
+      </Show>
     </>
   )
 }

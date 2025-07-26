@@ -168,6 +168,11 @@
       "none": "None",
       "visible": "Visible"
     },
+    "show_count_msg": "Show file count message",
+    "show_count_msg_options": {
+      "none": "None",
+      "visible": "Visible"
+    },
     "list_item_filename_overflow": "List item filename overflow",
     "list_item_filename_overflow_options": {
       "ellipsis": "Ellipsis",

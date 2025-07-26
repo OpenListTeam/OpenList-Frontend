@@ -33,9 +33,6 @@ const ImageLayout = (props: { images: StoreObj[] }) => {
       spacing="$2"
       w="$full"
     >
-      <Box w="100%" textAlign="left" pl="$2">
-        <Text>{countMsg(ObjType.IMAGE)}</Text>
-      </Box>
       <Show when={local["show_folder_in_image_view"] === "top"}>
         {folders()}
       </Show>
@@ -53,6 +50,11 @@ const ImageLayout = (props: { images: StoreObj[] }) => {
       </Show>
       <Show when={local["show_folder_in_image_view"] === "bottom"}>
         {folders()}
+      </Show>
+      <Show when={local["show_count_msg"] === "visible"}>
+        <Text size="sm" color="$neutral11">
+          {countMsg()}
+        </Text>
       </Show>
     </VStack>
   )
