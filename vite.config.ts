@@ -22,6 +22,9 @@ export default defineConfig({
       publicPath: " window.__dynamic_base__",
       // dynamic load resources on index.html, default false. maybe change default true
       transformIndexHtml: true,
+      transformIndexHtmlConfig: {
+        insertBodyAfter: true,
+      },
     }),
   ],
   base: process.env.NODE_ENV === "production" ? "/__dynamic_base__/" : "/",
