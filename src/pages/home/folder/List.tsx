@@ -55,31 +55,33 @@ export const ListTitle = (props: {
     }
   }
   return (
-    <HStack class="title" w="$full" p="$2">
-      <HStack w={cols[0].w} spacing="$1">
-        <Show when={!props.disableCheckbox && checkboxOpen()}>
-          <ItemCheckbox
-            checked={allChecked()}
-            indeterminate={isIndeterminate()}
-            onChange={(e: any) => {
-              selectAll(e.target.checked as boolean)
-            }}
-          />
-        </Show>
-        <Text {...itemProps(cols[0])}>{t(`home.obj.${cols[0].name}`)}</Text>
-        <Text {...itemProps(cols[0])}>{countMsg()}</Text>
+    <>
+      <HStack class="title" w="$full" p="$2">
+        <HStack w={cols[0].w} spacing="$1">
+          <Show when={!props.disableCheckbox && checkboxOpen()}>
+            <ItemCheckbox
+              checked={allChecked()}
+              indeterminate={isIndeterminate()}
+              onChange={(e: any) => {
+                selectAll(e.target.checked as boolean)
+              }}
+            />
+          </Show>
+          <Text {...itemProps(cols[0])}>{t(`home.obj.${cols[0].name}`)}</Text>
+        </HStack>
+        <Text w={cols[1].w} {...itemProps(cols[1])}>
+          {t(`home.obj.${cols[1].name}`)}
+        </Text>
+        <Text
+          w={cols[2].w}
+          {...itemProps(cols[2])}
+          display={{ "@initial": "none", "@md": "inline" }}
+        >
+          {t(`home.obj.${cols[2].name}`)}
+        </Text>
       </HStack>
-      <Text w={cols[1].w} {...itemProps(cols[1])}>
-        {t(`home.obj.${cols[1].name}`)}
-      </Text>
-      <Text
-        w={cols[2].w}
-        {...itemProps(cols[2])}
-        display={{ "@initial": "none", "@md": "inline" }}
-      >
-        {t(`home.obj.${cols[2].name}`)}
-      </Text>
-    </HStack>
+      <CountMsgText />
+    </>
   )
 }
 
@@ -113,6 +115,21 @@ const ListLayout = () => {
         }}
       </For>
     </VStack>
+  )
+}
+
+const CountMsgText = () => {
+  return (
+    <HStack w="$full" p="$2">
+      <Text
+        fontWeight="bold"
+        fontSize="$sm"
+        color="$neutral11"
+        textAlign={cols[0].textAlign as any}
+      >
+        {countMsg()}
+      </Text>
+    </HStack>
   )
 }
 
