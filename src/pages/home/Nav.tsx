@@ -4,7 +4,6 @@ import {
   BreadcrumbLink,
   BreadcrumbProps,
   BreadcrumbSeparator,
-  HStack,
 } from "@hope-ui/solid"
 import { Link } from "@solidjs/router"
 import { createMemo, For, Show } from "solid-js"
