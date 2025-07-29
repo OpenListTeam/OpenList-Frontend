@@ -167,7 +167,7 @@ importers:
         version: 8.11.12
       '@types/node':
         specifier: ^22.0.0
-        version: 22.16.3
+        version: 22.17.0
       '@types/qrcode':
         specifier: ^1.5.5
         version: 1.5.5
@@ -179,7 +179,7 @@ importers:
         version: 2.0.5
       '@vitejs/plugin-legacy':
         specifier: ^6.1.1
-        version: 6.1.1(terser@5.43.1)(vite@6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0))
+        version: 6.1.1(terser@5.43.1)(vite@6.3.5(@types/node@22.17.0)(terser@5.43.1)(yaml@2.8.0))
       husky:
         specifier: ^9.0.0
         version: 9.1.7
@@ -200,13 +200,13 @@ importers:
         version: 5.8.3
       vite:
         specifier: ^6.3.5
-        version: 6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0)
+        version: 6.3.5(@types/node@22.17.0)(terser@5.43.1)(yaml@2.8.0)
       vite-plugin-dynamic-base:
         specifier: ^1.0.0
-        version: 1.2.0(vite@6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0))
+        version: 1.2.0(vite@6.3.5(@types/node@22.17.0)(terser@5.43.1)(yaml@2.8.0))
       vite-plugin-solid:
         specifier: ^2.11.7
-        version: 2.11.7(solid-js@1.9.7)(vite@6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0))
+        version: 2.11.7(solid-js@1.9.7)(vite@6.3.5(@types/node@22.17.0)(terser@5.43.1)(yaml@2.8.0))
 
 packages:
 
@@ -1356,8 +1356,8 @@ packages:
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
 
-  '@types/node@22.16.3':
-    resolution: {integrity: sha512-sr4Xz74KOUeYadexo1r8imhRtlVXcs+j3XK3TcoiYk7B1t3YRVJgtaD3cwX73NYb71pmVuMLNRhJ9XKdoDB74g==}
+  '@types/node@22.17.0':
+    resolution: {integrity: sha512-bbAKTCqX5aNVryi7qXVMi+OkB3w/OyblodicMbvE38blyAz7GxXf6XYhklokijuPwwVg9sDLKRxt0ZHXQwZVfQ==}
 
   '@types/prop-types@15.7.15':
     resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
@@ -4054,7 +4054,7 @@ snapshots:
 
   '@types/bencode@2.0.4':
     dependencies:
-      '@types/node': 22.16.3
+      '@types/node': 22.17.0
 
   '@types/crypto-js@4.2.2': {}
 
@@ -4066,12 +4066,12 @@ snapshots:
 
   '@types/fs-extra@8.1.5':
     dependencies:
-      '@types/node': 22.16.3
+      '@types/node': 22.17.0
 
   '@types/glob@7.2.0':
     dependencies:
       '@types/minimatch': 5.1.2
-      '@types/node': 22.16.3
+      '@types/node': 22.17.0
 
   '@types/hast@2.3.10':
     dependencies:
@@ -4107,7 +4107,7 @@ snapshots:
 
   '@types/ms@2.1.0': {}
 
-  '@types/node@22.16.3':
+  '@types/node@22.17.0':
     dependencies:
       undici-types: 6.21.0
 
@@ -4115,11 +4115,11 @@ snapshots:
 
   '@types/qrcode@1.5.5':
     dependencies:
-      '@types/node': 22.16.3
+      '@types/node': 22.17.0
 
   '@types/sha256@0.2.2':
     dependencies:
-      '@types/node': 22.16.3
+      '@types/node': 22.17.0
 
   '@types/sizzle@2.3.9': {}
 
@@ -4135,7 +4135,7 @@ snapshots:
 
   '@viselect/vanilla@3.9.0': {}
 
-  '@vitejs/plugin-legacy@6.1.1(terser@5.43.1)(vite@6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0))':
+  '@vitejs/plugin-legacy@6.1.1(terser@5.43.1)(vite@6.3.5(@types/node@22.17.0)(terser@5.43.1)(yaml@2.8.0))':
     dependencies:
       '@babel/core': 7.28.0
       '@babel/preset-env': 7.28.0(@babel/core@7.28.0)
@@ -4146,7 +4146,7 @@ snapshots:
       regenerator-runtime: 0.14.1
       systemjs: 6.15.1
       terser: 5.43.1
-      vite: 6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0)
+      vite: 6.3.5(@types/node@22.17.0)(terser@5.43.1)(yaml@2.8.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -5781,15 +5781,15 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.2
 
-  vite-plugin-dynamic-base@1.2.0(vite@6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0)):
+  vite-plugin-dynamic-base@1.2.0(vite@6.3.5(@types/node@22.17.0)(terser@5.43.1)(yaml@2.8.0)):
     dependencies:
       '@swc/core': 1.12.14
       node-html-parser: 5.4.2
-      vite: 6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0)
+      vite: 6.3.5(@types/node@22.17.0)(terser@5.43.1)(yaml@2.8.0)
     transitivePeerDependencies:
       - '@swc/helpers'
 
-  vite-plugin-solid@2.11.7(solid-js@1.9.7)(vite@6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0)):
+  vite-plugin-solid@2.11.7(solid-js@1.9.7)(vite@6.3.5(@types/node@22.17.0)(terser@5.43.1)(yaml@2.8.0)):
     dependencies:
       '@babel/core': 7.28.0
       '@types/babel__core': 7.20.5
@@ -5797,12 +5797,12 @@ snapshots:
       merge-anything: 5.1.7
       solid-js: 1.9.7
       solid-refresh: 0.6.3(solid-js@1.9.7)
-      vite: 6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0)
-      vitefu: 1.1.1(vite@6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0))
+      vite: 6.3.5(@types/node@22.17.0)(terser@5.43.1)(yaml@2.8.0)
+      vitefu: 1.1.1(vite@6.3.5(@types/node@22.17.0)(terser@5.43.1)(yaml@2.8.0))
     transitivePeerDependencies:
       - supports-color
 
-  vite@6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0):
+  vite@6.3.5(@types/node@22.17.0)(terser@5.43.1)(yaml@2.8.0):
     dependencies:
       esbuild: 0.25.6
       fdir: 6.4.6(picomatch@4.0.3)
@@ -5811,14 +5811,14 @@ snapshots:
       rollup: 4.45.1
       tinyglobby: 0.2.14
     optionalDependencies:
-      '@types/node': 22.16.3
+      '@types/node': 22.17.0
       fsevents: 2.3.3
       terser: 5.43.1
       yaml: 2.8.0
 
-  vitefu@1.1.1(vite@6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0)):
+  vitefu@1.1.1(vite@6.3.5(@types/node@22.17.0)(terser@5.43.1)(yaml@2.8.0)):
     optionalDependencies:
-      vite: 6.3.5(@types/node@22.16.3)(terser@5.43.1)(yaml@2.8.0)
+      vite: 6.3.5(@types/node@22.17.0)(terser@5.43.1)(yaml@2.8.0)
 
   web-namespaces@2.0.1: {}
 
