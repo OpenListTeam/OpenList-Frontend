@@ -52,7 +52,7 @@ importers:
         version: 5.2.5
       artplayer-plugin-danmuku:
         specifier: ^5.1.6
-        version: 5.1.7
+        version: 5.1.8
       asciinema-player:
         specifier: ^3.10.0
         version: 3.10.0
@@ -1424,9 +1424,8 @@ packages:
     resolution: {integrity: sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw==}
     engines: {node: '>=8'}
 
-  artplayer-plugin-danmuku@5.1.7:
-    resolution: {integrity: sha512-lnfPQlzRzG16/UOLr4OjYVHTwka2SeEbmAHANxAR02rwSTBVfmqTi/OATccvuXtXwaCCF+Oik9XKQAvkhsAUXQ==}
-    deprecated: This version contains a critical bug. Please use 5.1.6 or upgrade to 5.1.8.
+  artplayer-plugin-danmuku@5.1.8:
+    resolution: {integrity: sha512-J9kUtU46/07ZckvmfFDwfJRJDLD7UIfrWVutc7EqDCkUModArOISifXkD27/R2ruIpfAJk6HxOfB0cQfvjbZCQ==}
 
   artplayer@5.2.5:
     resolution: {integrity: sha512-Ogym5rvkAJ4VLncM4Apl3TJ/a/ozM3csvY4IKuuMR++hUmEZgj/HaGsNonwx8r56nsqiZYE7O4vS1HFZl+NBSg==}
@@ -4166,7 +4165,7 @@ snapshots:
 
   array-union@2.1.0: {}
 
-  artplayer-plugin-danmuku@5.1.7: {}
+  artplayer-plugin-danmuku@5.1.8: {}
 
   artplayer@5.2.5:
     dependencies:
