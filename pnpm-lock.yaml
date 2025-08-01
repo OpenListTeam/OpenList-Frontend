@@ -152,7 +152,7 @@ importers:
     devDependencies:
       '@crowdin/cli':
         specifier: ^4.0.0
-        version: 4.9.0
+        version: 4.9.1
       '@hrgui/libass-wasm-ts':
         specifier: ^1.0.3
         version: 1.0.3
@@ -722,8 +722,8 @@ packages:
   '@cfcs/core@0.0.24':
     resolution: {integrity: sha512-feB38qu+eDk0Pggh/yR7gjaNmvUYA2uCxHP3Pz2MLE4LZ/9jPdtu8bzCSI47yTEhWyZCF5Pk698hdz8IN2mTjA==}
 
-  '@crowdin/cli@4.9.0':
-    resolution: {integrity: sha512-kC7NNdqcIEY7EL9qgE7CRsScnbC1w6ttztN9uLnNDj57OPpLEAuPuSs1Uv6NjrK/Rode/QnirNwyg5AjDRIb/w==}
+  '@crowdin/cli@4.9.1':
+    resolution: {integrity: sha512-GqWhrzKNh2ZYWssyoLEQPi5f4Sfvd9VB7ElhLMngZbSUwr7z734au2gJqynM2mUgPr+e/MiJfTHXi7/9Ht293Q==}
     hasBin: true
 
   '@egjs/component@3.0.5':
@@ -3572,7 +3572,7 @@ snapshots:
     dependencies:
       '@egjs/component': 3.0.5
 
-  '@crowdin/cli@4.9.0':
+  '@crowdin/cli@4.9.1':
     dependencies:
       command-exists-promise: 2.0.2
       node-fetch: 2.7.0
