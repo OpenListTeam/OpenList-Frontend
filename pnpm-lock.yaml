@@ -49,7 +49,7 @@ importers:
         version: 1.10.1
       artplayer:
         specifier: ^5.2.3
-        version: 5.2.3
+        version: 5.2.4
       artplayer-plugin-danmuku:
         specifier: ^5.1.6
         version: 5.1.6
@@ -1431,8 +1431,8 @@ packages:
   artplayer-plugin-danmuku@5.1.6:
     resolution: {integrity: sha512-3JufaEvxI0bTR74vxLU7K9F9OLmR3yrDFqeflV0T0QWedabassX5hsl0AyNNcjVkfdm3A5s1YC0icdtiFZA1Ig==}
 
-  artplayer@5.2.3:
-    resolution: {integrity: sha512-WaOZQrpZn/L+GgI2f0TEsoAL3Wb+v16Mu0JmWh7qKFYuvr11WNt3dWhWeIaCfoHy3NtkCWM9jTP+xwwsxdElZQ==}
+  artplayer@5.2.4:
+    resolution: {integrity: sha512-ALf1juBOni0KtvRttJ33+SvNAAWSJyB2iLotWrhGc6iM8PssLzVwsGI38bWS2gILLdZqrk5MBOMKUjuWM3YjhA==}
 
   asciinema-player@3.10.0:
     resolution: {integrity: sha512-shoOK6F606nDKZxDVM7JuGSCAyWLePoGRFNlV+FqiP5Sqvyn0BlE7wlbjZyd2X4P1iRhv/HKfVNtnQIxmgphRA==}
@@ -4176,7 +4176,7 @@ snapshots:
 
   artplayer-plugin-danmuku@5.1.6: {}
 
-  artplayer@5.2.3:
+  artplayer@5.2.4:
     dependencies:
       option-validator: 2.0.6
 
