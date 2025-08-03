@@ -1,5 +1,5 @@
 import { Error, FullLoading } from "~/components"
-import { useRouter, useT } from "~/hooks"
+import { useCDN, useRouter, useT } from "~/hooks"
 import { objStore } from "~/store"
 import { onCleanup, onMount, createSignal, Show } from "solid-js"
 
@@ -8,6 +8,7 @@ const Preview = () => {
   const { replace } = useRouter()
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
+  const { libHeifPath } = useCDN()
 
   // 获取当前目录下所有HEIC文件
   let heicFiles = objStore.objs.filter((obj) =>
@@ -54,11 +55,11 @@ const Preview = () => {
     try {
       // 动态加载libheif脚本
       if (!window.libheif) {
-        await loadScript("/static/libheif/libheif.js", "libheif-script")
+        await loadScript(`${libHeifPath()}/libheif.js`, "libheif-script")
       }
 
       // 加载WASM文件
-      const wasmBinary = await fetchWasm("/static/libheif/libheif.wasm")
+      const wasmBinary = await fetchWasm(`${libHeifPath()}/libheif.wasm`)
 
       // 初始化libheif
       libheif = window.libheif({ wasmBinary })

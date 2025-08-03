@@ -35,11 +35,19 @@ export const useCDN = () => {
       : `${base_path}/static/ruffle/ruffle.js`
   }
 
+  const libHeifPath = () => {
+    // libheif-js is not available on cnpm white list
+    return import.meta.env.VITE_LITE === "true"
+      ? "https://res.oplist.org/libheif"
+      : `${base_path}/static/libheif`
+  }
+
   return {
     npm,
     monacoPath,
     katexCSSPath,
     mermaidJSPath,
     ruffleJSPath,
+    libHeifPath,
   }
 }

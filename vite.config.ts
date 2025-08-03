@@ -50,6 +50,10 @@ export default defineConfig({
               src: "node_modules/@ruffle-rs/ruffle/*.{js,wasm}",
               dest: "dist/static/ruffle",
             },
+            {
+              src: "node_modules/libheif-js/libheif-wasm/libheif.{js,wasm}",
+              dest: "dist/static/libheif",
+            },
           ],
           hook: "writeBundle",
         })

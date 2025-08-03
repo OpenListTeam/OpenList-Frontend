@@ -95,6 +95,9 @@ importers:
       libass-wasm:
         specifier: ^4.1.0
         version: 4.1.0
+      libheif-js:
+        specifier: ^1.19.8
+        version: 1.19.8
       lightgallery:
         specifier: ^2.8.3
         version: 2.8.3
@@ -2395,6 +2398,10 @@ packages:
 
   libass-wasm@4.1.0:
     resolution: {integrity: sha512-+RbYT/uuI6VHExCmGyUuMg3A2gQOaCRTzSn8GGDSf3q4cEoUNiINd9u4RGfZXA1UKafW+Hv8bmcKIX4FKbSh0Q==}
+
+  libheif-js@1.19.8:
+    resolution: {integrity: sha512-vQJWusIxO7wavpON1dusciL8Go9jsIQ+EUrckauFYAiSTjcmLAsuJh3SszLpvkwPci3JcL41ek2n+LUZGFpPIQ==}
+    engines: {node: '>=8.0.0'}
 
   lightgallery@2.8.3:
     resolution: {integrity: sha512-s67Z7KZAhIu/io7qs2yIM+8+hUyDQ1ufRtCQwhFnmHVzRQ8cKlxf53CxS/DpJ0sDGOWHNx5L6Y3PfACQxiH+8A==}
@@ -5670,6 +5677,8 @@ snapshots:
   layout-base@2.0.1: {}
 
   libass-wasm@4.1.0: {}
+
+  libheif-js@1.19.8: {}
 
   lightgallery@2.8.3: {}
 
