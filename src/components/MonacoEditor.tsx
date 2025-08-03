@@ -3,6 +3,7 @@ import { createEffect, createSignal, onCleanup, onMount } from "solid-js"
 import { MaybeLoading } from "./FullLoading"
 import loader from "@monaco-editor/loader"
 import { useCDN } from "~/hooks"
+import type * as monacoType from "monaco-editor/esm/vs/editor/editor.api"
 
 export interface MonacoEditorProps {
   value: string
@@ -11,7 +12,7 @@ export interface MonacoEditorProps {
   path?: string
   language?: string
 }
-let monaco: any
+let monaco: typeof monacoType
 
 export const MonacoEditorLoader = (props: MonacoEditorProps) => {
   const { monacoPath } = useCDN()
@@ -34,8 +35,9 @@ export const MonacoEditorLoader = (props: MonacoEditorProps) => {
 
 export const MonacoEditor = (props: MonacoEditorProps) => {
   let monacoEditorDiv: HTMLDivElement
-  let monacoEditor: any /*monaco.editor.IStandaloneCodeEditor*/
-  let model: any /*monaco.editor.ITextModel*/
+  let monacoEditor: monacoType.editor.IStandaloneCodeEditor
+  let model: monacoType.editor.ITextModel
+
   onMount(() => {
     monacoEditor = monaco.editor.create(monacoEditorDiv!, {
       value: props.value,
