@@ -7,17 +7,10 @@ import "./markdown.css"
 import { For, Show, createEffect, createMemo, createSignal, on } from "solid-js"
 import { clsx } from "clsx"
 import { Anchor, Box, List, ListItem } from "@hope-ui/solid"
-import { useParseText, useRouter } from "~/hooks"
+import { useCDN, useParseText, useRouter } from "~/hooks"
 import { EncodingSelect } from "."
 import once from "just-once"
-import {
-  pathDir,
-  pathJoin,
-  api,
-  pathResolve,
-  getKatexCSSPath,
-  getMermaidJSPath,
-} from "~/utils"
+import { pathDir, pathJoin, api, pathResolve } from "~/utils"
 import { createStorageSignal } from "@solid-primitives/storage"
 import { isMobile } from "~/utils/compatibility.js"
 import { useScrollListener } from "~/pages/home/toolbar/BackTop.jsx"
@@ -159,16 +152,18 @@ function MarkdownToc(props: {
   )
 }
 
+const { katexCSSPath, mermaidJSPath } = useCDN()
+
 const insertKatexCSS = once(() => {
   const link = document.createElement("link")
   link.rel = "stylesheet"
-  link.href = getKatexCSSPath()
+  link.href = katexCSSPath()
   document.head.appendChild(link)
 })
 
 const insertMermaidJS = once(() => {
   const script = document.createElement("script")
-  script.src = getMermaidJSPath()
+  script.src = mermaidJSPath()
   document.body.appendChild(script)
 })
 

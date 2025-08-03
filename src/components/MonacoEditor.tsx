@@ -2,7 +2,7 @@ import { Box } from "@hope-ui/solid"
 import { createEffect, createSignal, onCleanup, onMount } from "solid-js"
 import { MaybeLoading } from "./FullLoading"
 import loader from "@monaco-editor/loader"
-import { getMonacoPath } from "~/utils"
+import { useCDN } from "~/hooks"
 
 export interface MonacoEditorProps {
   value: string
@@ -14,10 +14,11 @@ export interface MonacoEditorProps {
 let monaco: any
 
 export const MonacoEditorLoader = (props: MonacoEditorProps) => {
+  const { monacoPath } = useCDN()
   const [loading, setLoading] = createSignal(true)
   loader.config({
     paths: {
-      vs: getMonacoPath(),
+      vs: monacoPath(),
     },
   })
   loader.init().then((m) => {
