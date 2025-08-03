@@ -86,6 +86,9 @@ importers:
       just-once:
         specifier: ^2.2.0
         version: 2.2.0
+      katex:
+        specifier: 0.16.11
+        version: 0.16.11
       libass-wasm:
         specifier: ^4.1.0
         version: 4.1.0
@@ -2351,6 +2354,10 @@ packages:
 
   just-once@2.2.0:
     resolution: {integrity: sha512-Wo547FgUOUZ98jbrZ1KX8nRezdEdtgIlC2NK1u1RvR1oZ/WoU++FjprP8J8hRbaox776MHyeMZZED4DvhhHVjg==}
+
+  katex@0.16.11:
+    resolution: {integrity: sha512-RQrI8rlHY92OLf3rho/Ts8i/XvjgguEjOkO1BEXcU3N8BqPpSzBNwV/G0Ukr+P/l3ivvJUE/Fa/CwbS6HesGNQ==}
+    hasBin: true
 
   katex@0.16.22:
     resolution: {integrity: sha512-XCHRdUw4lf3SKBaJe4EvgqIuWwkPSo9XoeO8GjQW94Bp7TWv9hNhzZjZ+OH9yf1UmLygb7DIT5GSFQiyt16zYg==}
@@ -5626,6 +5633,10 @@ snapshots:
 
   just-once@2.2.0: {}
 
+  katex@0.16.11:
+    dependencies:
+      commander: 8.3.0
+
   katex@0.16.22:
     dependencies:
       commander: 8.3.0
@@ -5958,7 +5969,7 @@ snapshots:
   micromark-extension-math@2.1.2:
     dependencies:
       '@types/katex': 0.16.7
-      katex: 0.16.22
+      katex: 0.16.11
       micromark-factory-space: 1.1.0
       micromark-util-character: 1.2.0
       micromark-util-symbol: 1.1.0
@@ -6294,7 +6305,7 @@ snapshots:
       '@types/katex': 0.14.0
       hast-util-from-html-isomorphic: 1.0.0
       hast-util-to-text: 3.1.2
-      katex: 0.16.22
+      katex: 0.16.11
       unist-util-visit: 4.1.2
 
   rehype-raw@7.0.0:

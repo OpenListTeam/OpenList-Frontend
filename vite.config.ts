@@ -35,7 +35,7 @@ export default defineConfig({
               dest: "dist/static/monaco-editor",
             },
             {
-              src: "node_modules/.pnpm/katex@0.16.22/node_modules/katex/dist",
+              src: "node_modules/katex/dist",
               dest: "dist/static/katex",
             },
             {
