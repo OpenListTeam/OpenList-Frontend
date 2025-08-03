@@ -10,7 +10,14 @@ import { Anchor, Box, List, ListItem } from "@hope-ui/solid"
 import { useParseText, useRouter } from "~/hooks"
 import { EncodingSelect } from "."
 import once from "just-once"
-import { pathDir, pathJoin, api, pathResolve } from "~/utils"
+import {
+  pathDir,
+  pathJoin,
+  api,
+  pathResolve,
+  getKatexCSSPath,
+  getMermaidJSPath,
+} from "~/utils"
 import { createStorageSignal } from "@solid-primitives/storage"
 import { isMobile } from "~/utils/compatibility.js"
 import { useScrollListener } from "~/pages/home/toolbar/BackTop.jsx"
@@ -155,17 +162,13 @@ function MarkdownToc(props: {
 const insertKatexCSS = once(() => {
   const link = document.createElement("link")
   link.rel = "stylesheet"
-  link.href = import.meta.env.VITE_LOCAL_MONACO
-    ? "/static/katex/dist/katex.min.css"
-    : "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.css"
+  link.href = getKatexCSSPath()
   document.head.appendChild(link)
 })
 
 const insertMermaidJS = once(() => {
   const script = document.createElement("script")
-  script.src = import.meta.env.VITE_LOCAL_MONACO
-    ? "/static/mermaid/dist/mermaid.min.js"
-    : "https://registry.npmmirror.com/mermaid/11/files/dist/mermaid.min.js"
+  script.src = getMermaidJSPath()
   document.body.appendChild(script)
 })
 

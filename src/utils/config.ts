@@ -35,3 +35,19 @@ export const getMonacoPath = () => {
     ? `${base}static/monaco-editor/min/vs`
     : monaco_cdn
 }
+
+export const getKatexCSSPath = () => {
+  // @ts-ignore
+  const base = window.__dynamic_base__ || "/"
+  return import.meta.env.VITE_LOCAL_MONACO
+    ? `${base}static/katex/dist/katex.min.css`
+    : "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.css"
+}
+
+export const getMermaidJSPath = () => {
+  // @ts-ignore
+  const base = window.__dynamic_base__ || "/"
+  return import.meta.env.VITE_LOCAL_MONACO
+    ? `${base}static/mermaid/dist/mermaid.min.js`
+    : "https://registry.npmmirror.com/mermaid/11/files/dist/mermaid.min.js"
+}
