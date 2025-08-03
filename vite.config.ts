@@ -3,6 +3,7 @@ import { defineConfig } from "vite"
 import solidPlugin from "vite-plugin-solid"
 import legacy from "@vitejs/plugin-legacy"
 import { dynamicBase } from "vite-plugin-dynamic-base"
+import copy from "rollup-plugin-copy"
 
 export default defineConfig({
   resolve: {
@@ -26,6 +27,17 @@ export default defineConfig({
         insertBodyAfter: true,
       },
     }),
+    process.env.VITE_LOCAL_MONACO
+      ? copy({
+          targets: [
+            {
+              src: "node_modules/monaco-editor/min",
+              dest: "dist/static/monaco-editor",
+            },
+          ],
+          hook: "writeBundle",
+        })
+      : null,
   ],
   base: process.env.NODE_ENV === "production" ? "/__dynamic_base__/" : "/",
   // base: "/",

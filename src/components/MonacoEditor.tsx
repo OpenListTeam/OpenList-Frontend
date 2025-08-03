@@ -4,11 +4,6 @@ import { MaybeLoading } from "./FullLoading"
 import loader from "@monaco-editor/loader"
 import { monaco_cdn } from "~/utils"
 
-loader.config({
-  paths: {
-    vs: monaco_cdn,
-  },
-})
 export interface MonacoEditorProps {
   value: string
   onChange?: (value: string) => void
@@ -20,6 +15,15 @@ let monaco: any
 
 export const MonacoEditorLoader = (props: MonacoEditorProps) => {
   const [loading, setLoading] = createSignal(true)
+  // @ts-ignore
+  const base = window.__dynamic_base__ || "/"
+  loader.config({
+    paths: {
+      vs: import.meta.env.VITE_LOCAL_MONACO
+        ? `${base}static/monaco-editor/min/vs`
+        : monaco_cdn,
+    },
+  })
   loader.init().then((m) => {
     monaco = m
     setLoading(false)
