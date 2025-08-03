@@ -25,6 +25,13 @@ if (api.endsWith("/")) {
   api = api.slice(0, -1)
 }
 
-export const monaco_cdn =
-  window.OPENLIST_CONFIG.monaco_cdn ||
-  "https://registry.npmmirror.com/monaco-editor/0.52.2/files/min/vs"
+export const getMonacoPath = () => {
+  const monaco_cdn =
+    window.OPENLIST_CONFIG.monaco_cdn ||
+    "https://registry.npmmirror.com/monaco-editor/0.52.2/files/min/vs"
+  // @ts-ignore
+  const base = window.__dynamic_base__ || "/"
+  return import.meta.env.VITE_LOCAL_MONACO
+    ? `${base}static/monaco-editor/min/vs`
+    : monaco_cdn
+}
