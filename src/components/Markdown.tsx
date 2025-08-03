@@ -155,15 +155,17 @@ function MarkdownToc(props: {
 const insertKatexCSS = once(() => {
   const link = document.createElement("link")
   link.rel = "stylesheet"
-  link.href =
-    "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.css"
+  link.href = import.meta.env.VITE_LOCAL_MONACO
+    ? "/static/katex/dist/katex.min.css"
+    : "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.css"
   document.head.appendChild(link)
 })
 
 const insertMermaidJS = once(() => {
   const script = document.createElement("script")
-  script.src =
-    "https://registry.npmmirror.com/mermaid/11/files/dist/mermaid.min.js"
+  script.src = import.meta.env.VITE_LOCAL_MONACO
+    ? "/static/mermaid/dist/mermaid.min.js"
+    : "https://registry.npmmirror.com/mermaid/11/files/dist/mermaid.min.js"
   document.body.appendChild(script)
 })
 

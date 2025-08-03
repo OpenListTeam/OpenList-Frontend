@@ -34,6 +34,14 @@ export default defineConfig({
               src: "node_modules/monaco-editor/min",
               dest: "dist/static/monaco-editor",
             },
+            {
+              src: "node_modules/.pnpm/katex@0.16.22/node_modules/katex/dist",
+              dest: "dist/static/katex",
+            },
+            {
+              src: "node_modules/mermaid/dist",
+              dest: "dist/static/mermaid",
+            },
           ],
           hook: "writeBundle",
         })

@@ -24,11 +24,6 @@ main() {
     parse_args "$@"
     set_defaults
 
-    if [[ "$LOCAL_RES_FLAG" == "true" ]]; then
-        trap cleanup EXIT
-        pre_build_local_res
-    fi
-
     check_git_version_and_commit
     update_package_version
     if [[ "$LITE_FLAG" == "true" ]]; then
@@ -89,35 +84,6 @@ set_defaults() {
     SKIP_I18N=${SKIP_I18N:-${OPENLIST_FRONTEND_BUILD_SKIP_I18N:-false}}
     LITE_FLAG=${LITE_FLAG:-false}
     LOCAL_RES_FLAG=${LOCAL_RES_FLAG:-false}
-}
-
-# Cleanup function to restore modified files
-cleanup() {
-    log_info "Cleaning up..."
-    git checkout -- src/components/Markdown.tsx
-    rm -f public/static/katex.min.css public/static/mermaid.min.js
-    log_success "Cleanup complete."
-}
-
-# Pre-build steps for local resources
-pre_build_local_res() {
-    log_step "==== Preparing for local resource build ===="
-
-    export VITE_LOCAL_MONACO=true
-    log_info "VITE_LOCAL_MONACO exported as: $VITE_LOCAL_MONACO"
-    log_info "Monaco editor configured for local build."
-
-    # Download markdown resources
-    katex_css_url=$(grep -o 'https://[^"]*katex.min.css' src/components/Markdown.tsx)
-    mermaid_js_url=$(grep -o 'https://[^"]*mermaid.min.js' src/components/Markdown.tsx)
-    wget -O public/static/katex.min.css "$katex_css_url"
-    wget -O public/static/mermaid.min.js "$mermaid_js_url"
-
-    # Modify Markdown.tsx
-    sed -i "s|$katex_css_url|/static/katex.min.css|" src/components/Markdown.tsx
-    sed -i "s|$mermaid_js_url|/static/mermaid.min.js|" src/components/Markdown.tsx
-
-    log_success "Local resource preparation complete."
 }
 
 # Check git version and commit
@@ -188,6 +154,7 @@ build_project() {
 
     log_step "==== Building project ===="
     if [[ "$LOCAL_RES_FLAG" == "true" ]]; then
+        log_info "Monaco editor, Katex and Mermaid configured for local build."
         VITE_LOCAL_MONACO=true pnpm build
     else
         pnpm build
