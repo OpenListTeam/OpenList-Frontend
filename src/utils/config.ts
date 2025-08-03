@@ -25,29 +25,28 @@ if (api.endsWith("/")) {
   api = api.slice(0, -1)
 }
 
+export const dynamicBase =
+  window.__dynamic_base__ || window.OPENLIST_CONFIG.cdn || ""
+
+export const getNpmCDN = (name: string, version: string, path: string) => {
+  // get version from package.json
+  return `https://registry.npmmirror.com/${name}/${version}/files/${path}`
+}
+
 export const getMonacoPath = () => {
-  const monaco_cdn =
-    window.OPENLIST_CONFIG.monaco_cdn ||
-    "https://registry.npmmirror.com/monaco-editor/0.52.2/files/min/vs"
-  // @ts-ignore
-  const base = window.__dynamic_base__ || "/"
-  return import.meta.env.VITE_LOCAL_MONACO
-    ? `${base}static/monaco-editor/min/vs`
-    : monaco_cdn
+  return import.meta.env.VITE_LITE == "true"
+    ? getNpmCDN("monaco-editor", "0.52.2", "min/vs")
+    : `${dynamicBase}/static/monaco-editor/min/vs`
 }
 
 export const getKatexCSSPath = () => {
-  // @ts-ignore
-  const base = window.__dynamic_base__ || "/"
-  return import.meta.env.VITE_LOCAL_MONACO
-    ? `${base}static/katex/dist/katex.min.css`
-    : "https://registry.npmmirror.com/katex/0.16.11/files/dist/katex.min.css"
+  return import.meta.env.VITE_LITE == "true"
+    ? getNpmCDN("katex", "0.16.11", "dist/katex.min.css")
+    : `${dynamicBase}/static/katex/katex.min.css`
 }
 
 export const getMermaidJSPath = () => {
-  // @ts-ignore
-  const base = window.__dynamic_base__ || "/"
-  return import.meta.env.VITE_LOCAL_MONACO
-    ? `${base}static/mermaid/dist/mermaid.min.js`
-    : "https://registry.npmmirror.com/mermaid/11/files/dist/mermaid.min.js"
+  return import.meta.env.VITE_LITE == "true"
+    ? getNpmCDN("mermaid", "11.1.0", "dist/mermaid.min.js")
+    : `${dynamicBase}/static/mermaid/mermaid.min.js`
 }

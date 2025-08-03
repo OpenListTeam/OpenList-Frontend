@@ -27,6 +27,7 @@
     "start": "vite",
     "dev": "vite --force",
     "build": "vite build",
+    "build:lite": "export VITE_LITE=true && vite build",
     "serve": "vite preview",
     "prepare": "husky",
     "format": "prettier --ignore-path .gitignore -w \"src/**/*.{js,ts,json,css,tsx,jsx}\""

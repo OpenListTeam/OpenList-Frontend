@@ -23,7 +23,6 @@ log_build() { echo -e "${BLUE}$1${NC}"; }
 main() {
     parse_args "$@"
     set_defaults
-
     check_git_version_and_commit
     update_package_version
     if [[ "$LITE_FLAG" == "true" ]]; then
@@ -48,7 +47,6 @@ parse_args() {
             --enforce-tag) ENFORCE_TAG="true"; shift ;;
             --skip-i18n) SKIP_I18N="true"; shift ;;
             --lite) LITE_FLAG="true"; shift ;;
-            --local-res) LOCAL_RES_FLAG="true"; shift ;;
             -h|--help) display_help; exit 0 ;;
             *) log_error "Unknown option: $1"; display_help; exit 1 ;;
         esac
@@ -57,7 +55,7 @@ parse_args() {
 
 # Display help message
 display_help() {
-    echo "Usage: $0 [--dev|--release] [--compress|--no-compress] [--enforce-tag] [--skip-i18n] [--lite] [--local-res]"
+    echo "Usage: $0 [--dev|--release] [--compress|--no-compress] [--enforce-tag] [--skip-i18n] [--lite]"
     echo ""
     echo "Options (will overwrite environment setting):"
     echo "  --dev         Build development version"
@@ -66,8 +64,7 @@ display_help() {
     echo "  --no-compress Skip compression"
     echo "  --enforce-tag Force git tag requirement for both dev and release builds"
     echo "  --skip-i18n   Skip i18n build step"
-    echo "  --lite        Add -lite suffix to frontend archive name"
-    echo "  --local-res   Download resources from CDN and build locally"
+    echo "  --lite        Build lite version"
     echo ""
     echo "Environment variables:"
     echo "  OPENLIST_FRONTEND_BUILD_MODE=dev|release (default: dev)"
@@ -83,7 +80,6 @@ set_defaults() {
     ENFORCE_TAG=${ENFORCE_TAG:-${OPENLIST_FRONTEND_BUILD_ENFORCE_TAG:-false}}
     SKIP_I18N=${SKIP_I18N:-${OPENLIST_FRONTEND_BUILD_SKIP_I18N:-false}}
     LITE_FLAG=${LITE_FLAG:-false}
-    LOCAL_RES_FLAG=${LOCAL_RES_FLAG:-false}
 }
 
 # Check git version and commit
@@ -153,9 +149,8 @@ build_project() {
     fi
 
     log_step "==== Building project ===="
-    if [[ "$LOCAL_RES_FLAG" == "true" ]]; then
-        log_info "Monaco editor, Katex and Mermaid configured for local build."
-        VITE_LOCAL_MONACO=true pnpm build
+    if [[ "$LITE_FLAG" == "true" ]]; then
+        pnpm build:lite
     else
         pnpm build
     fi

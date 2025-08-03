@@ -27,7 +27,7 @@ export default defineConfig({
         insertBodyAfter: true,
       },
     }),
-    process.env.VITE_LOCAL_MONACO
+    process.env.VITE_LITE !== "true"
       ? copy({
           targets: [
             {
@@ -35,11 +35,15 @@ export default defineConfig({
               dest: "dist/static/monaco-editor",
             },
             {
-              src: "node_modules/katex/dist",
+              src: "node_modules/katex/dist/katex.min.css",
               dest: "dist/static/katex",
             },
             {
-              src: "node_modules/mermaid/dist",
+              src: "node_modules/katex/dist/fonts",
+              dest: "dist/static/katex/fonts",
+            },
+            {
+              src: "node_modules/mermaid/dist/mermaid.min.js",
               dest: "dist/static/mermaid",
             },
           ],
