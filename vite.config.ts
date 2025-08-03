@@ -46,6 +46,10 @@ export default defineConfig({
               src: "node_modules/mermaid/dist/mermaid.min.js",
               dest: "dist/static/mermaid",
             },
+            {
+              src: "node_modules/@ruffle-rs/ruffle/*.{js,wasm}",
+              dest: "dist/static/ruffle",
+            },
           ],
           hook: "writeBundle",
         })

@@ -28,10 +28,18 @@ export const useCDN = () => {
       : `${base_path}/static/mermaid/mermaid.min.js`
   }
 
+  const ruffleJSPath = () => {
+    // ruffle is not available on cnpm white list
+    return import.meta.env.VITE_LITE === "true"
+      ? "https://res.oplist.org/ruffle/ruffle.js"
+      : `${base_path}/static/ruffle/ruffle.js`
+  }
+
   return {
     npm,
     monacoPath,
     katexCSSPath,
     mermaidJSPath,
+    ruffleJSPath,
   }
 }

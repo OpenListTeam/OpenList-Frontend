@@ -23,6 +23,9 @@ importers:
       '@pdfslick/solid':
         specifier: ^3.0.0
         version: 3.0.0(solid-js@1.9.7)
+      '@ruffle-rs/ruffle':
+        specifier: 0.2.0-nightly.2025.8.3
+        version: 0.2.0-nightly.2025.8.3
       '@solid-primitives/i18n':
         specifier: ^2.2.1
         version: 2.2.1(solid-js@1.9.7)
@@ -1177,6 +1180,9 @@ packages:
     resolution: {integrity: sha512-M/fKi4sasCdM8i0aWJjCSFm2qEnYRR8AMLG2kxp6wD13+tMGA4Z1tVAuHkNRjud5SW2EM3naLuK35w9twvf6aA==}
     cpu: [x64]
     os: [win32]
+
+  '@ruffle-rs/ruffle@0.2.0-nightly.2025.8.3':
+    resolution: {integrity: sha512-3Xn0AEYt84bioRE4HQSALbB+5g/hP04j2P0eCB+fYFj06MGc+7AhlWFas9apE1S4UTJN3TR/WmRMVUGmeouspw==}
 
   '@solid-primitives/event-listener@2.4.1':
     resolution: {integrity: sha512-Xc/lBCeuh9LwzR4lYbMDtopwWK7N9b4o+FmI4uoI8DOtVGYi0Ip20DG8PtwHk+g31lHgvwtFFVKfnUx2UaqZJg==}
@@ -4399,6 +4405,8 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.45.1':
     optional: true
+
+  '@ruffle-rs/ruffle@0.2.0-nightly.2025.8.3': {}
 
   '@solid-primitives/event-listener@2.4.1(solid-js@1.9.7)':
     dependencies:

@@ -1,5 +1,5 @@
 import { Error, FullLoading } from "~/components"
-import { useRouter, useT } from "~/hooks"
+import { useCDN, useRouter, useT } from "~/hooks"
 import { objStore } from "~/store"
 import { onCleanup, onMount, createSignal, Show } from "solid-js"
 
@@ -8,6 +8,7 @@ const Preview = () => {
   const { replace } = useRouter()
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
+  const { ruffleJSPath } = useCDN()
 
   // 获取当前目录下所有SWF文件
   let swfFiles = objStore.objs.filter((obj) =>
@@ -58,7 +59,7 @@ const Preview = () => {
     // 动态加载Ruffle脚本
     const script = document.createElement("script")
     // script.src = "https://unpkg.com/@ruffle-rs/ruffle"
-    script.src = "/static/ruffle/ruffle.js"
+    script.src = ruffleJSPath()
     script.async = true
     script.id = "ruffle-script"
 
