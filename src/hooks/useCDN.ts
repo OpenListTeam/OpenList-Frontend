@@ -1,6 +1,8 @@
-import { base_path } from "~/utils"
+import { joinBase } from "~/utils"
 
 export const useCDN = () => {
+  const assets_path = joinBase("assets")
+
   const npm = (name: string, version: string, path: string) => {
     // Available: https://github.com/cnpm/unpkg-white-list
     // https://registry.npmmirror.com/monaco-editor/0.52.2/files/min/vs/loader.js
@@ -13,33 +15,44 @@ export const useCDN = () => {
   const monacoPath = () => {
     return import.meta.env.VITE_LITE === "true"
       ? npm("monaco-editor", "0.52.2", "min/vs")
-      : `${base_path}/static/monaco-editor/min/vs`
+      : `${assets_path}/monaco-editor/min/vs`
   }
 
   const katexCSSPath = () => {
     return import.meta.env.VITE_LITE === "true"
       ? npm("katex", "0.16.11", "dist/katex.min.css")
-      : `${base_path}/static/katex/katex.min.css`
+      : `${assets_path}/katex/katex.min.css`
   }
 
   const mermaidJSPath = () => {
     return import.meta.env.VITE_LITE === "true"
       ? npm("mermaid", "11.1.0", "dist/mermaid.min.js")
-      : `${base_path}/static/mermaid/mermaid.min.js`
+      : `${assets_path}/mermaid/mermaid.min.js`
   }
 
   const ruffleJSPath = () => {
     // ruffle is not available on cnpm white list
     return import.meta.env.VITE_LITE === "true"
       ? "https://res.oplist.org/ruffle/ruffle.js"
-      : `${base_path}/static/ruffle/ruffle.js`
+      : `${assets_path}/ruffle/ruffle.js`
   }
 
   const libHeifPath = () => {
     // libheif-js is not available on cnpm white list
     return import.meta.env.VITE_LITE === "true"
       ? "https://res.oplist.org/libheif"
-      : `${base_path}/static/libheif`
+      : `${assets_path}/libheif`
+  }
+
+  const libAssPath = () => {
+    // libass-wasm is not available on cnpm white list
+    return import.meta.env.VITE_LITE === "true"
+      ? "https://res.oplist.org/libass-wasm"
+      : `${assets_path}/libass-wasm`
+  }
+
+  const fontsPath = () => {
+    return "https://res.oplist.org/fonts"
   }
 
   return {
@@ -49,5 +62,7 @@ export const useCDN = () => {
     mermaidJSPath,
     ruffleJSPath,
     libHeifPath,
+    libAssPath,
+    fontsPath,
   }
 }

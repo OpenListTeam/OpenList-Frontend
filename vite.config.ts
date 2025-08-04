@@ -32,30 +32,35 @@ export default defineConfig({
           targets: [
             {
               src: "node_modules/monaco-editor/min",
-              dest: "dist/static/monaco-editor",
+              dest: "public/assets/monaco-editor",
             },
             {
               src: "node_modules/katex/dist/katex.min.css",
-              dest: "dist/static/katex",
+              dest: "public/assets/katex",
             },
             {
               src: "node_modules/katex/dist/fonts",
-              dest: "dist/static/katex/fonts",
+              dest: "public/assets/katex/fonts",
             },
             {
               src: "node_modules/mermaid/dist/mermaid.min.js",
-              dest: "dist/static/mermaid",
+              dest: "public/assets/mermaid",
             },
             {
               src: "node_modules/@ruffle-rs/ruffle/*.{js,wasm}",
-              dest: "dist/static/ruffle",
+              dest: "public/assets/ruffle",
             },
             {
               src: "node_modules/libheif-js/libheif-wasm/libheif.{js,wasm}",
-              dest: "dist/static/libheif",
+              dest: "public/assets/libheif",
+            },
+            {
+              src: "node_modules/libass-wasm/dist/js/subtitles-octopus-worker.{js,wasm}",
+              dest: "public/assets/libass-wasm",
             },
           ],
-          hook: "writeBundle",
+          hook: "buildStart",
+          copyOnce: true,
         })
       : null,
   ],

@@ -1,9 +1,19 @@
 import SubtitlesOctopus from "libass-wasm"
-import workerUrl from "libass-wasm/dist/js/subtitles-octopus-worker.js?url"
-import wasmUrl from "libass-wasm/dist/js/subtitles-octopus-worker.wasm?url"
+// import workerUrl from "libass-wasm/dist/js/subtitles-octopus-worker.js?url"
+// import wasmUrl from "libass-wasm/dist/js/subtitles-octopus-worker.wasm?url"
 
-import TimesNewRomanFont from "./fonts/TimesNewRoman.ttf?url"
-import fallbackFont from "./fonts/SourceHanSansCN-Bold.woff2?url"
+// import TimesNewRomanFont from "./fonts/TimesNewRoman.ttf?url"
+// import fallbackFont from "./fonts/SourceHanSansCN-Bold.woff2?url"
+
+import { useCDN } from "~/hooks"
+
+const { fontsPath, libAssPath } = useCDN()
+
+const workerUrl = `${libAssPath()}/subtitles-octopus-worker.js`
+const wasmUrl = `${libAssPath()}/subtitles-octopus-worker.wasm`
+
+const TimesNewRomanFont = `${fontsPath()}/TimesNewRoman.ttf`
+const fallbackFont = `${fontsPath()}/SourceHanSansCN-Bold.woff2`
 
 let instance = null
 
