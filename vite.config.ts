@@ -3,7 +3,7 @@ import { defineConfig } from "vite"
 import solidPlugin from "vite-plugin-solid"
 import legacy from "@vitejs/plugin-legacy"
 import { dynamicBase } from "vite-plugin-dynamic-base"
-import copy from "rollup-plugin-copy"
+import { viteStaticCopy } from "vite-plugin-static-copy"
 
 export default defineConfig({
   resolve: {
@@ -28,39 +28,37 @@ export default defineConfig({
       },
     }),
     process.env.VITE_LITE !== "true"
-      ? copy({
+      ? viteStaticCopy({
           targets: [
             {
-              src: "node_modules/monaco-editor/min",
-              dest: "public/assets/monaco-editor",
+              src: "node_modules/monaco-editor/min/*",
+              dest: "assets/monaco-editor",
             },
             {
               src: "node_modules/katex/dist/katex.min.css",
-              dest: "public/assets/katex",
+              dest: "assets/katex",
             },
             {
-              src: "node_modules/katex/dist/fonts",
-              dest: "public/assets/katex/fonts",
+              src: "node_modules/katex/dist/fonts/*",
+              dest: "assets/katex/fonts",
             },
             {
               src: "node_modules/mermaid/dist/mermaid.min.js",
-              dest: "public/assets/mermaid",
+              dest: "assets/mermaid",
             },
             {
               src: "node_modules/@ruffle-rs/ruffle/*.{js,wasm}",
-              dest: "public/assets/ruffle",
+              dest: "assets/ruffle",
             },
             {
               src: "node_modules/libheif-js/libheif-wasm/libheif.{js,wasm}",
-              dest: "public/assets/libheif",
+              dest: "assets/libheif",
             },
             {
               src: "node_modules/libass-wasm/dist/js/subtitles-octopus-worker.{js,wasm}",
-              dest: "public/assets/libass-wasm",
+              dest: "assets/libass-wasm",
             },
           ],
-          hook: "buildStart",
-          copyOnce: true,
         })
       : null,
   ],

@@ -48,12 +48,12 @@
     "lint-staged": "^16.0.0",
     "mermaid": "^11.9.0",
     "prettier": "3.6.2",
-    "rollup-plugin-copy": "^3.5.0",
     "terser": "^5.43.1",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vite-plugin-dynamic-base": "^1.0.0",
-    "vite-plugin-solid": "^2.11.7"
+    "vite-plugin-solid": "^2.11.7",
+    "vite-plugin-static-copy": "^3.1.1"
   },
   "dependencies": {
     "@egjs/view360": "4.0.0-beta.7",
