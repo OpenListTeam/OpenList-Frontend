@@ -15,7 +15,7 @@ export const useCDN = () => {
   const monacoPath = () => {
     return import.meta.env.VITE_LITE === "true"
       ? npm("monaco-editor", "0.52.2", "min/vs")
-      : `${static_path}/monaco-editor/min/vs`
+      : `${static_path}/monaco-editor/vs`
   }
 
   const katexCSSPath = () => {
@@ -52,7 +52,9 @@ export const useCDN = () => {
   }
 
   const fontsPath = () => {
-    return "https://res.oplist.org/fonts"
+    return import.meta.env.VITE_LITE === "true"
+      ? "https://res.oplist.org/fonts"
+      : `${static_path}/fonts`
   }
 
   return {
