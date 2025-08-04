@@ -189,15 +189,8 @@ jobs:
             echo "Publishing to npm..."
             pnpm publish --no-git-checks --access public
           fi
-
-          # Publish to GitHub NPM Registry
-          echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > ~/.npmrc
-          echo "Publishing to GitHub NPM Registry..."
-          pnpm publish --registry https://npm.pkg.github.com --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 permissions:
   contents: write
-  packages: write
