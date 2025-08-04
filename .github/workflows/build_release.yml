@@ -132,40 +132,24 @@ jobs:
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
 
-      - name: Checkout lite version code
-        uses: actions/checkout@v4
-        with:
-          ref: lite
-          path: lite
-          fetch-depth: 0
-          submodules: recursive
-
-      - name: Setup CI Bot
-        if: github.event_name == 'workflow_dispatch'
-        working-directory: ./lite
+      - name: Move regular build
         run: |
-          git config user.name "The OpenList Bot"
-          git config user.email "bot@openlist.team"
-
-      - name: Update package.json and commit
-        if: github.event_name == 'workflow_dispatch'
-        working-directory: ./lite
-        run: |
-          jq --arg version "${{ steps.semver.outputs.version }}" '.version = $version' package.json > package.json.tmp && mv package.json.tmp package.json
-          git add package.json
-          git commit -S -m "chore: release v${{ steps.semver.outputs.version }}" --no-verify
-          git push
+          mkdir -p regular-dist
+          mv dist/* regular-dist/
 
       - name: Build Lite Release
         run: |
-          rm -rf .git
-          cp -r ../.git .git
           chmod +x build.sh
           ./build.sh --release --compress --lite
-        working-directory: ./lite
         env:
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
+      - name: Move lite build and restore regular build
+        run: |
+          mkdir -p lite-dist
+          mv dist/* lite-dist/
+          mv regular-dist/* dist/
 
       - name: Upload Release Assets
         run: |
@@ -176,24 +160,27 @@ jobs:
             --notes-file "${{ github.workspace }}-CHANGELOG.txt" \
             --prerelease=${{ steps.check_pre_release.outputs.is_pre_release }} \
             ${{ steps.get_current_tag.outputs.current_tag }} \
-            dist/openlist-frontend-dist-v*.tar.gz lite/dist/openlist-frontend-dist-lite-v*.tar.gz dist/i18n.tar.gz
+            dist/openlist-frontend-dist-v*.tar.gz lite-dist/openlist-frontend-dist-lite-v*.tar.gz dist/i18n.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish npm
+      - name: Prepare for npm
         run: |
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
           # Delete the generated dist tarball
           rm -f dist/openlist-frontend-dist-v*.tar.gz
-          rm -f lite/dist/openlist-frontend-dist-lite-v*.tar.gz
+          rm -f lite-dist/openlist-frontend-dist-lite-v*.tar.gz
           # Copy the lite version
           mkdir dist/lite
-          cp -r lite/dist/. dist/lite/
+          cp -r lite-dist/. dist/lite/
 
           if ! jq -e '.name and .version' package.json > /dev/null; then
             echo "Error: Invalid package.json"
             exit 1
           fi
+
+      - name: Publish npm
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
 
           if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
             echo "NPM_TOKEN not set, performing dry run"
@@ -202,8 +189,15 @@ jobs:
             echo "Publishing to npm..."
             pnpm publish --no-git-checks --access public
           fi
+
+          # Publish to GitHub NPM Registry
+          echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > ~/.npmrc
+          echo "Publishing to GitHub NPM Registry..."
+          pnpm publish --registry https://npm.pkg.github.com --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 permissions:
   contents: write
+  packages: write
