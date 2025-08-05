@@ -48,7 +48,7 @@ Relates to #XXXX
       我确保没有直接从我 fork 后的 `main` 分支创建 PR。
 - [ ] I have formatted my code with `go fmt` or [prettier](https://prettier.io/).
       我已使用 `go fmt` 或 [prettier](https://prettier.io/) 格式化提交的代码。
-- [ ] I have updated the repository accordingly.
+- [ ] I have updated the repository accordingly (If it’s needed).
       我已相应更新了相关仓库（若适用）。
   - [ ] [OpenList](https://github.com/OpenListTeam/OpenList) #XXXX
   - [ ] [OpenList-Docs](https://github.com/OpenListTeam/OpenList-Docs) #XXXX
