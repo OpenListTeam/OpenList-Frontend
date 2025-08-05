@@ -48,7 +48,11 @@ Relates to #XXXX
       我确保没有直接从我 fork 后的 `main` 分支创建 PR。
 - [ ] I have formatted my code with `go fmt` or [prettier](https://prettier.io/).
       我已使用 `go fmt` 或 [prettier](https://prettier.io/) 格式化提交的代码。
+- [ ] I have added appropriate labels to this PR (or mentioned needed labels in the description if lacking permissions).
+      我已为此 PR 添加了适当的标签（如无权限或需要的标签不存在，请在描述中说明，管理员将后续处理）。
+- [ ] I have requested review from relevant code authors using the "Request review" feature when applicable.
+      我已在适当情况下使用"Request review"功能请求相关代码作者进行审查。
 - [ ] I have updated the repository accordingly (If it’s needed).
       我已相应更新了相关仓库（若适用）。
-  - [ ] [OpenList](https://github.com/OpenListTeam/OpenList) #XXXX
+  - [ ] [OpenList-Frontend](https://github.com/OpenListTeam/OpenList-Frontend) #XXXX
   - [ ] [OpenList-Docs](https://github.com/OpenListTeam/OpenList-Docs) #XXXX
