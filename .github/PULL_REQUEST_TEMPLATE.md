@@ -1,0 +1,54 @@
+<!--
+  Provide a general summary of your changes in the Title above.
+  The PR title must start with `feat(): `, `docs(): `, `fix(): `, `style(): `, or `refactor(): `, `chore(): `. For example: `feat(component): add new feature`.
+  If it spans multiple components, use the main component as the prefix and enumerate in the title, describe in the body.
+-->
+<!--
+  在上方标题中提供您更改的总体摘要。
+  PR 标题需以 `feat(): `, `docs(): `, `fix(): `, `style(): `, `refactor(): `, `chore(): ` 其中之一开头，例如：`feat(component): 新增功能`。
+  如果跨多个组件，请使用主要组件作为前缀，并在标题中枚举、描述中说明。
+-->
+
+## Description / 描述
+
+<!-- Describe your changes in detail -->
+<!-- 详细描述您的更改 -->
+
+## Motivation and Context / 背景
+
+<!-- Why is this change required? What problem does it solve? -->
+<!-- 为什么需要此更改？它解决了什么问题？ -->
+
+<!-- If it fixes an open issue, please link to the issue here. -->
+<!-- 如果修复了一个打开的issue，请在此处链接到该issue -->
+
+Closes #XXXX
+
+<!-- or -->
+<!-- 或者 -->
+
+Relates to #XXXX
+
+## How Has This Been Tested? / 测试
+
+<!-- Please describe in detail how you tested your changes. -->
+<!-- 请详细描述您如何测试更改 -->
+
+## Checklist / 检查清单
+
+<!-- Go over all the following points, and put an `x` in all the boxes that apply. -->
+<!-- 检查以下所有要点，并在所有适用的框中打`x` -->
+
+<!-- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
+<!-- 如果您对其中任何一项不确定，请不要犹豫提问。我们会帮助您！ -->
+
+- [ ] I have read the [CONTRIBUTING](https://github.com/OpenListTeam/OpenList/blob/main/CONTRIBUTING.md) document.
+      我已阅读 [CONTRIBUTING](https://github.com/OpenListTeam/OpenList/blob/main/CONTRIBUTING.md) 文档。
+- [ ] I have ensured that I am not making pull request from `main` branch directly.
+      我没有直接从 `main` 分支创建 PR。
+- [ ] I have formatted my code with `go fmt` or [prettier](https://prettier.io/).
+      我已使用 `go fmt` 或 [prettier](https://prettier.io/) 格式化提交的代码。
+- [ ] I have updated the repository accordingly.
+      我已相应更新了相关仓库（若适用）。
+  - [ ] [OpenList](https://github.com/OpenListTeam/OpenList) #XXXX
+  - [ ] [OpenList-Docs](https://github.com/OpenListTeam/OpenList-Docs) #XXXX
