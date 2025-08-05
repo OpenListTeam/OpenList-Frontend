@@ -44,8 +44,6 @@ Relates to #XXXX
 
 - [ ] I have read the [CONTRIBUTING](https://github.com/OpenListTeam/OpenList/blob/main/CONTRIBUTING.md) document.
       我已阅读 [CONTRIBUTING](https://github.com/OpenListTeam/OpenList/blob/main/CONTRIBUTING.md) 文档。
-- [ ] I have ensured that I am not creating a pull request directly from my fork's `main` branch.
-      我确保没有直接从我 fork 后的 `main` 分支创建 PR。
 - [ ] I have formatted my code with `go fmt` or [prettier](https://prettier.io/).
       我已使用 `go fmt` 或 [prettier](https://prettier.io/) 格式化提交的代码。
 - [ ] I have added appropriate labels to this PR (or mentioned needed labels in the description if lacking permissions).
