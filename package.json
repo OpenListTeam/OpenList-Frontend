@@ -111,5 +111,10 @@
   },
   "lint-staged": {
     "**/*.{js,ts,css,tsx,jsx,md,html,yml,yaml}": "prettier --write"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "@pdfslick/core@3.0.0": "patches/@pdfslick__core@3.0.0.patch"
+    }
   }
 }
