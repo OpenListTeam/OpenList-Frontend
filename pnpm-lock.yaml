@@ -90,8 +90,8 @@ importers:
         specifier: ^2.2.0
         version: 2.2.0
       katex:
-        specifier: 0.16.11
-        version: 0.16.11
+        specifier: 0.16.21
+        version: 0.16.21
       libass-wasm:
         specifier: ^4.1.0
         version: 4.1.0
@@ -2143,6 +2143,7 @@ packages:
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
+    deprecated: Glob versions prior to v9 are no longer supported
 
   globals@15.15.0:
     resolution: {integrity: sha512-7ACyT3wmyp3I61S4fG682L0VA2RGD9otkqGJIwNUMF1SWUombIIk+af1unuDYgMm082aHYwD+mzJvv9Iu8dsgg==}
@@ -2239,6 +2240,7 @@ packages:
 
   inflight@1.0.6:
     resolution: {integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==}
+    deprecated: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
 
   inherits@2.0.4:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
@@ -2329,8 +2331,8 @@ packages:
   just-once@2.2.0:
     resolution: {integrity: sha512-Wo547FgUOUZ98jbrZ1KX8nRezdEdtgIlC2NK1u1RvR1oZ/WoU++FjprP8J8hRbaox776MHyeMZZED4DvhhHVjg==}
 
-  katex@0.16.11:
-    resolution: {integrity: sha512-RQrI8rlHY92OLf3rho/Ts8i/XvjgguEjOkO1BEXcU3N8BqPpSzBNwV/G0Ukr+P/l3ivvJUE/Fa/CwbS6HesGNQ==}
+  katex@0.16.21:
+    resolution: {integrity: sha512-XvqR7FgOHtWupfMiigNzmh+MgUVmDGU2kXZm899ZkPfcuoPuFxyHmXsgATDpFZDAXCI8tvinaVcDo8PIIJSo4A==}
     hasBin: true
 
   katex@0.16.22:
@@ -2876,6 +2878,7 @@ packages:
 
   scroll-lock@2.1.5:
     resolution: {integrity: sha512-GN8Lp0AzXbkrPFUUNkMUruiiv019UvarNKE/SnXi+AxZRjMnDc2R22VB9RcUtL4P/uub04cKibmpHKIKTyWwYQ==}
+    deprecated: 'Please use the new version: https://github.com/fluejs/noscroll'
 
   seemly@0.3.10:
     resolution: {integrity: sha512-2+SMxtG1PcsL0uyhkumlOU6Qo9TAQ/WyH7tthnPIOQB05/12jz9naq6GZ6iZ6ApVsO3rr2gsnTf3++OV63kE1Q==}
@@ -5572,7 +5575,7 @@ snapshots:
 
   just-once@2.2.0: {}
 
-  katex@0.16.11:
+  katex@0.16.21:
     dependencies:
       commander: 8.3.0
 
@@ -5908,7 +5911,7 @@ snapshots:
   micromark-extension-math@2.1.2:
     dependencies:
       '@types/katex': 0.16.7
-      katex: 0.16.11
+      katex: 0.16.21
       micromark-factory-space: 1.1.0
       micromark-util-character: 1.2.0
       micromark-util-symbol: 1.1.0
@@ -6248,7 +6251,7 @@ snapshots:
       '@types/katex': 0.14.0
       hast-util-from-html-isomorphic: 1.0.0
       hast-util-to-text: 3.1.2
-      katex: 0.16.11
+      katex: 0.16.21
       unist-util-visit: 4.1.2
 
   rehype-raw@7.0.0:
