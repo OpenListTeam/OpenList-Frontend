@@ -1,4 +1,5 @@
 import { joinBase } from "~/utils"
+import packageJson from "../../package.json"
 
 export const useCDN = () => {
   const static_path = joinBase("static")
@@ -31,29 +32,30 @@ export const useCDN = () => {
   }
 
   const ruffleJSPath = () => {
-    // ruffle is not available on cnpm white list
     return import.meta.env.VITE_LITE === "true"
-      ? "https://res.oplist.org/ruffle/ruffle.js"
+      ? npm(
+          packageJson.name,
+          packageJson.version,
+          "dist/static/ruffle/ruffle.js",
+        )
       : `${static_path}/ruffle/ruffle.js`
   }
 
   const libHeifPath = () => {
-    // libheif-js is not available on cnpm white list
     return import.meta.env.VITE_LITE === "true"
-      ? "https://res.oplist.org/libheif"
+      ? npm(packageJson.name, packageJson.version, "dist/static/libheif")
       : `${static_path}/libheif`
   }
 
   const libAssPath = () => {
-    // libass-wasm is not available on cnpm white list
     return import.meta.env.VITE_LITE === "true"
-      ? "https://res.oplist.org/libass-wasm"
+      ? npm(packageJson.name, packageJson.version, "dist/static/libass-wasm")
       : `${static_path}/libass-wasm`
   }
 
   const fontsPath = () => {
     return import.meta.env.VITE_LITE === "true"
-      ? "https://res.oplist.org/fonts"
+      ? npm(packageJson.name, packageJson.version, "dist/static/fonts")
       : `${static_path}/fonts`
   }
 
