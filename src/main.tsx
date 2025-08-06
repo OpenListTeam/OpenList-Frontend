@@ -7,6 +7,7 @@ import { Index } from "./app"
 declare global {
   interface Window {
     [key: string]: any
+    __dynamic_base__?: string
   }
 }
 

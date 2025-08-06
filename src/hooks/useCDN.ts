@@ -1,7 +1,7 @@
 import { joinBase } from "~/utils"
 
 export const useCDN = () => {
-  const static_path = joinBase("static")
+  const static_path = `${window.__dynamic_base__ || ""}/static`
 
   const npm = (name: string, version: string, path: string) => {
     // Available: https://github.com/cnpm/unpkg-white-list
