@@ -27,7 +27,7 @@
     "start": "vite",
     "dev": "vite --force",
     "build": "vite build",
-    "build:lite": "export VITE_LITE=true && vite build",
+    "build:lite": "cross-env VITE_LITE=true vite build",
     "serve": "vite preview",
     "prepare": "husky",
     "format": "prettier --ignore-path .gitignore -w \"src/**/*.{js,ts,json,css,tsx,jsx}\""
@@ -44,6 +44,7 @@
     "@types/sha256": "^0.2.2",
     "@types/streamsaver": "^2.0.5",
     "@vitejs/plugin-legacy": "^6.1.1",
+    "cross-env": "^7.0.3",
     "husky": "^9.0.0",
     "lint-staged": "^16.0.0",
     "mermaid": "^11.9.0",
