@@ -33,11 +33,7 @@ export const useCDN = () => {
 
   const ruffleJSPath = () => {
     return import.meta.env.VITE_LITE === "true"
-      ? npm(
-          packageJson.name,
-          packageJson.version,
-          "dist/static/ruffle/ruffle.js",
-        )
+      ? npm(packageJson.name, packageJson.version, "dist/static/ruffle/ruffle.js")
       : `${static_path}/ruffle/ruffle.js`
   }
 
