@@ -80,8 +80,8 @@ jobs:
       - name: Setup CI Bot
         if: github.event_name == 'workflow_dispatch'
         run: |
-          git config user.name "The OpenList Bot"
-          git config user.email "bot@openlist.team"
+          git config user.name "${{ secrets.BOT_USERNAME }}"
+          git config user.email "${{ secrets.BOT_USEREMAIL }}"
 
       - name: Update package.json and commit
         if: github.event_name == 'workflow_dispatch'
