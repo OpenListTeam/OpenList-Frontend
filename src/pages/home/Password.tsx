@@ -9,7 +9,7 @@ import {
   VStack,
 } from "@hope-ui/solid"
 import { useRouter, useT } from "~/hooks"
-import { JSXElement, onMount } from "solid-js"
+import { JSXElement } from "solid-js"
 
 type PasswordProps = {
   title: string
@@ -22,14 +22,6 @@ type PasswordProps = {
 const Password = (props: PasswordProps) => {
   const t = useT()
   const { back } = useRouter()
-  let inputRef: HTMLInputElement | undefined
-
-  onMount(() => {
-    if (inputRef) {
-      inputRef.focus()
-    }
-  })
-
   return (
     <VStack
       w={{
@@ -42,7 +34,7 @@ const Password = (props: PasswordProps) => {
     >
       <Heading>{props.title}</Heading>
       <Input
-        ref={inputRef}
+        autofocus={true}
         type="password"
         value={props.password()}
         background={useColorModeValue("$neutral3", "$neutral2")()}
