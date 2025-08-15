@@ -1,0 +1,23 @@
+name: Sync to Gitee
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    name: Sync GitHub to Gitee
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Mirror to Gitee
+        uses: pixta-dev/repository-mirroring-action@v1
+        with:
+          target_repo_url: ${{ vars.GITEE_REPO_URL }}
+          ssh_private_key: ${{ secrets.GITEE_SSH_PRIVATE_KEY }}
