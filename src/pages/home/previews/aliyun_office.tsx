@@ -1,3 +1,4 @@
+import { createEffect } from "solid-js"
 import { Box } from "@hope-ui/solid"
 import { MaybeLoading } from "~/components"
 import { useFetch, useRouter } from "~/hooks"
@@ -15,9 +16,27 @@ const AliDocPreview = () => {
         method: "doc_preview",
       }),
   )
+
+  const loadAliyunSDK = () => {
+    return new Promise<void>((resolve, reject) => {
+      if (window.aliyun) return resolve()
+      const script = document.createElement("script")
+      script.src =
+        "https://g.alicdn.com/IMM/office-js/1.1.5/aliyun-web-office-sdk.min.js"
+      script.async = true
+      script.onload = () => resolve()
+      script.onerror = () =>
+        reject(new Error("Failed to load Aliyun Office SDK"))
+      document.body.appendChild(script)
+    })
+  }
+
   const init = async () => {
+    await loadAliyunSDK()
     const resp = await post()
     handleResp(resp, (data) => {
+      const aliyun = window.aliyun
+      if (!aliyun) return
       const docOptions = aliyun.config({
         mount: document.querySelector("#office-preview")!,
         url: data.preview_url,
@@ -25,7 +44,11 @@ const AliDocPreview = () => {
       docOptions.setToken({ token: data.access_token })
     })
   }
-  init()
+
+  createEffect(() => {
+    init()
+  })
+
   return (
     <MaybeLoading loading={loading()}>
       <Box w="$full" h="70vh" id="office-preview"></Box>
