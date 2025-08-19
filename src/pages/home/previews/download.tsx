@@ -1,5 +1,6 @@
 import {
   Button,
+  ButtonGroup,
   HStack,
   IconButton,
   Image,
@@ -31,36 +32,37 @@ export const Download = (props: { openWith?: boolean }) => {
   return (
     <FileInfo>
       <HStack spacing="$2">
-        <Button colorScheme="accent" onClick={() => copyCurrentRawLink(true)}>
-          {t("home.toolbar.copy_link")}
-        </Button>
+        <ButtonGroup colorScheme="accent" attached>
+          <Button onClick={() => copyCurrentRawLink(true)}>
+            {t("home.toolbar.copy_link")}
+          </Button>
+          <Popover opened={pinned() || hover()} motionPreset="none">
+            <PopoverTrigger
+              as={IconButton}
+              icon={<BsQrCode />}
+              aria-label="QRCode"
+              onClick={() => {
+                setPinned(!pinned())
+              }}
+              onMouseOver={() => setHover(true)}
+              onMouseOut={() => setHover(false)}
+            />
+            <PopoverContent width="fit-content">
+              <PopoverArrow />
+              <PopoverBody>
+                <Image
+                  maxWidth="300px"
+                  src={qrUrl()}
+                  alt="QR Code of download link"
+                  objectFit="cover"
+                />
+              </PopoverBody>
+            </PopoverContent>
+          </Popover>
+        </ButtonGroup>
         <Button as="a" href={objStore.raw_url} target="_blank">
           {t("home.preview.download")}
         </Button>
-        <Popover opened={pinned() || hover()} motionPreset="none">
-          <PopoverTrigger
-            as={IconButton}
-            icon={<BsQrCode />}
-            aria-label="QRCode"
-            colorScheme="success"
-            onClick={() => {
-              setPinned(!pinned())
-            }}
-            onMouseOver={() => setHover(true)}
-            onMouseOut={() => setHover(false)}
-          />
-          <PopoverContent width="fit-content">
-            <PopoverArrow />
-            <PopoverBody>
-              <Image
-                maxWidth="300px"
-                src={qrUrl()}
-                alt="QR Code of download link"
-                objectFit="cover"
-              />
-            </PopoverBody>
-          </PopoverContent>
-        </Popover>
       </HStack>
       <Show when={props.openWith}>
         <OpenWith />
