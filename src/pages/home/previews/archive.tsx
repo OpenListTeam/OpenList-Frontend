@@ -427,7 +427,7 @@ const Preview = () => {
                     "/" +
                     obj.name
                   if (!obj.is_dir) {
-                    const hasQuery = raw_url.indexOf("?") !== -1
+                    const hasQuery = raw_url.includes("?")
                     url =
                       raw_url +
                       `${hasQuery ? "&" : "?"}inner=${encodePath(innerPath, true)}`

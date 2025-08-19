@@ -4,11 +4,10 @@ import { base_path } from "."
 const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
 export const randomPwd = () => {
-  let arr = []
-  arr.length = 5
-  for (let i = 0; i < arr.length; i++) {
-    arr[i] = letters[Math.floor(Math.random() * letters.length)]
-  }
+  const arr: string[] = Array.from(
+    { length: 5 },
+    () => letters[Math.floor(Math.random() * letters.length)],
+  )
   return arr.join("")
 }
 
