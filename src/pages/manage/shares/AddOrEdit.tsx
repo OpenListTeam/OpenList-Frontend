@@ -34,8 +34,8 @@ const AddOrEdit = () => {
       batch(() => {
         setShare(shareData as ShareUpdate)
         setFiles(shareData.files.join("\n"))
-        if (share.expires) {
-          setExpireString(new Date(share.expires).toLocaleString())
+        if (shareData.expires) {
+          setExpireString(new Date(shareData.expires).toLocaleString())
         }
         setFilesValid(true)
       })
