@@ -441,6 +441,7 @@
     "share_ids": "Share ids"
   },
   "Dropbox": {
+    "RootNamespaceId": "RootNamespaceId",
     "api_url_address": "Api url address",
     "client_id": "Client id",
     "client_id-tips": "Keep it empty if you don't have one",
@@ -607,6 +608,8 @@
     "show_root_folder": "Show root folder"
   },
   "Local": {
+    "directory_size": "Directory size",
+    "directory_size-tips": "This might impact host performance",
     "mkdir_perm": "Mkdir perm",
     "recycle_bin_path": "Recycle bin path",
     "recycle_bin_path-tips": "path to recycle bin, delete permanently if empty or keep 'delete permanently'",

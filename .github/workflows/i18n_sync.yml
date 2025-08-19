@@ -70,8 +70,8 @@ jobs:
       - name: Setup CI Bot
         if: steps.verify-changed-files.outputs.changed == 'true'
         run: |
-          git config --global user.name "The OpenList Bot"
-          git config --global user.email "bot@openlist.team"
+          git config --global user.name "${{ secrets.BOT_USERNAME }}"
+          git config --global user.email "${{ secrets.BOT_USEREMAIL }}"
 
       - name: Commit the changes
         if: steps.verify-changed-files.outputs.changed == 'true'
