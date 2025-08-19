@@ -40,7 +40,7 @@ const Preview = () => {
       cover =
         obj.thumb ||
         getSetting("audio_cover") ||
-        "https://cdn.oplist.org/gh/OpenListTeam/Logo@main/logo.svg"
+        "https://res.oplist.org/logo/logo.svg"
     }
     const audio = {
       name: obj.name,

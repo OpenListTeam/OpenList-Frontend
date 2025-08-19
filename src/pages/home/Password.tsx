@@ -34,6 +34,7 @@ const Password = (props: PasswordProps) => {
     >
       <Heading>{props.title}</Heading>
       <Input
+        autofocus={true}
         type="password"
         value={props.password()}
         background={useColorModeValue("$neutral3", "$neutral2")()}
