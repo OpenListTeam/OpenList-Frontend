@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@hope-ui/solid"
-import { useCopyLink, useT } from "~/hooks"
+import { useCopyLink, useLink, useT } from "~/hooks"
 import { objStore } from "~/store"
 import { FileInfo } from "./info"
 import { OpenWith } from "../file/open-with"
@@ -20,8 +20,9 @@ import QRCode from "qrcode"
 export const Download = (props: { openWith?: boolean }) => {
   const t = useT()
   const { copyCurrentRawLink } = useCopyLink()
+  const { currentObjLink } = useLink()
   const [qrUrl, setQrUrl] = createSignal("")
-  QRCode.toDataURL(objStore.raw_url, {
+  QRCode.toDataURL(currentObjLink(), {
     type: "image/jpeg",
     scale: 2,
   }).then((url) => setQrUrl(url))
