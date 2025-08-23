@@ -15,7 +15,7 @@ import {
 } from "@hope-ui/solid"
 import { createSignal, For, Show } from "solid-js"
 import { usePath, useRouter, useT } from "~/hooks"
-import { getMainColor } from "~/store"
+import { getMainColor, objStore } from "~/store"
 import {
   RiDocumentFolderUploadFill,
   RiDocumentFileUploadFill,
@@ -70,6 +70,7 @@ const UploadFile = (props: UploadFileProps) => {
   )
 }
 
+import { onMount } from "solid-js"
 const Upload = () => {
   const t = useT()
   const { pathname } = useRouter()
@@ -136,6 +137,11 @@ const Upload = () => {
       setUpload(path, "msg", e.message)
     }
   }
+  onMount(() => {
+    if (objStore.provider === "Local") {
+      setRapid(false)
+    }
+  })
   return (
     <VStack w="$full" pb="$2" spacing="$2">
       <Show
