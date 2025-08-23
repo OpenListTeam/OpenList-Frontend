@@ -1,32 +1,32 @@
 import {
-  VStack,
-  Input,
+  Badge,
+  Box,
+  Button,
+  Checkbox,
   Heading,
   HStack,
   IconButton,
-  Checkbox,
-  Text,
-  Badge,
+  Input,
   Progress,
   ProgressIndicator,
-  Button,
-  Box,
   Stack,
+  Text,
+  VStack,
 } from "@hope-ui/solid"
-import { createSignal, For, Show } from "solid-js"
+import {
+  RiDocumentFileUploadFill,
+  RiDocumentFolderUploadFill,
+} from "solid-icons/ri"
+import { createSignal, For, onMount, Show } from "solid-js"
+import { createStore } from "solid-js/store"
+import { SelectWrapper } from "~/components"
 import { usePath, useRouter, useT } from "~/hooks"
 import { getMainColor, objStore } from "~/store"
-import {
-  RiDocumentFolderUploadFill,
-  RiDocumentFileUploadFill,
-} from "solid-icons/ri"
 import { getFileSize, notify, pathJoin } from "~/utils"
 import { asyncPool } from "~/utils/async_pool"
-import { createStore } from "solid-js/store"
-import { UploadFileProps, StatusBadge } from "./types"
-import { File2Upload, traverseFileTree } from "./util"
-import { SelectWrapper } from "~/components"
+import { StatusBadge, UploadFileProps } from "./types"
 import { getUploads } from "./uploads"
+import { File2Upload, traverseFileTree } from "./util"
 
 const UploadFile = (props: UploadFileProps) => {
   const t = useT()
@@ -70,7 +70,6 @@ const UploadFile = (props: UploadFileProps) => {
   )
 }
 
-import { onMount } from "solid-js"
 const Upload = () => {
   const t = useT()
   const { pathname } = useRouter()
