@@ -4,6 +4,7 @@ import { MaybeLoading } from "./FullLoading"
 import loader from "@monaco-editor/loader"
 import { useCDN } from "~/hooks"
 import type * as monacoType from "monaco-editor/esm/vs/editor/editor.api"
+import { local } from "~/store"
 
 export interface MonacoEditorProps {
   value: string
@@ -42,6 +43,7 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
     monacoEditor = monaco.editor.create(monacoEditorDiv!, {
       value: props.value,
       theme: props.theme,
+      fontSize: parseInt(local.editor_font_size),
     })
     model = monaco.editor.createModel(
       props.value,
@@ -60,6 +62,13 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
   createEffect(() => {
     monaco.editor.setTheme(props.theme)
   })
+
+  createEffect(() => {
+    monacoEditor?.updateOptions({
+      fontSize: parseInt(local.editor_font_size),
+    })
+  })
+
   onCleanup(() => {
     model && model.dispose()
     monacoEditor && monacoEditor.dispose()
