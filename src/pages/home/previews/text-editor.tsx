@@ -70,7 +70,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
 
 // TODO add encoding select
 const TextEditor = () => {
-  const [content] = useFetchText()
+  const [content] = useFetchText(true)
   return (
     <MaybeLoading loading={content.loading}>
       <Editor data={content()?.content} contentType={content()?.contentType} />
