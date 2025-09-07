@@ -10,7 +10,7 @@ import {
 import { handleResp, notify, r, randomPwd } from "~/utils"
 import { createStore } from "solid-js/store"
 import { Button, Heading } from "@hope-ui/solid"
-import { MaybeLoading, FolderChooseInput } from "~/components"
+import { MaybeLoading } from "~/components"
 import { ResponsiveGrid } from "../common/ResponsiveGrid"
 import { batch, createSignal, Show } from "solid-js"
 import { Item } from "./Item"
