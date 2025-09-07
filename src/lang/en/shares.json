@@ -6,6 +6,8 @@
   "pwd": "Share code",
   "files": "Share Paths",
   "files_etc": " and {{more}} more",
+  "files_placeholder": "Enter file or folder paths, one per line",
+  "add_path": "Add Path",
   "creator": "Creator",
   "status": "Status",
   "status_list": {

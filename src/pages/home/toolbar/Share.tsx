@@ -36,7 +36,7 @@ import {
 import { createStore } from "solid-js/store"
 import { getSetting, me, selectedObjs } from "~/store"
 import { TbRefresh } from "solid-icons/tb"
-import { SelectOptions } from "~/components"
+import { SelectOptions, MultiPathInput } from "~/components"
 
 export const Share = () => {
   const t = useT()
@@ -122,6 +122,15 @@ export const Share = () => {
           <Match when={link() === ""}>
             <ModalBody>
               <VStack spacing="$1" alignItems="flex-start">
+                <Text size="sm">{t("shares.files")}</Text>
+                <MultiPathInput
+                  value={share.files?.join("\n") || ""}
+                  valid={true}
+                  onChange={(value) => {
+                    const paths = value.split("\n").filter(Boolean)
+                    setShare("files", paths)
+                  }}
+                />
                 <Text size="sm">{t("shares.remark")}</Text>
                 <Textarea
                   size="sm"
