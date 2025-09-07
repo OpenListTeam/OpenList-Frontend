@@ -23,7 +23,7 @@ export const makeTemplateData = (
 }
 
 const expireDateIncrementRegExp =
-  /^\+(?:(\d+)w)?(?:(\d+)d)?(?:(\d+)H)?(?:(\d+)m)?(?:(\d+)s)?(?:(\d+)ms)?$/
+  /^\+(?=\d+[wdHms])(?:(\d+)w)?(?:(\d+)d)?(?:(\d+)H)?(?:(\d+)m)?(?:(\d+)s)?(?:(\d+)ms)?$/
 
 const toInt = (s: string | undefined) => {
   if (s === undefined) return 0
@@ -40,9 +40,7 @@ export const getExpireDate = (dateStr: string) => {
     const m = toInt(match[4]) + H * 60
     const s = toInt(match[5]) + m * 60
     const ms = toInt(match[6]) + s * 1000
-    let date = new Date()
-    date.setTime(date.getTime() + ms)
-    return date
+    return new Date(Date.now() + ms)
   } else {
     return new Date(dateStr)
   }
