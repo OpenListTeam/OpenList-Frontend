@@ -16,7 +16,7 @@ import {
 import { createSignal } from "solid-js"
 import { TbPlus, TbFolder } from "solid-icons/tb"
 import { useT } from "~/hooks"
-import { FolderTree } from "./FolderTree"
+import { EnhancedFolderTree } from "~/components/EnhancedFolderTree"
 
 export interface MultiPathInputProps {
   value: string
@@ -54,7 +54,7 @@ export const MultiPathInput = (props: MultiPathInputProps) => {
         />
         <IconButton
           colorScheme="accent"
-          aria-label={t("global.choose_folder")}
+          aria-label={t("global.choose_or_input_path")}
           icon={<TbFolder />}
           onClick={onOpen}
           size="lg"
@@ -66,9 +66,9 @@ export const MultiPathInput = (props: MultiPathInputProps) => {
         <ModalOverlay />
         <ModalContent>
           <ModalCloseButton />
-          <ModalHeader>{t("global.choose_folder")}</ModalHeader>
+          <ModalHeader>{t("global.choose_or_input_path")}</ModalHeader>
           <ModalBody>
-            <FolderTree
+            <EnhancedFolderTree
               forceRoot
               onChange={setSelectedPath}
               showHiddenFolder={true}
