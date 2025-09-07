@@ -122,15 +122,6 @@ export const Share = () => {
           <Match when={link() === ""}>
             <ModalBody>
               <VStack spacing="$1" alignItems="flex-start">
-                <Text size="sm">{t("shares.files")}</Text>
-                <MultiPathInput
-                  value={share.files?.join("\n") || ""}
-                  valid={true}
-                  onChange={(value) => {
-                    const paths = value.split("\n").filter(Boolean)
-                    setShare("files", paths)
-                  }}
-                />
                 <Text size="sm">{t("shares.remark")}</Text>
                 <Textarea
                   size="sm"

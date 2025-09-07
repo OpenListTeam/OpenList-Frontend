@@ -5,4 +5,5 @@ export enum Type {
   Text = "text",
   Number = "number",
   Float = "float",
+  MultiPath = "multipath",
 }

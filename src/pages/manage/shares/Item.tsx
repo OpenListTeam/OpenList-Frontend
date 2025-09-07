@@ -46,6 +46,11 @@ export type ItemProps = {
       random?: () => string
     }
   | {
+      type: Type.MultiPath
+      onChange?: (value: string) => void
+      value: string
+    }
+  | {
       type: Type.Select
       searchable?: boolean
       onChange?: (value: string) => void
@@ -136,34 +141,30 @@ const Item = (props: ItemProps) => {
           />
         </Match>
         <Match when={props.type === Type.Text}>
-          <Show
-            when={props.name === "files"}
-            fallback={
-              <Textarea
-                id={props.name}
-                readOnly={props.readonly}
-                value={props.value as string}
-                invalid={!props.valid}
-                onChange={
-                  props.type === Type.Text
-                    ? (e) => props.onChange?.(e.currentTarget.value)
-                    : undefined
-                }
-              />
+          <Textarea
+            id={props.name}
+            readOnly={props.readonly}
+            value={props.value as string}
+            invalid={!props.valid}
+            onChange={
+              props.type === Type.Text
+                ? (e) => props.onChange?.(e.currentTarget.value)
+                : undefined
             }
-          >
-            <MultiPathInput
-              id={props.name}
-              value={props.value as string}
-              valid={props.valid}
-              readOnly={props.readonly}
-              onChange={(value) => {
-                if (props.type === Type.Text) {
-                  props.onChange?.(value)
-                }
-              }}
-            />
-          </Show>
+          />
+        </Match>
+        <Match when={props.type === Type.MultiPath}>
+          <MultiPathInput
+            id={props.name}
+            value={props.value as string}
+            valid={props.valid}
+            readOnly={props.readonly}
+            onChange={(value) => {
+              if (props.type === Type.MultiPath) {
+                props.onChange?.(value)
+              }
+            }}
+          />
         </Match>
         <Match when={props.type === Type.Select}>
           <Select

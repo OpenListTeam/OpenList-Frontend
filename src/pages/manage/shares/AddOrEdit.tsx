@@ -56,7 +56,7 @@ const AddOrEdit = () => {
         </Show>
         <Item
           name="files"
-          type={Type.Text}
+          type={Type.MultiPath}
           value={files()}
           valid={filesValid()}
           required
