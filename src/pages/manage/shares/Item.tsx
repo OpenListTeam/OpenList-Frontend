@@ -23,6 +23,7 @@ export type ItemProps = {
   options?: string
   options_prefix?: string
   valid?: boolean
+  placeholder?: string
 } & (
   | {
       type: Type.Bool
@@ -74,6 +75,7 @@ const Item = (props: ItemProps) => {
               readOnly={props.readonly}
               value={props.value as string}
               invalid={!props.valid}
+              placeholder={props.placeholder}
               onChange={
                 props.type === Type.String
                   ? (e) => props.onChange?.(e.currentTarget.value)
@@ -101,6 +103,7 @@ const Item = (props: ItemProps) => {
             readOnly={props.readonly}
             value={props.value as number}
             invalid={!props.valid}
+            placeholder={props.placeholder}
             onInput={
               props.type === Type.Number
                 ? (e) => props.onChange?.(parseInt(e.currentTarget.value))
@@ -115,6 +118,7 @@ const Item = (props: ItemProps) => {
             readOnly={props.readonly}
             value={props.value as number}
             invalid={!props.valid}
+            placeholder={props.placeholder}
             onInput={
               props.type === Type.Float
                 ? (e) => props.onChange?.(parseFloat(e.currentTarget.value))
@@ -141,6 +145,7 @@ const Item = (props: ItemProps) => {
             readOnly={props.readonly}
             value={props.value as string}
             invalid={!props.valid}
+            placeholder={props.placeholder}
             onChange={
               props.type === Type.Text
                 ? (e) => props.onChange?.(e.currentTarget.value)

@@ -1,6 +1,7 @@
 import { useFetch, useRouter, useT, useUtil } from "~/hooks"
 import {
   bus,
+  getExpireDate,
   handleResp,
   makeTemplateData,
   matchTemplate,
@@ -224,6 +225,7 @@ export const Share = () => {
                   size="sm"
                   invalid={!expireValid()}
                   value={expireString()}
+                  placeholder="yyyy-MM-dd HH:mm:ss or +1w1d1H1m1s1ms"
                   onInput={(e) => {
                     setExpireString(e.currentTarget.value)
                     if (e.currentTarget.value === "") {
@@ -231,7 +233,7 @@ export const Share = () => {
                       setShare("expires", null)
                       return
                     }
-                    const date = new Date(e.currentTarget.value)
+                    const date = getExpireDate(e.currentTarget.value)
                     if (isNaN(date.getTime())) {
                       setExpireValid(false)
                     } else {

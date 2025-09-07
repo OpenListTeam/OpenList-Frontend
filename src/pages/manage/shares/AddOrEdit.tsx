@@ -1,13 +1,6 @@
 import { useFetch, useRouter, useT } from "~/hooks"
-import {
-  OrderDirection,
-  PResp,
-  Share,
-  ShareInfo,
-  ShareUpdate,
-  Type,
-} from "~/types"
-import { handleResp, notify, r, randomPwd } from "~/utils"
+import { PResp, Share, ShareInfo, ShareUpdate, Type } from "~/types"
+import { handleResp, notify, r, randomPwd, getExpireDate } from "~/utils"
 import { createStore } from "solid-js/store"
 import { Button, Heading } from "@hope-ui/solid"
 import { MaybeLoading } from "~/components"
@@ -140,6 +133,7 @@ const AddOrEdit = () => {
           type={Type.String}
           value={expireString()}
           valid={expireValid()}
+          placeholder="yyyy-MM-dd HH:mm:ss or +1w1d1H1m1s1ms"
           onChange={(e) => {
             setExpireString(e)
             if (e === "") {
@@ -147,7 +141,7 @@ const AddOrEdit = () => {
               setShare("expires", null)
               return
             }
-            const date = new Date(e)
+            const date = getExpireDate(e)
             if (isNaN(date.getTime())) {
               setExpireValid(false)
             } else {
