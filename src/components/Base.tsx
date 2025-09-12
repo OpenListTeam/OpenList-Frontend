@@ -15,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
   Icon,
-  Button,
 } from "@hope-ui/solid"
 import { SwitchColorMode } from "./SwitchColorMode"
 import { ComponentProps, For, mergeProps, Show, JSXElement } from "solid-js"

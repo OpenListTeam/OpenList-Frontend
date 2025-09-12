@@ -19,7 +19,9 @@ import {
   recordHistory,
   setPassword,
   /*layout,*/ State,
+  me,
 } from "~/store"
+import { UserMethods } from "~/types"
 
 const Folder = lazy(() => import("./folder/Folder"))
 const File = lazy(() => import("./file/File"))
@@ -61,8 +63,12 @@ export const Obj = () => {
   const isStorageError = createMemo(() => {
     const err = objStore.err
     return (
-      err.includes("storage not found") && err.includes("please add a storage")
+      err.includes("storage not found") || err.includes("please add a storage")
     )
+  })
+
+  const shouldShowStorageButton = createMemo(() => {
+    return isStorageError() && UserMethods.is_admin(me())
   })
 
   const storageErrorActions = () => (
@@ -87,7 +93,9 @@ export const Obj = () => {
             <Error
               msg={objStore.err}
               disableColor
-              actions={isStorageError() ? storageErrorActions() : undefined}
+              actions={
+                shouldShowStorageButton() ? storageErrorActions() : undefined
+              }
             />
           </Match>
           <Match
