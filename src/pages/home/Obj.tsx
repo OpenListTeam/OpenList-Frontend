@@ -1,4 +1,4 @@
-import { Text, useColorModeValue, VStack } from "@hope-ui/solid"
+import { Text, useColorModeValue, VStack, Button } from "@hope-ui/solid"
 import {
   createEffect,
   createMemo,
@@ -33,7 +33,7 @@ export { objBoxRef }
 export const Obj = () => {
   const t = useT()
   const cardBg = useColorModeValue("white", "$neutral3")
-  const { pathname, searchParams, isShare } = useRouter()
+  const { pathname, searchParams, isShare, to } = useRouter()
   const { handlePathChange, refresh } = usePath()
   const pagination = getPagination()
   const page = createMemo(() => {
@@ -57,6 +57,19 @@ export const Obj = () => {
       await handlePathChange(pathname, page)
     }),
   )
+
+  const isStorageError = createMemo(() => {
+    const err = objStore.err
+    return (
+      err.includes("storage not found") && err.includes("please add a storage")
+    )
+  })
+
+  const storageErrorActions = () => (
+    <Button colorScheme="accent" onClick={() => to("/@manage/storages")}>
+      {t("global.go_to_storages")}
+    </Button>
+  )
   return (
     <VStack
       ref={(el: HTMLDivElement) => setObjBoxRef(el)}
@@ -71,7 +84,11 @@ export const Obj = () => {
       <Suspense fallback={<FullLoading />}>
         <Switch>
           <Match when={objStore.err}>
-            <Error msg={objStore.err} disableColor />
+            <Error
+              msg={objStore.err}
+              disableColor
+              actions={isStorageError() ? storageErrorActions() : undefined}
+            />
           </Match>
           <Match
             when={[State.FetchingObj, State.FetchingObjs].includes(

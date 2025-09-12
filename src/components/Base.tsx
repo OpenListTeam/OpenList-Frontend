@@ -15,9 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
   Icon,
+  Button,
 } from "@hope-ui/solid"
 import { SwitchColorMode } from "./SwitchColorMode"
-import { ComponentProps, For, mergeProps, Show } from "solid-js"
+import { ComponentProps, For, mergeProps, Show, JSXElement } from "solid-js"
 import { AiOutlineFullscreen, AiOutlineFullscreenExit } from "solid-icons/ai"
 import { hoverColor } from "~/utils"
 
@@ -25,6 +26,7 @@ export const Error = (props: {
   msg: string
   disableColor?: boolean
   h?: string
+  actions?: JSXElement
 }) => {
   const merged = mergeProps(
     {
@@ -47,6 +49,11 @@ export const Error = (props: {
         >
           {props.msg}
         </Heading>
+        <Show when={props.actions}>
+          <Flex mt="$4" justifyContent="center">
+            {props.actions}
+          </Flex>
+        </Show>
         <Show when={!props.disableColor}>
           <Flex mt="$2" justifyContent="end">
             <SwitchColorMode />
