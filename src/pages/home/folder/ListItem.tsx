@@ -55,24 +55,24 @@ export const ListItem = (props: { obj: StoreObj; index: number }) => {
     details.free_space > 0
   const toReadableSpace = (n: number) => {
     let unit = "B"
-    if (n > 1024) {
-      n /= 1024
+    if (n > 1000) {
+      n /= 1000
       unit = "KB"
     }
-    if (n > 1024) {
-      n /= 1024
+    if (n > 1000) {
+      n /= 1000
       unit = "MB"
     }
-    if (n > 1024) {
-      n /= 1024
+    if (n > 1000) {
+      n /= 1000
       unit = "GB"
     }
-    if (n > 1024) {
-      n /= 1024
+    if (n > 1000) {
+      n /= 1000
       unit = "TB"
     }
-    if (n > 1024) {
-      n /= 1024
+    if (n > 1000) {
+      n /= 1000
       unit = "PB"
     }
     return `${n.toFixed(2)} ${unit}`

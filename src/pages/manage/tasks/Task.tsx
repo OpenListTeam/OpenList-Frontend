@@ -144,17 +144,21 @@ export const Task = (props: TaskAttribute & TasksProps & TaskLocalSetter) => {
   const parseSpeedText = (timeDelta: number, lengthDelta: number) => {
     let delta = lengthDelta / timeDelta
     let unit = "bytes/s"
-    if (delta > 1024) {
-      delta /= 1024
+    if (delta > 1000) {
+      delta /= 1000
       unit = "KB/s"
     }
-    if (delta > 1024) {
-      delta /= 1024
+    if (delta > 1000) {
+      delta /= 1000
       unit = "MB/s"
     }
-    if (delta > 1024) {
-      delta /= 1024
+    if (delta > 1000) {
+      delta /= 1000
       unit = "GB/s"
+    }
+    if (delta > 1000) {
+      delta /= 1000
+      unit = "TB/s"
     }
     return `${delta.toFixed(2)} ${unit}`
   }
