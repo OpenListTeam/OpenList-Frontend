@@ -53,32 +53,18 @@ export const ListItem = (props: { obj: StoreObj; index: number }) => {
     details.free_space &&
     details.total_space > 0 &&
     details.free_space > 0
-  const toReadableSpace = (n: number) => {
-    let unit = "B"
-    if (n > 1000) {
-      n /= 1000
-      unit = "KB"
-    }
-    if (n > 1000) {
-      n /= 1000
-      unit = "MB"
-    }
-    if (n > 1000) {
-      n /= 1000
-      unit = "GB"
-    }
-    if (n > 1000) {
-      n /= 1000
-      unit = "TB"
-    }
-    if (n > 1000) {
-      n /= 1000
-      unit = "PB"
-    }
-    return `${n.toFixed(2)} ${unit}`
-  }
   const toReadableUsage = (details: MountDetails) => {
-    return `${toReadableSpace(details.free_space!)} / ${toReadableSpace(details.total_space!)}`
+    let total = details.total_space!
+    let used = total - details.free_space!
+    const units = ["B", "KB", "MB", "GB", "TB", "PB"]
+    const k = 1000
+    let unit_i = 0
+    while (unit_i < units.length - 1 && (used >= k || total >= k)) {
+      used /= k
+      total /= k
+      unit_i++
+    }
+    return `${used.toFixed(2)} / ${total.toFixed(2)} ${units[unit_i]}`
   }
   const usedPercentage = (details: MountDetails) => {
     return (
