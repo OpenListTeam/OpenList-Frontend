@@ -67,7 +67,7 @@ const Preview = () => {
       loop: "all",
       order: "list",
       preload: "auto",
-      volume: 0.7,
+      volume: 1.0,
       mutex: true,
       listFolded: false,
       lrcType: objStore.provider === "NeteaseMusic" ? 1 : 3,
