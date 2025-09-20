@@ -78,7 +78,7 @@ const Preview = () => {
     id: pathname(),
     container: "#video-player",
     title: objStore.obj.name,
-    volume: 0.5,
+    volume: 1.0,
     autoplay: getSettingBool("video_autoplay"),
     autoSize: false,
     autoMini: true,
