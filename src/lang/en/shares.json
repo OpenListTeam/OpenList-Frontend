@@ -36,5 +36,6 @@
     "back": "Extract to back"
   },
   "input_password": "Please input share code",
-  "copy_msg": "Copy link"
+  "copy_msg": "Copy link",
+  "no_permission_tip": "To create a share, you need \"Share\" permission."
 }

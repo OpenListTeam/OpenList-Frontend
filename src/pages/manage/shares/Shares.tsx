@@ -6,6 +6,7 @@ import {
   Tbody,
   Th,
   Thead,
+  Tooltip,
   Tr,
   VStack,
 } from "@hope-ui/solid"
@@ -51,14 +52,22 @@ const Shares = () => {
         >
           {t("global.refresh")}
         </Button>
-        <Button
-          disabled={!canShare}
-          onClick={() => {
-            to("/@manage/shares/add")
-          }}
+        <Show
+          when={!canShare}
+          fallback={
+            <Button onClick={() => to("/@manage/shares/add")}>
+              {t("global.add")}
+            </Button>
+          }
         >
-          {t("global.add")}
-        </Button>
+          <Tooltip
+            withArrow
+            label={t("shares.no_permission_tip")}
+            placement="right"
+          >
+            <Button disabled> {t("global.add")} </Button>
+          </Tooltip>
+        </Show>
       </HStack>
       <Box w="$full" overflowX="auto">
         <Table highlightOnHover dense>
