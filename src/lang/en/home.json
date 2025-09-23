@@ -136,10 +136,12 @@
     "pending": "Pending",
     "uploading": "Uploading",
     "backending": "Uploading in the backend",
+    "tasked": "Successfully added to the task",
     "success": "Success",
     "error": "Error",
     "back": "Back to Upload",
-    "clear_done": "Clear Done"
+    "clear_done": "Clear Done",
+     "slice_upload": "Slice upload"
   },
   "local_settings": {
     "aria2_rpc_url": "Aria2 RPC URL",

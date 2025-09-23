@@ -72,6 +72,7 @@ export default defineConfig({
     // target: "es2015", //next
     // polyfillDynamicImport: false,
     rollupOptions: {
+      external: ["p-limit"],
       output: {
         assetFileNames: (assetInfo) =>
           assetInfo.names?.some((name) => name.endsWith("pdf.worker.min.mjs"))

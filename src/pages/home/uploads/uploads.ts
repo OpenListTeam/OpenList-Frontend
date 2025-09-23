@@ -2,6 +2,7 @@ import { objStore } from "~/store"
 import { FormUpload } from "./form"
 import { StreamUpload } from "./stream"
 import { Upload } from "./types"
+import { SliceUpload } from "./slice_upload"
 
 type Uploader = {
   upload: Upload
@@ -18,6 +19,11 @@ const AllUploads: Uploader[] = [
   {
     name: "Form",
     upload: FormUpload,
+    provider: /.*/,
+  },
+  {
+    name: "Slice",
+    upload: SliceUpload,
     provider: /.*/,
   },
 ]

@@ -2,7 +2,7 @@ import { password } from "~/store"
 import { EmptyResp } from "~/types"
 import { r } from "~/utils"
 import { SetUpload, Upload } from "./types"
-import { calculateHash } from "./util"
+import { calculateHash, HashType } from "./util"
 export const StreamUpload: Upload = async (
   uploadPath: string,
   file: File,
@@ -22,10 +22,14 @@ export const StreamUpload: Upload = async (
     Overwrite: overwrite.toString(),
   }
   if (rapid) {
-    const { md5, sha1, sha256 } = await calculateHash(file)
-    headers["X-File-Md5"] = md5
-    headers["X-File-Sha1"] = sha1
-    headers["X-File-Sha256"] = sha256
+    const hash = await calculateHash(file, [
+      HashType.Md5,
+      HashType.Sha1,
+      HashType.Sha256,
+    ])
+    headers["X-File-Md5"] = hash.md5
+    headers["X-File-Sha1"] = hash.sha1
+    headers["X-File-Sha256"] = hash.sha256
   }
   const resp: EmptyResp = await r.put("/fs/put", file, {
     headers: headers,

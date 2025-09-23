@@ -41,6 +41,26 @@ export type FsGetResp = Resp<
   }
 >
 
+export type FsPreupResp = Resp<{
+  task_id: string
+  slice_size: number
+  slice_cnt: number
+  slice_upload_status: string
+  reuse: boolean
+}>
+export type FsUpinfoResp = Resp<{
+  slice_hash_need: boolean //是否需要分片哈希
+  hash_md5_need: boolean //是否需要md5
+  hash_md5_256kb_need: boolean //是否需要前256KB的md5
+  hash_sha1_need: boolean //是否需要sha1
+}>
+
+export type FsSliceupCompleteResp = Resp<{
+  task_id: string
+  slice_upload_status: string
+  complete: number
+}>
+
 export type EmptyResp = Resp<{}>
 
 export type PResp<T> = Promise<Resp<T>>

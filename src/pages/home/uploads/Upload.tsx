@@ -86,7 +86,7 @@ const Upload = () => {
   })
   const allDone = () => {
     return uploadFiles.uploads.every(({ status }) =>
-      ["success", "error"].includes(status),
+      ["success", "error", "tasked"].includes(status),
     )
   }
   let fileInput: HTMLInputElement
@@ -124,7 +124,7 @@ const Upload = () => {
         rapid(),
       )
       if (!err) {
-        setUpload(path, "status", "success")
+        setUpload(path, "status", asTask() ? "tasked" : "success")
         setUpload(path, "progress", 100)
       } else {
         setUpload(path, "status", "error")
@@ -148,7 +148,8 @@ const Upload = () => {
                 onClick={() => {
                   setUploadFiles("uploads", (_uploads) =>
                     _uploads.filter(
-                      ({ status }) => !["success", "error"].includes(status),
+                      ({ status }) =>
+                        !["success", "error", "tasked"].includes(status),
                     ),
                   )
                   console.log(uploadFiles.uploads)
@@ -304,6 +305,7 @@ const Upload = () => {
               >
                 {t("home.upload.add_as_task")}
               </Checkbox>
+
               <Checkbox
                 checked={overwrite()}
                 onChange={() => {
@@ -312,14 +314,16 @@ const Upload = () => {
               >
                 {t("home.conflict_policy.overwrite_existing")}
               </Checkbox>
-              <Checkbox
-                checked={rapid()}
-                onChange={() => {
-                  setRapid(!rapid())
-                }}
-              >
-                {t("home.upload.try_rapid")}
-              </Checkbox>
+              <Show when={curUploader().name !== "Slice"}>
+                <Checkbox
+                  checked={rapid()}
+                  onChange={() => {
+                    setRapid(!rapid())
+                  }}
+                >
+                  {t("home.upload.try_rapid")}
+                </Checkbox>
+              </Show>
             </Stack>
           </Show>
         </VStack>

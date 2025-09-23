@@ -12,6 +12,7 @@ export const StatusBadge = {
   pending: "neutral",
   uploading: "info",
   backending: "info",
+  tasked: "info",
   success: "success",
   error: "danger",
 } as const
@@ -24,3 +25,10 @@ export type Upload = (
   overwrite: boolean,
   rapid: boolean,
 ) => Promise<Error | undefined>
+
+export type HashInfo = {
+  md5: string
+  md5_256kb: string
+  sha1: string
+  sha256: string
+}
