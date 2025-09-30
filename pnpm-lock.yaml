@@ -60,7 +60,7 @@ importers:
         version: 5.2.5
       artplayer-plugin-danmuku:
         specifier: ^5.1.6
-        version: 5.1.8
+        version: 5.2.0
       asciinema-player:
         specifier: ^3.10.0
         version: 3.10.0
@@ -1571,8 +1571,8 @@ packages:
   aplayer@1.10.1:
     resolution: {integrity: sha512-HAfyxgCUTLAqtYlxzzK9Fyqg6y+kZ9CqT1WfeWE8FSzwspT6oBqWOZHANPHF3RGTtC33IsyEgrfthPDzU5r9kQ==}
 
-  artplayer-plugin-danmuku@5.1.8:
-    resolution: {integrity: sha512-J9kUtU46/07ZckvmfFDwfJRJDLD7UIfrWVutc7EqDCkUModArOISifXkD27/R2ruIpfAJk6HxOfB0cQfvjbZCQ==}
+  artplayer-plugin-danmuku@5.2.0:
+    resolution: {integrity: sha512-iHHSGEc0J+gl7imX4nmLqqC7LXmv8xeGf2lUevhhyUCoiCRZplecpKQICHjErVb1Yqyp1xCy6Sp8eYN+EpFWFw==}
 
   artplayer@5.2.5:
     resolution: {integrity: sha512-Ogym5rvkAJ4VLncM4Apl3TJ/a/ozM3csvY4IKuuMR++hUmEZgj/HaGsNonwx8r56nsqiZYE7O4vS1HFZl+NBSg==}
@@ -4818,7 +4818,7 @@ snapshots:
       promise-polyfill: 7.1.0
       smoothscroll: 0.4.0
 
-  artplayer-plugin-danmuku@5.1.8: {}
+  artplayer-plugin-danmuku@5.2.0: {}
 
   artplayer@5.2.5:
     dependencies:
