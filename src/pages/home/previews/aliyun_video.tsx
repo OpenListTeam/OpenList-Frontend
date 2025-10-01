@@ -16,6 +16,7 @@ import { AutoHeightPlugin, VideoBox } from "./video_box"
 import { ArtPlayerIconsSubtitle } from "~/components/icons"
 import { useNavigate } from "@solidjs/router"
 import { TiWarning } from "solid-icons/ti"
+import "./artplayer.css"
 
 export interface Data {
   drive_id: string

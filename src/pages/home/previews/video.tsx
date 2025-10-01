@@ -16,6 +16,7 @@ import { currentLang } from "~/app/i18n"
 import { AutoHeightPlugin, VideoBox } from "./video_box"
 import { ArtPlayerIconsSubtitle } from "~/components/icons"
 import { useNavigate } from "@solidjs/router"
+import "./artplayer.css"
 
 const Preview = () => {
   const { pathname, searchParams } = useRouter()
