@@ -187,7 +187,7 @@ importers:
         version: 8.11.12
       '@types/node':
         specifier: ^22.0.0
-        version: 22.18.1
+        version: 22.18.8
       '@types/qrcode':
         specifier: ^1.5.5
         version: 1.5.5
@@ -199,7 +199,7 @@ importers:
         version: 2.0.5
       '@vitejs/plugin-legacy':
         specifier: ^6.1.1
-        version: 6.1.1(terser@5.43.1)(vite@6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1))
+        version: 6.1.1(terser@5.43.1)(vite@6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1))
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
@@ -223,16 +223,16 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^6.3.5
-        version: 6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1)
+        version: 6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1)
       vite-plugin-dynamic-base:
         specifier: ^1.0.0
-        version: 1.2.0(vite@6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1))
+        version: 1.2.0(vite@6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1))
       vite-plugin-solid:
         specifier: ^2.11.7
-        version: 2.11.9(solid-js@1.9.9)(vite@6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1))
+        version: 2.11.9(solid-js@1.9.9)(vite@6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1))
       vite-plugin-static-copy:
         specifier: ^3.1.1
-        version: 3.1.3(vite@6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1))
+        version: 3.1.3(vite@6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1))
 
 packages:
 
@@ -1539,8 +1539,8 @@ packages:
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
 
-  '@types/node@22.18.1':
-    resolution: {integrity: sha512-rzSDyhn4cYznVG+PCzGe1lwuMYJrcBS1fc3JqSa2PvtABwWo+dZ1ij5OVok3tqfpEBCBoaR4d7upFJk73HRJDw==}
+  '@types/node@22.18.8':
+    resolution: {integrity: sha512-pAZSHMiagDR7cARo/cch1f3rXy0AEXwsVsVH09FcyeJVAzCnGgmYis7P3JidtTUjyadhTeSo8TgRPswstghDaw==}
 
   '@types/prop-types@15.7.15':
     resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
@@ -4704,7 +4704,7 @@ snapshots:
 
   '@types/bencode@2.0.4':
     dependencies:
-      '@types/node': 22.18.1
+      '@types/node': 22.18.8
 
   '@types/crypto-js@4.2.2': {}
 
@@ -4865,7 +4865,7 @@ snapshots:
 
   '@types/ms@2.1.0': {}
 
-  '@types/node@22.18.1':
+  '@types/node@22.18.8':
     dependencies:
       undici-types: 6.21.0
 
@@ -4873,11 +4873,11 @@ snapshots:
 
   '@types/qrcode@1.5.5':
     dependencies:
-      '@types/node': 22.18.1
+      '@types/node': 22.18.8
 
   '@types/sha256@0.2.2':
     dependencies:
-      '@types/node': 22.18.1
+      '@types/node': 22.18.8
 
   '@types/sizzle@2.3.9': {}
 
@@ -4896,7 +4896,7 @@ snapshots:
 
   '@viselect/vanilla@3.9.0': {}
 
-  '@vitejs/plugin-legacy@6.1.1(terser@5.43.1)(vite@6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1))':
+  '@vitejs/plugin-legacy@6.1.1(terser@5.43.1)(vite@6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1))':
     dependencies:
       '@babel/core': 7.28.0
       '@babel/preset-env': 7.28.0(@babel/core@7.28.0)
@@ -4907,7 +4907,7 @@ snapshots:
       regenerator-runtime: 0.14.1
       systemjs: 6.15.1
       terser: 5.43.1
-      vite: 6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1)
+      vite: 6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -6899,15 +6899,15 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.2
 
-  vite-plugin-dynamic-base@1.2.0(vite@6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1)):
+  vite-plugin-dynamic-base@1.2.0(vite@6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1)):
     dependencies:
       '@swc/core': 1.12.14
       node-html-parser: 5.4.2
-      vite: 6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1)
+      vite: 6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1)
     transitivePeerDependencies:
       - '@swc/helpers'
 
-  vite-plugin-solid@2.11.9(solid-js@1.9.9)(vite@6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1)):
+  vite-plugin-solid@2.11.9(solid-js@1.9.9)(vite@6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1)):
     dependencies:
       '@babel/core': 7.28.4
       '@types/babel__core': 7.20.5
@@ -6915,21 +6915,21 @@ snapshots:
       merge-anything: 5.1.7
       solid-js: 1.9.9
       solid-refresh: 0.6.3(solid-js@1.9.9)
-      vite: 6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1)
-      vitefu: 1.1.1(vite@6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1))
+      vite: 6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1)
+      vitefu: 1.1.1(vite@6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1))
     transitivePeerDependencies:
       - supports-color
 
-  vite-plugin-static-copy@3.1.3(vite@6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1)):
+  vite-plugin-static-copy@3.1.3(vite@6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1)):
     dependencies:
       chokidar: 3.6.0
       fs-extra: 11.3.2
       p-map: 7.0.3
       picocolors: 1.1.1
       tinyglobby: 0.2.15
-      vite: 6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1)
+      vite: 6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1)
 
-  vite@6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1):
+  vite@6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1):
     dependencies:
       esbuild: 0.25.9
       fdir: 6.5.0(picomatch@4.0.3)
@@ -6938,14 +6938,14 @@ snapshots:
       rollup: 4.50.1
       tinyglobby: 0.2.15
     optionalDependencies:
-      '@types/node': 22.18.1
+      '@types/node': 22.18.8
       fsevents: 2.3.3
       terser: 5.43.1
       yaml: 2.8.1
 
-  vitefu@1.1.1(vite@6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1)):
+  vitefu@1.1.1(vite@6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1)):
     optionalDependencies:
-      vite: 6.3.6(@types/node@22.18.1)(terser@5.43.1)(yaml@2.8.1)
+      vite: 6.3.6(@types/node@22.18.8)(terser@5.43.1)(yaml@2.8.1)
 
   vscode-jsonrpc@8.2.0: {}
 
