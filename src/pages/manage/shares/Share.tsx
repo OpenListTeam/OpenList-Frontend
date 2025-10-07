@@ -2,7 +2,6 @@ import { PEmptyResp, ShareInfo, UserMethods } from "~/types"
 import { useFetch, useRouter, useT, useUtil } from "~/hooks"
 import { Badge, Button, HStack, Td, Tr } from "@hope-ui/solid"
 import {
-  base_path,
   handleResp,
   handleRespWithNotifySuccess,
   makeTemplateData,
@@ -29,9 +28,7 @@ function ShareOp(props: ShareProps) {
   const [enableOrDisableLoading, enableOrDisable] = useFetch(
     (): PEmptyResp =>
       r.post(
-        `/share/${props.share.disabled ? "enable" : "disable"}?id=${
-          props.share.id
-        }`,
+        `/share/${props.share.disabled ? "enable" : "disable"}?id=${props.share.id}`,
       ),
   )
   return (

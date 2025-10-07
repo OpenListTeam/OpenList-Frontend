@@ -16,6 +16,7 @@ import {
 import { createSignal } from "solid-js"
 import { TbPlus, TbFolder } from "solid-icons/tb"
 import { useT } from "~/hooks"
+import { pathJoin } from "~/utils"
 import { EnhancedFolderTree } from "~/components/EnhancedFolderTree"
 
 export interface MultiPathInputProps {
@@ -25,6 +26,7 @@ export interface MultiPathInputProps {
   readOnly?: boolean
   id?: string
   placeholder?: string
+  basePath?: string
 }
 
 export const MultiPathInput = (props: MultiPathInputProps) => {
@@ -34,7 +36,11 @@ export const MultiPathInput = (props: MultiPathInputProps) => {
 
   const addPath = () => {
     const currentPaths = props.value ? props.value.split("\n") : []
-    const newPaths = [...currentPaths, selectedPath()].filter(Boolean)
+    let sp = selectedPath()
+    if (props.basePath) {
+      sp = pathJoin(props.basePath, sp)
+    }
+    const newPaths = [...currentPaths, sp].filter(Boolean)
     const uniquePaths = [...new Set(newPaths)]
     props.onChange(uniquePaths.join("\n"))
     onClose()

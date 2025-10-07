@@ -50,6 +50,7 @@ export type ItemProps = {
       type: Type.MultiPath
       onChange?: (value: string) => void
       value: string
+      basePath?: string
     }
   | {
       type: Type.Select
@@ -164,6 +165,7 @@ const Item = (props: ItemProps) => {
             value={props.value as string}
             valid={props.valid}
             readOnly={props.readonly}
+            basePath={props.basePath}
             onChange={(value) => {
               if (props.type === Type.MultiPath) {
                 props.onChange?.(value)

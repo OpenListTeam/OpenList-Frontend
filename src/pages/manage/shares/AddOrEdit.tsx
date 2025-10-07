@@ -7,6 +7,7 @@ import { MaybeLoading } from "~/components"
 import { ResponsiveGrid } from "../common/ResponsiveGrid"
 import { batch, createSignal, Show } from "solid-js"
 import { Item } from "./Item"
+import { me } from "~/store"
 
 const AddOrEdit = () => {
   const t = useT()
@@ -52,6 +53,7 @@ const AddOrEdit = () => {
           type={Type.MultiPath}
           value={files()}
           valid={filesValid()}
+          basePath={me().base_path}
           required
           onChange={(f) => {
             setFiles(f)
