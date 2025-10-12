@@ -34,7 +34,7 @@ const useRouter = () => {
       navigate(path, options)
     },
     replace: (to: string) => {
-      const path = encodePath(pathJoin(pathDir(pathname()), to), true)
+      const path = joinBase(encodePath(pathJoin(pathDir(pathname()), to), true))
       clearHistory(decodeURIComponent(path))
       navigate(path)
     },
