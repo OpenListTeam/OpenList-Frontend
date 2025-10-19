@@ -150,6 +150,7 @@ export const VideoBox = (props: {
       if (!path.endsWith(objStore.obj.name)) {
         // 单文件分享
         videos.push(objStore.obj)
+        setVideoName(objStore.obj.name)
         return videos
       }
       const append = objStore.objs.length > 0
