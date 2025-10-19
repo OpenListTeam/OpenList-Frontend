@@ -146,9 +146,15 @@ export const VideoBox = (props: {
       isLoadMore = getPagination().type !== "all"
     }
     if (isLoadMore) {
+      let path = pathname()
+      if (!path.endsWith(objStore.obj.name)) {
+        // 单文件分享
+        videos.push(objStore.obj)
+        return videos
+      }
       const append = objStore.objs.length > 0
       handleFolder(
-        pathDir(pathname()),
+        pathDir(path),
         getGlobalPage() + (append ? 1 : 0),
         undefined,
         append,
