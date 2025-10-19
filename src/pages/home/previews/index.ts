@@ -1,10 +1,9 @@
 import { Component, lazy } from "solid-js"
-import { getIframePreviews, me, getSettingBool } from "~/store"
+import { getIframePreviews, me, getSettingBool, isArchive } from "~/store"
 import { Obj, ObjType, UserMethods, UserPermissions } from "~/types"
 import { ext } from "~/utils"
 import { generateIframePreview } from "./iframe"
 import { useRouter } from "~/hooks"
-import { isArchive } from "~/store/archive"
 
 type Ext = string[] | "*" | ((name: string) => boolean)
 type Prior = boolean | (() => boolean)
@@ -150,7 +149,17 @@ const previews: Preview[] = [
       return isArchive(name)
     },
     component: lazy(() => import("./archive")),
-    prior: () => getSettingBool("preview_archives_by_default"),
+    prior: () => {
+      const { isShare } = useRouter()
+      return (
+        (!isShare() &&
+          getSettingBool("preview_archives_by_default") &&
+          !getSettingBool("preview_download_by_default")) ||
+        (isShare() &&
+          getSettingBool("share_preview_archives_by_default") &&
+          !getSettingBool("share_preview_download_by_default"))
+      )
+    },
   },
 ]
 
@@ -162,6 +171,9 @@ export const getPreviews = (
     ObjType[searchParams["type"]?.toUpperCase() as keyof typeof ObjType]
   const res: PreviewComponent[] = []
   const subsequent: PreviewComponent[] = []
+  const downloadPrior =
+    (!isShare() && getSettingBool("preview_download_by_default")) ||
+    (isShare() && getSettingBool("share_preview_download_by_default"))
   // internal previews
   if (!isShare() || getSettingBool("share_preview")) {
     previews.forEach((preview) => {
@@ -174,7 +186,7 @@ export const getPreviews = (
         extsContains(preview.exts, file.name)
       ) {
         const r = { name: preview.name, component: preview.component }
-        if (!isShare() && isPrior(preview.prior)) {
+        if (!downloadPrior && isPrior(preview.prior)) {
           res.push(r)
         } else {
           subsequent.push(r)

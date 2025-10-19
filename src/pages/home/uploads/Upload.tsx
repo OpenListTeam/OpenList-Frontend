@@ -15,7 +15,7 @@ import {
 } from "@hope-ui/solid"
 import { createSignal, For, Show } from "solid-js"
 import { usePath, useRouter, useT } from "~/hooks"
-import { getMainColor } from "~/store"
+import { getMainColor, uploadConfig, setUploadConfig } from "~/store"
 import {
   RiDocumentFolderUploadFill,
   RiDocumentFileUploadFill,
@@ -76,9 +76,6 @@ const Upload = () => {
   const { refresh } = usePath()
   const [drag, setDrag] = createSignal(false)
   const [uploading, setUploading] = createSignal(false)
-  const [asTask, setAsTask] = createSignal(false)
-  const [overwrite, setOverwrite] = createSignal(false)
-  const [rapid, setRapid] = createSignal(true)
   const [uploadFiles, setUploadFiles] = createStore<{
     uploads: UploadFileProps[]
   }>({
@@ -119,9 +116,9 @@ const Upload = () => {
         (key, value) => {
           setUpload(path, key, value)
         },
-        asTask(),
-        overwrite(),
-        rapid(),
+        uploadConfig.asTask,
+        uploadConfig.overwrite,
+        uploadConfig.rapid,
       )
       if (!err) {
         setUpload(path, "status", "success")
@@ -297,25 +294,25 @@ const Upload = () => {
               direction={{ "@initial": "column", "@md": "row" }}
             >
               <Checkbox
-                checked={asTask()}
+                checked={uploadConfig.asTask}
                 onChange={() => {
-                  setAsTask(!asTask())
+                  setUploadConfig({ asTask: !uploadConfig.asTask })
                 }}
               >
                 {t("home.upload.add_as_task")}
               </Checkbox>
               <Checkbox
-                checked={overwrite()}
+                checked={uploadConfig.overwrite}
                 onChange={() => {
-                  setOverwrite(!overwrite())
+                  setUploadConfig({ overwrite: !uploadConfig.overwrite })
                 }}
               >
                 {t("home.conflict_policy.overwrite_existing")}
               </Checkbox>
               <Checkbox
-                checked={rapid()}
+                checked={uploadConfig.rapid}
                 onChange={() => {
-                  setRapid(!rapid())
+                  setUploadConfig({ rapid: !uploadConfig.rapid })
                 }}
               >
                 {t("home.upload.try_rapid")}

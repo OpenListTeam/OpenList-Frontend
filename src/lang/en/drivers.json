@@ -607,6 +607,18 @@
     "upload_thread": "Upload thread",
     "upload_thread-tips": "1 \u003c= thread \u003c= 32"
   },
+  "HalalCloudOpen": {
+    "client_id": "Client id",
+    "client_secret": "Client secret",
+    "host": "Host",
+    "refresh_token": "Refresh token",
+    "refresh_token-tips": "If using a personal API approach, the RefreshToken is not required.",
+    "root_folder_path": "Root folder path",
+    "timeout": "Timeout",
+    "timeout-tips": "timeout in seconds",
+    "upload_thread": "Upload thread",
+    "upload_thread-tips": "1 \u003c= thread \u003c= 32"
+  },
   "ILanZou": {
     "ip": "Ip",
     "password": "Password",
@@ -1345,6 +1357,7 @@
     "GoogleDrive": {},
     "GooglePhoto": {},
     "HalalCloud": {},
+    "HalalCloudOpen": {},
     "ILanZou": {},
     "IPFS API": {},
     "KodBox": {},
@@ -1431,6 +1444,7 @@
     "GoogleDrive": "GoogleDrive",
     "GooglePhoto": "GooglePhoto",
     "HalalCloud": "HalalCloud",
+    "HalalCloudOpen": "HalalCloudOpen",
     "ILanZou": "ILanZou",
     "IPFS API": "IPFS API",
     "KodBox": "KodBox",
