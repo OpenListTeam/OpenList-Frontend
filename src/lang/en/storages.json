@@ -10,6 +10,8 @@
     "remark": "Remark",
     "cache_expiration": "Cache Expiration",
     "cache_expiration-tips": "The cache expiration time for this storage(minutes)",
+    "custom_cache_policies": "Custom cache policies",
+    "custom_cache_policies-tips": "The cache expiration rules for this storage(minutes)",
     "down_proxy_url": "Download proxy URL",
     "disable_proxy_sign": "Disable proxy sign",
     "disable_proxy_sign-tips": "Disable sign for Download proxy URL",
