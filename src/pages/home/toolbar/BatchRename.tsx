@@ -63,7 +63,7 @@ export const BatchRename = () => {
   })
 
   const submit = () => {
-    if (!srcName() || !newName()) {
+    if (!srcName()) {
       // Check if both input values are not empty
       notify.warning(t("global.empty_input"))
       return
@@ -132,7 +132,7 @@ export const BatchRename = () => {
           }
           return renameObj
         })
-    } else {
+    } else if (type() === "2") {
       let tempNum = newName()
       matchNames = selectedObjs().map((obj) => {
         let suffix = ""
@@ -150,6 +150,16 @@ export const BatchRename = () => {
           .padStart(tempNum.length, "0")
         return renameObj
       })
+    } else {
+      matchNames = selectedObjs()
+        .filter((obj) => obj.name.indexOf(srcName()) !== -1)
+        .map((obj) => {
+          const renameObj: RenameObj = {
+            src_name: obj.name,
+            new_name: obj.name.replace(srcName(), newName()),
+          }
+          return renameObj
+        })
     }
 
     setMatchNames(matchNames)
@@ -178,7 +188,7 @@ export const BatchRename = () => {
               defaultValue="1"
               onChange={(event) => {
                 setType(event)
-                if (event === "1") {
+                if (event === "1" || event == "3") {
                   setNewNameType("string")
                 } else if (event === "2") {
                   setNewNameType("number")
@@ -188,6 +198,7 @@ export const BatchRename = () => {
               <HStack spacing="$4">
                 <Radio value="1">{t("home.toolbar.regex_rename")}</Radio>
                 <Radio value="2">{t("home.toolbar.sequential_renaming")}</Radio>
+                <Radio value="3">{t("home.toolbar.find_replace")}</Radio>
               </HStack>
             </RadioGroup>
             <VStack spacing="$2">
@@ -197,6 +208,9 @@ export const BatchRename = () => {
                 </Show>
                 <Show when={type() === "2"}>
                   {t("home.toolbar.sequential_renaming_desc")}
+                </Show>
+                <Show when={type() === "3"}>
+                  {t("home.toolbar.find_replace_desc")}
                 </Show>
               </p>
               <Input
@@ -240,7 +254,7 @@ export const BatchRename = () => {
             </Button>
             <Button
               onClick={() => submit()}
-              disabled={!srcName() || !newName()}
+              disabled={type() === "2" ? !srcName() || !newName() : !srcName()}
             >
               {t("global.ok")}
             </Button>
