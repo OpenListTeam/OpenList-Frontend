@@ -188,7 +188,7 @@ export const BatchRename = () => {
               defaultValue="1"
               onChange={(event) => {
                 setType(event)
-                if (event === "1" || event == "3") {
+                if (event === "1" || event === "3") {
                   setNewNameType("string")
                 } else if (event === "2") {
                   setNewNameType("number")
