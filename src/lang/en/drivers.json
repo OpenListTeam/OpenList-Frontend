@@ -313,7 +313,7 @@
       "crack_video": "Crack video",
       "official": "Official"
     },
-    "low_bandwith_upload_mode": "Low bandwith upload mode",
+    "low_bandwith_upload_mode": "Low bandwidth upload mode",
     "only_list_video_file": "Only list video file",
     "order_by": "Order by",
     "order_bys": {
@@ -328,9 +328,11 @@
     },
     "refresh_token": "Refresh token",
     "root_folder_path": "Root folder path",
-    "upload_api": "Upload api",
+    "upload_api": "Upload API",
     "upload_thread": "Upload thread",
     "upload_thread-tips": "1\u003c=thread\u003c=32",
+    "use_dynamic_upload_api": "Use dynamic upload API",
+    "use_dynamic_upload_api-tips": "dynamically get upload api domain, will ignore 'Upload API' setting when enabled",
     "use_online_api": "Use online api"
   },
   "BaiduPhoto": {
