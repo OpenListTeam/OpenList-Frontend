@@ -11,7 +11,6 @@ export enum ObjType {
 }
 
 export interface Obj {
-  id: string
   name: string
   size: number
   is_dir: boolean
@@ -26,11 +25,6 @@ export interface Obj {
 
 export type StoreObj = Obj & {
   selected?: boolean
-}
-
-export type IDName = {
-  id: string
-  name: string
 }
 
 export type RenameObj = {
