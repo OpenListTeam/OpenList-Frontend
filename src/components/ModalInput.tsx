@@ -18,7 +18,7 @@ import {
   onCleanup,
 } from "solid-js"
 import { useT } from "~/hooks"
-import { notify } from "~/utils"
+import { notify, validateFilename } from "~/utils"
 export type ModalInputProps = {
   opened: boolean
   onClose: () => void
@@ -36,6 +36,7 @@ export type ModalInputProps = {
 }
 export const ModalInput = (props: ModalInputProps) => {
   const [value, setValue] = createSignal(props.defaultValue ?? "")
+  const [validationError, setValidationError] = createSignal<string>("")
   const t = useT()
 
   let inputRef: HTMLInputElement | HTMLTextAreaElement
@@ -77,11 +78,18 @@ export const ModalInput = (props: ModalInputProps) => {
   })
 
   const submit = () => {
-    if (!value()) {
-      notify.warning(t("global.empty_input"))
+    const validation = validateFilename(value())
+    if (!validation.valid) {
+      notify.warning(t(`global.${validation.error}`))
       return
     }
     props.onSubmit?.(value())
+  }
+
+  const handleInput = (newValue: string) => {
+    setValue(newValue)
+    const validation = validateFilename(newValue)
+    setValidationError(validation.valid ? "" : validation.error || "")
   }
 
   return (
@@ -105,8 +113,9 @@ export const ModalInput = (props: ModalInputProps) => {
                 type={props.type}
                 value={value()}
                 ref={(el) => (inputRef = el)}
+                invalid={!!validationError()}
                 onInput={(e) => {
-                  setValue(e.currentTarget.value)
+                  handleInput(e.currentTarget.value)
                 }}
                 onFocus={handleFocus}
                 onKeyDown={(e) => {
@@ -121,11 +130,17 @@ export const ModalInput = (props: ModalInputProps) => {
               id="modal-input"
               value={value()}
               ref={(el) => (inputRef = el)}
+              invalid={!!validationError()}
               onInput={(e) => {
-                setValue(e.currentTarget.value)
+                handleInput(e.currentTarget.value)
               }}
               onFocus={handleFocus}
             />
+          </Show>
+          <Show when={validationError()}>
+            <FormHelperText color="$danger9">
+              {t(`global.${validationError()}`)}
+            </FormHelperText>
           </Show>
           <Show when={props.tips}>
             <FormHelperText>{props.tips}</FormHelperText>

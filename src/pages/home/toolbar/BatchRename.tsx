@@ -20,6 +20,7 @@ import {
   fsBatchRename,
   handleRespWithNotifySuccess,
   notify,
+  validateFilename,
 } from "~/utils"
 import { createSignal, For, onCleanup, Show } from "solid-js"
 import { selectedObjs } from "~/store"
@@ -41,7 +42,29 @@ export const BatchRename = () => {
   const [newName, setNewName] = createSignal("")
   const [newNameType, setNewNameType] = createSignal("string")
   const [matchNames, setMatchNames] = createSignal<RenameObj[]>([])
+  const [validationErrorSrc, setValidationErrorSrc] = createSignal<string>("")
+  const [validationErrorNew, setValidationErrorNew] = createSignal<string>("")
   const t = useT()
+
+  const handleInputSrc = (newValue: string) => {
+    setSrcName(newValue)
+    if (type() === "2" || type() === "3") {
+      const validation = validateFilename(newValue)
+      setValidationErrorSrc(validation.valid ? "" : validation.error || "")
+    } else {
+      setValidationErrorSrc("")
+    }
+  }
+
+  const handleInputNew = (newValue: string) => {
+    setNewName(newValue)
+    if (type() === "2" || type() === "3") {
+      const validation = validateFilename(newValue)
+      setValidationErrorNew(validation.valid ? "" : validation.error || "")
+    } else {
+      setValidationErrorNew("")
+    }
+  }
 
   const itemProps = () => {
     return {
@@ -67,6 +90,18 @@ export const BatchRename = () => {
       // Check if both input values are not empty
       notify.warning(t("global.empty_input"))
       return
+    }
+    if (type() === "2" || type() === "3") {
+      const validationSrc = validateFilename(srcName())
+      if (!validationSrc.valid) {
+        notify.warning(t(`global.${validationSrc.error}`))
+        return
+      }
+      const validationNew = validateFilename(newName())
+      if (!validationNew.valid) {
+        notify.warning(t(`global.${validationNew.error}`))
+        return
+      }
     }
     const replaceRegexp = new RegExp(srcName(), "g")
 
@@ -217,8 +252,9 @@ export const BatchRename = () => {
                 id="modal-input1" // Update id to "modal-input1" for first input
                 type={"string"}
                 value={srcName()} // Update value to value1 for first input
+                invalid={!!validationErrorSrc()}
                 onInput={(e) => {
-                  setSrcName(e.currentTarget.value)
+                  handleInputSrc(e.currentTarget.value)
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -226,12 +262,18 @@ export const BatchRename = () => {
                   }
                 }}
               />
+              <Show when={validationErrorSrc()}>
+                <Text color="$danger9" fontSize="$sm">
+                  {t(`global.${validationErrorSrc()}`)}
+                </Text>
+              </Show>
               <Input
                 id="modal-input2" // Add second input with id "modal-input2"
                 type={newNameType()}
                 value={newName()} // Bind value to value2 for second input
+                invalid={!!validationErrorNew()}
                 onInput={(e) => {
-                  setNewName(e.currentTarget.value)
+                  handleInputNew(e.currentTarget.value)
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -239,6 +281,11 @@ export const BatchRename = () => {
                   }
                 }}
               />
+              <Show when={validationErrorNew()}>
+                <Text color="$danger9" fontSize="$sm">
+                  {t(`global.${validationErrorNew()}`)}
+                </Text>
+              </Show>
             </VStack>
           </ModalBody>
           <ModalFooter display="flex" gap="$2">
@@ -246,6 +293,8 @@ export const BatchRename = () => {
               onClick={() => {
                 setType("1")
                 setNewNameType("string")
+                setValidationErrorSrc("")
+                setValidationErrorNew("")
                 onClose()
               }}
               colorScheme="neutral"
@@ -256,7 +305,7 @@ export const BatchRename = () => {
               onClick={() => submit()}
               disabled={
                 type() === "2" || type() === "3"
-                  ? !srcName() || !newName()
+                  ? !srcName() || !newName() || !!validationErrorSrc() || !!validationErrorNew()
                   : !srcName()
               }
             >
@@ -297,6 +346,8 @@ export const BatchRename = () => {
                 setMatchNames([])
                 setType("1")
                 setNewNameType("string")
+                setValidationErrorSrc("")
+                setValidationErrorNew("")
                 closePreviewModal()
                 onClose()
               }}
@@ -324,6 +375,8 @@ export const BatchRename = () => {
                   setNewName("")
                   setType("1")
                   setNewNameType("string")
+                  setValidationErrorSrc("")
+                  setValidationErrorNew("")
                   refresh()
                   onClose()
                   closePreviewModal()

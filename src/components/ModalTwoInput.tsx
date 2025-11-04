@@ -13,7 +13,7 @@ import {
 } from "@hope-ui/solid"
 import { createSignal, JSXElement, Show } from "solid-js"
 import { useT } from "~/hooks"
-import { notify } from "~/utils"
+import { notify, validateFilename } from "~/utils"
 export type ModalTwoInputProps = {
   opened: boolean
   onClose: () => void
@@ -29,11 +29,32 @@ export type ModalTwoInputProps = {
 export const ModalTwoInput = (props: ModalTwoInputProps) => {
   const [value1, setValue1] = createSignal(props.defaultValue1 ?? "") // Update value and setValue to value1 and setValue1
   const [value2, setValue2] = createSignal(props.defaultValue2 ?? "") // Add value2 and setValue2 for second input
+  const [validationError1, setValidationError1] = createSignal<string>("")
+  const [validationError2, setValidationError2] = createSignal<string>("")
   const t = useT()
+
+  const handleInput1 = (newValue: string) => {
+    setValue1(newValue)
+    const validation = validateFilename(newValue)
+    setValidationError1(validation.valid ? "" : validation.error || "")
+  }
+
+  const handleInput2 = (newValue: string) => {
+    setValue2(newValue)
+    const validation = validateFilename(newValue)
+    setValidationError2(validation.valid ? "" : validation.error || "")
+  }
+
   const submit = () => {
-    if (!value1() || !value2()) {
-      // Check if both input values are not empty
-      notify.warning(t("global.empty_input"))
+    const validation1 = validateFilename(value1())
+    const validation2 = validateFilename(value2())
+
+    if (!validation1.valid) {
+      notify.warning(t(`global.${validation1.error}`))
+      return
+    }
+    if (!validation2.valid) {
+      notify.warning(t(`global.${validation2.error}`))
       return
     }
     props.onSubmit?.(value1(), value2()) // Update onSubmit to pass both input values
@@ -59,8 +80,9 @@ export const ModalTwoInput = (props: ModalTwoInputProps) => {
                   id="modal-input1" // Update id to "modal-input1" for first input
                   type={props.type}
                   value={value1()} // Update value to value1 for first input
+                  invalid={!!validationError1()}
                   onInput={(e) => {
-                    setValue1(e.currentTarget.value)
+                    handleInput1(e.currentTarget.value)
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -68,12 +90,18 @@ export const ModalTwoInput = (props: ModalTwoInputProps) => {
                     }
                   }}
                 />
+                <Show when={validationError1()}>
+                  <FormHelperText color="$danger9">
+                    {t(`global.${validationError1()}`)}
+                  </FormHelperText>
+                </Show>
                 <Input
                   id="modal-input2" // Add second input with id "modal-input2"
                   type={props.type}
                   value={value2()} // Bind value to value2 for second input
+                  invalid={!!validationError2()}
                   onInput={(e) => {
-                    setValue2(e.currentTarget.value)
+                    handleInput2(e.currentTarget.value)
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -81,25 +109,42 @@ export const ModalTwoInput = (props: ModalTwoInputProps) => {
                     }
                   }}
                 />
+                <Show when={validationError2()}>
+                  <FormHelperText color="$danger9">
+                    {t(`global.${validationError2()}`)}
+                  </FormHelperText>
+                </Show>
               </VStack>
             }
           >
-            <div>
+            <VStack spacing="$2">
               <Textarea
                 id="modal-input1" // Update id to "modal-input1" for first input
                 value={value1()} // Update value to value1 for first input
+                invalid={!!validationError1()}
                 onInput={(e) => {
-                  setValue1(e.currentTarget.value)
+                  handleInput1(e.currentTarget.value)
                 }}
               />
+              <Show when={validationError1()}>
+                <FormHelperText color="$danger9">
+                  {t(`global.${validationError1()}`)}
+                </FormHelperText>
+              </Show>
               <Textarea
                 id="modal-input2" // Add second input with id "modal-input2"
                 value={value2()} // Bind value to value2 for second input
+                invalid={!!validationError2()}
                 onInput={(e) => {
-                  setValue2(e.currentTarget.value)
+                  handleInput2(e.currentTarget.value)
                 }}
               />
-            </div>
+              <Show when={validationError2()}>
+                <FormHelperText color="$danger9">
+                  {t(`global.${validationError2()}`)}
+                </FormHelperText>
+              </Show>
+            </VStack>
           </Show>
           <Show when={props.tips}>
             <FormHelperText>{props.tips}</FormHelperText>
