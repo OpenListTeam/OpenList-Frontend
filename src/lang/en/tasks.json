@@ -1,11 +1,11 @@
 {
-  "offline_download": "Download file to local machine",
+  "offline_download": "Download file to local device",
   "offline_download_transfer": "Transfer downloaded file to corresponding storage",
   "upload": "Upload file to corresponding storage",
   "copy": "Copy file from a storage to another storage",
   "move": "Move file from a storage to another storage",
   "decompress": "Download and decompress an archive file",
-  "decompress_upload": "Upload extracted file into target storage",
+  "decompress_upload": "Upload extracted files into target storage",
   "done": "Completed",
   "undone": "Running",
   "clear_succeeded": "Clear Succeeded",
@@ -17,11 +17,11 @@
     "2": "Succeeded",
     "3": "Canceling",
     "4": "Canceled",
-    "5": "Errored",
+    "5": "Error",
     "6": "Failing",
     "7": "Failed",
-    "8": "WaitingRetry",
-    "9": "BeforeRetry"
+    "8": "Waiting for Retry",
+    "9": "Preparing to Retry"
   },
   "retry_selected": "Retry Selected",
   "cancel_selected": "Cancel Selected",

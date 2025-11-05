@@ -1,8 +1,8 @@
 {
-  "expires": "Expire time",
+  "expires": "Expiration time",
   "id": "ID",
   "accessed": "Access count",
-  "max_accessed": "Max access count",
+  "max_accessed": "Maximum access count",
   "pwd": "Share code",
   "files": "Share Paths",
   "files_etc": " and {{more}} more",
@@ -17,8 +17,8 @@
     "denied": "No permission"
   },
   "remark": "Remark",
-  "readme": "Custom readme",
-  "header": "Custom header",
+  "readme": "Description",
+  "header": "Header Description",
   "order_by": "Order by",
   "order_bys": {
     "name": "Name",
@@ -30,12 +30,12 @@
     "asc": "Ascending",
     "desc": "Descending"
   },
-  "extract_folder": "Extract folder",
+  "extract_folder": "Folder Order",
   "extract_folders": {
-    "front": "Extract to front",
-    "back": "Extract to back"
+    "front": "Folders on Top",
+    "back": "Folders at Bottom"
   },
-  "input_password": "Please input share code",
+  "input_password": "Please enter share code",
   "copy_msg": "Copy link",
   "no_permission_tip": "To create a share, you need \"Share\" permission."
 }

@@ -1,30 +1,30 @@
 {
   "115 Cloud": {
     "cookie": "Cookie",
-    "cookie-tips": "one of QR code token and cookie required",
+    "cookie-tips": "One of QR code token and cookie is required",
     "limit_rate": "Limit rate",
-    "limit_rate-tips": "limit all api request rate ([limit]r/1s)",
+    "limit_rate-tips": "Limit all API request rate ([limit]r/1s)",
     "page_size": "Page size",
     "page_size-tips": "list api per page size of 115 driver",
-    "qrcode_source": "Qrcode source",
+    "qrcode_source": "QR code source",
     "qrcode_source-tips": "select the QR code device, default linux",
     "qrcode_sources": {
-      "alipaymini": "Alipaymini",
+      "alipaymini": "Alipay Mini App",
       "android": "Android",
-      "ios": "Ios",
-      "qandroid": "Qandroid",
-      "tv": "Tv",
+      "ios": "iOS",
+      "qandroid": "QAndroid",
+      "tv": "TV",
       "web": "Web",
-      "wechatmini": "Wechatmini"
+      "wechatmini": "Wechat Mini App"
     },
-    "qrcode_token": "Qrcode token",
-    "qrcode_token-tips": "one of QR code token and cookie required",
-    "root_folder_id": "Root folder id"
+    "qrcode_token": "QR code token",
+    "qrcode_token-tips": "One of QR code token and cookie required",
+    "root_folder_id": "Root folder ID"
   },
   "115 Open": {
     "access_token": "Access token",
     "limit_rate": "Limit rate",
-    "limit_rate-tips": "limit all api request rate ([limit]r/1s)",
+    "limit_rate-tips": "Limit all API request rate ([limit]r/1s)",
     "order_by": "Order by",
     "order_bys": {
       "file_name": "File name",
@@ -34,84 +34,84 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "refresh_token": "Refresh token",
-    "root_folder_id": "Root folder id"
+    "root_folder_id": "Root folder ID"
   },
   "115 Share": {
     "cookie": "Cookie",
-    "cookie-tips": "one of QR code token and cookie required",
+    "cookie-tips": "One of QR code token and cookie is required",
     "limit_rate": "Limit rate",
-    "limit_rate-tips": "limit all api request rate (1r/[limit_rate]s)",
+    "limit_rate-tips": "Limit all API request rate (1r/[limit_rate]s)",
     "page_size": "Page size",
-    "page_size-tips": "list api per page size of 115 driver",
-    "qrcode_source": "Qrcode source",
-    "qrcode_source-tips": "select the QR code device, default linux",
+    "page_size-tips": "List api per page size of 115 driver",
+    "qrcode_source": "QRcode source",
+    "qrcode_source-tips": "Select the QR code device, default linux",
     "qrcode_sources": {
-      "alipaymini": "Alipaymini",
+      "alipaymini": "Alipay Mini App",
       "android": "Android",
-      "ios": "Ios",
-      "qandroid": "Qandroid",
-      "tv": "Tv",
+      "ios": "iOS",
+      "qandroid": "Aandroid",
+      "tv": "TV",
       "web": "Web",
-      "wechatmini": "Wechatmini"
+      "wechatmini": "Wechat Mini App"
     },
-    "qrcode_token": "Qrcode token",
-    "qrcode_token-tips": "one of QR code token and cookie required",
+    "qrcode_token": "QR code token",
+    "qrcode_token-tips": "One of QR code token and cookie is required",
     "receive_code": "Receive code",
-    "receive_code-tips": "receive code of 115 share link",
-    "root_folder_id": "Root folder id",
+    "receive_code-tips": "Receive code of 115 share link",
+    "root_folder_id": "Root folder ID",
     "share_code": "Share code",
-    "share_code-tips": "share code of 115 share link"
+    "share_code-tips": "Share code of 115 share link"
   },
   "123 Open": {
     "AccessToken": "AccessToken",
     "ClientID": "ClientID",
     "ClientSecret": "ClientSecret",
     "DirectLink": "DirectLink",
-    "DirectLink-tips": "use direct link when download file",
+    "DirectLink-tips": "Use direct link when downloading files",
     "DirectLinkPrivateKey": "DirectLinkPrivateKey",
-    "DirectLinkPrivateKey-tips": "private key for direct link, if URL authentication is enabled",
+    "DirectLinkPrivateKey-tips": "Private key for direct link, if URL authentication is enabled",
     "DirectLinkValidDuration": "DirectLinkValidDuration",
-    "DirectLinkValidDuration-tips": "minutes, if URL authentication is enabled",
+    "DirectLinkValidDuration-tips": "Minutes, if URL authentication is enabled",
     "RefreshToken": "RefreshToken",
     "UploadThread": "UploadThread",
-    "UploadThread-tips": "the threads of upload",
-    "root_folder_id": "Root folder id"
+    "UploadThread-tips": "Number of upload threads",
+    "root_folder_id": "Root folder ID"
   },
   "123Pan": {
     "UploadThread": "UploadThread",
-    "UploadThread-tips": "the threads of upload",
+    "UploadThread-tips": "Number of upload threads",
     "password": "Password",
     "platform": "Platform",
-    "platform-tips": "the platform header value, sent with API requests",
-    "root_folder_id": "Root folder id",
+    "platform-tips": "The platform header value, sent with API requests",
+    "root_folder_id": "Root folder ID",
     "username": "Username"
   },
   "123PanLink": {
-    "origin_urls": "Origin urls",
-    "origin_urls-tips": "structure:FolderName:\n  [FileSize:][Modified:]Url",
+    "origin_urls": "Origin URLs",
+    "origin_urls-tips": "Structure:FolderName:\n  [FileSize:][Modified:]URL",
     "private_key": "Private key",
-    "uid": "Uid",
+    "uid": "UID",
     "valid_duration": "Valid duration",
-    "valid_duration-tips": "minutes"
+    "valid_duration-tips": "Minutes"
   },
   "123PanShare": {
-    "accesstoken": "Accesstoken",
-    "root_folder_id": "Root folder id",
-    "sharekey": "Sharekey",
-    "sharepassword": "Sharepassword"
+    "accesstoken": "Access token",
+    "root_folder_id": "Root folder ID",
+    "sharekey": "Share key",
+    "sharepassword": "Share password"
   },
   "139Yun": {
     "authorization": "Authorization",
-    "cloud_id": "Cloud id",
+    "cloud_id": "Cloud ID",
     "custom_upload_part_size": "Custom upload part size",
     "custom_upload_part_size-tips": "0 for auto",
     "report_real_size": "Report real size",
     "report_real_size-tips": "Enable to report the real file size during upload",
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "type": "Type",
     "types": {
       "family": "Family",
@@ -121,41 +121,41 @@
     },
     "use_large_thumbnail": "Use large thumbnail",
     "use_large_thumbnail-tips": "Enable to use large thumbnail for images",
-    "user_domain_id": "User domain id",
+    "user_domain_id": "User domain ID",
     "user_domain_id-tips": "ud_id in Cookie, fill in to show disk usage"
   },
   "189Cloud": {
     "cookie": "Cookie",
-    "cookie-tips": "Fill in the cookie if need captcha",
+    "cookie-tips": "Fill in the cookie if CAPTCHA required",
     "password": "Password",
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "username": "Username"
   },
   "189CloudPC": {
-    "family_id": "Family id",
+    "family_id": "Family ID",
     "family_transfer": "Family transfer",
     "login_type": "Login type",
     "login_types": {
       "password": "Password",
-      "qrcode": "Qrcode"
+      "qrcode": "QR code"
     },
-    "no_use_ocr": "No use ocr",
+    "no_use_ocr": "No use OCR",
     "order_by": "Order by",
     "order_bys": {
       "filename": "Filename",
       "filesize": "Filesize",
-      "lastOpTime": "LastOpTime"
+      "lastOpTime": "Last Modify Time"
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "password": "Password",
     "rapid_upload": "Rapid upload",
     "refresh_token": "Refresh token",
     "refresh_token-tips": "To switch accounts, please clear this field",
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "type": "Type",
     "types": {
       "family": "Family",
@@ -168,33 +168,33 @@
       "stream": "Stream"
     },
     "upload_thread": "Upload thread",
-    "upload_thread-tips": "1\u003c=thread\u003c=32",
+    "upload_thread-tips": "1<=thread<=32",
     "username": "Username",
-    "validate_code": "Validate code"
+    "validate_code": "Validation code"
   },
   "189CloudTV": {
     "access_token": "Access token",
-    "family_id": "Family id",
+    "family_id": "Family ID",
     "order_by": "Order by",
     "order_bys": {
       "filename": "Filename",
       "filesize": "Filesize",
-      "lastOpTime": "LastOpTime"
+      "lastOpTime": "Last Modify Time"
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "rapid_upload": "Rapid upload",
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "type": "Type",
     "types": {
       "family": "Family",
       "personal": "Personal"
     },
     "upload_thread": "Upload thread",
-    "upload_thread-tips": "1\u003c=thread\u003c=32"
+    "upload_thread-tips": "1<=thread<=32"
   },
   "Alias": {
     "details_pass_through": "Details pass through",
@@ -220,12 +220,12 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "ASC": "ASC",
-      "DESC": "DESC"
+      "ASC": "Ascending",
+      "DESC": "Descending"
     },
     "rapid_upload": "Rapid upload",
     "refresh_token": "Refresh token",
-    "root_folder_id": "Root folder id"
+    "root_folder_id": "Root folder ID"
   },
   "AliyundriveOpen": {
     "alipan_type": "Alipan type",
@@ -233,8 +233,8 @@
       "alipanTV": "AlipanTV",
       "default": "Default"
     },
-    "api_url_address": "Api url address",
-    "client_id": "Client id",
+    "api_url_address": "API URL address",
+    "client_id": "Client ID",
     "client_id-tips": "Keep it empty if you don't have one",
     "client_secret": "Client secret",
     "client_secret-tips": "Keep it empty if you don't have one",
@@ -260,8 +260,8 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "ASC": "ASC",
-      "DESC": "DESC"
+      "ASC": "Ascending",
+      "DESC": "Descending"
     },
     "rapid_upload": "Rapid upload",
     "rapid_upload-tips": "If you enable this option, the file will be uploaded to the server first, so the progress will be incorrect",
@@ -271,8 +271,8 @@
       "delete": "Delete",
       "trash": "Trash"
     },
-    "root_folder_id": "Root folder id",
-    "use_online_api": "Use online api"
+    "root_folder_id": "Root folder ID",
+    "use_online_api": "Use online API"
   },
   "AliyundriveShare": {
     "order_by": "Order by",
@@ -284,13 +284,13 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "ASC": "ASC",
-      "DESC": "DESC"
+      "ASC": "Ascending",
+      "DESC": "Descending"
     },
     "refresh_token": "Refresh token",
-    "root_folder_id": "Root folder id",
-    "share_id": "Share id",
-    "share_pwd": "Share pwd"
+    "root_folder_id": "Root folder ID",
+    "share_id": "Share ID",
+    "share_pwd": "Share password"
   },
   "Azure Blob Storage": {
     "access_key": "Access key",
@@ -299,23 +299,23 @@
     "container_name-tips": "The name of the container in Azure Storage (created in the Azure portal). https://learn.microsoft.com/azure/storage/blobs/blob-containers-portal",
     "endpoint": "Endpoint",
     "endpoint-tips": "e.g. https://accountname.blob.core.windows.net/. The full endpoint URL for Azure Storage, including the unique storage account name (3 ~ 24 numbers and lowercase letters only).",
-    "sign_url_expire": "Sign url expire",
+    "sign_url_expire": "Sign URL expire",
     "sign_url_expire-tips": "The expiration time for SAS URLs, in hours."
   },
   "BaiduNetdisk": {
-    "api_url_address": "Api url address",
-    "client_id": "Client id",
+    "api_url_address": "API URL address",
+    "client_id": "Client ID",
     "client_secret": "Client secret",
-    "custom_crack_ua": "Custom crack ua",
+    "custom_crack_ua": "Custom crack UA",
     "custom_upload_part_size": "Custom upload part size",
     "custom_upload_part_size-tips": "0 for auto",
-    "download_api": "Download api",
+    "download_api": "Download API",
     "download_apis": {
       "crack": "Crack",
       "crack_video": "Crack video",
       "official": "Official"
     },
-    "low_bandwith_upload_mode": "Low bandwith upload mode",
+    "low_bandwith_upload_mode": "Low bandwidth upload mode",
     "only_list_video_file": "Only list video file",
     "order_by": "Order by",
     "order_bys": {
@@ -325,20 +325,20 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "refresh_token": "Refresh token",
     "root_folder_path": "Root folder path",
-    "upload_api": "Upload api",
+    "upload_api": "Upload API",
     "upload_thread": "Upload thread",
-    "upload_thread-tips": "1\u003c=thread\u003c=32",
-    "use_dynamic_upload_api": "Use dynamic upload api",
-    "use_dynamic_upload_api-tips": "dynamically get upload api domain, when enabled, the 'Upload API' setting will be used as a fallback if failed to get",
-    "use_online_api": "Use online api"
+    "upload_thread-tips": "1<=thread<=32",
+    "use_dynamic_upload_api": "Use dynamic upload API",
+    "use_dynamic_upload_api-tips": "Dynamically get upload API domain, when enabled, the 'Upload API' setting will be used as a fallback if failed to get",
+    "use_online_api": "Use online API"
   },
   "BaiduPhoto": {
-    "album_id": "Album id",
+    "album_id": "Album ID",
     "cookie": "Cookie",
     "delete_origin": "Delete origin",
     "show_type": "Show type",
@@ -348,7 +348,7 @@
       "root_only_file": "Root only file"
     },
     "upload_thread": "Upload thread",
-    "upload_thread-tips": "1\u003c=thread\u003c=32"
+    "upload_thread-tips": "1<=thread<=32"
   },
   "CNB Releases": {
     "default_branch": "Default branch",
@@ -360,32 +360,32 @@
     "use_tag_name-tips": "Use tag name instead of release name"
   },
   "ChaoXingGroupDrive": {
-    "bbsid": "Bbsid",
+    "bbsid": "BBS ID",
     "cookie": "Cookie",
     "password": "Password",
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "user_name": "User name"
   },
   "Chunk": {
     "chunk_large_file_only": "Chunk large file only",
-    "chunk_large_file_only-tips": "chunk only if file size \u003e part_size",
+    "chunk_large_file_only-tips": "Chunk only if file size > part_size",
     "chunk_prefix": "Chunk prefix",
-    "chunk_prefix-tips": "the prefix of chunk folder",
-    "custom_ext": "Custom ext",
+    "chunk_prefix-tips": "The prefix of chunk folder",
+    "custom_ext": "Custom extension name",
     "num_list_workers": "Num list workers",
     "part_size": "Part size",
-    "part_size-tips": "bytes",
+    "part_size-tips": "Bytes",
     "remote_path": "Remote path",
     "show_hidden": "Show hidden",
-    "show_hidden-tips": "show hidden directories and files",
+    "show_hidden-tips": "Show hidden directories and files",
     "store_hash": "Store hash",
     "thumbnail": "Thumbnail",
-    "thumbnail-tips": "enable thumbnail which pre-generated under .thumbnails folder"
+    "thumbnail-tips": "Enable thumbnail which pre-generated under .thumbnails folder"
   },
   "Cloudreve": {
     "address": "Address",
     "cookie": "Cookie",
-    "custom_ua": "Custom ua",
+    "custom_ua": "Custom UA",
     "enable_thumb_and_folder_size": "Enable thumb and folder size",
     "password": "Password",
     "root_folder_path": "Root folder path",
@@ -394,7 +394,7 @@
   "Cloudreve V4": {
     "access_token": "Access token",
     "address": "Address",
-    "custom_ua": "Custom ua",
+    "custom_ua": "Custom UA",
     "enable_folder_size": "Enable folder size",
     "enable_thumb": "Enable thumb",
     "enable_version_upload": "Enable version upload",
@@ -408,8 +408,8 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "password": "Password",
     "refresh_token": "Refresh token",
@@ -423,9 +423,9 @@
       "true": "True"
     },
     "encrypted_suffix": "Encrypted suffix",
-    "encrypted_suffix-tips": "for advanced user only! encrypted files will have this suffix",
+    "encrypted_suffix-tips": "For advanced user only! Encrypted files will have this suffix",
     "filename_encoding": "Filename encoding",
-    "filename_encoding-tips": "for advanced user only!",
+    "filename_encoding-tips": "For advanced user only!",
     "filename_encodings": {
       "base32": "Base32",
       "base32768": "Base32768",
@@ -438,15 +438,15 @@
       "standard": "Standard"
     },
     "password": "Password",
-    "password-tips": "the main password",
+    "password-tips": "The main password",
     "remote_path": "Remote path",
     "remote_path-tips": "This is where the encrypted data stores",
     "salt": "Salt",
     "salt-tips": "If you don't know what is salt, treat it as a second password. Optional but recommended",
     "show_hidden": "Show hidden",
-    "show_hidden-tips": "show hidden directories and files",
+    "show_hidden-tips": "Show hidden directories and files",
     "thumbnail": "Thumbnail",
-    "thumbnail-tips": "enable thumbnail which pre-generated under .thumbnails folder"
+    "thumbnail-tips": "Enable thumbnail which pre-generated under .thumbnails folder"
   },
   "Degoo": {
     "access_token": "Access token",
@@ -455,12 +455,12 @@
     "password-tips": "Your Degoo account password",
     "refresh_token": "Refresh token",
     "refresh_token-tips": "Refresh token for automatic token renewal, obtained automatically",
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "username": "Username",
     "username-tips": "Your Degoo account email"
   },
   "Doge": {
-    "access_key_id": "Access key id",
+    "access_key_id": "Access key ID",
     "add_filename_to_disposition": "Add filename to disposition",
     "add_filename_to_disposition-tips": "Add filename to Content-Disposition header.",
     "bucket": "Bucket",
@@ -480,33 +480,33 @@
     "root_folder_path": "Root folder path",
     "secret_access_key": "Secret access key",
     "session_token": "Session token",
-    "sign_url_expire": "Sign url expire"
+    "sign_url_expire": "Sign URL expire"
   },
   "Doubao": {
     "cookie": "Cookie",
-    "download_api": "Download api",
+    "download_api": "Download API",
     "download_apis": {
       "get_download_info": "Get download info",
-      "get_file_url": "Get file url"
+      "get_file_url": "Get file URL"
     },
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "upload_thread": "Upload thread"
   },
   "DoubaoShare": {
     "cookie": "Cookie",
     "root_folder_path": "Root folder path",
-    "share_ids": "Share ids"
+    "share_ids": "Share IDs"
   },
   "Dropbox": {
-    "RootNamespaceId": "RootNamespaceId",
-    "api_url_address": "Api url address",
-    "client_id": "Client id",
+    "RootNamespaceId": "Root Namespace ID",
+    "api_url_address": "API URL address",
+    "client_id": "Client ID",
     "client_id-tips": "Keep it empty if you don't have one",
     "client_secret": "Client secret",
     "client_secret-tips": "Keep it empty if you don't have one",
     "refresh_token": "Refresh token",
     "root_folder_path": "Root folder path",
-    "use_online_api": "Use online api"
+    "use_online_api": "Use online API"
   },
   "FTP": {
     "address": "Address",
@@ -516,29 +516,29 @@
     "username": "Username"
   },
   "FebBox": {
-    "client_id": "Client id",
+    "client_id": "Client ID",
     "client_secret": "Client secret",
     "page_size": "Page size",
-    "page_size-tips": "list api per page size of FebBox driver",
-    "root_folder_id": "Root folder id",
+    "page_size-tips": "List API per page size of FebBox driver",
+    "root_folder_id": "Root folder ID",
     "sort_rule": "Sort rule",
     "sort_rules": {
-      "ext_asc": "Ext asc",
-      "ext_desc": "Ext desc",
-      "name_asc": "Name asc",
-      "name_desc": "Name desc",
-      "size_asc": "Size asc",
-      "size_desc": "Size desc",
-      "update_asc": "Update asc",
-      "update_desc": "Update desc"
+      "ext_asc": "Extension Name Ascending",
+      "ext_desc": "Extension Name Descending",
+      "name_asc": "Name Ascending",
+      "name_desc": "Name Descending",
+      "size_asc": "Size Ascending",
+      "size_desc": "Size Descending",
+      "update_asc": "Update Ascending",
+      "update_desc": "Update Descending"
     },
-    "user_ip": "User ip",
-    "user_ip-tips": "user ip address for download link which can speed up the download"
+    "user_ip": "User IP",
+    "user_ip-tips": "User IP address for download link which can speed up the download"
   },
   "FeijiPan": {
-    "ip": "Ip",
+    "ip": "IP",
     "password": "Password",
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "username": "Username"
   },
   "GitHub API": {
@@ -550,8 +550,8 @@
     "delete_commit_message": "Delete commit message",
     "gh_proxy": "Gh proxy",
     "gh_proxy-tips": "GitHub proxy, e.g. https://ghproxy.net/raw.githubusercontent.com or https://gh-proxy.com/raw.githubusercontent.com",
-    "gpg_key_passphrase": "Gpg key passphrase",
-    "gpg_private_key": "Gpg private key",
+    "gpg_key_passphrase": "GPG key passphrase",
+    "gpg_private_key": "GPG private key",
     "mkdir_commit_message": "Mkdir commit message",
     "move_commit_message": "Move commit message",
     "owner": "Owner",
@@ -567,68 +567,68 @@
     "gh_proxy": "Gh proxy",
     "gh_proxy-tips": "GitHub proxy, e.g. https://ghproxy.net/github.com or https://gh-proxy.com/github.com ",
     "repo_structure": "Repo structure",
-    "repo_structure-tips": "structure:[path:]org/repo",
-    "root_folder_id": "Root folder id",
+    "repo_structure-tips": "Structure:[path:]org/repo",
+    "root_folder_id": "Root folder ID",
     "show_all_version": "Show all version",
-    "show_all_version-tips": "show all versions",
+    "show_all_version-tips": "Show all versions",
     "show_readme": "Show readme",
-    "show_readme-tips": "show README、LICENSE file",
+    "show_readme-tips": "Show README、LICENSE file",
     "show_source_code": "Show source code",
-    "show_source_code-tips": "show Source code (zip/tar.gz)",
+    "show_source_code-tips": "Show Source code (zip/tar.gz)",
     "token": "Token",
     "token-tips": "GitHub token, if you want to access private repositories or increase the rate limit"
   },
   "GoogleDrive": {
-    "api_url_address": "Api url address",
+    "api_url_address": "API URL address",
     "chunk_size": "Chunk size",
-    "chunk_size-tips": "chunk size while uploading (unit: MB)",
-    "client_id": "Client id",
+    "chunk_size-tips": "Chunk size while uploading (unit: MB)",
+    "client_id": "Client ID",
     "client_secret": "Client secret",
     "disable_disk_usage": "Disable disk usage",
     "order_by": "Order by",
-    "order_by-tips": "such as: folder,name,modifiedTime",
+    "order_by-tips": "Such as: folder,name,modifiedTime",
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "refresh_token": "Refresh token",
-    "root_folder_id": "Root folder id",
-    "use_online_api": "Use online api"
+    "root_folder_id": "Root folder ID",
+    "use_online_api": "Use online API"
   },
   "GooglePhoto": {
-    "client_id": "Client id",
+    "client_id": "Client ID",
     "client_secret": "Client secret",
     "refresh_token": "Refresh token",
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "show_archive": "Show archive"
   },
   "HalalCloud": {
-    "app_id": "App id",
+    "app_id": "App ID",
     "app_secret": "App secret",
     "app_version": "App version",
     "refresh_token": "Refresh token",
     "refresh_token-tips": "login type is refresh_token,this is required",
     "root_folder_path": "Root folder path",
     "upload_thread": "Upload thread",
-    "upload_thread-tips": "1 \u003c= thread \u003c= 32"
+    "upload_thread-tips": "1 <= thread <= 32"
   },
   "HalalCloudOpen": {
-    "client_id": "Client id",
+    "client_id": "Client ID",
     "client_secret": "Client secret",
     "host": "Host",
     "refresh_token": "Refresh token",
     "refresh_token-tips": "If using a personal API approach, the RefreshToken is not required.",
     "root_folder_path": "Root folder path",
     "timeout": "Timeout",
-    "timeout-tips": "timeout in seconds",
+    "timeout-tips": "Timeout in seconds",
     "upload_thread": "Upload thread",
-    "upload_thread-tips": "1 \u003c= thread \u003c= 32"
+    "upload_thread-tips": "1 <= thread <= 32"
   },
   "ILanZou": {
-    "ip": "Ip",
+    "ip": "IP",
     "password": "Password",
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "username": "Username"
   },
   "IPFS API": {
@@ -653,13 +653,13 @@
     "baseUrl": "BaseUrl",
     "baseUrl-tips": "basic URL for file operation",
     "cookie": "Cookie",
-    "cookie-tips": "about 15 days valid, ignore if shareUrl is used",
+    "cookie-tips": "About 15 days valid, ignore if shareUrl is used",
     "password": "Password",
     "repair_file_info": "Repair file info",
-    "repair_file_info-tips": "To use webdav, you need to enable it",
-    "root_folder_id": "Root folder id",
+    "repair_file_info-tips": "To use WebDAV, you need to enable it",
+    "root_folder_id": "Root folder ID",
     "shareUrl": "ShareUrl",
-    "shareUrl-tips": "used to get the sharing page",
+    "shareUrl-tips": "Used to get the sharing page",
     "share_password": "Share password",
     "type": "Type",
     "types": {
@@ -673,9 +673,9 @@
     "host": "Host",
     "host-tips": "You can change it to your local area network",
     "root_folder_path": "Root folder path",
-    "share_id": "Share id",
+    "share_id": "Share ID",
     "share_id-tips": "The part after the last / in the shared link",
-    "share_pwd": "Share pwd",
+    "share_pwd": "Share password",
     "share_pwd-tips": "The password of the shared link",
     "show_root_folder": "Show root folder"
   },
@@ -684,15 +684,15 @@
     "directory_size-tips": "This might impact host performance",
     "mkdir_perm": "Mkdir perm",
     "recycle_bin_path": "Recycle bin path",
-    "recycle_bin_path-tips": "path to recycle bin, delete permanently if empty or keep 'delete permanently'",
+    "recycle_bin_path-tips": "Path to recycle bin, delete permanently if empty or keep 'delete permanently'",
     "root_folder_path": "Root folder path",
     "show_hidden": "Show hidden",
-    "show_hidden-tips": "show hidden directories and files",
+    "show_hidden-tips": "Show hidden directories and files",
     "thumb_cache_folder": "Thumb cache folder",
     "thumb_concurrency": "Thumb concurrency",
     "thumb_concurrency-tips": "Number of concurrent thumbnail generation goroutines. This controls how many thumbnails can be generated in parallel.",
     "thumbnail": "Thumbnail",
-    "thumbnail-tips": "enable thumbnail",
+    "thumbnail-tips": "Enable thumbnail",
     "video_thumb_pos": "Video thumb pos",
     "video_thumb_pos-tips": "The position of the video thumbnail. If the value is a number (integer ot floating point), it represents the time in seconds. If the value ends with '%', it represents the percentage of the video duration."
   },
@@ -701,7 +701,7 @@
     "cookie": "Cookie",
     "cookie-tips": "Required for navigation",
     "limit_rate": "Limit rate",
-    "limit_rate-tips": "limit all api request rate ([limit]r/1s)",
+    "limit_rate-tips": "Limit all API request rate ([limit]r/1s)",
     "order_by": "Order by",
     "order_bys": {
       "name": "Name",
@@ -710,14 +710,14 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "root_folder_path": "Root folder path",
     "session_token": "Session token",
     "session_token-tips": "Required for MediaFire API",
     "upload_threads": "Upload threads",
-    "upload_threads-tips": "concurrent upload threads"
+    "upload_threads-tips": "Concurrent upload threads"
   },
   "MediaTrack": {
     "access_token": "Access token",
@@ -727,16 +727,16 @@
       "title": "Title",
       "updated_at": "Updated at"
     },
-    "order_desc": "Order desc",
-    "project_id": "Project id",
-    "root_folder_id": "Root folder id"
+    "order_desc": "Order Descending",
+    "project_id": "Project ID",
+    "root_folder_id": "Root folder ID"
   },
   "Mega_nz": {
     "email": "Email",
     "password": "Password",
-    "two_fa_code": "Two fa code",
+    "two_fa_code": "Two-factor authentication code",
     "two_fa_code-tips": "2FA 6-digit code, filling in the 2FA code alone will not support reloading driver",
-    "two_fa_secret": "Two fa secret",
+    "two_fa_secret": "Two-factor authentication secret",
     "two_fa_secret-tips": "2FA secret"
   },
   "Misskey": {
@@ -745,42 +745,42 @@
     "root_folder_path": "Root folder path"
   },
   "MoPan": {
-    "cloud_id": "Cloud id",
+    "cloud_id": "Cloud ID",
     "device_info": "Device info",
     "order_by": "Order by",
     "order_bys": {
       "filename": "Filename",
       "filesize": "Filesize",
-      "lastOpTime": "LastOpTime"
+      "lastOpTime": "Last Modify Time"
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "password": "Password",
     "phone": "Phone",
-    "root_folder_id": "Root folder id",
-    "sms_code": "Sms code",
-    "sms_code-tips": "input 'send' send sms ",
+    "root_folder_id": "Root folder ID",
+    "sms_code": "SMS code",
+    "sms_code-tips": "Input 'send' to send SMS ",
     "upload_thread": "Upload thread",
-    "upload_thread-tips": "1\u003c=thread\u003c=32"
+    "upload_thread-tips": "1<=thread<=32"
   },
   "NeteaseMusic": {
     "cookie": "Cookie",
     "song_limit": "Song limit",
-    "song_limit-tips": "only get 200 songs by default"
+    "song_limit-tips": "Only get 200 songs by default"
   },
   "Onedrive": {
-    "api_url_address": "Api url address",
+    "api_url_address": "API URL address",
     "chunk_size": "Chunk size",
-    "client_id": "Client id",
+    "client_id": "Client ID",
     "client_secret": "Client secret",
     "custom_host": "Custom host",
     "custom_host-tips": "Custom host for onedrive download link",
     "disable_disk_usage": "Disable disk usage",
-    "is_sharepoint": "Is sharepoint",
-    "redirect_uri": "Redirect uri",
+    "is_sharepoint": "Is SharePoint",
+    "redirect_uri": "Redirect URI",
     "refresh_token": "Refresh token",
     "region": "Region",
     "regions": {
@@ -790,20 +790,20 @@
       "us": "Us"
     },
     "root_folder_path": "Root folder path",
-    "site_id": "Site id",
-    "use_online_api": "Use online api"
+    "site_id": "Site ID",
+    "use_online_api": "Use online API"
   },
   "Onedrive Sharelink": {
     "password": "Password",
     "root_folder_path": "Root folder path",
-    "url": "Url"
+    "url": "URL"
   },
   "OnedriveAPP": {
     "chunk_size": "Chunk size",
-    "client_id": "Client id",
+    "client_id": "Client ID",
     "client_secret": "Client secret",
     "custom_host": "Custom host",
-    "custom_host-tips": "Custom host for onedrive download link",
+    "custom_host-tips": "Custom host for OneDrive download link",
     "disable_disk_usage": "Disable disk usage",
     "email": "Email",
     "region": "Region",
@@ -814,29 +814,29 @@
       "us": "Us"
     },
     "root_folder_path": "Root folder path",
-    "tenant_id": "Tenant id"
+    "tenant_id": "Tenant ID"
   },
   "OpenList": {
     "forward_archive_requests": "Forward archive requests",
     "meta_password": "Meta password",
-    "pass_ip_to_upsteam": "Pass ip to upsteam",
-    "pass_ua_to_upsteam": "Pass ua to upsteam",
+    "pass_ip_to_upsteam": "Pass IP to upstream",
+    "pass_ua_to_upsteam": "Pass UA to upstream",
     "password": "Password",
     "root_folder_path": "Root folder path",
     "token": "Token",
-    "url": "Url",
+    "url": "URL",
     "username": "Username"
   },
   "OpenListShare": {
     "forward_archive_requests": "Forward archive requests",
-    "pwd": "Pwd",
+    "pwd": "Password",
     "root_folder_path": "Root folder path",
-    "sid": "Sid",
-    "url": "Url"
+    "sid": "SID",
+    "url": "URL"
   },
   "PikPak": {
-    "captcha_token": "Captcha token",
-    "device_id": "Device id",
+    "captcha_token": "CAPTCHA token",
+    "device_id": "Device ID",
     "disable_media_link": "Disable media link",
     "password": "Password",
     "platform": "Platform",
@@ -846,28 +846,28 @@
       "web": "Web"
     },
     "refresh_token": "Refresh token",
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "username": "Username"
   },
   "PikPakShare": {
-    "device_id": "Device id",
+    "device_id": "Device ID",
     "platform": "Platform",
     "platforms": {
       "android": "Android",
       "pc": "Pc",
       "web": "Web"
     },
-    "root_folder_id": "Root folder id",
-    "share_id": "Share id",
-    "share_pwd": "Share pwd",
+    "root_folder_id": "Root folder ID",
+    "share_id": "Share ID",
+    "share_pwd": "Share password",
     "use_transcoding_address": "Use transcoding address"
   },
   "ProtonDrive": {
     "chunk_size": "Chunk size",
     "email": "Email",
     "password": "Password",
-    "root_folder_id": "Root folder id",
-    "two_fa_code": "Two fa code",
+    "root_folder_id": "Root folder ID",
+    "two_fa_code": "Two-factor authentication code",
     "use_reusable_login": "Use reusable login",
     "use_reusable_login-tips": "Use reusable login credentials instead of username/password"
   },
@@ -883,8 +883,8 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "root_folder_id": "Root folder id",
     "use_transcoding_address": "Use transcoding address",
@@ -892,8 +892,8 @@
   },
   "QuarkOpen": {
     "access_token": "Access token",
-    "api_url_address": "Api url address",
-    "app_id": "App id",
+    "api_url_address": "API URL address",
+    "app_id": "App ID",
     "app_id-tips": "Keep it empty if you don't have one",
     "order_by": "Order by",
     "order_bys": {
@@ -905,17 +905,17 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "refresh_token": "Refresh token",
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "sign_key": "Sign key",
     "sign_key-tips": "Keep it empty if you don't have one",
-    "use_online_api": "Use online api"
+    "use_online_api": "Use online API"
   },
   "QuarkTV": {
-    "device_id": "Device id",
+    "device_id": "Device ID",
     "link_method": "Link method",
     "link_methods": {
       "download": "Download",
@@ -928,16 +928,16 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "query_token": "Query token",
-    "query_token-tips": "don't edit'",
+    "query_token-tips": "Don't edit",
     "refresh_token": "Refresh token",
-    "root_folder_id": "Root folder id"
+    "root_folder_id": "Root folder ID"
   },
   "S3": {
-    "access_key_id": "Access key id",
+    "access_key_id": "Access key ID",
     "add_filename_to_disposition": "Add filename to disposition",
     "add_filename_to_disposition-tips": "Add filename to Content-Disposition header.",
     "bucket": "Bucket",
@@ -957,7 +957,7 @@
     "root_folder_path": "Root folder path",
     "secret_access_key": "Secret access key",
     "session_token": "Session token",
-    "sign_url_expire": "Sign url expire"
+    "sign_url_expire": "Sign URL expire"
   },
   "SFTP": {
     "address": "Address",
@@ -978,28 +978,28 @@
   "Seafile": {
     "address": "Address",
     "password": "Password",
-    "repoId": "RepoId",
-    "repoPwd": "RepoPwd",
+    "repoId": "Repo ID",
+    "repoPwd": "Repo Password",
     "root_folder_path": "Root folder path",
     "token": "Token",
     "username": "Username"
   },
   "Strm": {
-    "SaveStrmLocalPath": "SaveStrmLocalPath",
-    "SaveStrmLocalPath-tips": "save strm file local path",
-    "SaveStrmToLocal": "SaveStrmToLocal",
-    "SaveStrmToLocal-tips": "save strm file locally",
-    "downloadFileTypes": "DownloadFileTypes",
-    "downloadFileTypes-tips": "Files need to download with strm (usally subtitles)",
-    "encodePath": "EncodePath",
-    "encodePath-tips": "encode the path in the strm file",
-    "filterFileTypes": "FilterFileTypes",
-    "filterFileTypes-tips": "Supports suffix name of strm file",
+    "SaveStrmLocalPath": "Save STRM file local path",
+    "SaveStrmLocalPath-tips": "Save STRM file local path",
+    "SaveStrmToLocal": "Save STRM file locally",
+    "SaveStrmToLocal-tips": "Save STRM file locally",
+    "downloadFileTypes": "Download File Types",
+    "downloadFileTypes-tips": "Files need to download with STRM (usually subtitles)",
+    "encodePath": "Encode Paths",
+    "encodePath-tips": "Encode the path in the STRM file",
+    "filterFileTypes": "Filter File Types",
+    "filterFileTypes-tips": "Supports suffix name of STRM file",
     "paths": "Paths",
     "siteUrl": "SiteUrl",
-    "siteUrl-tips": "The prefix URL of the strm file",
-    "withoutUrl": "WithoutUrl",
-    "withoutUrl-tips": "strm file content without URL prefix"
+    "siteUrl-tips": "The prefix URL of the STRM file",
+    "withoutUrl": "Without URL prefix",
+    "withoutUrl-tips": "STRM file content without URL prefix"
   },
   "Teambition": {
     "cookie": "Cookie",
@@ -1012,17 +1012,17 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "Asc": "Asc",
-      "Desc": "Desc"
+      "Asc": "Ascending",
+      "Desc": "Descending"
     },
-    "project_id": "Project id",
+    "project_id": "Project ID",
     "region": "Region",
     "regions": {
       "china": "China",
       "international": "International"
     },
-    "root_folder_id": "Root folder id",
-    "use_s3_upload_method": "Use s3 upload method"
+    "root_folder_id": "Root folder ID",
+    "use_s3_upload_method": "Use S3 upload method"
   },
   "Teldrive": {
     "chunk_size": "Chunk size",
@@ -1031,14 +1031,14 @@
     "cookie-tips": "access_token=xxx",
     "root_folder_path": "Root folder path",
     "upload_concurrency": "Upload concurrency",
-    "upload_concurrency-tips": "Concurrency upload requests",
-    "url": "Url",
+    "upload_concurrency-tips": "Concurrent upload requests",
+    "url": "URL",
     "use_share_link": "Use share link",
     "use_share_link-tips": "Create share link when getting link to support 302. If disabled, you need to enable web proxy."
   },
   "Terabox": {
     "cookie": "Cookie",
-    "download_api": "Download api",
+    "download_api": "Download API",
     "download_apis": {
       "crack": "Crack",
       "official": "Official"
@@ -1051,52 +1051,52 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "root_folder_path": "Root folder path"
   },
   "Thunder": {
-    "captcha_token": "Captcha token",
+    "captcha_token": "CAPTCHA token",
     "credit_key": "Credit key",
-    "credit_key-tips": "credit key,used for login",
-    "device_id": "Device id",
+    "credit_key-tips": "Credit key, used for login",
+    "device_id": "Device ID",
     "password": "Password",
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "space": "Space",
-    "space-tips": "device id for remote device",
+    "space-tips": "Device ID for remote device",
     "username": "Username"
   },
   "ThunderBrowser": {
-    "captcha_token": "Captcha token",
+    "captcha_token": "CAPTCHA token",
     "credit_key": "Credit key",
-    "credit_key-tips": "credit key,used for login",
-    "device_id": "Device id",
+    "credit_key-tips": "Credit key, used for login",
+    "device_id": "Device ID",
     "password": "Password",
     "remove_way": "Remove way",
     "remove_ways": {
       "delete": "Delete",
       "trash": "Trash"
     },
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "safe_password": "Safe password",
     "use_fluent_play": "Use fluent play",
-    "use_fluent_play-tips": "use fluent play for offline download,only magnet links supported",
-    "use_video_url": "Use video url",
+    "use_fluent_play-tips": "Use fluent play for offline download, only magnet links supported",
+    "use_video_url": "Use video URL",
     "username": "Username"
   },
   "ThunderBrowserExpert": {
     "algorithms": "Algorithms",
-    "algorithms-tips": "sign type is algorithms,this is required",
-    "captcha_sign": "Captcha sign",
-    "captcha_sign-tips": "sign type is captcha_sign,this is required",
-    "captcha_token": "Captcha token",
-    "client_id": "Client id",
+    "algorithms-tips": "Sign type is algorithms, this is required",
+    "captcha_sign": "CAPTCHA sign",
+    "captcha_sign-tips": "Sign type is captcha_sign, this is required",
+    "captcha_token": "CAPTCHA token",
+    "client_id": "Client ID",
     "client_secret": "Client secret",
     "client_version": "Client version",
     "credit_key": "Credit key",
-    "credit_key-tips": "credit key,used for login",
-    "device_id": "Device id",
+    "credit_key-tips": "Credit key,used for login",
+    "device_id": "Device ID",
     "download_user_agent": "Download user agent",
     "login_type": "Login type",
     "login_types": {
@@ -1105,38 +1105,38 @@
     },
     "package_name": "Package name",
     "password": "Password",
-    "password-tips": "login type is user,this is required",
+    "password-tips": "Login type is user,this is required",
     "refresh_token": "Refresh token",
-    "refresh_token-tips": "login type is refresh_token,this is required",
+    "refresh_token-tips": "Login type is refresh_token,this is required",
     "remove_way": "Remove way",
     "remove_ways": {
       "delete": "Delete",
       "trash": "Trash"
     },
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "safe_password": "Safe password",
-    "safe_password-tips": "super safe password",
+    "safe_password-tips": "Super safe password",
     "sign_type": "Sign type",
     "sign_types": {
       "algorithms": "Algorithms",
-      "captcha_sign": "Captcha sign"
+      "captcha_sign": "CAPTCHA sign"
     },
     "timestamp": "Timestamp",
-    "timestamp-tips": "sign type is captcha_sign,this is required",
+    "timestamp-tips": "Sign type is captcha_sign, this is required",
     "use_fluent_play": "Use fluent play",
-    "use_fluent_play-tips": "use fluent play for offline download,only magnet links supported",
-    "use_video_url": "Use video url",
+    "use_fluent_play-tips": "Use fluent play for offline download, only magnet links supported",
+    "use_video_url": "Use video URL",
     "user_agent": "User agent",
     "username": "Username",
-    "username-tips": "login type is user,this is required"
+    "username-tips": "Login type is user, this is required"
   },
   "ThunderExpert": {
     "algorithms": "Algorithms",
-    "algorithms-tips": "sign type is algorithms,this is required",
-    "captcha_sign": "Captcha sign",
-    "captcha_sign-tips": "sign type is captcha_sign,this is required",
-    "captcha_token": "Captcha token",
-    "client_id": "Client id",
+    "algorithms-tips": "Sign type is algorithms, this is required",
+    "captcha_sign": "CAPTCHA sign",
+    "captcha_sign-tips": "Sign type is captcha_sign, this is required",
+    "captcha_token": "CAPTCHA token",
+    "client_id": "Client ID",
     "client_secret": "Client secret",
     "client_version": "Client version",
     "credit_key": "Credit key",
@@ -1157,34 +1157,34 @@
     "sign_type": "Sign type",
     "sign_types": {
       "algorithms": "Algorithms",
-      "captcha_sign": "Captcha sign"
+      "captcha_sign": "CAPTCHA sign"
     },
     "space": "Space",
-    "space-tips": "device id for remote device",
+    "space-tips": "Device ID for remote device",
     "timestamp": "Timestamp",
-    "timestamp-tips": "sign type is captcha_sign,this is required",
-    "use_video_url": "Use video url",
+    "timestamp-tips": "Sign type is captcha_sign, this is required",
+    "use_video_url": "Use video URL",
     "user_agent": "User agent",
     "username": "Username",
-    "username-tips": "login type is user,this is required"
+    "username-tips": "Login type is user, this is required"
   },
   "ThunderX": {
-    "captcha_token": "Captcha token",
+    "captcha_token": "CAPTCHA token",
     "password": "Password",
-    "root_folder_id": "Root folder id",
-    "use_video_url": "Use video url",
+    "root_folder_id": "Root folder ID",
+    "use_video_url": "Use video URL",
     "username": "Username"
   },
   "ThunderXExpert": {
     "algorithms": "Algorithms",
-    "algorithms-tips": "sign type is algorithms,this is required",
-    "captcha_sign": "Captcha sign",
-    "captcha_sign-tips": "sign type is captcha_sign,this is required",
-    "captcha_token": "Captcha token",
-    "client_id": "Client id",
+    "algorithms-tips": "Sign type is algorithms, this is required",
+    "captcha_sign": "CAPTCHA sign",
+    "captcha_sign-tips": "Sign type is captcha_sign, this is required",
+    "captcha_token": "CAPTCHA token",
+    "client_id": "Client ID",
     "client_secret": "Client secret",
     "client_version": "Client version",
-    "device_id": "Device id",
+    "device_id": "Device ID",
     "download_user_agent": "Download user agent",
     "login_type": "Login type",
     "login_types": {
@@ -1193,21 +1193,21 @@
     },
     "package_name": "Package name",
     "password": "Password",
-    "password-tips": "login type is user,this is required",
+    "password-tips": "Login type is user, this is required",
     "refresh_token": "Refresh token",
-    "refresh_token-tips": "login type is refresh_token,this is required",
-    "root_folder_id": "Root folder id",
+    "refresh_token-tips": "Login type is refresh_token, this is required",
+    "root_folder_id": "Root folder ID",
     "sign_type": "Sign type",
     "sign_types": {
       "algorithms": "Algorithms",
-      "captcha_sign": "Captcha sign"
+      "captcha_sign": "CAPTCHA sign"
     },
     "timestamp": "Timestamp",
-    "timestamp-tips": "sign type is captcha_sign,this is required",
-    "use_video_url": "Use video url",
+    "timestamp-tips": "Sign type is captcha_sign, this is required",
+    "use_video_url": "Use video URL",
     "user_agent": "User agent",
     "username": "Username",
-    "username-tips": "login type is user,this is required"
+    "username-tips": "Login type is user, this is required"
   },
   "UC": {
     "cookie": "Cookie",
@@ -1221,15 +1221,15 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "root_folder_id": "Root folder id",
     "use_transcoding_address": "Use transcoding address",
     "use_transcoding_address-tips": "You can watch the transcoded video and support 302 redirection"
   },
   "UCTV": {
-    "device_id": "Device id",
+    "device_id": "Device ID",
     "link_method": "Link method",
     "link_methods": {
       "download": "Download",
@@ -1242,13 +1242,13 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "query_token": "Query token",
-    "query_token-tips": "don't edit'",
+    "query_token-tips": "Don't edit",
     "refresh_token": "Refresh token",
-    "root_folder_id": "Root folder id"
+    "root_folder_id": "Root folder ID"
   },
   "USS": {
     "anti_theft_chain_token": "Anti theft chain token",
@@ -1257,13 +1257,13 @@
     "operator_name": "Operator name",
     "operator_password": "Operator password",
     "root_folder_path": "Root folder path",
-    "sign_url_expire": "Sign url expire"
+    "sign_url_expire": "Sign URL expire"
   },
   "UrlTree": {
     "head_size": "Head size",
-    "head_size-tips": "Use head method to get file size, but it may be failed.",
-    "url_structure": "Url structure",
-    "url_structure-tips": "structure:FolderName:\n  [FileName:][FileSize:][Modified:]Url",
+    "head_size-tips": "Use HEAD method to get file size, but it may be failed.",
+    "url_structure": "URL structure",
+    "url_structure-tips": "Structure:FolderName:\n  [FileName:][FileSize:][Modified:]URL",
     "writable": "Writable"
   },
   "Virtual": {
@@ -1277,12 +1277,12 @@
     "address": "Address",
     "password": "Password",
     "root_folder_path": "Root folder path",
-    "tls_insecure_skip_verify": "Tls insecure skip verify",
+    "tls_insecure_skip_verify": "TLS insecure skip verify",
     "username": "Username",
     "vendor": "Vendor",
     "vendors": {
       "other": "Other",
-      "sharepoint": "Sharepoint"
+      "sharepoint": "SharePoint"
     }
   },
   "WeiYun": {
@@ -1295,32 +1295,32 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "upload_thread": "Upload thread",
-    "upload_thread-tips": "4\u003c=thread\u003c=32"
+    "upload_thread-tips": "4<=thread<=32"
   },
   "WoPan": {
     "access_token": "Access token",
-    "family_id": "Family id",
+    "family_id": "Family ID",
     "family_id-tips": "Keep it empty if you want to use your personal drive",
     "refresh_token": "Refresh token",
-    "root_folder_id": "Root folder id",
+    "root_folder_id": "Root folder ID",
     "sort_rule": "Sort rule",
     "sort_rules": {
-      "name_asc": "Name asc",
-      "name_desc": "Name desc",
-      "size_asc": "Size asc",
-      "size_desc": "Size desc",
-      "time_asc": "Time asc",
-      "time_desc": "Time desc"
+      "name_asc": "Name Ascending",
+      "name_desc": "Name Descending",
+      "size_asc": "Size Ascending",
+      "size_desc": "Size Descending",
+      "time_asc": "Time Ascending",
+      "time_desc": "Time Descending"
     }
   },
   "YandexDisk": {
-    "api_url_address": "Api url address",
-    "client_id": "Client id",
+    "api_url_address": "API URL address",
+    "client_id": "Client ID",
     "client_secret": "Client secret",
     "order_by": "Order by",
     "order_bys": {
@@ -1332,12 +1332,12 @@
     },
     "order_direction": "Order direction",
     "order_directions": {
-      "asc": "Asc",
-      "desc": "Desc"
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "refresh_token": "Refresh token",
     "root_folder_path": "Root folder path",
-    "use_online_api": "Use online api"
+    "use_online_api": "Use online API"
   },
   "config": {
     "115 Cloud": {},

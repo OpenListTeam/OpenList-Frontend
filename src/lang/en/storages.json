@@ -4,23 +4,23 @@
     "mount_path-tips": "The path you want to mount to, it is unique and cannot be repeated",
     "driver": "Driver",
     "order": "Order",
-    "order-tips": "Use to sort",
+    "order-tips": "Used for sorting",
     "usage": "Usage",
     "status": "Status",
     "remark": "Remark",
     "cache_expiration": "Cache Expiration",
-    "cache_expiration-tips": "The cache expiration time for this storage(minutes)",
+    "cache_expiration-tips": "The cache expiration time for this storage (minutes)",
     "down_proxy_url": "Download proxy URL",
     "disable_proxy_sign": "Disable proxy sign",
-    "disable_proxy_sign-tips": "Disable sign for Download proxy URL",
+    "disable_proxy_sign-tips": "Disable sign for download proxy URL",
     "web_proxy": "Web proxy",
     "webdav_policy": "WebDAV policy",
-    "proxy_range": "Proxy Range",
+    "proxy_range": "Proxy range",
     "proxy_range-tips": "Need to enable proxy",
     "webdav_policys": {
       "302_redirect": "302 redirect",
-      "use_proxy_url": "use proxy URL",
-      "native_proxy": "native proxy"
+      "use_proxy_url": "Use proxy URL",
+      "native_proxy": "Native proxy"
     },
     "order_by": "Order by",
     "order_bys": {
@@ -33,17 +33,17 @@
       "asc": "Ascending",
       "desc": "Descending"
     },
-    "extract_folder": "Extract folder",
+    "extract_folder": "Folder Order",
     "extract_folders": {
-      "front": "Extract to front",
-      "back": "Extract to back"
+      "front": " Folders on Top",
+      "back": "Folders at Bottom"
     },
     "enable_sign": "Enable sign",
     "disable_index": "Disable index"
   },
   "table_fields": {
     "status": {
-      "work": "Work",
+      "work": "Working",
       "disabled": "Disabled"
     }
   },
