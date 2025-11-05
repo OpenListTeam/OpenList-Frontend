@@ -4,7 +4,7 @@
   "announcement": "Announcement",
   "aria2_secret": "Aria2 secret",
   "aria2_uri": "Aria2 URI",
-  "audio_autoplay": "Audio autoplay",
+  "audio_autoplay": "Autoplay audio",
   "audio_cover": "Audio cover",
   "audio_types": "Audio types",
   "auto_update_index": "Auto update index",
