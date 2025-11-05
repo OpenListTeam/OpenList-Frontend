@@ -333,7 +333,7 @@
     "upload_thread-tips": "1\u003c=thread\u003c=32",
     "use_dynamic_upload_api": "Use dynamic upload API",
     "use_dynamic_upload_api-tips": "dynamically get upload api domain, when enabled, the 'Upload API' setting will be used as a fallback if failed to get",
-    "use_online_api": "Use online api"
+    "use_online_api": "Use online API"
   },
   "BaiduPhoto": {
     "album_id": "Album id",
