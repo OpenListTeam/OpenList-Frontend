@@ -5,8 +5,7 @@ export const showDiskUsage = (details: MountDetails | undefined) => {
     details &&
     details.total_space &&
     details.free_space &&
-    details.total_space > 0 &&
-    details.free_space > 0
+    details.total_space > 0
   )
 }
 
