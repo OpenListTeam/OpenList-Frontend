@@ -76,7 +76,7 @@
   "proxy_types": "Proxy types",
   "qbittorrent_seedtime": "qBittorrent seeding time",
   "qbittorrent_url": "qBittorrent URL",
-  "readme_autorender": "Auto render README",
+  "readme_autorender": "Auto-render README",
   "robots_txt": "Robots.txt",
   "s3_access_key_id": "S3 access key ID",
   "s3_buckets": "S3 buckets",
