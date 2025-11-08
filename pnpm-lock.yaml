@@ -93,7 +93,7 @@ importers:
         version: 4.12.0
       hls.js:
         specifier: ^1.6.5
-        version: 1.6.13
+        version: 1.6.14
       ini:
         specifier: ^5.0.0
         version: 5.0.0
@@ -2319,8 +2319,8 @@ packages:
   hey-listen@1.0.8:
     resolution: {integrity: sha512-COpmrF2NOg4TBWUJ5UVyaCU2A88wEMkUPK4hNqyCkqHbxT92BbvfjoSozkAIIm6XhicGlJHhFdullInrdhwU8Q==}
 
-  hls.js@1.6.13:
-    resolution: {integrity: sha512-hNEzjZNHf5bFrUNvdS4/1RjIanuJ6szpWNfTaX5I6WfGynWXGT7K/YQLYtemSvFExzeMdgdE4SsyVLJbd5PcZA==}
+  hls.js@1.6.14:
+    resolution: {integrity: sha512-CSpT2aXsv71HST8C5ETeVo+6YybqCpHBiYrCRQSn3U5QUZuLTSsvtq/bj+zuvjLVADeKxoebzo16OkH8m1+65Q==}
 
   html-entities@2.3.3:
     resolution: {integrity: sha512-DV5Ln36z34NNTDgnz0EWGBLZENelNAtkiFA4kyNOG2tDI6Mz1uSWiq1wAKdyjnJwyDiDO7Fa2SO1CTxPXL8VxA==}
@@ -5768,7 +5768,7 @@ snapshots:
 
   hey-listen@1.0.8: {}
 
-  hls.js@1.6.13: {}
+  hls.js@1.6.14: {}
 
   html-entities@2.3.3: {}
 
