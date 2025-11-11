@@ -226,17 +226,27 @@ export const ModalFolderChoose = (props: ModalFolderChooseProps) => {
             autoOpen
           />
         </ModalBody>
-        <ModalFooter display="flex" gap="$2">
-          <Show when={props.footerSlot}>{props.footerSlot}</Show>
-          <Button onClick={props.onClose} colorScheme="neutral">
-            {t("global.cancel")}
-          </Button>
-          <Button
-            loading={props.loading}
-            onClick={() => props.onSubmit?.(value())}
-          >
-            {t("global.ok")}
-          </Button>
+        <ModalFooter
+          display="flex"
+          w="$full"
+          gap="$4"
+          alignItems="flex-end"
+          justifyContent="flex-end"
+        >
+          <Show when={props.footerSlot}>
+            <Box mr="auto">{props.footerSlot}</Box>
+          </Show>
+          <HStack spacing="$2">
+            <Button onClick={props.onClose} colorScheme="neutral">
+              {t("global.cancel")}
+            </Button>
+            <Button
+              loading={props.loading}
+              onClick={() => props.onSubmit?.(value())}
+            >
+              {t("global.ok")}
+            </Button>
+          </HStack>
         </ModalFooter>
       </ModalContent>
     </Modal>
