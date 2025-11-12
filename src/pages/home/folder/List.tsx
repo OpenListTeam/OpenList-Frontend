@@ -1,6 +1,6 @@
 import { HStack, VStack, Text } from "@hope-ui/solid"
-import { batch, createEffect, createSignal, For, Show } from "solid-js"
-import { useT } from "~/hooks"
+import { batch, createEffect, createSignal, For, Show, onMount } from "solid-js"
+import { useT, useRouter } from "~/hooks"
 import {
   allChecked,
   checkboxOpen,
@@ -17,15 +17,56 @@ import { Col, cols, ListItem } from "./ListItem"
 import { ItemCheckbox, useSelectWithMouse } from "./helper"
 import { bus } from "~/utils"
 
+export interface SortState {
+  orderBy: string
+  reverse: boolean
+}
+
+const SORT_KEY_PREFIX = "dir_sort_"
+
+export function saveSortState(dir: string, state: SortState) {
+  try {
+    localStorage.setItem(`${SORT_KEY_PREFIX}${dir}`, JSON.stringify(state))
+  } catch (err) {
+    console.warn("failed to save sort config:", err)
+  }
+}
+
+export function loadSortState(dir: string): SortState | null {
+  try {
+    const item = localStorage.getItem(`${SORT_KEY_PREFIX}${dir}`)
+    if (!item) return null
+    return JSON.parse(item) as SortState
+  } catch (err) {
+    console.warn("failed to read sort config:", err)
+    return null
+  }
+}
+
 export const ListTitle = (props: {
   sortCallback: (orderBy: OrderBy, reverse?: boolean) => void
   disableCheckbox?: boolean
+  initialOrder?: OrderBy
+  initialReverse?: boolean
 }) => {
   const t = useT()
-  const [orderBy, setOrderBy] = createSignal<OrderBy>()
-  const [reverse, setReverse] = createSignal(false)
+  const { pathname } = useRouter()
+
+  const [orderBy, setOrderBy] = createSignal<OrderBy | undefined>(
+    props.initialOrder,
+  )
+  const [reverse, setReverse] = createSignal(props.initialReverse ?? false)
+
+  createEffect(() => {
+    if (props.initialOrder !== undefined) {
+      setOrderBy(props.initialOrder)
+      setReverse(props.initialReverse ?? false)
+    }
+  })
+
   createEffect(() => {
     if (orderBy()) {
+      saveSortState(pathname(), { orderBy: orderBy()!, reverse: reverse() })
       props.sortCallback(orderBy()!, reverse())
     }
   })
@@ -82,6 +123,23 @@ export const ListTitle = (props: {
 }
 
 const ListLayout = () => {
+  const { pathname } = useRouter()
+
+  const [initialOrder, setInitialOrder] = createSignal<OrderBy>()
+  const [initialReverse, setInitialReverse] = createSignal(false)
+
+  const { registerSelectContainer, captureContentMenu } = useSelectWithMouse()
+  registerSelectContainer()
+
+  onMount(() => {
+    const saved = loadSortState(pathname())
+    if (saved) {
+      setInitialOrder(saved.orderBy as OrderBy)
+      setInitialReverse(saved.reverse)
+      sortObjs(saved.orderBy as OrderBy, saved.reverse)
+    }
+  })
+
   const onDragOver = (e: DragEvent) => {
     const items = Array.from(e.dataTransfer?.items ?? [])
     for (let i = 0; i < items.length; i++) {
@@ -93,9 +151,7 @@ const ListLayout = () => {
       }
     }
   }
-  const { isMouseSupported, registerSelectContainer, captureContentMenu } =
-    useSelectWithMouse()
-  registerSelectContainer()
+
   return (
     <VStack
       onDragOver={onDragOver}
@@ -104,7 +160,11 @@ const ListLayout = () => {
       w="$full"
       spacing="$1"
     >
-      <ListTitle sortCallback={sortObjs} />
+      <ListTitle
+        sortCallback={sortObjs}
+        initialOrder={initialOrder()}
+        initialReverse={initialReverse()}
+      />
       <For each={objStore.objs}>
         {(obj, i) => {
           return <ListItem obj={obj} index={i()} />
