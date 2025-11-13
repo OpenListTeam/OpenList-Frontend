@@ -1,12 +1,7 @@
 import { MountDetails } from "~/types"
 
-export const showDiskUsage = (details: MountDetails | undefined) => {
-  return (
-    details &&
-    details.total_space &&
-    details.free_space &&
-    details.total_space > 0
-  )
+export const showDiskUsage = (details?: MountDetails) => {
+  return details?.total_space > 0
 }
 
 export const toReadableUsage = (details: MountDetails) => {
