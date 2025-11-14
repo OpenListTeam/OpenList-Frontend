@@ -120,12 +120,6 @@ const previews: Preview[] = [
     prior: true,
   },
   {
-    name: "PDF Preview",
-    exts: ["pdf"],
-    component: lazy(() => import("./pdf")),
-    prior: true,
-  },
-  {
     name: "PPT Preview",
     exts: ["pptx"],
     component: lazy(() => import("./ppt")),
