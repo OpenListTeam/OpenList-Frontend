@@ -92,7 +92,7 @@
     "lightgallery": "^2.8.3",
     "mark.js": "^8.11.1",
     "mitt": "^3.0.1",
-    "monaco-editor": "^0.54.0",
+    "monaco-editor": "^0.55.0",
     "mpegts.js": "^1.8.0",
     "qrcode": "^1.5.4",
     "rehype-katex": "6.0.3",
