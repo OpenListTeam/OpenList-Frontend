@@ -18,7 +18,7 @@ importers:
         specifier: 0.6.7
         version: 0.6.7(@stitches/core@1.2.8)(solid-js@1.9.10)(solid-transition-group@0.3.0(solid-js@1.9.10))
       '@monaco-editor/loader':
-        specifier: ^1.7.0
+        specifier: 1.7.0
         version: 1.7.0
       '@ruffle-rs/ruffle':
         specifier: 0.2.0-nightly.2025.8.3
@@ -111,7 +111,7 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1
       monaco-editor:
-        specifier: ^0.55.0
+        specifier: 0.55.1
         version: 0.55.1
       mpegts.js:
         specifier: ^1.8.0
