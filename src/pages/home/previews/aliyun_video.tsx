@@ -290,15 +290,13 @@ const Preview = () => {
         speed: 5,
         opacity: 1,
         fontSize: 25,
-        color: "#FFFFFF",
         mode: 0,
         antiOverlap: false,
         synchronousPlayback: false,
-        lockTime: 5,
-        maxLength: 100,
         theme: "dark",
         heatmap: true,
         ...JSON.parse(localStorage.getItem("danmuku_config") || "{}"),
+        emitter: false,
         danmuku: proxyLink(danmu, true),
       }),
     )
@@ -346,8 +344,33 @@ const Preview = () => {
       })
       if (danmu) {
         player.on("artplayerPluginDanmuku:config", (option) => {
-          const { mount, danmuku, ...rest } = option as DanmukuOption
-          localStorage.setItem("danmuku_config", JSON.stringify(rest))
+          const {
+            speed,
+            margin,
+            opacity,
+            mode,
+            modes,
+            fontSize,
+            antiOverlap,
+            synchronousPlayback,
+            heatmap,
+            visible,
+          } = option as DanmukuOption
+          localStorage.setItem(
+            "danmuku_config",
+            JSON.stringify({
+              speed,
+              margin,
+              opacity,
+              mode,
+              modes,
+              fontSize,
+              antiOverlap,
+              synchronousPlayback,
+              heatmap,
+              visible,
+            }),
+          )
         })
       }
       player.on("video:ended", () => {
