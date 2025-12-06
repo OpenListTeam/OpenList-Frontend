@@ -83,7 +83,7 @@
     "docx-preview": "^0.3.7",
     "handlebars": "^4.7.8",
     "hash-wasm": "^4.12.0",
-    "hls.js": "^1.6.5",
+    "hls.js": "^1.6.15",
     "ini": "^6.0.0",
     "just-once": "^2.2.0",
     "katex": "0.16.25",

@@ -84,7 +84,7 @@ importers:
         specifier: ^4.12.0
         version: 4.12.0
       hls.js:
-        specifier: ^1.6.5
+        specifier: ^1.6.15
         version: 1.6.15
       ini:
         specifier: ^6.0.0
