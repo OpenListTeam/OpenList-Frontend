@@ -30,6 +30,7 @@ export const Rename = () => {
     <Show when={isOpen()}>
       <ModalInput
         title="home.toolbar.input_new_name"
+        validateFilename={true}
         footerSlot={
           <Checkbox
             mr="auto"

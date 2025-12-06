@@ -10,7 +10,8 @@ const Copy = () => {
       type="copy"
       canRetry
       nameAnalyzer={{
-        regex: /^copy \[(.*\/([^\/]*))]\((.*\/([^\/]*))\) to \[(.+)]\((.+)\)$/,
+        regex:
+          /^(?:copy|merge) \[(.*\/([^\/]*))]\((.*\/([^\/]*))\) to \[(.+)]\((.+)\)$/,
         title: (matches) => {
           if (matches[4] !== "") return matches[4]
           return matches[2] === "" ? "/" : matches[2]

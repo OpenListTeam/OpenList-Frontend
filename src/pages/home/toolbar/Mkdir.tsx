@@ -21,6 +21,7 @@ export const Mkdir = () => {
   return (
     <ModalInput
       title="home.toolbar.input_dir_name"
+      validateFilename={true}
       opened={isOpen()}
       onClose={onClose}
       loading={loading()}

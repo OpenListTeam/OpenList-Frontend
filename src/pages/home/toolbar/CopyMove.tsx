@@ -1,9 +1,23 @@
-import { Checkbox, createDisclosure } from "@hope-ui/solid"
+import { Checkbox, createDisclosure, VStack, Button } from "@hope-ui/solid"
 import { createSignal, onCleanup } from "solid-js"
-import { ModalFolderChoose } from "~/components"
+import { ModalFolderChoose, FolderTreeHandler } from "~/components"
 import { useFetch, usePath, useRouter, useT } from "~/hooks"
 import { selectedObjs } from "~/store"
 import { bus, fsCopy, fsMove, handleRespWithNotifySuccess } from "~/utils"
+import { CgFolderAdd } from "solid-icons/cg"
+
+const CreateFolderButton = (props: { handler?: FolderTreeHandler }) => {
+  const t = useT()
+  return (
+    <Button
+      leftIcon={<CgFolderAdd />}
+      size="sm"
+      onClick={() => props.handler?.startCreateFolder()}
+    >
+      {t("home.toolbar.mkdir")}
+    </Button>
+  )
+}
 
 export const Copy = () => {
   const t = useT()
@@ -12,6 +26,8 @@ export const Copy = () => {
   const { pathname } = useRouter()
   const { refresh } = usePath()
   const [overwrite, setOverwrite] = createSignal(false)
+  const [skipExisting, setSkipExisting] = createSignal(false)
+  const [merge, setMerge] = createSignal(false)
   const handler = (name: string) => {
     if (name === "copy") {
       onOpen()
@@ -28,16 +44,44 @@ export const Copy = () => {
       opened={isOpen()}
       onClose={onClose}
       loading={loading()}
+      headerSlot={(handler) => <CreateFolderButton handler={handler} />}
       footerSlot={
-        <Checkbox
-          mr="auto"
-          checked={overwrite()}
-          onChange={() => {
-            setOverwrite(!overwrite())
-          }}
-        >
-          {t("home.conflict_policy.overwrite_existing")}
-        </Checkbox>
+        <VStack w="$full" spacing="$2">
+          <Checkbox
+            mr="auto"
+            checked={overwrite()}
+            onChange={() => {
+              const curOverwrite = !overwrite()
+              if (curOverwrite) {
+                setSkipExisting(false)
+                setMerge(false)
+              }
+              setOverwrite(curOverwrite)
+            }}
+          >
+            {t("home.conflict_policy.overwrite_existing")}
+          </Checkbox>
+          <Checkbox
+            mr="auto"
+            checked={skipExisting()}
+            onChange={() => {
+              setSkipExisting(!skipExisting())
+            }}
+            disabled={overwrite() || merge()}
+          >
+            {t("home.conflict_policy.skip_existing")}
+          </Checkbox>
+          <Checkbox
+            mr="auto"
+            checked={merge()}
+            onChange={() => {
+              setMerge(!merge())
+            }}
+            disabled={overwrite() || skipExisting()}
+          >
+            {t("home.conflict_policy.merge")}
+          </Checkbox>
+        </VStack>
       }
       onSubmit={async (dst) => {
         const resp = await ok(
@@ -45,6 +89,8 @@ export const Copy = () => {
           dst,
           selectedObjs().map((obj) => obj.name),
           overwrite(),
+          skipExisting(),
+          merge(),
         )
         handleRespWithNotifySuccess(resp, () => {
           refresh()
@@ -62,6 +108,7 @@ export const Move = () => {
   const { pathname } = useRouter()
   const { refresh } = usePath()
   const [overwrite, setOverwrite] = createSignal(false)
+  const [skipExisting, setSkipExisting] = createSignal(false)
   const handler = (name: string) => {
     if (name === "move") {
       onOpen()
@@ -78,16 +125,33 @@ export const Move = () => {
       opened={isOpen()}
       onClose={onClose}
       loading={loading()}
+      headerSlot={(handler) => <CreateFolderButton handler={handler} />}
       footerSlot={
-        <Checkbox
-          mr="auto"
-          checked={overwrite()}
-          onChange={() => {
-            setOverwrite(!overwrite())
-          }}
-        >
-          {t("home.conflict_policy.overwrite_existing")}
-        </Checkbox>
+        <VStack w="$full" spacing="$2">
+          <Checkbox
+            mr="auto"
+            checked={overwrite()}
+            onChange={() => {
+              const curOverwrite = !overwrite()
+              if (curOverwrite) {
+                setSkipExisting(false)
+              }
+              setOverwrite(curOverwrite)
+            }}
+          >
+            {t("home.conflict_policy.overwrite_existing")}
+          </Checkbox>
+          <Checkbox
+            mr="auto"
+            checked={skipExisting()}
+            onChange={() => {
+              setSkipExisting(!skipExisting())
+            }}
+            disabled={overwrite()}
+          >
+            {t("home.conflict_policy.skip_existing")}
+          </Checkbox>
+        </VStack>
       }
       onSubmit={async (dst) => {
         const resp = await ok(
@@ -95,6 +159,7 @@ export const Move = () => {
           dst,
           selectedObjs().map((obj) => obj.name),
           overwrite(),
+          skipExisting(),
         )
         handleRespWithNotifySuccess(resp, () => {
           refresh()

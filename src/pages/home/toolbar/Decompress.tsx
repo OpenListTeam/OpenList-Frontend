@@ -22,6 +22,7 @@ export const Decompress = () => {
   const [archivePass, setArchivePass] = createSignal("")
   const [cacheFull, setCacheFull] = createSignal(true)
   const [putIntoNewDir, setPutIntoNewDir] = createSignal(false)
+  const [overwrite, setOverwrite] = createSignal(false)
   const handler = (name: string) => {
     if (name === "decompress") {
       batch(() => {
@@ -68,6 +69,17 @@ export const Decompress = () => {
       opened={isOpen()}
       onClose={onClose}
       loading={loading()}
+      footerSlot={
+        <VStack w="$full" spacing="$2">
+          <Checkbox
+            mr="auto"
+            checked={overwrite()}
+            onChange={() => setOverwrite(!overwrite())}
+          >
+            {t("home.conflict_policy.overwrite_existing")}
+          </Checkbox>
+        </VStack>
+      }
       onSubmit={async (dst) => {
         const { path, name } = getPathAndName()
         const resp = await ok(
@@ -78,6 +90,7 @@ export const Decompress = () => {
           innerPath(),
           cacheFull(),
           putIntoNewDir(),
+          overwrite(),
         )
         handleRespWithNotifySuccess(resp, () => {
           refresh()

@@ -25,6 +25,7 @@ export const NewFile = () => {
   return (
     <ModalInput
       title="home.toolbar.input_filename"
+      validateFilename={true}
       footerSlot={
         <Checkbox
           mr="auto"

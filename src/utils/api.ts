@@ -83,8 +83,15 @@ export const fsMove = (
   dst_dir: string,
   names: string[],
   overwrite: boolean,
+  skip_existing: boolean,
 ): PEmptyResp => {
-  return r.post("/fs/move", { src_dir, dst_dir, names, overwrite })
+  return r.post("/fs/move", {
+    src_dir,
+    dst_dir,
+    names,
+    overwrite,
+    skip_existing,
+  })
 }
 
 export const fsRecursiveMove = (
@@ -100,8 +107,17 @@ export const fsCopy = (
   dst_dir: string,
   names: string[],
   overwrite: boolean,
+  skip_existing: boolean,
+  merge: boolean,
 ): PEmptyResp => {
-  return r.post("/fs/copy", { src_dir, dst_dir, names, overwrite })
+  return r.post("/fs/copy", {
+    src_dir,
+    dst_dir,
+    names,
+    overwrite,
+    skip_existing,
+    merge,
+  })
 }
 
 export const fsRemove = (dir: string, names: string[]): PEmptyResp => {
@@ -182,6 +198,7 @@ export const fsArchiveDecompress = (
   inner_path = "/",
   cache_full = true,
   put_into_new_dir = false,
+  overwrite = false,
 ): PEmptyResp => {
   return r.post("/fs/archive/decompress", {
     src_dir,
@@ -191,6 +208,7 @@ export const fsArchiveDecompress = (
     inner_path,
     cache_full,
     put_into_new_dir,
+    overwrite,
   })
 }
 

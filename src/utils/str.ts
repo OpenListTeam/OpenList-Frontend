@@ -176,3 +176,17 @@ export const matchTemplate = (
   const template = Handlebars.compile(templateStr)
   return template(data)
 }
+
+export const validateFilename = (
+  name: string,
+): { valid: boolean; error?: string } => {
+  if (!name || name.trim().length === 0) {
+    return { valid: false, error: "empty_input" }
+  }
+  const INVALID_CHARS = /[\/\\?<>*:|"]/
+  if (INVALID_CHARS.test(name)) {
+    return { valid: false, error: "invalid_filename_chars" }
+  }
+
+  return { valid: true }
+}

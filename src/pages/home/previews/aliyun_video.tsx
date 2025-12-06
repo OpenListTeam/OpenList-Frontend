@@ -9,6 +9,7 @@ import { type Option } from "artplayer/types/option"
 import { type Setting } from "artplayer/types/setting"
 import { type Events } from "artplayer/types/events"
 import artplayerPluginDanmuku from "artplayer-plugin-danmuku"
+import { type Option as DanmukuOption } from "artplayer-plugin-danmuku"
 import artplayerPluginAss from "~/components/artplayer-plugin-ass"
 import Hls from "hls.js"
 import { currentLang } from "~/app/i18n"
@@ -286,18 +287,17 @@ const Preview = () => {
   if (danmu) {
     option.plugins?.push(
       artplayerPluginDanmuku({
-        danmuku: proxyLink(danmu, true),
         speed: 5,
         opacity: 1,
         fontSize: 25,
-        color: "#FFFFFF",
         mode: 0,
-        margin: [0, "0%"],
         antiOverlap: false,
         synchronousPlayback: false,
-        lockTime: 5,
-        maxLength: 100,
         theme: "dark",
+        heatmap: true,
+        ...JSON.parse(localStorage.getItem("danmuku_config") || "{}"),
+        emitter: false,
+        danmuku: proxyLink(danmu, true),
       }),
     )
   }
@@ -342,6 +342,37 @@ const Preview = () => {
       player.on("ready", () => {
         player.fullscreen = auto_fullscreen
       })
+      if (danmu) {
+        player.on("artplayerPluginDanmuku:config", (option) => {
+          const {
+            speed,
+            margin,
+            opacity,
+            mode,
+            modes,
+            fontSize,
+            antiOverlap,
+            synchronousPlayback,
+            heatmap,
+            visible,
+          } = option as DanmukuOption
+          localStorage.setItem(
+            "danmuku_config",
+            JSON.stringify({
+              speed,
+              margin,
+              opacity,
+              mode,
+              modes,
+              fontSize,
+              antiOverlap,
+              synchronousPlayback,
+              heatmap,
+              visible,
+            }),
+          )
+        })
+      }
       player.on("video:ended", () => {
         if (!autoNext()) return
         next_video()

@@ -6,16 +6,16 @@ export const useCDN = () => {
 
   const npm = (name: string, version: string, path: string) => {
     // Available: https://github.com/cnpm/unpkg-white-list
-    // https://registry.npmmirror.com/monaco-editor/0.52.2/files/min/vs/loader.js
+    // https://registry.npmmirror.com/monaco-editor/0.55.1/files/min/vs/loader.js
     return `https://registry.npmmirror.com/${name}/${version}/files/${path}`
 
-    // https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js
+    // https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs/loader.js
     // return `https://cdn.jsdelivr.net/npm/${name}@${version}/${path}`
   }
 
   const monacoPath = () => {
     return import.meta.env.VITE_LITE === "true"
-      ? npm("monaco-editor", "0.52.2", "min/vs")
+      ? npm("monaco-editor", "0.55.1", "min/vs")
       : `${static_path}/monaco-editor/vs`
   }
 

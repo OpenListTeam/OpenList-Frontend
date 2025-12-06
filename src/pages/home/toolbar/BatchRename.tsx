@@ -20,6 +20,7 @@ import {
   fsBatchRename,
   handleRespWithNotifySuccess,
   notify,
+  validateFilename,
 } from "~/utils"
 import { createSignal, For, onCleanup, Show } from "solid-js"
 import { selectedObjs } from "~/store"
@@ -41,7 +42,29 @@ export const BatchRename = () => {
   const [newName, setNewName] = createSignal("")
   const [newNameType, setNewNameType] = createSignal("string")
   const [matchNames, setMatchNames] = createSignal<RenameObj[]>([])
+  const [validationErrorSrc, setValidationErrorSrc] = createSignal<string>("")
+  const [validationErrorNew, setValidationErrorNew] = createSignal<string>("")
   const t = useT()
+
+  const handleInputSrc = (newValue: string) => {
+    setSrcName(newValue)
+    if (type() === "2" || type() === "3") {
+      const validation = validateFilename(newValue)
+      setValidationErrorSrc(validation.valid ? "" : validation.error || "")
+    } else {
+      setValidationErrorSrc("")
+    }
+  }
+
+  const handleInputNew = (newValue: string) => {
+    setNewName(newValue)
+    if (type() === "2" || type() === "3") {
+      const validation = validateFilename(newValue)
+      setValidationErrorNew(validation.valid ? "" : validation.error || "")
+    } else {
+      setValidationErrorNew("")
+    }
+  }
 
   const itemProps = () => {
     return {
@@ -63,10 +86,22 @@ export const BatchRename = () => {
   })
 
   const submit = () => {
-    if (!srcName() || !newName()) {
+    if (!srcName()) {
       // Check if both input values are not empty
       notify.warning(t("global.empty_input"))
       return
+    }
+    if (type() === "2" || type() === "3") {
+      const validationSrc = validateFilename(srcName())
+      if (!validationSrc.valid) {
+        notify.warning(t(`global.${validationSrc.error}`))
+        return
+      }
+      const validationNew = validateFilename(newName())
+      if (!validationNew.valid) {
+        notify.warning(t(`global.${validationNew.error}`))
+        return
+      }
     }
     const replaceRegexp = new RegExp(srcName(), "g")
 
@@ -132,7 +167,7 @@ export const BatchRename = () => {
           }
           return renameObj
         })
-    } else {
+    } else if (type() === "2") {
       let tempNum = newName()
       matchNames = selectedObjs().map((obj) => {
         let suffix = ""
@@ -150,6 +185,16 @@ export const BatchRename = () => {
           .padStart(tempNum.length, "0")
         return renameObj
       })
+    } else {
+      matchNames = selectedObjs()
+        .filter((obj) => obj.name.indexOf(srcName()) !== -1)
+        .map((obj) => {
+          const renameObj: RenameObj = {
+            src_name: obj.name,
+            new_name: obj.name.replace(srcName(), newName()),
+          }
+          return renameObj
+        })
     }
 
     setMatchNames(matchNames)
@@ -178,7 +223,7 @@ export const BatchRename = () => {
               defaultValue="1"
               onChange={(event) => {
                 setType(event)
-                if (event === "1") {
+                if (event === "1" || event === "3") {
                   setNewNameType("string")
                 } else if (event === "2") {
                   setNewNameType("number")
@@ -188,6 +233,7 @@ export const BatchRename = () => {
               <HStack spacing="$4">
                 <Radio value="1">{t("home.toolbar.regex_rename")}</Radio>
                 <Radio value="2">{t("home.toolbar.sequential_renaming")}</Radio>
+                <Radio value="3">{t("home.toolbar.find_replace")}</Radio>
               </HStack>
             </RadioGroup>
             <VStack spacing="$2">
@@ -198,13 +244,17 @@ export const BatchRename = () => {
                 <Show when={type() === "2"}>
                   {t("home.toolbar.sequential_renaming_desc")}
                 </Show>
+                <Show when={type() === "3"}>
+                  {t("home.toolbar.find_replace_desc")}
+                </Show>
               </p>
               <Input
                 id="modal-input1" // Update id to "modal-input1" for first input
                 type={"string"}
                 value={srcName()} // Update value to value1 for first input
+                invalid={!!validationErrorSrc()}
                 onInput={(e) => {
-                  setSrcName(e.currentTarget.value)
+                  handleInputSrc(e.currentTarget.value)
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -212,12 +262,18 @@ export const BatchRename = () => {
                   }
                 }}
               />
+              <Show when={validationErrorSrc()}>
+                <Text color="$danger9" fontSize="$sm">
+                  {t(`global.${validationErrorSrc()}`)}
+                </Text>
+              </Show>
               <Input
                 id="modal-input2" // Add second input with id "modal-input2"
                 type={newNameType()}
                 value={newName()} // Bind value to value2 for second input
+                invalid={!!validationErrorNew()}
                 onInput={(e) => {
-                  setNewName(e.currentTarget.value)
+                  handleInputNew(e.currentTarget.value)
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -225,6 +281,11 @@ export const BatchRename = () => {
                   }
                 }}
               />
+              <Show when={validationErrorNew()}>
+                <Text color="$danger9" fontSize="$sm">
+                  {t(`global.${validationErrorNew()}`)}
+                </Text>
+              </Show>
             </VStack>
           </ModalBody>
           <ModalFooter display="flex" gap="$2">
@@ -232,6 +293,8 @@ export const BatchRename = () => {
               onClick={() => {
                 setType("1")
                 setNewNameType("string")
+                setValidationErrorSrc("")
+                setValidationErrorNew("")
                 onClose()
               }}
               colorScheme="neutral"
@@ -240,7 +303,14 @@ export const BatchRename = () => {
             </Button>
             <Button
               onClick={() => submit()}
-              disabled={!srcName() || !newName()}
+              disabled={
+                type() === "2" || type() === "3"
+                  ? !srcName() ||
+                    !newName() ||
+                    !!validationErrorSrc() ||
+                    !!validationErrorNew()
+                  : !srcName()
+              }
             >
               {t("global.ok")}
             </Button>
@@ -279,6 +349,8 @@ export const BatchRename = () => {
                 setMatchNames([])
                 setType("1")
                 setNewNameType("string")
+                setValidationErrorSrc("")
+                setValidationErrorNew("")
                 closePreviewModal()
                 onClose()
               }}
@@ -306,6 +378,8 @@ export const BatchRename = () => {
                   setNewName("")
                   setType("1")
                   setNewNameType("string")
+                  setValidationErrorSrc("")
+                  setValidationErrorNew("")
                   refresh()
                   onClose()
                   closePreviewModal()

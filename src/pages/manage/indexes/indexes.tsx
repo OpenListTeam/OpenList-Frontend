@@ -18,7 +18,7 @@ import {
   useColorModeValue,
   VStack,
 } from "@hope-ui/solid"
-import { createSignal, onCleanup, Show } from "solid-js"
+import { createSignal, Show } from "solid-js"
 import { useFetch, useT } from "~/hooks"
 import { Group, PEmptyResp, PResp } from "~/types"
 import {
@@ -45,15 +45,30 @@ const Indexes = () => {
   const [progressLoading, getProgressReq] = useFetch(
     (): PResp<Progress> => r.get("/admin/index/progress"),
   )
+  const [refreshTimeout, setRefreshTimeout] = createSignal<number | undefined>()
+  const resetRefreshTimeout = (run: boolean) => {
+    if (refreshTimeout()) {
+      clearTimeout(refreshTimeout())
+    }
+    if (run) {
+      setRefreshTimeout(window.setTimeout(refreshProgress, 5000))
+    } else {
+      setRefreshTimeout(undefined)
+    }
+  }
   const refreshProgress = async () => {
     const resp = await getProgressReq()
-    handleResp(resp, (data) => {
-      setProgress(data)
-    })
+    handleResp(
+      resp,
+      (data) => {
+        setProgress(data)
+        resetRefreshTimeout(!data.is_done)
+      },
+      (_, code) => {
+        resetRefreshTimeout(code !== 404)
+      },
+    )
   }
-  const intervalId = setInterval(refreshProgress, 5000)
-  const clear = () => clearInterval(intervalId)
-  onCleanup(clear)
   refreshProgress()
   const [rebuildLoading, rebuildReq] = useFetch(buildIndex)
   const rebuild = async () => {
@@ -83,12 +98,12 @@ const Indexes = () => {
   const [updateLoading, updateReq] = useFetch(updateIndex)
   const update = async () => {
     let updatePaths: string[] = []
-    if (updatePathsRef.value) {
-      updatePaths = updatePathsRef.value.split("\n")
+    if (updatePathsRef!.value) {
+      updatePaths = updatePathsRef!.value.split("\n")
     }
     let updateMaxDepth = 20
-    if (updateMaxDepthRef.value) {
-      updateMaxDepth = parseInt(updateMaxDepthRef.value)
+    if (updateMaxDepthRef!.value) {
+      updateMaxDepth = parseInt(updateMaxDepthRef!.value)
     }
     const resp = await updateReq(updatePaths, updateMaxDepth)
     handleRespWithNotifySuccess(resp)
@@ -96,8 +111,8 @@ const Indexes = () => {
   }
   const { isOpen, onOpen, onClose } = createDisclosure()
   return (
-    <VStack spacing="$2" w="$full" alignItems="start">
-      <Heading>{t("manage.sidemenu.settings")}</Heading>
+    <>
+      <Heading>{t("indexes.index_header")}</Heading>
       <CommonSettings group={Group.INDEX} />
       <Heading>{t("indexes.current")}</Heading>
       <Show when={progress()}>
@@ -190,7 +205,7 @@ const Indexes = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </VStack>
+    </>
   )
 }
 

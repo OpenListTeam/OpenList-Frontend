@@ -28,6 +28,7 @@ const initialObjStore = {
   readme: "",
   header: "",
   provider: "",
+  direct_upload_tools: <string[] | undefined>undefined,
   state: State.Initial,
   err: "",
 }
@@ -76,6 +77,8 @@ export const ObjStore = {
   //   setObjStore("write", resp.data.write);
   // },
   setState: (state: State) => setObjStore("state", state),
+  setDirectUploadTools: (tools?: string[]) =>
+    setObjStore("direct_upload_tools", tools),
   setErr: (err: string) => setObjStore("err", err),
 }
 

@@ -10,7 +10,7 @@ export const FormUpload: Upload = async (
   asTask = false,
   overwrite = false,
   rapid = false,
-): Promise<Error | undefined> => {
+): Promise<undefined> => {
   let oldTimestamp = new Date().valueOf()
   let oldLoaded = 0
   const form = new FormData()
@@ -60,6 +60,6 @@ export const FormUpload: Upload = async (
   if (resp.code === 200) {
     return
   } else {
-    return new Error(resp.message)
+    throw new Error(resp.message)
   }
 }

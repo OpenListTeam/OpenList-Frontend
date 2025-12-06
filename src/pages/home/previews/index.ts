@@ -120,9 +120,21 @@ const previews: Preview[] = [
     prior: true,
   },
   {
-    name: "PDF Preview",
-    exts: ["pdf"],
-    component: lazy(() => import("./pdf")),
+    name: "PPT Preview",
+    exts: ["pptx"],
+    component: lazy(() => import("./ppt")),
+    prior: true,
+  },
+  {
+    name: "XLS Preview",
+    exts: ["xlsx", "xls"],
+    component: lazy(() => import("./xls")),
+    prior: true,
+  },
+  {
+    name: "DOC Preview",
+    exts: ["docx", "doc"],
+    component: lazy(() => import("./doc")),
     prior: true,
   },
   {

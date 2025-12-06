@@ -85,6 +85,8 @@
     "UploadThread": "UploadThread",
     "UploadThread-tips": "the threads of upload",
     "password": "Password",
+    "platform": "Platform",
+    "platform-tips": "the platform header value, sent with API requests",
     "root_folder_id": "Root folder id",
     "username": "Username"
   },
@@ -297,6 +299,7 @@
     "container_name-tips": "The name of the container in Azure Storage (created in the Azure portal). https://learn.microsoft.com/azure/storage/blobs/blob-containers-portal",
     "endpoint": "Endpoint",
     "endpoint-tips": "e.g. https://accountname.blob.core.windows.net/. The full endpoint URL for Azure Storage, including the unique storage account name (3 ~ 24 numbers and lowercase letters only).",
+    "root_folder_path": "Root folder path",
     "sign_url_expire": "Sign url expire",
     "sign_url_expire-tips": "The expiration time for SAS URLs, in hours."
   },
@@ -331,6 +334,10 @@
     "upload_api": "Upload api",
     "upload_thread": "Upload thread",
     "upload_thread-tips": "1\u003c=thread\u003c=32",
+    "upload_timeout": "Upload timeout",
+    "upload_timeout-tips": "per-slice upload timeout in seconds",
+    "use_dynamic_upload_api": "Use dynamic upload api",
+    "use_dynamic_upload_api-tips": "dynamically get upload api domain, when enabled, the 'Upload API' setting will be used as a fallback if failed to get",
     "use_online_api": "Use online api"
   },
   "BaiduPhoto": {
@@ -350,7 +357,7 @@
     "default_branch": "Default branch",
     "default_branch-tips": "Default branch for new releases",
     "repo": "Repo",
-    "root_folder_path": "Root folder path",
+    "root_folder_id": "Root folder id",
     "token": "Token",
     "use_tag_name": "Use tag name",
     "use_tag_name-tips": "Use tag name instead of release name"
@@ -461,7 +468,9 @@
     "add_filename_to_disposition-tips": "Add filename to Content-Disposition header.",
     "bucket": "Bucket",
     "custom_host": "Custom host",
+    "direct_upload_host": "Direct upload host",
     "enable_custom_host_presign": "Enable custom host presign",
+    "enable_direct_upload": "Enable direct upload",
     "endpoint": "Endpoint",
     "force_path_style": "Force path style",
     "list_object_version": "List object version",
@@ -485,6 +494,8 @@
       "get_download_info": "Get download info",
       "get_file_url": "Get file url"
     },
+    "limit_rate": "Limit rate",
+    "limit_rate-tips": "limit all api request rate ([limit]r/1s)",
     "root_folder_id": "Root folder id",
     "upload_thread": "Upload thread"
   },
@@ -564,11 +575,13 @@
     "gh_proxy-tips": "GitHub proxy, e.g. https://ghproxy.net/github.com or https://gh-proxy.com/github.com ",
     "repo_structure": "Repo structure",
     "repo_structure-tips": "structure:[path:]org/repo",
-    "root_folder_id": "Root folder id",
+    "root_folder_path": "Root folder path",
     "show_all_version": "Show all version",
     "show_all_version-tips": "show all versions",
     "show_readme": "Show readme",
     "show_readme-tips": "show README、LICENSE file",
+    "show_source_code": "Show source code",
+    "show_source_code-tips": "show Source code (zip/tar.gz)",
     "token": "Token",
     "token-tips": "GitHub token, if you want to access private repositories or increase the rate limit"
   },
@@ -693,7 +706,7 @@
   "MediaFire": {
     "chunk_size": "Chunk size",
     "cookie": "Cookie",
-    "cookie-tips": "Required for navigation",
+    "cookie-tips": "Required for MediaFire API authentication",
     "limit_rate": "Limit rate",
     "limit_rate-tips": "limit all api request rate ([limit]r/1s)",
     "order_by": "Order by",
@@ -709,7 +722,7 @@
     },
     "root_folder_path": "Root folder path",
     "session_token": "Session token",
-    "session_token-tips": "Required for MediaFire API",
+    "session_token-tips": "Optional for MediaFire API, can be auto-acquired from cookie",
     "upload_threads": "Upload threads",
     "upload_threads-tips": "concurrent upload threads"
   },
@@ -773,6 +786,8 @@
     "custom_host": "Custom host",
     "custom_host-tips": "Custom host for onedrive download link",
     "disable_disk_usage": "Disable disk usage",
+    "enable_direct_upload": "Enable direct upload",
+    "enable_direct_upload-tips": "Enable direct upload from client to OneDrive",
     "is_sharepoint": "Is sharepoint",
     "redirect_uri": "Redirect uri",
     "refresh_token": "Refresh token",
@@ -800,6 +815,8 @@
     "custom_host-tips": "Custom host for onedrive download link",
     "disable_disk_usage": "Disable disk usage",
     "email": "Email",
+    "enable_direct_upload": "Enable direct upload",
+    "enable_direct_upload-tips": "Enable direct upload from client to OneDrive",
     "region": "Region",
     "regions": {
       "cn": "Cn",
@@ -936,7 +953,9 @@
     "add_filename_to_disposition-tips": "Add filename to Content-Disposition header.",
     "bucket": "Bucket",
     "custom_host": "Custom host",
+    "direct_upload_host": "Direct upload host",
     "enable_custom_host_presign": "Enable custom host presign",
+    "enable_direct_upload": "Enable direct upload",
     "endpoint": "Endpoint",
     "force_path_style": "Force path style",
     "list_object_version": "List object version",
@@ -979,17 +998,25 @@
     "username": "Username"
   },
   "Strm": {
+    "KeepLocalDownloadFile": "KeepLocalDownloadFile",
+    "KeepLocalDownloadFile-tips": "keep local download files",
+    "PathPrefix": "PathPrefix",
+    "PathPrefix-tips": "Path prefix",
+    "SaveStrmLocalPath": "SaveStrmLocalPath",
+    "SaveStrmLocalPath-tips": "save strm file local path",
+    "SaveStrmToLocal": "SaveStrmToLocal",
+    "SaveStrmToLocal-tips": "save strm file locally",
     "downloadFileTypes": "DownloadFileTypes",
     "downloadFileTypes-tips": "Files need to download with strm (usally subtitles)",
     "encodePath": "EncodePath",
     "encodePath-tips": "encode the path in the strm file",
     "filterFileTypes": "FilterFileTypes",
     "filterFileTypes-tips": "Supports suffix name of strm file",
-    "localModel": "LocalModel",
-    "localModel-tips": "enable local mode",
     "paths": "Paths",
     "siteUrl": "SiteUrl",
-    "siteUrl-tips": "The prefix URL of the strm file"
+    "siteUrl-tips": "The prefix URL of the strm file",
+    "withoutUrl": "WithoutUrl",
+    "withoutUrl-tips": "strm file content without URL prefix"
   },
   "Teambition": {
     "cookie": "Cookie",
@@ -1053,6 +1080,8 @@
     "device_id": "Device id",
     "password": "Password",
     "root_folder_id": "Root folder id",
+    "space": "Space",
+    "space-tips": "device id for remote device",
     "username": "Username"
   },
   "ThunderBrowser": {
@@ -1147,6 +1176,8 @@
       "algorithms": "Algorithms",
       "captcha_sign": "Captcha sign"
     },
+    "space": "Space",
+    "space-tips": "device id for remote device",
     "timestamp": "Timestamp",
     "timestamp-tips": "sign type is captcha_sign,this is required",
     "use_video_url": "Use video url",

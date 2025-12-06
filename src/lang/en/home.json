@@ -22,31 +22,7 @@
     "tr-install": "TrollStore",
     "tr-installing": "TrollStore Installing",
     "open_in_new_window": "Open in new window",
-    "auto_next": "Auto next",
-    "pdf": {
-      "document_outline": "Document Outline",
-      "no_outline": "No outline available for this document",
-      "loading": "Loading...",
-      "prev_page": "Previous Page",
-      "next_page": "Next Page",
-      "toggle_sidebar": "Toggle Sidebar",
-      "close_sidebar": "Close Sidebar",
-      "toggle_pen": "Toggle Pen",
-      "zoom_presets": "Zoom Presets",
-      "zoom_levels": "Zoom Levels",
-      "zoom_auto": "Auto",
-      "zoom_actual": "Actual Size",
-      "zoom_fit": "Page Fit",
-      "zoom_width": "Page Width",
-      "zoom_50": "50%",
-      "zoom_75": "75%",
-      "zoom_100": "100%",
-      "zoom_125": "125%",
-      "zoom_150": "150%",
-      "zoom_200": "200%",
-      "zoom_in": "Zoom In",
-      "zoom_out": "Zoom Out"
-    }
+    "auto_next": "Auto next"
   },
   "layouts": {
     "list": "List View",
@@ -123,7 +99,9 @@
     "regex_rename_preview_old_name": "Old Name",
     "regex_rename_preview_new_name": "New Name",
     "regular_rename": "Regular expression file renaming. Input the source file name regular expression on the first line, and input the new file name regular expression on the second line.",
-    "sequential_renaming_desc": "The new file name will have a numerical starting value appended to it, and it will be displayed sequentially by adding 1 to the starting value. Enter the new file name on the first line and the starting value on the second line."
+    "sequential_renaming_desc": "The new file name will have a numerical starting value appended to it, and it will be displayed sequentially by adding 1 to the starting value. Enter the new file name on the first line and the starting value on the second line.",
+    "find_replace": "Find and Replace",
+    "find_replace_desc": "Find and Replace"
   },
   "upload": {
     "add_as_task": "Add as task",
@@ -215,6 +193,7 @@
   "conflict_policy": {
     "cancel_if_exists": "Cancel if file exists",
     "overwrite_existing": "Overwrite existing files",
-    "skip_existing": "Skip existing files"
+    "skip_existing": "Skip existing files",
+    "merge": "Only Copy new files and subdirectories"
   }
 }

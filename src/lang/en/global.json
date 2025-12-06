@@ -28,6 +28,7 @@
   "close": "Close",
   "no_support_now": "Not currently supported",
   "empty_input": "Please enter",
+  "invalid_filename_chars": "Filename cannot contain: / \\ ? < > * : | \"",
   "name": "Name",
   "go_to_storages": "Go to Storages"
 }

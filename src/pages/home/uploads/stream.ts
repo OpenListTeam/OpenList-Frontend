@@ -10,7 +10,7 @@ export const StreamUpload: Upload = async (
   asTask = false,
   overwrite = false,
   rapid = false,
-): Promise<Error | undefined> => {
+): Promise<undefined> => {
   let oldTimestamp = new Date().valueOf()
   let oldLoaded = 0
   let headers: { [k: string]: any } = {
@@ -58,6 +58,6 @@ export const StreamUpload: Upload = async (
   if (resp.code === 200) {
     return
   } else {
-    return new Error(resp.message)
+    throw new Error(resp.message)
   }
 }

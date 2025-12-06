@@ -71,14 +71,6 @@ export default defineConfig({
   build: {
     // target: "es2015", //next
     // polyfillDynamicImport: false,
-    rollupOptions: {
-      output: {
-        assetFileNames: (assetInfo) =>
-          assetInfo.names?.some((name) => name.endsWith("pdf.worker.min.mjs"))
-            ? "assets/[name]-[hash].js"
-            : "assets/[name]-[hash][extname]",
-      },
-    },
   },
   // experimental: {
   //   renderBuiltUrl: (filename, { type, hostId, hostType }) => {
