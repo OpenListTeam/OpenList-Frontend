@@ -41,7 +41,7 @@
     "@types/crypto-js": "^4.2.2",
     "@types/mark.js": "^8.11.12",
     "@types/node": "^22.0.0",
-    "@types/qrcode": "^1.5.5",
+    "@types/qrcode": "^1.5.6",
     "@types/sha256": "^0.2.2",
     "@types/streamsaver": "^2.0.5",
     "@vitejs/plugin-legacy": "^6.1.1",

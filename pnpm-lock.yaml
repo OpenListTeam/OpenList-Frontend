@@ -181,7 +181,7 @@ importers:
         specifier: ^22.0.0
         version: 22.19.0
       '@types/qrcode':
-        specifier: ^1.5.5
+        specifier: ^1.5.6
         version: 1.5.6
       '@types/sha256':
         specifier: ^0.2.2
