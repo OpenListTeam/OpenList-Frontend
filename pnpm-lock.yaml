@@ -102,7 +102,7 @@ importers:
         specifier: ^1.19.8
         version: 1.19.8
       lightgallery:
-        specifier: ^2.8.3
+        specifier: ^2.9.0
         version: 2.9.0
       mark.js:
         specifier: ^8.11.1
