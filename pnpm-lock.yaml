@@ -223,7 +223,7 @@ importers:
         specifier: ^2.11.10
         version: 2.11.10(solid-js@1.9.10)(vite@6.4.1(@types/node@22.19.0)(terser@5.44.1)(yaml@2.8.1))
       vite-plugin-static-copy:
-        specifier: ^3.1.1
+        specifier: ^3.1.4
         version: 3.1.4(vite@6.4.1(@types/node@22.19.0)(terser@5.44.1)(yaml@2.8.1))
 
 packages:
