@@ -1,6 +1,24 @@
 import { Upload, SetUpload } from "./types"
 import { r, pathDir } from "~/utils"
 
+// Create a speed calculator using closure
+function createSpeedCalculator(throttleMs = 500) {
+  let lastLoaded = 0
+  let lastTime = Date.now()
+
+  return (loaded: number, setUpload?: SetUpload) => {
+    const now = Date.now()
+    const timeDiff = (now - lastTime) / 1000
+
+    if (timeDiff >= throttleMs / 1000) {
+      const speed = (loaded - lastLoaded) / timeDiff
+      setUpload?.("speed", speed)
+      lastLoaded = loaded
+      lastTime = now
+    }
+  }
+}
+
 export const HttpDirectUpload: Upload = async (
   uploadPath: string,
   file: File,
@@ -39,8 +57,9 @@ export const HttpDirectUpload: Upload = async (
   const uploadURL = uploadInfo.upload_url
   const method = uploadInfo.method || "PUT"
 
-  if (chunkSize > 0 && file.size > chunkSize) {
-    // Chunked upload
+  if (chunkSize > 0) {
+    // Always use chunked upload when chunkSize is provided
+    // This ensures Content-Range header is set for all files
     return await uploadChunked(
       file,
       uploadURL,
@@ -50,7 +69,7 @@ export const HttpDirectUpload: Upload = async (
       setUpload,
     )
   } else {
-    // Single upload
+    // Single upload for drivers that don't support chunking
     return await uploadSingle(
       file,
       uploadURL,
@@ -69,13 +88,14 @@ async function uploadSingle(
   setUpload?: SetUpload,
 ): Promise<undefined> {
   const xhr = new XMLHttpRequest()
+  const calcSpeed = createSpeedCalculator()
 
   return new Promise((resolve, reject) => {
     xhr.upload.addEventListener("progress", (e) => {
       if (e.lengthComputable && setUpload) {
         const progress = (e.loaded / e.total) * 100
         setUpload("progress", progress)
-        setUpload("speed", 0) // Speed calculation not implemented
+        calcSpeed(e.loaded, setUpload)
       }
     })
 
@@ -113,6 +133,7 @@ async function uploadChunked(
   setUpload?: SetUpload,
 ): Promise<undefined> {
   const totalChunks = Math.ceil(file.size / chunkSize)
+  const calcSpeed = createSpeedCalculator()
   let uploadedBytes = 0
 
   for (let i = 0; i < totalChunks; i++) {
@@ -125,10 +146,10 @@ async function uploadChunked(
     await new Promise<void>((resolve, reject) => {
       xhr.upload.addEventListener("progress", (e) => {
         if (e.lengthComputable && setUpload) {
-          const chunkProgress = uploadedBytes + e.loaded
-          const progress = (chunkProgress / file.size) * 100
+          const totalLoaded = uploadedBytes + e.loaded
+          const progress = (totalLoaded / file.size) * 100
           setUpload("progress", progress)
-          setUpload("speed", 0) // Speed calculation not implemented
+          calcSpeed(totalLoaded, setUpload)
         }
       })
 

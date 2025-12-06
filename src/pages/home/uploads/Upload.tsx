@@ -49,11 +49,14 @@ const UploadFile = (props: UploadFileProps) => {
       >
         {props.path}
       </Text>
-      <HStack spacing="$2">
-        <Badge colorScheme={StatusBadge[props.status]}>
-          {t(`home.upload.${props.status}`)}
-        </Badge>
-        <Text>{getFileSize(props.speed)}/s</Text>
+      <HStack spacing="$2" w="$full" justifyContent="space-between">
+        <HStack spacing="$2">
+          <Badge colorScheme={StatusBadge[props.status]}>
+            {t(`home.upload.${props.status}`)}
+          </Badge>
+          <Text>{getFileSize(props.speed)}/s</Text>
+        </HStack>
+        <Text color="$neutral11">{getFileSize(props.size)}</Text>
       </HStack>
       <Progress
         w="$full"

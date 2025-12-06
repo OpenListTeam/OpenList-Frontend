@@ -18,13 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout frontend codes
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           submodules: recursive
 
       - name: Checkout backend codes
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: ${{ vars.SYNC_LANG_ENV_BACKEND_REPOSITORY || 'OpenListTeam/OpenList' }}
           ref: main
@@ -85,7 +85,7 @@ jobs:
 
       - name: Setup Node
         if: steps.verify-changed-files.outputs.changed == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
