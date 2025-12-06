@@ -50,7 +50,7 @@
     "lint-staged": "^16.0.0",
     "mermaid": "^11.9.0",
     "prettier": "3.6.2",
-    "terser": "^5.43.1",
+    "terser": "^5.44.1",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vite-plugin-dynamic-base": "^1.0.0",
