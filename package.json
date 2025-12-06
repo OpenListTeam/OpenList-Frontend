@@ -45,7 +45,7 @@
     "@types/sha256": "^0.2.2",
     "@types/streamsaver": "^2.0.5",
     "@vitejs/plugin-legacy": "^6.1.1",
-    "cross-env": "^7.0.3",
+    "cross-env": "^10.1.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.0.0",
     "mermaid": "^11.9.0",
