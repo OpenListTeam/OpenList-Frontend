@@ -54,7 +54,7 @@ importers:
         specifier: ^5.2.0
         version: 5.2.0
       asciinema-player:
-        specifier: ^3.10.0
+        specifier: ^3.12.1
         version: 3.12.1
       axios:
         specifier: ^1.9.0

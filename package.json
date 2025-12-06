@@ -73,7 +73,7 @@
     "aplayer": "^1.10.1",
     "artplayer": "^5.2.3",
     "artplayer-plugin-danmuku": "^5.2.0",
-    "asciinema-player": "^3.10.0",
+    "asciinema-player": "^3.12.1",
     "axios": "^1.9.0",
     "bencode": "^4.0.0",
     "chardet": "^2.1.0",
