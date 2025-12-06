@@ -76,7 +76,7 @@
     "asciinema-player": "^3.12.1",
     "axios": "^1.9.0",
     "bencode": "^4.0.0",
-    "chardet": "^2.1.0",
+    "chardet": "^2.1.1",
     "clsx": "^2.1.1",
     "copy-to-clipboard": "^3.3.3",
     "crypto-js": "^4.2.0",

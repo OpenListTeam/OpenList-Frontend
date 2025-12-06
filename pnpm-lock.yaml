@@ -63,7 +63,7 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0
       chardet:
-        specifier: ^2.1.0
+        specifier: ^2.1.1
         version: 2.1.1
       clsx:
         specifier: ^2.1.1
