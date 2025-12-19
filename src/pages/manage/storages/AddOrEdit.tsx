@@ -1,7 +1,14 @@
-import { Alert, AlertIcon, Button, Heading, VStack } from "@hope-ui/solid"
+import {
+  Alert,
+  AlertIcon,
+  Button,
+  Heading,
+  HStack,
+  VStack,
+} from "@hope-ui/solid"
 import { createMemo, createSignal, For, Show } from "solid-js"
 import { MaybeLoading } from "~/components"
-import { useFetch, useRouter, useT } from "~/hooks"
+import { useFetch, useRouter, useT, useUtil } from "~/hooks"
 import { handleResp, joinBase, notify, r } from "~/utils"
 import {
   Addition,
@@ -50,6 +57,7 @@ type Drivers = Record<string, DriverInfo>
 
 const AddOrEdit = () => {
   const t = useT()
+  const { copy } = useUtil()
   const { params, back, to } = useRouter()
   const { id } = params
   const [driversLoading, loadDrivers] = useFetch(
@@ -177,32 +185,67 @@ const AddOrEdit = () => {
           </For>
         </Show>
       </ResponsiveGrid>
-      <Button
+      <HStack
         mt="$2"
-        loading={okLoading()}
-        onClick={async () => {
-          if (drivers()[storage.driver].config.need_ms) {
-            notify.info(t("manage.add_storage-tips"))
-            window.open(joinBase("/@manage/messenger"), "_blank")
-          }
-          const resp = await ok()
-          // TODO maybe can use handleRrespWithNotifySuccess
-          handleResp(
-            resp,
-            () => {
-              notify.success(t("global.save_success"))
-              back()
-            },
-            (msg, code) => {
-              if (resp.data.id) {
-                to(`/@manage/storages/edit/${resp.data.id}`)
-              }
-            },
-          )
+        spacing="$2"
+        gap="$2"
+        w="$full"
+        wrap={{
+          "@initial": "wrap",
+          "@md": "unset",
         }}
       >
-        {t(`global.${id ? "save" : "add"}`)}
-      </Button>
+        <Button
+          loading={okLoading()}
+          onClick={async () => {
+            if (drivers()[storage.driver].config.need_ms) {
+              notify.info(t("manage.add_storage-tips"))
+              window.open(joinBase("/@manage/messenger"), "_blank")
+            }
+            const resp = await ok()
+            // TODO maybe can use handleRrespWithNotifySuccess
+            handleResp(
+              resp,
+              () => {
+                notify.success(t("global.save_success"))
+                back()
+              },
+              (msg, code) => {
+                if (resp.data.id) {
+                  to(`/@manage/storages/edit/${resp.data.id}`)
+                }
+              },
+            )
+          }}
+        >
+          {t(`global.${id ? "save" : "add"}`)}
+        </Button>
+        <Button
+          colorScheme="accent"
+          loading={okLoading()}
+          onClick={async () => {
+            copy(JSON.stringify(storage))
+          }}
+        >
+          Export
+        </Button>
+        <Button
+          colorScheme="primary"
+          loading={okLoading()}
+          onClick={async () => {
+            const text = await navigator.clipboard.readText()
+            try {
+              const obj = JSON.parse(text)
+              setStorage(obj)
+              setAddition(JSON.parse(obj.addition))
+            } catch (e) {
+              notify.error("Invalid storage format")
+            }
+          }}
+        >
+          Import
+        </Button>
+      </HStack>
     </MaybeLoading>
   )
 }
