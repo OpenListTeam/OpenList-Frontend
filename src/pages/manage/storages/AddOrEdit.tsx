@@ -235,7 +235,8 @@ const AddOrEdit = () => {
           onClick={async () => {
             const text = await navigator.clipboard.readText()
             try {
-              const obj = JSON.parse(text)
+              const { id, disabled, modified, status, ...obj }: Storage =
+                JSON.parse(text)
               setStorage(obj)
               setAddition(JSON.parse(obj.addition))
             } catch (e) {
