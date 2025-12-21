@@ -29,6 +29,7 @@
   "no_support_now": "Not currently supported",
   "empty_input": "Please enter",
   "invalid_filename_chars": "Filename cannot contain: / \\ ? < > * : | \"",
+  "invalid_regex": "Invalid regular expression",
   "name": "Name",
   "go_to_storages": "Go to Storages"
 }
