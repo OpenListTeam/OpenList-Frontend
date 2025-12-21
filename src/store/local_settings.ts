@@ -71,6 +71,12 @@ export const initialLocalSettings = [
     default: "14",
     type: "number",
   },
+  {
+    key: "show_gallery_thumbnails",
+    default: "visible",
+    type: "select",
+    options: ["none", "visible"],
+  },
 ]
 export type LocalSetting = (typeof initialLocalSettings)[number]
 for (const setting of initialLocalSettings) {

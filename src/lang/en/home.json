@@ -164,6 +164,11 @@
       "direct": "Direct",
       "dblclick": "Double click",
       "disable_while_checked": "Disable while checked"
+    },
+    "show_gallery_thumbnails": "Show gallery thumbnails",
+    "show_gallery_thumbnails_options": {
+      "none": "None",
+      "visible": "Visible"
     }
   },
   "package_download": {
