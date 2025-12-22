@@ -262,16 +262,14 @@ export const getPreviews = (
     res.push(downloadComponent)
   }
 
-    // 根据用户设置动态调整默认预览器 ---
   if (file.type === ObjType.TEXT) {
-    const preferredName = local.default_text_previewer;
-    // 在结果列表 res 中查找用户偏好的预览器
-    const index = res.findIndex(p => p.name === preferredName);
-    // 如果找到了，并且它不在第一位，就把它提到第一位
+    const preferredName = local.default_text_previewer
+    const index = res.findIndex((p) => p.name === preferredName)
     if (index > 0) {
-      const [preferredPreviewer] = res.splice(index, 1);
-      res.unshift(preferredPreviewer);
+      const [preferredPreviewer] = res.splice(index, 1)
+      res.unshift(preferredPreviewer)
     }
   }
+
   return res.concat(subsequent)
 }

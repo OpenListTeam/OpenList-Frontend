@@ -44,11 +44,8 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
       value: props.value,
       theme: props.theme,
       fontSize: parseInt(local.editor_font_size),
-      wordWrap: local.editor_word_wrap as any, // 开启换行
-      minimap: { enabled: local.editor_minimap === "true" }, // 缩略图
-      automaticLayout: true,
-      scrollBeyondLastLine: false,
-      renderWhitespace: "selection", // 选中时显示空格
+      wordWrap: local.editor_word_wrap as any,
+      minimap: { enabled: local.editor_minimap === "true" },
       renderLineHighlight: local.editor_line_highlight as any,
       unicodeHighlight: {
         ambiguousCharacters: local.editor_unicode_highlight === "true",
@@ -76,6 +73,13 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
   createEffect(() => {
     monacoEditor?.updateOptions({
       fontSize: parseInt(local.editor_font_size),
+      wordWrap: local.editor_word_wrap as any,
+      minimap: { enabled: local.editor_minimap === "true" },
+      renderLineHighlight: local.editor_line_highlight as any,
+      unicodeHighlight: {
+        ambiguousCharacters: local.editor_unicode_highlight === "true",
+        invisibleCharacters: local.editor_unicode_highlight === "true",
+      },
     })
   })
 
