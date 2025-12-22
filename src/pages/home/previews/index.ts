@@ -4,6 +4,7 @@ import { Obj, ObjType, UserMethods, UserPermissions, ArchiveObj } from "~/types"
 import { ext } from "~/utils"
 import { generateIframePreview } from "./iframe"
 import { useRouter } from "~/hooks"
+import { local } from "~/store"
 
 type Ext = string[] | "*" | ((name: string) => boolean)
 type Prior = boolean | (() => boolean)
@@ -259,6 +260,18 @@ export const getPreviews = (
     // Case 3: The "normal" case for all other files (images, videos, small text files, etc.).
     // Add "Download" as the last fallback option in the high-priority list.
     res.push(downloadComponent)
+  }
+
+    // 根据用户设置动态调整默认预览器 ---
+  if (file.type === ObjType.TEXT) {
+    const preferredName = local.default_text_previewer;
+    // 在结果列表 res 中查找用户偏好的预览器
+    const index = res.findIndex(p => p.name === preferredName);
+    // 如果找到了，并且它不在第一位，就把它提到第一位
+    if (index > 0) {
+      const [preferredPreviewer] = res.splice(index, 1);
+      res.unshift(preferredPreviewer);
+    }
   }
   return res.concat(subsequent)
 }

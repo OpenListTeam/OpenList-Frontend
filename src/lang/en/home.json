@@ -164,6 +164,23 @@
       "direct": "Direct",
       "dblclick": "Double click",
       "disable_while_checked": "Disable while checked"
+    },
+    "editor_font_size": "Editor Font Size",
+    "editor_word_wrap": "Editor Word Wrap",
+    "editor_word_wrap_options": {
+      "on": "On",
+      "off": "Off"
+    },
+    "editor_minimap": "Show Minimap",
+    "editor_minimap_options": {
+      "true": "Show",
+      "false": "Hide"
+    },
+    "default_text_previewer": "Default Text Viewer",
+    "default_text_previewer_options": {
+      "Markdown": "Markdown",
+      "Markdown with word wrap": "Markdown (Word Wrap)",
+      "Text Editor": "Text Editor (Edit Mode)"
     }
   },
   "package_download": {
