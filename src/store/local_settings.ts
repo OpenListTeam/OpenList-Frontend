@@ -89,6 +89,18 @@ export const initialLocalSettings = [
     type: "select",
     options: ["Markdown", "Markdown with word wrap", "Text Editor"],
   },
+  {
+    key: "editor_line_highlight",
+    default: "all",
+    type: "select",
+    options: ["all", "none"],
+  },
+  {
+    key: "editor_unicode_highlight",
+    default: "true",
+    type: "select",
+    options: ["true", "false"],
+  },
 ]
 export type LocalSetting = (typeof initialLocalSettings)[number]
 for (const setting of initialLocalSettings) {

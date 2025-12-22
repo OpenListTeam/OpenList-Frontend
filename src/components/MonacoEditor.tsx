@@ -46,9 +46,14 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
       fontSize: parseInt(local.editor_font_size),
       wordWrap: local.editor_word_wrap as any, // 开启换行
       minimap: { enabled: local.editor_minimap === "true" }, // 缩略图
-      automaticLayout: true, // 自适应容器大小，解决不换行，溢出问题
+      automaticLayout: true,
       scrollBeyondLastLine: false,
       renderWhitespace: "selection", // 选中时显示空格
+      renderLineHighlight: local.editor_line_highlight as any,
+      unicodeHighlight: {
+        ambiguousCharacters: local.editor_unicode_highlight === "true",
+        invisibleCharacters: local.editor_unicode_highlight === "true",
+      },
     })
     model = monaco.editor.createModel(
       props.value,

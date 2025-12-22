@@ -181,6 +181,16 @@
       "Markdown": "Markdown",
       "Markdown with word wrap": "Markdown (Word Wrap)",
       "Text Editor": "Text Editor (Edit Mode)"
+    },
+    "editor_line_highlight": "Line Highlight",
+    "editor_line_highlight_options": {
+      "all": "All",
+      "none": "None"
+    },
+    "editor_unicode_highlight": "Unicode Highlight",
+    "editor_unicode_highlight_options": {
+      "true": "Show",
+      "false": "Hide"
     }
   },
   "package_download": {
