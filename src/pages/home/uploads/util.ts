@@ -10,7 +10,7 @@ export const traverseFileTree = async (entry: FileSystemEntry) => {
         reject(e)
       }
       if (entry.isFile) {
-        ;(entry as FileSystemFileEntry).file((file) => {
+        ; (entry as FileSystemFileEntry).file((file) => {
           const newFile = new File([file], path + file.name, {
             type: file.type,
           })
@@ -25,12 +25,12 @@ export const traverseFileTree = async (entry: FileSystemEntry) => {
             for (let i = 0; i < entries.length; i++) {
               await internalProcess(entries[i], path + entry.name + "/")
             }
-            if (entries.length > 0){
+            if (entries.length > 0) {
               readEntries()
-            }else {
+            } else {
               resolve({})
             }
-            
+
             /*  resolve({})
             /**
             why? https://stackoverflow.com/questions/3590058/does-html5-allow-drag-drop-upload-of-folders-or-a-folder-tree/53058574#53058574
@@ -46,7 +46,7 @@ export const traverseFileTree = async (entry: FileSystemEntry) => {
             /*  readEntries()
             }
             */
-           
+
           }, errorCallback)
         }
         readEntries()
