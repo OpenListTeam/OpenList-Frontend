@@ -1,5 +1,13 @@
 name: Sync i18n to Crowdin
 
+inputs:
+  crowdin_project_id:
+    required: true
+    description: "Crowdin Project ID"
+  crowdin_personal_token:
+    required: true
+    description: "Crowdin Personal Token"
+
 runs:
   using: "composite"
   steps:
@@ -24,5 +32,5 @@ runs:
       run: |
         pnpm crowdin:upload
       env:
-        CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
-        CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+        CROWDIN_PROJECT_ID: ${{ inputs.crowdin_project_id }}
+        CROWDIN_PERSONAL_TOKEN: ${{ inputs.crowdin_personal_token }}
