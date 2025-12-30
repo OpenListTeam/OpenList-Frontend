@@ -222,34 +222,34 @@
     "file_consistency_check": "File consistency check",
     "paths": "Paths",
     "provider_pass_through": "Provider pass through",
-    "put_conflict_policy": "Put conflict policy",
+    "put_conflict_policy": "Putting conflict policy",
     "put_conflict_policy-tips": "How the driver handles identical backend paths when uploading, copying, moving, or decompressing.",
     "put_conflict_policys": {
-      "all": "All",
-      "all_strict": "All strict",
-      "deterministic": "Deterministic",
-      "deterministic_or_all": "Deterministic or all",
-      "disabled": "Disabled",
-      "first": "First",
-      "quota": "Quota",
-      "quota_strict": "Quota strict",
-      "random": "Random"
+      "all": "Put into all conflict paths",
+      "all_strict": "Allow full conflict paths",
+      "deterministic": "Allow unique path",
+      "deterministic_or_all": "Allow unique path and full conflict paths",
+      "disabled": "Disable putting",
+      "first": "Put into the first conflict path",
+      "quota": "Weighted random load balancing based on remaining space",
+      "quota_strict": "Strict weighted random load balancing based on remaining space",
+      "random": "Random load balancing"
     },
-    "read_conflict_policy": "Read conflict policy",
+    "read_conflict_policy": "Reading conflict policy",
     "read_conflict_policys": {
-      "all": "All",
-      "first": "First",
-      "random": "Random"
+      "all": "Load balancing on a per-part basis",
+      "first": "Get the file corresponding to the first conflict path",
+      "random": "Load balancing on a per-file basis"
     },
-    "write_conflict_policy": "Write conflict policy",
+    "write_conflict_policy": "Writing conflict policy",
     "write_conflict_policy-tips": "How the driver handles identical backend paths when renaming, removing, or making directories.",
     "write_conflict_policys": {
-      "all": "All",
-      "all_strict": "All strict",
-      "deterministic": "Deterministic",
-      "deterministic_or_all": "Deterministic or all",
-      "disabled": "Disabled",
-      "first": "First"
+      "all": "Write into all conflict paths",
+      "all_strict": "Allow full conflict paths",
+      "deterministic": "Allow unique path",
+      "deterministic_or_all": "Allow unique path and full conflict paths",
+      "disabled": "Disable writing",
+      "first": "Write into the first conflict path"
     }
   },
   "Aliyundrive": {
