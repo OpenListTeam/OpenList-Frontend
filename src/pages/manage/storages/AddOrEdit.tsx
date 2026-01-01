@@ -256,7 +256,7 @@ const AddOrEdit = () => {
           onClose={() => setImportOpened(false)}
           title={t("storages.common.import_title")}
           type="text"
-          tips="Paste the exported storage JSON to import."
+          tips={t("storages.common.import_tips")}
           onSubmit={(text: string) => {
             try {
               const { id, disabled, modified, status, ...obj }: Storage =
