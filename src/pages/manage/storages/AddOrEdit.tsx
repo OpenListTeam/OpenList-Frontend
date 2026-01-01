@@ -7,8 +7,8 @@ import {
   VStack,
 } from "@hope-ui/solid"
 import { createMemo, createSignal, For, Show } from "solid-js"
-import { MaybeLoading } from "~/components"
-import { useFetch, useRouter, useT, useUtil } from "~/hooks"
+import { MaybeLoading, ModalInput } from "~/components"
+import { useFetch, useRouter, useT } from "~/hooks"
 import { handleResp, joinBase, notify, r } from "~/utils"
 import {
   Addition,
@@ -57,7 +57,6 @@ type Drivers = Record<string, DriverInfo>
 
 const AddOrEdit = () => {
   const t = useT()
-  const { copy } = useUtil()
   const { params, back, to } = useRouter()
   const { id } = params
   const [driversLoading, loadDrivers] = useFetch(
@@ -108,6 +107,8 @@ const AddOrEdit = () => {
       return i.split("|")[0]
     }
   })
+  const [exportOpened, setExportOpened] = createSignal(false)
+  const [importOpened, setImportOpened] = createSignal(false)
   return (
     <MaybeLoading
       loading={id ? storageLoading() || driverLoading() : driversLoading()}
@@ -224,28 +225,51 @@ const AddOrEdit = () => {
           colorScheme="accent"
           loading={okLoading()}
           onClick={async () => {
-            copy(JSON.stringify(storage))
+            setExportOpened(true)
           }}
         >
           Export
         </Button>
+        <Show when={exportOpened()}>
+          <ModalInput
+            opened={exportOpened()}
+            onClose={() => setExportOpened(false)}
+            title="Export Storage JSON"
+            type="text"
+            defaultValue={JSON.stringify(storage)}
+            onSubmit={(text: string) => {
+              setExportOpened(false)
+            }}
+          />
+        </Show>
         <Button
           colorScheme="primary"
           loading={okLoading()}
           onClick={async () => {
-            const text = await navigator.clipboard.readText()
+            setImportOpened(true)
+          }}
+        >
+          Import
+        </Button>
+        <ModalInput
+          opened={importOpened()}
+          onClose={() => setImportOpened(false)}
+          title="Import Storage JSON"
+          type="text"
+          tips="Paste the exported storage JSON to import."
+          onSubmit={(text: string) => {
             try {
               const { id, disabled, modified, status, ...obj }: Storage =
                 JSON.parse(text)
               setStorage(obj)
               setAddition(JSON.parse(obj.addition))
-            } catch (e) {
-              notify.error("Invalid storage format")
+              setImportOpened(false)
+              notify.success("Imported successfully")
+            } catch (e: any) {
+              notify.error(`Invalid storage format: ${e.message}`)
             }
           }}
-        >
-          Import
-        </Button>
+        />
       </HStack>
     </MaybeLoading>
   )
