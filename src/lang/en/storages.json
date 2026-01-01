@@ -1,5 +1,10 @@
 {
   "common": {
+    "export": "Export",
+    "export_title": "Export Storage to JSON",
+    "import": "Import",
+    "import_title": "Import Storage from JSON",
+    "import_success": "Imported successfully!",
     "mount_path": "Mount Path",
     "mount_path-tips": "The path you want to mount to, it is unique and cannot be repeated",
     "driver": "Driver",

@@ -228,13 +228,13 @@ const AddOrEdit = () => {
             setExportOpened(true)
           }}
         >
-          Export
+          {t("storages.common.export")}
         </Button>
         <Show when={exportOpened()}>
           <ModalInput
             opened={exportOpened()}
             onClose={() => setExportOpened(false)}
-            title="Export Storage JSON"
+            title={t("storages.common.export_title")}
             type="text"
             defaultValue={JSON.stringify(storage)}
             onSubmit={(text: string) => {
@@ -249,12 +249,12 @@ const AddOrEdit = () => {
             setImportOpened(true)
           }}
         >
-          Import
+          {t("storages.common.import")}
         </Button>
         <ModalInput
           opened={importOpened()}
           onClose={() => setImportOpened(false)}
-          title="Import Storage JSON"
+          title={t("storages.common.import_title")}
           type="text"
           tips="Paste the exported storage JSON to import."
           onSubmit={(text: string) => {
@@ -264,7 +264,7 @@ const AddOrEdit = () => {
               setStorage(obj)
               setAddition(JSON.parse(obj.addition))
               setImportOpened(false)
-              notify.success("Imported successfully")
+              notify.success(t("storages.common.import_success"))
             } catch (e: any) {
               notify.error(`Invalid storage format: ${e.message}`)
             }
