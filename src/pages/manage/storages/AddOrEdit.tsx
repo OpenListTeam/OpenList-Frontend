@@ -230,18 +230,6 @@ const AddOrEdit = () => {
         >
           {t("storages.common.export")}
         </Button>
-        <Show when={exportOpened()}>
-          <ModalInput
-            opened={exportOpened()}
-            onClose={() => setExportOpened(false)}
-            title={t("storages.common.export_title")}
-            type="text"
-            defaultValue={JSON.stringify(storage)}
-            onSubmit={(text: string) => {
-              setExportOpened(false)
-            }}
-          />
-        </Show>
         <Button
           colorScheme="primary"
           loading={okLoading()}
@@ -251,26 +239,38 @@ const AddOrEdit = () => {
         >
           {t("storages.common.import")}
         </Button>
+      </HStack>
+      <Show when={exportOpened()}>
         <ModalInput
-          opened={importOpened()}
-          onClose={() => setImportOpened(false)}
-          title={t("storages.common.import_title")}
+          opened={exportOpened()}
+          onClose={() => setExportOpened(false)}
+          title={t("storages.common.export_title")}
           type="text"
-          tips={t("storages.common.import_tips")}
-          onSubmit={(text: string) => {
-            try {
-              const { id, disabled, modified, status, ...obj }: Storage =
-                JSON.parse(text)
-              setStorage(obj)
-              setAddition(JSON.parse(obj.addition))
-              setImportOpened(false)
-              notify.success(t("storages.common.import_success"))
-            } catch (e: any) {
-              notify.error(`Invalid storage format: ${e.message}`)
-            }
+          defaultValue={JSON.stringify(storage)}
+          onSubmit={() => {
+            setExportOpened(false)
           }}
         />
-      </HStack>
+      </Show>
+      <ModalInput
+        opened={importOpened()}
+        onClose={() => setImportOpened(false)}
+        title={t("storages.common.import_title")}
+        type="text"
+        tips={t("storages.common.import_tips")}
+        onSubmit={(text: string) => {
+          try {
+            const { id, disabled, modified, status, ...obj }: Storage =
+              JSON.parse(text)
+            setStorage(obj)
+            setAddition(JSON.parse(obj.addition))
+            setImportOpened(false)
+            notify.success(t("storages.common.import_success"))
+          } catch (e: any) {
+            notify.error(`Invalid storage format: ${e.message}`)
+          }
+        }}
+      />
     </MaybeLoading>
   )
 }
