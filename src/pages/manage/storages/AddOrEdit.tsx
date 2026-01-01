@@ -246,6 +246,7 @@ const AddOrEdit = () => {
           onClose={() => setExportOpened(false)}
           title={t("storages.common.export_title")}
           type="text"
+          tips={t("storages.common.export_tips")}
           defaultValue={JSON.stringify(storage)}
           onSubmit={() => {
             setExportOpened(false)
