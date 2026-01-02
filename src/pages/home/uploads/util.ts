@@ -10,7 +10,7 @@ export const traverseFileTree = async (entry: FileSystemEntry) => {
         reject(e)
       }
       if (entry.isFile) {
-        ; (entry as FileSystemFileEntry).file((file) => {
+        ;(entry as FileSystemFileEntry).file((file) => {
           const newFile = new File([file], path + file.name, {
             type: file.type,
           })
@@ -41,12 +41,11 @@ export const traverseFileTree = async (entry: FileSystemEntry) => {
             To actually get all the files, we'll need to call readEntries repeatedly (for each directory we encounter) 
             until it returns an empty array. If we don't, we will miss some files/sub-directories in a directory 
             e.g. in Chrome, readEntries will only return at most 100 entries at a time.
-            */
-            /*if (entries.length > 0) {
-            /*  readEntries()
+            
+            if (entries.length > 0) {
+              readEntries()
             }
             */
-
           }, errorCallback)
         }
         readEntries()
