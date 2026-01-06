@@ -79,6 +79,7 @@
     "chardet": "^2.1.1",
     "clsx": "^2.1.1",
     "copy-to-clipboard": "^3.3.3",
+    "crc-32": "^1.2.2",
     "crypto-js": "^4.2.0",
     "docx-preview": "^0.3.7",
     "handlebars": "^4.7.8",
@@ -114,3 +115,4 @@
     "**/*.{js,ts,css,tsx,jsx,md,html,yml,yaml}": "prettier --write"
   }
 }
+ 
