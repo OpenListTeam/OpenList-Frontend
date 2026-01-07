@@ -1,5 +1,5 @@
 import { UploadFileProps } from "./types"
-import { createMD5, createSHA1, createSHA256 } from "hash-wasm"
+import { createMD5, createSHA1, createSHA256, createXXHash64 } from "hash-wasm"
 
 export const traverseFileTree = async (entry: FileSystemEntry) => {
   let res: File[] = []
@@ -10,7 +10,7 @@ export const traverseFileTree = async (entry: FileSystemEntry) => {
         reject(e)
       }
       if (entry.isFile) {
-        ;(entry as FileSystemFileEntry).file((file) => {
+        ; (entry as FileSystemFileEntry).file((file) => {
           const newFile = new File([file], path + file.name, {
             type: file.type,
           })
@@ -68,24 +68,32 @@ export const File2Upload = (file: File): UploadFileProps => {
   }
 }
 
-export const calculateHash = async (file: File) => {
-  const md5Digest = await createMD5()
-  const sha1Digest = await createSHA1()
-  const sha256Digest = await createSHA256()
+export const calculateXXHash64 = async (file: File) => {
+  const hasher = await createXXHash64()
   const reader = file.stream().getReader()
+
   const read = async () => {
     const { done, value } = await reader.read()
     if (done) {
       return
     }
-    md5Digest.update(value)
-    sha1Digest.update(value)
-    sha256Digest.update(value)
+    hasher.update(value)
+    // Yield to main thread to prevent UI freeze
+    await new Promise((resolve) => setTimeout(resolve, 0))
     await read()
   }
+
   await read()
-  const md5 = md5Digest.digest("hex")
-  const sha1 = sha1Digest.digest("hex")
-  const sha256 = sha256Digest.digest("hex")
-  return { md5, sha1, sha256 }
+  return hasher.digest("hex")
 }
+
+// Keep old signature for compatibility if needed, but we essentially replace it
+export const calculateHash = async (file: File) => {
+  return calculateXXHash64(file).then((xxhash) => ({
+    xxhash,
+    md5: "",
+    sha1: "",
+    sha256: "",
+  }))
+}
+ 
