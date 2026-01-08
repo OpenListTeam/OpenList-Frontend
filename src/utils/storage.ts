@@ -23,7 +23,7 @@ export const usedPercentage = (details: MountDetails) => {
   const total = details.total_space
   const used =
     !details.used_space || details.used_space <= 0 ? 0.0 : details.used_space
-  return used >= total ? 100.0 : (used / details.total_space) * 100.0
+  return used >= total ? 100.0 : (used / total) * 100.0
 }
 
 export const nearlyFull = (details: MountDetails) => {
