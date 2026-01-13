@@ -27,7 +27,9 @@ export const getLinkByDirAndObj = (
       : pathJoin(me().base_path, dir)
 
   dir = standardizePath(dir, true)
-  let path = `${dir}/${obj.name}`
+  // For shared non-directory objects, the link points to the directory itself; otherwise include the object name
+  const useDirOnlyForShare = isShare && !obj.is_dir
+  let path = useDirOnlyForShare ? dir : `${dir}/${obj.name}`
   path = encodePath(path, encodeAll)
   let host = api
   let prefix = isShare ? "/sd" : type === "direct" ? "/d" : "/p"
@@ -63,7 +65,19 @@ export const getLinkByDirAndObj = (
 export const useLink = () => {
   const { pathname, isShare } = useRouter()
   const getLinkByObj = (obj: Obj, type?: URLType, encodeAll?: boolean) => {
-    const dir = objStore.state !== State.File ? pathname() : pathDir(pathname())
+    let dir: string
+    // When viewing a single file, handle the directory specially (single-file share vs normal);
+    // for other states, use the current pathname directly as the directory.
+    if (objStore.state === State.File) {
+      if (isShare()) {
+        // single file share, do not contain path name (file name)
+        dir = pathname()
+      } else {
+        dir = pathDir(pathname())
+      }
+    } else {
+      dir = pathname()
+    }
     return getLinkByDirAndObj(dir, obj, type, isShare(), encodeAll)
   }
   const rawLink = (obj: Obj, encodeAll?: boolean) => {
