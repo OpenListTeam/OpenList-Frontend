@@ -335,6 +335,15 @@
     "share_id": "Share id",
     "share_pwd": "Share pwd"
   },
+  "Autoindex": {
+    "ignore_file_names": "Ignore filenames",
+    "item_xpath": "Entry XPath",
+    "modified_time_format": "Modification date format",
+    "modified_xpath": "Modification time XPath",
+    "name_xpath": "Filename XPath",
+    "size_xpath": "File size XPath",
+    "url": "URL"
+  },
   "Azure Blob Storage": {
     "access_key": "Access key",
     "access_key-tips": "The access key for Azure Storage, used for authentication. https://learn.microsoft.com/azure/storage/common/storage-account-keys-manage",
