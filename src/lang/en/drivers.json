@@ -335,7 +335,7 @@
     "share_id": "Share id",
     "share_pwd": "Share pwd"
   },
-  "Autoindex": {
+  "AutoIndex": {
     "ignore_file_names": "Ignore filenames",
     "item_xpath": "Entry XPath",
     "modified_time_format": "Modification date format",
