@@ -336,7 +336,7 @@
     "share_pwd": "Share pwd"
   },
   "AutoIndex": {
-    "ignore_file_names": "Ignore filenames",
+    "ignore_file_names": "Ignore file names",
     "item_xpath": "Entry XPath",
     "modified_time_format": "Modification date format",
     "modified_xpath": "Modification time XPath",
