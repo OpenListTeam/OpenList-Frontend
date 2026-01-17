@@ -1,4 +1,4 @@
-import { objStore, selectedObjs, State, me } from "~/store"
+import { objStore, selectedObjs, State, me, getSetting } from "~/store"
 import { Obj, ArchiveObj } from "~/types"
 import {
   base_path,
@@ -12,6 +12,20 @@ import { useRouter, useUtil } from "."
 import { cookieStorage } from "@solid-primitives/storage"
 
 type URLType = "preview" | "direct" | "proxy"
+
+// Get the host URL for direct/share links, using custom domain if configured
+const getCustomHost = (isShare: boolean): string => {
+  const settingKey = isShare ? "share_url_domain" : "direct_link_url_domain"
+  const customDomain = getSetting(settingKey)
+  if (customDomain) {
+    let url = customDomain.trim()
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url
+    }
+    return url.replace(/\/$/, "") + base_path
+  }
+  return api
+}
 
 // get download url by dir and obj
 export const getLinkByDirAndObj = (
@@ -29,7 +43,7 @@ export const getLinkByDirAndObj = (
   dir = standardizePath(dir, true)
   let path = `${dir}/${obj.name}`
   path = encodePath(path, encodeAll)
-  let host = api
+  let host = type === "preview" ? api : getCustomHost(isShare)
   let prefix = isShare ? "/sd" : type === "direct" ? "/d" : "/p"
   if (type === "preview") {
     prefix = ""
