@@ -1,5 +1,6 @@
 import { ShareInfo } from "~/types"
 import { base_path } from "."
+import { getSetting } from "~/store"
 
 const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
@@ -11,12 +12,26 @@ export const randomPwd = () => {
   return arr.join("")
 }
 
+// Get the base URL for share links, using custom domain if configured
+export const getShareBaseUrl = () => {
+  const customDomain = getSetting("share_url_domain")
+  if (customDomain) {
+    // Ensure proper URL format
+    let url = customDomain.trim()
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url
+    }
+    return url.replace(/\/$/, "") + base_path
+  }
+  return location.origin + base_path
+}
+
 export const makeTemplateData = (
   share: ShareInfo,
   other?: { [k: string]: any },
 ) => {
   return {
-    base_url: location.origin + base_path,
+    base_url: getShareBaseUrl(),
     ...share,
     ...other,
   }
