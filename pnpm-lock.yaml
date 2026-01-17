@@ -3083,8 +3083,8 @@ packages:
   tabbable@5.3.3:
     resolution: {integrity: sha512-QD9qKY3StfbZqWOPLp0++pOrAVb/HbUi5xCc8cUo4XjP19808oaMiDzn0leBY5mCespIBM0CIZePzZjgzR83kA==}
 
-  tar@7.5.2:
-    resolution: {integrity: sha512-7NyxrTE4Anh8km8iEy7o0QYPs+0JKBTj5ZaqHg6B39erLg0qYXN3BijtShwbsNSvQ+LN75+KV+C4QR/f6Gwnpg==}
+  tar@7.5.3:
+    resolution: {integrity: sha512-ENg5JUHUm2rDD7IvKNFGzyElLXNjachNLp6RaGf4+JOgxXHkqA+gq81ZAMCUmtMtqBsoU62lcp6S27g1LCYGGQ==}
     engines: {node: '>=18'}
 
   terser@5.44.1:
@@ -4180,7 +4180,7 @@ snapshots:
       command-exists-promise: 2.0.2
       node-fetch: 2.7.0
       shelljs: 0.8.5
-      tar: 7.5.2
+      tar: 7.5.3
       yauzl: 3.2.0
     transitivePeerDependencies:
       - encoding
@@ -6670,7 +6670,7 @@ snapshots:
 
   tabbable@5.3.3: {}
 
-  tar@7.5.2:
+  tar@7.5.3:
     dependencies:
       '@isaacs/fs-minipass': 4.0.1
       chownr: 3.0.0
