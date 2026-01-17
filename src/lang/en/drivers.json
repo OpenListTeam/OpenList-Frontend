@@ -340,7 +340,7 @@
     "item_xpath": "Entry XPath",
     "modified_time_format": "Modification date format",
     "modified_xpath": "Modification time XPath",
-    "name_xpath": "Filename XPath",
+    "name_xpath": "File name XPath",
     "size_xpath": "File size XPath",
     "url": "URL"
   },
