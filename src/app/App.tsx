@@ -43,23 +43,26 @@ const App: Component = () => {
   })
 
   const [err, setErr] = createSignal<string[]>([])
-  const [loading, data] = useLoading(() =>
-    Promise.all([
-      (async () => {
-        handleRespWithoutAuthAndNotify(
-          (await r.get("/public/settings")) as Resp<Record<string, string>>,
-          setSettings,
-          (e) => setErr(err().concat(e)),
-        )
-      })(),
-      (async () => {
-        handleRespWithoutAuthAndNotify(
-          (await r.get("/public/archive_extensions")) as Resp<string[]>,
-          setArchiveExtensions,
-          (e) => setErr(err().concat(e)),
-        )
-      })(),
-    ]),
+  const [loading, data] = useLoading(
+    () =>
+      Promise.all([
+        (async () => {
+          handleRespWithoutAuthAndNotify(
+            (await r.get("/public/settings")) as Resp<Record<string, string>>,
+            setSettings,
+            (e) => setErr(err().concat(e)),
+          )
+        })(),
+        (async () => {
+          handleRespWithoutAuthAndNotify(
+            (await r.get("/public/archive_extensions")) as Resp<string[]>,
+            setArchiveExtensions,
+            (e) => setErr(err().concat(e)),
+          )
+        })(),
+      ]),
+    false, // fetch parameter
+    true, // initial loading state - ensure settings are loaded before rendering
   )
   data()
   return (

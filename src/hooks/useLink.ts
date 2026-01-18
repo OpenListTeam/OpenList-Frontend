@@ -13,18 +13,66 @@ import { cookieStorage } from "@solid-primitives/storage"
 
 type URLType = "preview" | "direct" | "proxy"
 
-// Get the host URL for direct/share links, using custom domain if configured
-const getCustomHost = (isShare: boolean): string => {
-  const settingKey = isShare ? "share_url_domain" : "direct_link_url_domain"
-  const customDomain = getSetting(settingKey)
-  if (customDomain) {
-    let url = customDomain.trim()
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      url = "https://" + url
+// Check if current access is from external network (matching configured domain)
+const isExternalAccess = (): boolean => {
+  const customDomain = getSetting("share_url_domain")
+  if (!customDomain) return false
+
+  try {
+    let configuredUrl = customDomain.trim()
+    if (
+      !configuredUrl.startsWith("http://") &&
+      !configuredUrl.startsWith("https://")
+    ) {
+      configuredUrl = "https://" + configuredUrl
     }
-    return url.replace(/\/$/, "") + base_path
+    const configuredHost = new URL(configuredUrl).host
+    const currentHost = location.host
+    return (
+      currentHost === configuredHost ||
+      currentHost.endsWith("." + configuredHost)
+    )
+  } catch {
+    return false
   }
-  return api
+}
+
+// Get the host URL for direct/share links
+// Smart routing: always use current origin (location.origin)
+// This ensures internal users get internal links, external users get external links
+const getCustomHost = (isShare: boolean): string => {
+  // Always use current origin for consistency
+  // This provides smart routing automatically:
+  // - External access via ol.miyakko.de → links use ol.miyakko.de
+  // - Internal access via 192.168.x.x → links use 192.168.x.x
+  return location.origin + base_path
+}
+
+// Extract sharing ID from a share path (/@s/{sid}/...)
+const extractSharingId = (sharePath: string): string => {
+  // sharePath format: /@s/{sid} or /@s/{sid}/path/to/file
+  // Remove /@s prefix first
+  const withoutPrefix = sharePath.startsWith("/@s/")
+    ? sharePath.substring(4)
+    : sharePath.substring(3)
+  const slashIndex = withoutPrefix.indexOf("/")
+  if (slashIndex === -1) {
+    return withoutPrefix // Single file share: /@s/{sid}
+  }
+  return withoutPrefix.substring(0, slashIndex) // Folder share: /@s/{sid}/...
+}
+
+// Extract the path after sharing ID from a share path
+const extractPathAfterSid = (sharePath: string): string => {
+  // sharePath format: /@s/{sid} or /@s/{sid}/path/to/file
+  const withoutPrefix = sharePath.startsWith("/@s/")
+    ? sharePath.substring(4)
+    : sharePath.substring(3)
+  const slashIndex = withoutPrefix.indexOf("/")
+  if (slashIndex === -1) {
+    return "" // Single file share, no path after sid
+  }
+  return withoutPrefix.substring(slashIndex) // Returns /path/to/file
 }
 
 // get download url by dir and obj
@@ -35,16 +83,31 @@ export const getLinkByDirAndObj = (
   isShare: boolean,
   encodeAll?: boolean,
 ) => {
-  if (type !== "preview")
-    dir = isShare
-      ? dir.substring(3) /* remove /@s */
-      : pathJoin(me().base_path, dir)
+  let sharingId = ""
+  let isSingleFileShare = false
+
+  if (type !== "preview") {
+    if (isShare) {
+      // For share pages, extract the sharing ID and path after it
+      sharingId = extractSharingId(dir)
+      const pathAfterSid = extractPathAfterSid(dir)
+      // If pathAfterSid is empty, this is a single file share
+      // In that case, we should NOT add obj.name to the path
+      // because the backend will use the sharing's file path directly
+      isSingleFileShare = pathAfterSid === ""
+      dir = pathAfterSid
+    } else {
+      dir = pathJoin(me().base_path, dir)
+    }
+  }
 
   dir = standardizePath(dir, true)
-  let path = `${dir}/${obj.name}`
+  // For single file share, path should be "/" (root) since backend knows the file
+  // For multi-file share or normal access, path includes the filename
+  let path = isSingleFileShare ? "/" : `${dir}/${obj.name}`
   path = encodePath(path, encodeAll)
   let host = type === "preview" ? api : getCustomHost(isShare)
-  let prefix = isShare ? "/sd" : type === "direct" ? "/d" : "/p"
+  let prefix = isShare ? `/sd/${sharingId}` : type === "direct" ? "/d" : "/p"
   if (type === "preview") {
     prefix = ""
     if (!api.startsWith(location.origin + base_path))
@@ -53,7 +116,7 @@ export const getLinkByDirAndObj = (
   const { inner_path, archive } = obj as ArchiveObj
   if (archive) {
     prefix = "/ae"
-    path = `${dir}/${archive.name}`
+    path = isSingleFileShare ? "/" : `${dir}/${archive.name}`
     path = encodePath(path, encodeAll)
   }
   let ans = `${host}${prefix}${path}`
@@ -77,7 +140,14 @@ export const getLinkByDirAndObj = (
 export const useLink = () => {
   const { pathname, isShare } = useRouter()
   const getLinkByObj = (obj: Obj, type?: URLType, encodeAll?: boolean) => {
-    const dir = objStore.state !== State.File ? pathname() : pathDir(pathname())
+    // For share pages, always pass full pathname to preserve sharing ID
+    // For non-share pages, use pathDir when viewing a file
+    let dir: string
+    if (isShare()) {
+      dir = pathname() // Keep full path to preserve sharing ID
+    } else {
+      dir = objStore.state !== State.File ? pathname() : pathDir(pathname())
+    }
     return getLinkByDirAndObj(dir, obj, type, isShare(), encodeAll)
   }
   const rawLink = (obj: Obj, encodeAll?: boolean) => {
@@ -122,15 +192,26 @@ export const useCopyLink = () => {
   const { copy } = useUtil()
   const { previewPagesText, rawLinksText } = useSelectedLink()
   const { currentObjLink } = useLink()
+  const { isShare } = useRouter()
   return {
     copySelectedPreviewPage: () => {
       copy(previewPagesText())
     },
     copySelectedRawLink: (encodeAll?: boolean) => {
-      copy(rawLinksText(encodeAll))
+      // On share pages, copy the current page URL instead of download link
+      if (isShare()) {
+        copy(location.href)
+      } else {
+        copy(rawLinksText(encodeAll))
+      }
     },
     copyCurrentRawLink: (encodeAll?: boolean) => {
-      copy(currentObjLink(encodeAll))
+      // On share pages, copy the current page URL instead of download link
+      if (isShare()) {
+        copy(location.href)
+      } else {
+        copy(currentObjLink(encodeAll))
+      }
     },
   }
 }
