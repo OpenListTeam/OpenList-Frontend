@@ -281,3 +281,30 @@ export const updateIndex = async (paths = [], max_depth = -1): PEmptyResp => {
     max_depth,
   })
 }
+
+export const flashList = (
+  key: string,
+  parent_id: string,
+  is_zip: boolean,
+  zip_file_id: string,
+) => {
+  return r.post("/flash/list", {
+    key,
+    parent_id,
+    is_zip,
+    zip_file_id,
+  })
+}
+
+export const flashImport = (dst_path: string, selections: any[]) => {
+  return r.post("/flash/import", {
+    dst_path,
+    selections,
+  })
+}
+
+// export const flashShow = (physical_id: string) => {
+//   return r.post("/flash/show", {
+//     physical_id,
+//   })
+// }

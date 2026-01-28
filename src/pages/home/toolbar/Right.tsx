@@ -13,6 +13,7 @@ import { usePath, useRouter } from "~/hooks"
 import { Motion } from "solid-motionone"
 import { isTocVisible, setTocDisabled } from "~/components"
 import { BiSolidBookContent } from "solid-icons/bi"
+import { FlashTransferModal } from "~/pages/home/toolbar/FlashTransfer"
 
 export const Right = () => {
   const { isOpen, onToggle } = createDisclosure({
@@ -20,6 +21,15 @@ export const Right = () => {
     onClose: () => localStorage.setItem("more-open", "false"),
     onOpen: () => localStorage.setItem("more-open", "true"),
   })
+
+  const {
+    isOpen: isFlashOpen,
+    onOpen: onFlashOpen,
+    onClose: onFlashClose,
+  } = createDisclosure()
+
+  const isLocal = createMemo(() => objStore.provider.toLowerCase() === "local")
+
   const margin = createMemo(() => (isOpen() ? "$4" : "$5"))
   const isFolder = createMemo(() => objStore.state === State.Folder)
   const { refresh } = usePath()
@@ -116,6 +126,13 @@ export const Right = () => {
                   bus.emit("tool", "upload")
                 }}
               />
+              <Show when={isLocal()}>
+                <RightIcon
+                  as={operations.flash_transfer?.icon}
+                  tips="flash_transfer"
+                  onClick={onFlashOpen}
+                />
+              </Show>
             </Show>
             <Show
               when={isFolder() && !isShare() && userCan("offline_download")}
@@ -150,6 +167,7 @@ export const Right = () => {
                 bus.emit("tool", "local_settings")
               }}
             />
+            <FlashTransferModal opened={isFlashOpen()} onClose={onFlashClose} />
           </VStack>
           <RightIcon tips="more" as={CgMoreO} onClick={onToggle} />
         </VStack>
