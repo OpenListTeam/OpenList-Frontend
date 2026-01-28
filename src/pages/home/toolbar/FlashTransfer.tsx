@@ -154,7 +154,7 @@ export const FlashTransferModal = (props: {
 
     setLoading(false)
 
-    handleResp(resp, (data: FolderData) => {
+    handleResp(resp as any, (data: FolderData) => {
       const listData = data.list?.data?.file_lists?.[0]?.file_list || []
       if (data.fileset_id) {
         setCurrentFilesetId(data.fileset_id)
@@ -307,7 +307,7 @@ export const FlashTransferModal = (props: {
     const resp = await flashImport(pathname(), finalSelection)
     setImporting(false)
 
-    handleResp(resp, () => {
+    handleResp(resp as any, () => {
       notify.success(t("global.success"))
       props.onClose()
       refresh()
