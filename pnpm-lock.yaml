@@ -60,7 +60,7 @@ importers:
         specifier: ^3.12.1
         version: 3.12.1
       axios:
-        specifier: ^1.13.2
+        specifier: ^1.13.5
         version: 1.13.5
       bencode:
         specifier: ^4.0.0
