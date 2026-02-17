@@ -3,7 +3,7 @@ import { createStorageSignal } from "@solid-primitives/storage"
 import { clsx } from "clsx"
 import once from "just-once"
 import rehypeRaw from "rehype-raw"
-import rehypeSanitize from "rehype-sanitize"
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize"
 import rehypeStringify from "rehype-stringify"
 import remarkGfm from "remark-gfm"
 import remarkParse from "remark-parse"
@@ -190,14 +190,23 @@ async function renderMarkdown(
     )
   }
 
-  processor.use(remarkRehype, { allowDangerousHtml: true })
+  processor
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeRaw)
+    .use(rehypeSanitize, {
+      ...defaultSchema,
+      attributes: {
+        ...defaultSchema.attributes,
+        code: [["className", "math-inline", "math-display"]],
+      },
+    })
 
   if (hasMath) {
     const { default: rehypeKatex } = await import("rehype-katex")
     processor.use(rehypeKatex)
   }
 
-  processor.use(rehypeRaw).use(rehypeSanitize).use(rehypeStringify)
+  processor.use(rehypeStringify)
 
   const result = await processor.process(content)
 
