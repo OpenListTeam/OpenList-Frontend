@@ -21,7 +21,7 @@ export const useCDN = () => {
 
   const katexCSSPath = () => {
     return import.meta.env.VITE_LITE === "true"
-      ? npm("katex", "0.16.11", "dist/katex.min.css")
+      ? npm("katex", "0.16.28", "dist/katex.min.css")
       : `${static_path}/katex/katex.min.css`
   }
 
