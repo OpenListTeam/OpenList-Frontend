@@ -1,24 +1,25 @@
+import { Anchor, Box, List, ListItem, useColorModeValue } from "@hope-ui/solid"
+import { createStorageSignal } from "@solid-primitives/storage"
+import { clsx } from "clsx"
+import once from "just-once"
+import rehypeRaw from "rehype-raw"
+import rehypeSanitize from "rehype-sanitize"
+import rehypeStringify from "rehype-stringify"
+import remarkGfm from "remark-gfm"
+import remarkParse from "remark-parse"
+import remarkRehype from "remark-rehype"
+import { For, Show, createEffect, createMemo, createSignal, on } from "solid-js"
+import { Motion } from "solid-motionone"
+import { unified } from "unified"
+import { useCDN, useParseText, useRouter } from "~/hooks"
+import { useScrollListener } from "~/pages/home/toolbar/BackTop.jsx"
+import { getMainColor, me } from "~/store"
+import { api, notify, pathDir, pathJoin, pathResolve } from "~/utils"
+import { isMobile } from "~/utils/compatibility.js"
+import { EncodingSelect } from "."
 // @ts-ignore
 import { hljs } from "./highlight.js"
-import { unified } from "unified"
-import remarkParse from "remark-parse"
-import remarkGfm from "remark-gfm"
-import remarkRehype from "remark-rehype"
-import rehypeRaw from "rehype-raw"
-import rehypeStringify from "rehype-stringify"
 import "./markdown.css"
-import { For, Show, createEffect, createMemo, createSignal, on } from "solid-js"
-import { clsx } from "clsx"
-import { Anchor, Box, List, ListItem, useColorModeValue } from "@hope-ui/solid"
-import { useCDN, useParseText, useRouter } from "~/hooks"
-import { EncodingSelect } from "."
-import once from "just-once"
-import { pathDir, pathJoin, api, pathResolve, notify } from "~/utils"
-import { createStorageSignal } from "@solid-primitives/storage"
-import { isMobile } from "~/utils/compatibility.js"
-import { useScrollListener } from "~/pages/home/toolbar/BackTop.jsx"
-import { Motion } from "solid-motionone"
-import { getMainColor, me } from "~/store"
 
 type TocItem = { indent: number; text: string; tagName: string; key: string }
 
@@ -189,14 +190,14 @@ async function renderMarkdown(
     )
   }
 
-  processor.use(remarkRehype)
+  processor.use(remarkRehype, { allowDangerousHtml: true })
 
   if (hasMath) {
     const { default: rehypeKatex } = await import("rehype-katex")
     processor.use(rehypeKatex)
   }
 
-  processor.use(rehypeRaw).use(rehypeStringify)
+  processor.use(rehypeRaw).use(rehypeSanitize).use(rehypeStringify)
 
   const result = await processor.process(content)
 
