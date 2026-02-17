@@ -197,7 +197,9 @@ async function renderMarkdown(
       ...defaultSchema,
       attributes: {
         ...defaultSchema.attributes,
-        code: [["className", "math-inline", "math-display"]],
+        code: [
+          ["className", /^language-[\w-]+$/, "math-inline", "math-display"],
+        ],
       },
     })
 
