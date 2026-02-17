@@ -96,8 +96,8 @@ importers:
         specifier: ^2.2.0
         version: 2.2.0
       katex:
-        specifier: 0.16.25
-        version: 0.16.25
+        specifier: 0.16.28
+        version: 0.16.28
       libass-wasm:
         specifier: ^4.1.0
         version: 4.1.0
@@ -2769,8 +2769,8 @@ packages:
   just-once@2.2.0:
     resolution: {integrity: sha512-Wo547FgUOUZ98jbrZ1KX8nRezdEdtgIlC2NK1u1RvR1oZ/WoU++FjprP8J8hRbaox776MHyeMZZED4DvhhHVjg==}
 
-  katex@0.16.25:
-    resolution: {integrity: sha512-woHRUZ/iF23GBP1dkDQMh1QBad9dmr8/PAwNA54VrSOVYgI12MAcE14TqnDdQOdzyEonGzMepYnqBMYdsoAr8Q==}
+  katex@0.16.28:
+    resolution: {integrity: sha512-YHzO7721WbmAL6Ov1uzN/l5mY5WWWhJBSW+jq4tkfZfsxmo1hu6frS0EOswvjBUnWE6NtjEs48SFn5CQESRLZg==}
     hasBin: true
 
   khroma@2.1.0:
@@ -6610,7 +6610,7 @@ snapshots:
 
   just-once@2.2.0: {}
 
-  katex@0.16.25:
+  katex@0.16.28:
     dependencies:
       commander: 8.3.0
 
@@ -6856,7 +6856,7 @@ snapshots:
       dagre-d3-es: 7.0.13
       dayjs: 1.11.19
       dompurify: 3.3.0
-      katex: 0.16.25
+      katex: 0.16.28
       khroma: 2.1.0
       lodash-es: 4.17.21
       marked: 16.4.2
@@ -6947,7 +6947,7 @@ snapshots:
   micromark-extension-math@2.1.2:
     dependencies:
       '@types/katex': 0.16.7
-      katex: 0.16.25
+      katex: 0.16.28
       micromark-factory-space: 1.1.0
       micromark-util-character: 1.2.0
       micromark-util-symbol: 1.1.0
@@ -7315,7 +7315,7 @@ snapshots:
       '@types/katex': 0.14.0
       hast-util-from-html-isomorphic: 1.0.0
       hast-util-to-text: 3.1.2
-      katex: 0.16.25
+      katex: 0.16.28
       unist-util-visit: 4.1.2
 
   rehype-raw@7.0.0:
