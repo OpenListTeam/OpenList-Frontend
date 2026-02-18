@@ -17,6 +17,7 @@ import { LocalSettings } from "./LocalSettings"
 import { BackTop } from "./BackTop"
 import { Decompress } from "./Decompress"
 import { Share } from "./Share"
+import { RecurseList } from "~/pages/home/toolbar/RecurseList"
 
 const Upload = lazy(() => import("../uploads/Upload"))
 
@@ -33,6 +34,7 @@ export const Modal = () => {
       <Share />
       <RecursiveMove />
       <RemoveEmptyDirectory />
+      <RecurseList />
       <BatchRename />
       <OfflineDownload />
       <PackageDownloadModal />

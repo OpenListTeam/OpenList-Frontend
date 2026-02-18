@@ -102,6 +102,13 @@ export const Right = () => {
                 }}
               />
               <RightIcon
+                as={operations.recurse_list.icon}
+                tips="recurse_list"
+                onClick={() => {
+                  bus.emit("tool", "recurseList")
+                }}
+              />
+              <RightIcon
                 as={operations.batch_rename.icon}
                 tips="batch_rename"
                 onClick={() => {
