@@ -59,7 +59,12 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
           setValue(value)
         }}
       />
-      <Show when={userCan("write") || objStore.write}>
+      <Show
+        when={
+          objStore.write &&
+          (userCan("write_content") || objStore.write_content_bypass)
+        }
+      >
         <Button loading={loading()} onClick={onSave}>
           {t("global.save")}
         </Button>

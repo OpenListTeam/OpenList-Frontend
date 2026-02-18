@@ -8,7 +8,7 @@ import { CgFolderAdd } from "solid-icons/cg"
 import { UserMethods, UserPermissions } from "~/types"
 
 export const CreateFolderButton = (props: { handler?: FolderTreeHandler }) => {
-  if (!UserMethods.can(me(), UserPermissions.indexOf("write"))) {
+  if (!UserMethods.can(me(), UserPermissions.indexOf("write_content"))) {
     return null
   }
   const t = useT()

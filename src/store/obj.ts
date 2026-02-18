@@ -35,6 +35,7 @@ const initialObjStore = {
 const [objStore, setObjStore] = createStore<
   typeof initialObjStore & {
     write?: boolean
+    write_content_bypass?: boolean
   }
 >(initialObjStore)
 
