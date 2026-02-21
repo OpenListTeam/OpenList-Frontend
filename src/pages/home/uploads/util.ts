@@ -1,9 +1,11 @@
 import { UploadFileProps } from "./types"
+import type { WorkerMessage } from "./hash-worker"
 
 export const traverseFileTree = async (entry: FileSystemEntry) => {
-  let res: File[] = []
+  const res: File[] = []
+
   const internalProcess = async (entry: FileSystemEntry, path: string) => {
-    const promise = new Promise<{}>((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const errorCallback: ErrorCallback = (e) => {
         console.error(e)
         reject(e)
@@ -15,7 +17,7 @@ export const traverseFileTree = async (entry: FileSystemEntry) => {
           })
           res.push(newFile)
           console.log(newFile)
-          resolve({})
+          resolve()
         }, errorCallback)
       } else if (entry.isDirectory) {
         const dirReader = (entry as FileSystemDirectoryEntry).createReader()
@@ -27,10 +29,9 @@ export const traverseFileTree = async (entry: FileSystemEntry) => {
             if (entries.length > 0) {
               readEntries()
             } else {
-              resolve({})
+              resolve()
             }
 
-            /*  resolve({})
             /**
             why? https://stackoverflow.com/questions/3590058/does-html5-allow-drag-drop-upload-of-folders-or-a-folder-tree/53058574#53058574
             Unfortunately none of the existing answers are completely correct because 
@@ -41,16 +42,12 @@ export const traverseFileTree = async (entry: FileSystemEntry) => {
             until it returns an empty array. If we don't, we will miss some files/sub-directories in a directory 
             e.g. in Chrome, readEntries will only return at most 100 entries at a time.
             
-            if (entries.length > 0) {
-              readEntries()
-            }
             */
           }, errorCallback)
         }
         readEntries()
       }
     })
-    await promise
   }
   await internalProcess(entry, "")
   return res
@@ -59,7 +56,7 @@ export const traverseFileTree = async (entry: FileSystemEntry) => {
 export const File2Upload = (file: File): UploadFileProps => {
   return {
     name: file.name,
-    path: file.webkitRelativePath ? file.webkitRelativePath : file.name,
+    path: file.webkitRelativePath || file.name,
     size: file.size,
     progress: 0,
     speed: 0,
@@ -76,23 +73,30 @@ export const calculateHash = async (
       const worker = new Worker(new URL("./hash-worker.ts", import.meta.url), {
         type: "module",
       })
+
+      const terminate = (fn: () => void) => {
+        worker.terminate()
+        fn()
+      }
+
       worker.postMessage({ file })
-      worker.onmessage = (e) => {
-        const { type, progress, hash, error } = e.data
-        if (type === "progress") {
-          onProgress?.(progress)
-        } else if (type === "result") {
-          worker.terminate()
-          resolve(hash)
-        } else if (type === "error") {
-          worker.terminate()
-          reject(new Error(error))
+
+      worker.onmessage = (e: MessageEvent<WorkerMessage>) => {
+        const data = e.data
+        switch (data.type) {
+          case "progress":
+            onProgress?.(data.progress)
+            break
+          case "result":
+            terminate(() => resolve(data.hash))
+            break
+          case "error":
+            terminate(() => reject(new Error(data.error)))
+            break
         }
       }
-      worker.onerror = (e) => {
-        worker.terminate()
-        reject(e)
-      }
+
+      worker.onerror = (e) => terminate(() => reject(e))
     },
   )
 }
