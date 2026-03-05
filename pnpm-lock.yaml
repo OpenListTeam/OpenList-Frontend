@@ -238,8 +238,8 @@ importers:
         specifier: ^2.11.10
         version: 2.11.10(solid-js@1.9.11)(vite@6.4.1(@types/node@22.19.0)(terser@5.44.1)(yaml@2.8.1))
       vite-plugin-static-copy:
-        specifier: ^3.1.4
-        version: 3.1.4(vite@6.4.1(@types/node@22.19.0)(terser@5.44.1)(yaml@2.8.1))
+        specifier: ^3.2.0
+        version: 3.2.0(vite@6.4.1(@types/node@22.19.0)(terser@5.44.1)(yaml@2.8.1))
 
 packages:
 
@@ -3145,8 +3145,8 @@ packages:
     resolution: {integrity: sha512-R79ZZ/0wAxKGu3oYMlz8jy/kbhsNrS7SKZ7PxEHBgJ5+F2mtFW2fK2cOtBh1cHYkQsbzFV7I+EoRKe6Yt0oK7A==}
     engines: {node: '>=8'}
 
-  p-map@7.0.3:
-    resolution: {integrity: sha512-VkndIv2fIB99swvQoA65bm+fsmt6UNdGeIB0oxBs+WhAhdh08QA04JXpI7rbB9r08/nkbysKoya9rtDERYOYMA==}
+  p-map@7.0.4:
+    resolution: {integrity: sha512-tkAQEw8ysMzmkhgw8k+1U/iPhWNhykKnSk4Rd5zLoPJCuJaGRPo6YposrZgaxHKzDHdDWWZvE/Sk7hsL2X/CpQ==}
     engines: {node: '>=18'}
 
   p-try@2.2.0:
@@ -3676,8 +3676,8 @@ packages:
       '@testing-library/jest-dom':
         optional: true
 
-  vite-plugin-static-copy@3.1.4:
-    resolution: {integrity: sha512-iCmr4GSw4eSnaB+G8zc2f4dxSuDjbkjwpuBLLGvQYR9IW7rnDzftnUjOH5p4RYR+d4GsiBqXRvzuFhs5bnzVyw==}
+  vite-plugin-static-copy@3.2.0:
+    resolution: {integrity: sha512-g2k9z8B/1Bx7D4wnFjPLx9dyYGrqWMLTpwTtPHhcU+ElNZP2O4+4OsyaficiDClus0dzVhdGvoGFYMJxoXZ12Q==}
     engines: {node: ^18.0.0 || >=20.0.0}
     peerDependencies:
       vite: ^5.0.0 || ^6.0.0 || ^7.0.0
@@ -7149,7 +7149,7 @@ snapshots:
     dependencies:
       p-limit: 2.3.0
 
-  p-map@7.0.3: {}
+  p-map@7.0.4: {}
 
   p-try@2.2.0: {}
 
@@ -7748,10 +7748,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  vite-plugin-static-copy@3.1.4(vite@6.4.1(@types/node@22.19.0)(terser@5.44.1)(yaml@2.8.1)):
+  vite-plugin-static-copy@3.2.0(vite@6.4.1(@types/node@22.19.0)(terser@5.44.1)(yaml@2.8.1)):
     dependencies:
       chokidar: 3.6.0
-      p-map: 7.0.3
+      p-map: 7.0.4
       picocolors: 1.1.1
       tinyglobby: 0.2.15
       vite: 6.4.1(@types/node@22.19.0)(terser@5.44.1)(yaml@2.8.1)
