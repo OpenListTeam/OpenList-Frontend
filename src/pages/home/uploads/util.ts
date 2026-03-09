@@ -1,5 +1,6 @@
 import { UploadFileProps } from "./types"
 import type { WorkerMessage } from "./hash-worker"
+import HashWorker from "./hash-worker?worker&inline"
 
 export const traverseFileTree = async (entry: FileSystemEntry) => {
   const res: File[] = []
@@ -70,9 +71,7 @@ export const calculateHash = async (
 ) => {
   return new Promise<{ md5: string; sha1: string; sha256: string }>(
     (resolve, reject) => {
-      const worker = new Worker(new URL("./hash-worker.ts", import.meta.url), {
-        type: "module",
-      })
+      const worker = new HashWorker()
 
       const terminate = (fn: () => void) => {
         worker.terminate()
