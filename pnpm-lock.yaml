@@ -24,8 +24,8 @@ importers:
         specifier: 1.7.0
         version: 1.7.0
       '@ruffle-rs/ruffle':
-        specifier: 0.2.0-nightly.2026.1.29
-        version: 0.2.0-nightly.2026.1.29
+        specifier: 0.2.0-nightly.2026.3.9
+        version: 0.2.0-nightly.2026.3.9
       '@solid-primitives/i18n':
         specifier: ^2.2.1
         version: 2.2.1(solid-js@1.9.11)
@@ -1545,8 +1545,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@ruffle-rs/ruffle@0.2.0-nightly.2026.1.29':
-    resolution: {integrity: sha512-gMqg9mRM59JogrmFre1VIodkzMNmCA5dmkrXl3zWjS2EQ1gx/5GSfk5VUhHW2iSgdurAZXiAHcuaFTNsMf+ZJA==}
+  '@ruffle-rs/ruffle@0.2.0-nightly.2026.3.9':
+    resolution: {integrity: sha512-OUsrVHdCeZzSfYyjEiFes20kc3IWjtUUrlJZ1nAj4yfbmM9Oljdd/lDbhsy7JeOZ7VNvzFj1NnUF8pfN3+eMSA==}
 
   '@solid-primitives/event-listener@2.4.3':
     resolution: {integrity: sha512-h4VqkYFv6Gf+L7SQj+Y6puigL/5DIi7x5q07VZET7AWcS+9/G3WfIE9WheniHWJs51OEkRB43w6lDys5YeFceg==}
@@ -5276,7 +5276,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.52.5':
     optional: true
 
-  '@ruffle-rs/ruffle@0.2.0-nightly.2026.1.29': {}
+  '@ruffle-rs/ruffle@0.2.0-nightly.2026.3.9': {}
 
   '@solid-primitives/event-listener@2.4.3(solid-js@1.9.11)':
     dependencies:
