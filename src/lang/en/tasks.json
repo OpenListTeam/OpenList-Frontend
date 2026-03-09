@@ -50,7 +50,9 @@
       "path": "Destination Path",
       "transfer_src": "Source Path",
       "transfer_src_local": "Source Path (Local)",
-      "transfer_dst": "Destination Path"
+      "transfer_dst": "Destination Path",
+      "list_title": "Offline Download Tasks",
+      "no_tasks": "No ongoing tasks"
     },
     "decompress": {
       "src": "Source Path",
