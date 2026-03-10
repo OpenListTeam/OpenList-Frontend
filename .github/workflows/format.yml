@@ -36,7 +36,7 @@ jobs:
           git_commit_gpgsign: true
 
       - name: Commit and Push
-        uses: stefanzweifel/git-auto-commit-action@v6
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           # TODO: GPG sign: https://github.com/stefanzweifel/git-auto-commit-action?tab=readme-ov-file#signing-commits
           commit_message: "[skip ci] style: format code with prettier"
