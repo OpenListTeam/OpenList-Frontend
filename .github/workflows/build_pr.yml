@@ -40,7 +40,7 @@ jobs:
           # OPENLIST_FRONTEND_BUILD_COMPRESS: false
 
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: openlist-frontend-dist-dev-${{ github.sha }}
           path: dist/
