@@ -54,8 +54,8 @@ importers:
         specifier: ^5.3.0
         version: 5.3.0
       artplayer-plugin-danmuku:
-        specifier: ^5.2.0
-        version: 5.2.0
+        specifier: ^5.3.0
+        version: 5.3.0
       asciinema-player:
         specifier: ^3.15.1
         version: 3.15.1
@@ -1951,8 +1951,8 @@ packages:
     resolution: {integrity: sha512-COROpnaoap1E2F000S62r6A60uHZnmlvomhfyT2DlTcrY1OrBKn2UhH7qn5wTC9zMvD0AY7csdPSNwKP+7WiQw==}
     engines: {node: '>= 0.4'}
 
-  artplayer-plugin-danmuku@5.2.0:
-    resolution: {integrity: sha512-iHHSGEc0J+gl7imX4nmLqqC7LXmv8xeGf2lUevhhyUCoiCRZplecpKQICHjErVb1Yqyp1xCy6Sp8eYN+EpFWFw==}
+  artplayer-plugin-danmuku@5.3.0:
+    resolution: {integrity: sha512-a76bU1cWEZr53hD1X8IHfOzS4QawGHn8dQ3fIYyJ5TsyhTSnznhi2WzkS8M7LL3H02ekXRZTUFan9+9EERk12g==}
 
   artplayer@5.3.0:
     resolution: {integrity: sha512-yExO39MpEg4P+bxgChxx1eJfiUPE4q1QQRLCmqGhlsj+ANuaoEkR8hF93LdI5ZyrAcIbJkuEndxEiUoKobifDw==}
@@ -5700,7 +5700,7 @@ snapshots:
 
   aria-query@5.3.2: {}
 
-  artplayer-plugin-danmuku@5.2.0: {}
+  artplayer-plugin-danmuku@5.3.0: {}
 
   artplayer@5.3.0:
     dependencies:
