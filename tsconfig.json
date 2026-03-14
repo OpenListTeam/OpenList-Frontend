@@ -3,7 +3,7 @@
     "strict": true,
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "jsx": "preserve",
@@ -12,6 +12,7 @@
     "noEmit": true,
     "isolatedModules": false,
     "paths": {
+      "@hope-ui/solid": ["./node_modules/@hope-ui/solid/dist/index.d.ts"],
       "~/*": ["./src/*"]
       // "@solidjs/router": ["./solid-router/src/index.tsx"]
     },
