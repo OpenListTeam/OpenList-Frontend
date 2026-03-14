@@ -4,6 +4,33 @@ import solidPlugin from "vite-plugin-solid"
 import legacy from "@vitejs/plugin-legacy"
 import { dynamicBase } from "vite-plugin-dynamic-base"
 import { viteStaticCopy } from "vite-plugin-static-copy"
+import type { Plugin } from "vite"
+
+// vite-plugin-dynamic-base converts data-src → src in its generateBundle hook,
+// but @vitejs/plugin-legacy expects data-src on vite-legacy-polyfill so the
+// legacy detection script can read it.  This plugin runs its generateBundle
+// after dynamicBase (enforce:post, registered last) and restores data-src.
+function fixLegacyPolyfillDataSrc(): Plugin {
+  return {
+    name: "fix-legacy-polyfill-data-src",
+    enforce: "post",
+    apply: "build",
+    generateBundle(_, bundle) {
+      for (const chunk of Object.values(bundle)) {
+        if (
+          chunk.type === "asset" &&
+          chunk.fileName.endsWith(".html") &&
+          typeof chunk.source === "string"
+        ) {
+          chunk.source = chunk.source.replace(
+            /("id"\s*:\s*"vite-legacy-polyfill"[^}]*?)"src"\s*:/,
+            (match) => match.replace(/"src"\s*:/, '"data-src":'),
+          )
+        }
+      }
+    },
+  }
+}
 
 export default defineConfig({
   resolve: {
@@ -65,6 +92,7 @@ export default defineConfig({
           ],
         })
       : null,
+    fixLegacyPolyfillDataSrc(),
   ],
   base: process.env.NODE_ENV === "production" ? "/__dynamic_base__/" : "/",
   // base: "/",
