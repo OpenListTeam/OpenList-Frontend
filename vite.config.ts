@@ -16,7 +16,7 @@ export default defineConfig({
   plugins: [
     solidPlugin(),
     legacy({
-      targets: ["defaults"],
+      targets: ["chrome >= 48", "defaults"],
     }),
     dynamicBase({
       // dynamic public path var string, default window.__dynamic_base__
