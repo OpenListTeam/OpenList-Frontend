@@ -16,9 +16,8 @@ import { useScrollListener } from "~/pages/home/toolbar/BackTop.jsx"
 import { getMainColor, me } from "~/store"
 import { api, notify, pathDir, pathJoin, pathResolve } from "~/utils"
 import { isMobile } from "~/utils/compatibility.js"
+import hljs from "highlight.js"
 import { EncodingSelect } from "."
-// @ts-ignore
-import { hljs } from "./highlight.js"
 import "./markdown.css"
 
 type TocItem = { indent: number; text: string; tagName: string; key: string }
