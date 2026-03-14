@@ -20,7 +20,7 @@ export default defineConfig({
     }),
     dynamicBase({
       // dynamic public path var string, default window.__dynamic_base__
-      publicPath: " window.__dynamic_base__",
+      publicPath: "window.__dynamic_base__",
       // dynamic load resources on index.html, default false. maybe change default true
       transformIndexHtml: true,
       transformIndexHtmlConfig: {
