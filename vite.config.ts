@@ -77,14 +77,6 @@ export default defineConfig({
               src: "node_modules/libheif-js/libheif-wasm/libheif.{js,wasm}",
               dest: "static/libheif",
             },
-            {
-              src: "node_modules/libass-wasm/dist/js/subtitles-octopus-worker.{js,wasm}",
-              dest: "static/libass-wasm",
-            },
-            {
-              src: "src/components/artplayer-plugin-ass/fonts/*",
-              dest: "static/fonts",
-            },
           ],
         })
       : null,

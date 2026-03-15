@@ -37,25 +37,11 @@ export const useCDN = () => {
       : `${static_path}/libheif`
   }
 
-  const libAssPath = () => {
-    return import.meta.env.VITE_LITE === "true"
-      ? npm(packageJson.name, packageJson.version, "dist/static/libass-wasm")
-      : `${static_path}/libass-wasm`
-  }
-
-  const fontsPath = () => {
-    return import.meta.env.VITE_LITE === "true"
-      ? npm(packageJson.name, packageJson.version, "dist/static/fonts")
-      : `${static_path}/fonts`
-  }
-
   return {
     npm,
     monacoPath,
     katexCSSPath,
     mermaidJSPath,
     libHeifPath,
-    libAssPath,
-    fontsPath,
   }
 }
