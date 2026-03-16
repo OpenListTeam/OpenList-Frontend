@@ -25,6 +25,9 @@ importers:
       '@hope-ui/solid':
         specifier: 0.6.7
         version: 0.6.7(@stitches/core@1.2.8)(solid-js@1.9.12)(solid-transition-group@0.3.0(solid-js@1.9.12))
+      '@mediabunny/ac3':
+        specifier: ^1.39.2
+        version: 1.39.2(mediabunny@1.39.2)
       '@monaco-editor/loader':
         specifier: 1.7.0
         version: 1.7.0
@@ -118,6 +121,9 @@ importers:
       mark.js:
         specifier: ^8.11.1
         version: 8.11.1
+      mediabunny:
+        specifier: ^1.39.2
+        version: 1.39.2
       mitt:
         specifier: ^3.0.1
         version: 3.0.1
@@ -1240,6 +1246,11 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
+  '@mediabunny/ac3@1.39.2':
+    resolution: {integrity: sha512-CGtQx1hZTeNJQAJmu7Znz+4GMORUJGftmwe/rZ7uvGqu4MDSey1snt1SktOOEzpaVnKZo9V4N9YH9b69z3J3wg==}
+    peerDependencies:
+      mediabunny: ^1.0.0
+
   '@mermaid-js/parser@1.0.1':
     resolution: {integrity: sha512-opmV19kN1JsK0T6HhhokHpcVkqKpF+x2pPDKKM2ThHtZAB5F4PROopk0amuVYK5qMrIA4erzpNm8gmPNJgMDxQ==}
 
@@ -1656,6 +1667,12 @@ packages:
 
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
+
+  '@types/dom-mediacapture-transform@0.1.11':
+    resolution: {integrity: sha512-Y2p+nGf1bF2XMttBnsVPHUWzRRZzqUoJAKmiP10b5umnO6DDrWI0BrGDJy1pOHoOULVmGSfFNkQrAlC5dcj6nQ==}
+
+  '@types/dom-webcodecs@0.1.13':
+    resolution: {integrity: sha512-O5hkiFIcjjszPIYyUSyvScyvrBoV3NOEEZx/pMlsu44TKzWNkLVBBxnxJz42in5n3QIolYOcBYFCPZZ0h8SkwQ==}
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
@@ -2829,6 +2846,9 @@ packages:
 
   mdast-util-to-string@4.0.0:
     resolution: {integrity: sha512-0H44vDimn51F0YwvxSJSm0eCDOJTRlmN0R1yBh4HLj9wiV1Dn0QoXGbvFAWj2hSItVTlCmBF1hqKlIyUBVFLPg==}
+
+  mediabunny@1.39.2:
+    resolution: {integrity: sha512-VcrisGRt+OI7tTPrziucJoCIPYIS/DEWY37TqzQVLWSUUHiyvsiRizEypQ3FOlhfIZ4ytAG/Mw4zxfetCTyKUg==}
 
   meow@13.2.0:
     resolution: {integrity: sha512-pxQJQzB6djGPXh08dacEloMFopsOqGVRKFPYvPOt9XDZ1HasbgDZA74CJGreSU4G3Ak7EFJGoiH2auq+yXISgA==}
@@ -4974,6 +4994,10 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
+  '@mediabunny/ac3@1.39.2(mediabunny@1.39.2)':
+    dependencies:
+      mediabunny: 1.39.2
+
   '@mermaid-js/parser@1.0.1':
     dependencies:
       langium: 4.2.1
@@ -5364,6 +5388,12 @@ snapshots:
   '@types/debug@4.1.12':
     dependencies:
       '@types/ms': 2.1.0
+
+  '@types/dom-mediacapture-transform@0.1.11':
+    dependencies:
+      '@types/dom-webcodecs': 0.1.13
+
+  '@types/dom-webcodecs@0.1.13': {}
 
   '@types/estree@1.0.8': {}
 
@@ -6651,6 +6681,11 @@ snapshots:
   mdast-util-to-string@4.0.0:
     dependencies:
       '@types/mdast': 4.0.4
+
+  mediabunny@1.39.2:
+    dependencies:
+      '@types/dom-mediacapture-transform': 0.1.11
+      '@types/dom-webcodecs': 0.1.13
 
   meow@13.2.0: {}
 

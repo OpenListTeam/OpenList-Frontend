@@ -5,9 +5,10 @@ import { getMainColor, getSettingBool, objStore, password } from "~/store"
 import { ObjType, PResp } from "~/types"
 import { ext, handleResp, notify, r, pathDir, pathJoin } from "~/utils"
 import Artplayer from "artplayer"
-import { type Option } from "artplayer/types/option"
-import { type Setting } from "artplayer/types/setting"
-import { type Events } from "artplayer/types/events"
+import { type Option } from "artplayer"
+import { type Setting } from "artplayer"
+import { type Events } from "artplayer"
+import artplayerProxyMediabunny from "~/components/artplayer-proxy-mediabunny"
 import artplayerPluginDanmuku from "artplayer-plugin-danmuku"
 import { type Option as DanmukuOption } from "artplayer-plugin-danmuku"
 import artplayerPluginAss from "~/components/artplayer-plugin-ass"
@@ -18,6 +19,8 @@ import { ArtPlayerIconsSubtitle } from "~/components/icons"
 import { useNavigate } from "@solidjs/router"
 import { TiWarning } from "solid-icons/ti"
 import "./artplayer.css"
+import { registerAc3Decoder } from "@mediabunny/ac3"
+registerAc3Decoder()
 
 export interface Data {
   drive_id: string
@@ -121,6 +124,7 @@ const Preview = () => {
     theme: getMainColor(),
     quality: [],
     plugins: [AutoHeightPlugin],
+    proxy: artplayerProxyMediabunny(),
     whitelist: [],
     screenshot: true,
     settings: [],
