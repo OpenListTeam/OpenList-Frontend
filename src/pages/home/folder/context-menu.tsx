@@ -52,10 +52,10 @@ export const ContextMenu = () => {
       theme={colorMode() !== "dark" ? "light" : "dark"}
       style="z-index: var(--hope-zIndices-popover)"
     >
-      <For each={["rename", "move", "copy", "delete", "share"] as const}>
+      <For each={["rename", "move", "copy", "delete"] as const}>
         {(name) => (
           <Item
-            hidden={!userCan(name) || !objStore.write}
+            hidden={!userCan(name) || !objStore.write || isShare()}
             onClick={() => {
               bus.emit("tool", name)
             }}
@@ -64,6 +64,14 @@ export const ContextMenu = () => {
           </Item>
         )}
       </For>
+      <Item
+        hidden={!userCan("share")}
+        onClick={() => {
+          bus.emit("tool", "share")
+        }}
+      >
+        <ItemContent name="share" />
+      </Item>
       <Item
         hidden={() => {
           return (

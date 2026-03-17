@@ -53,14 +53,7 @@ export const Center = () => {
             <Show when={!isShare() && objStore.write}>
               <For
                 each={
-                  [
-                    "rename",
-                    "move",
-                    "copy",
-                    "delete",
-                    "share",
-                    "decompress",
-                  ] as const
+                  ["rename", "move", "copy", "delete", "decompress"] as const
                 }
               >
                 {(name) => {
@@ -74,6 +67,14 @@ export const Center = () => {
                   ) : null
                 }}
               </For>
+            </Show>
+            <Show when={userCan("share")}>
+              <CenterIcon
+                name="share"
+                onClick={() => {
+                  bus.emit("tool", "share")
+                }}
+              />
             </Show>
             <CopyLink />
             <Download />
