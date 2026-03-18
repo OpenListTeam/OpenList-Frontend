@@ -1,2 +1,6 @@
 allowBuilds:
   core-js: true
+patchedDependencies:
+  # if https://github.com/chenxch/vite-plugin-dynamic-base/pull/36 is merged,
+  # this patch can be removed
+  vite-plugin-dynamic-base: patches/vite-plugin-dynamic-base.patch
