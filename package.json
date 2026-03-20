@@ -36,7 +36,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@crowdin/cli": "^4.14.0",
+    "@crowdin/cli": "^4.14.1",
     "@hrgui/libass-wasm-ts": "^1.0.3",
     "@types/bencode": "^2.0.4",
     "@types/crypto-js": "^4.2.2",
