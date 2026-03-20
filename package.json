@@ -72,7 +72,7 @@
     "@solid-primitives/i18n": "^2.2.1",
     "@solid-primitives/keyboard": "^1.3.5",
     "@solid-primitives/storage": "^1.3.11",
-    "@solidjs/router": "^0.9.1",
+    "@solidjs/router": "^0.16.1",
     "@stitches/core": "^1.2.8",
     "@types/ini": "^4.1.1",
     "@viselect/vanilla": "^3.9.0",
