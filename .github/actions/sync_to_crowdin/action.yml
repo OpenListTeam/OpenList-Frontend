@@ -18,7 +18,7 @@ runs:
         registry-url: "https://registry.npmjs.org"
 
     - name: Install pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v5
       with:
         # version: 9.9.0
         run_install: false
