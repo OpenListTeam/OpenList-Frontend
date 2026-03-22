@@ -60,7 +60,7 @@
     "vite": "^8.0.1",
     "vite-plugin-dynamic-base": "^1.3.0",
     "vite-plugin-solid": "^2.11.11",
-    "vite-plugin-static-copy": "^3.3.0"
+    "vite-plugin-static-copy": "^3.4.0"
   },
   "dependencies": {
     "@egjs/view360": "4.0.0-beta.7",
