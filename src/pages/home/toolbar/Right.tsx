@@ -59,13 +59,6 @@ export const Right = () => {
           transition={{ duration: 0.2 }}
         >
           <VStack spacing="$1" class="left-toolbar-in">
-            <RightIcon
-              as={RiSystemRefreshLine}
-              tips="refresh"
-              onClick={() => {
-                refresh(undefined, true)
-              }}
-            />
             <Show
               when={
                 isFolder() &&
@@ -74,6 +67,13 @@ export const Right = () => {
                 objStore.write
               }
             >
+              <RightIcon
+                as={RiSystemRefreshLine}
+                tips="refresh"
+                onClick={() => {
+                  refresh(undefined, true)
+                }}
+              />
               <RightIcon
                 as={operations.new_file.icon}
                 tips="new_file"
