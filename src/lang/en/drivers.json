@@ -369,7 +369,7 @@
       "crack_video": "Crack video",
       "official": "Official"
     },
-    "low_bandwith_upload_mode": "Low bandwith upload mode",
+    "low_bandwith_upload_mode": "Low bandwidth upload mode",
     "only_list_video_file": "Only list video file",
     "order_by": "Order by",
     "order_bys": {
@@ -839,7 +839,7 @@
     "client_id": "Client id",
     "client_secret": "Client secret",
     "custom_host": "Custom host",
-    "custom_host-tips": "Custom host for onedrive download link",
+    "custom_host-tips": "Custom host for OneDrive download link",
     "disable_disk_usage": "Disable disk usage",
     "enable_direct_upload": "Enable direct upload",
     "enable_direct_upload-tips": "Enable direct upload from client to OneDrive",
@@ -867,7 +867,7 @@
     "client_id": "Client id",
     "client_secret": "Client secret",
     "custom_host": "Custom host",
-    "custom_host-tips": "Custom host for onedrive download link",
+    "custom_host-tips": "Custom host for OneDrive download link",
     "disable_disk_usage": "Disable disk usage",
     "email": "Email",
     "enable_direct_upload": "Enable direct upload",
@@ -885,8 +885,8 @@
   "OpenList": {
     "forward_archive_requests": "Forward archive requests",
     "meta_password": "Meta password",
-    "pass_ip_to_upsteam": "Pass ip to upsteam",
-    "pass_ua_to_upsteam": "Pass ua to upsteam",
+    "pass_ip_to_upsteam": "Pass ip to upstream",
+    "pass_ua_to_upsteam": "Pass ua to upstream",
     "password": "Password",
     "root_folder_path": "Root folder path",
     "token": "Token",

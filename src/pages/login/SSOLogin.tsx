@@ -10,7 +10,7 @@ import { onCleanup } from "solid-js"
 const SSOLogin = () => {
   const ssoSignEnabled = getSettingBool("sso_login_enabled")
   const loginPlatform = getSetting("sso_login_platform")
-  const usecompatibility = getSettingBool("sso_compatibility_mode")
+  const useCompatibility = getSettingBool("sso_compatibility_mode")
   const { searchParams, to } = useRouter()
   const token = searchParams["token"]
   if (token != undefined && token != "") {
@@ -31,7 +31,7 @@ const SSOLogin = () => {
   if (ssoSignEnabled) {
     const login = () => {
       const url = r.getUri() + "/auth/sso?method=sso_get_token"
-      if (usecompatibility) {
+      if (useCompatibility) {
         window.location.href = url
         return
       }
