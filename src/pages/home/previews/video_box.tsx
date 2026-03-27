@@ -224,12 +224,15 @@ export const VideoBox = (props: {
             return (
               <Tooltip placement="top" withArrow label={item.name}>
                 <Anchor
-                  // external
-                  href={convertURL(item.scheme, {
-                    raw_url: objStore.raw_url,
-                    name: objStore.obj.name,
-                    d_url: currentObjLink(true),
-                  })}
+                  onclick={() => {
+                    const a = document.createElement("a")
+                    a.href = convertURL(item.scheme, {
+                      raw_url: objStore.raw_url,
+                      name: objStore.obj.name,
+                      d_url: currentObjLink(true),
+                    })
+                    a.click()
+                  }}
                 >
                   <Image
                     m="0 auto"
