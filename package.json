@@ -87,7 +87,7 @@
     "copy-to-clipboard": "^3.3.3",
     "crypto-js": "^4.2.0",
     "docx-preview": "^0.3.7",
-    "handlebars": "^4.7.8",
+    "handlebars": "^4.7.9",
     "hash-wasm": "^4.12.0",
     "highlight.js": "^11.11.1",
     "hls.js": "^1.6.15",
