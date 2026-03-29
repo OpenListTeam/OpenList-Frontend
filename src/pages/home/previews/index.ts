@@ -44,13 +44,13 @@ export interface PreviewComponent {
 
 const previews: Preview[] = [
   {
-    key: "html_render",
+    key: "html",
     exts: ["html"],
     component: lazy(() => import("./html")),
     prior: true,
   },
   {
-    key: "aliyun_video_previewer",
+    key: "aliyun_video",
     type: ObjType.VIDEO,
     provider: /^Aliyundrive(Open)?$/,
     component: lazy(() => import("./aliyun_video")),
@@ -128,26 +128,26 @@ const previews: Preview[] = [
     ? []
     : [
         {
-          key: "pdf_preview",
+          key: "pdf",
           exts: ["pdf"],
           component: lazy(() => import("./pdf")),
           prior: true,
         },
       ]),
   {
-    key: "ppt_preview",
+    key: "ppt",
     exts: ["pptx"],
     component: lazy(() => import("./ppt")),
     prior: true,
   },
   {
-    key: "xls_preview",
+    key: "xls",
     exts: ["xlsx", "xls"],
     component: lazy(() => import("./xls")),
     prior: true,
   },
   {
-    key: "doc_preview",
+    key: "doc",
     exts: ["docx", "doc"],
     component: lazy(() => import("./doc")),
     prior: true,
@@ -165,7 +165,7 @@ const previews: Preview[] = [
     prior: true,
   },
   {
-    key: "archive_preview",
+    key: "archive",
     exts: (name: string) => {
       const index = UserPermissions.findIndex(
         (item) => item === "read_archives",
