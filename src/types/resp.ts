@@ -17,6 +17,7 @@ export type FsListResp = Resp<{
   readme: string
   header: string
   write: boolean
+  write_content_bypass: boolean
   provider: string
   direct_upload_tools?: string[]
 }>
