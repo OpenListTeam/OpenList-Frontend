@@ -64,7 +64,7 @@
   },
   "dependencies": {
     "@egjs/view360": "4.0.0-beta.7",
-    "@embedpdf/snippet": "^2.9.1",
+    "@embedpdf/snippet": "^2.12.1",
     "@github/webauthn-json": "^2.1.1",
     "@hope-ui/solid": "0.6.7",
     "@monaco-editor/loader": "1.7.0",
