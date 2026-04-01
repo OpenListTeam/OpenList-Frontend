@@ -5,9 +5,10 @@ import { getMainColor, getSettingBool, objStore } from "~/store"
 import { ObjType } from "~/types"
 import { ext, pathDir, pathJoin } from "~/utils"
 import Artplayer from "artplayer"
-import { type Option } from "artplayer/types/option"
-import { type Setting } from "artplayer/types/setting"
-import { type Events } from "artplayer/types/events"
+import { type Option } from "artplayer"
+import { type Setting } from "artplayer"
+import { type Events } from "artplayer"
+import artplayerProxyMediabunny from "~/components/artplayer-proxy-mediabunny"
 import artplayerPluginDanmuku from "artplayer-plugin-danmuku"
 import { type Option as DanmukuOption } from "artplayer-plugin-danmuku"
 import artplayerPluginAss from "~/components/artplayer-plugin-ass"
@@ -18,6 +19,8 @@ import { AutoHeightPlugin, VideoBox } from "./video_box"
 import { ArtPlayerIconsSubtitle } from "~/components/icons"
 import { useNavigate } from "@solidjs/router"
 import "./artplayer.css"
+import { registerAc3Decoder } from "@mediabunny/ac3"
+registerAc3Decoder()
 
 const Preview = () => {
   const { pathname, searchParams } = useRouter()
@@ -46,6 +49,7 @@ const Preview = () => {
       )
     }
   }
+
   let player: Artplayer
   let flvPlayer: mpegts.Player
   let hlsPlayer: Hls
@@ -101,6 +105,7 @@ const Preview = () => {
     quality: [],
     // highlight: [],
     plugins: [AutoHeightPlugin],
+    proxy: artplayerProxyMediabunny(),
     whitelist: [],
     settings: [],
     // subtitle:{}
