@@ -38,6 +38,7 @@ export interface Preview {
 }
 
 export interface PreviewComponent {
+  key: string
   name: string
   component: Component
 }
@@ -216,6 +217,7 @@ export const getPreviews = (
         extsContains(preview.exts, file.name)
       ) {
         const r = {
+          key: preview.key,
           name: t(`home.preview.names.${preview.key}`),
           component: preview.component,
         }
@@ -234,7 +236,8 @@ export const getPreviews = (
   // iframe previews
   const iframePreviews = getIframePreviews(file.name)
   const matchedIframePreviews = iframePreviews.map((preview) => ({
-    name: preview.key,
+    key: `iframe-${preview.key}`,
+    name: preview.key, // TODO: Add name field to backend
     component: generateIframePreview(preview.value),
   }))
   // Condition for iframe previews to respect the "preview_download_by_default" setting
@@ -246,6 +249,7 @@ export const getPreviews = (
 
   // download page
   const downloadComponent: PreviewComponent = {
+    key: "download",
     name: t("home.preview.names.download"),
     component: lazy(() => import("./download")),
   }
@@ -274,6 +278,7 @@ export const getPreviews = (
           ),
         )
         .map((p) => ({
+          key: p.key,
           name: t(`home.preview.names.${p.key}`),
           component: p.component,
         }))

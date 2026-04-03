@@ -260,7 +260,7 @@ const Preview = () => {
     "",
   )
   const [selectedFile, setSelectedFile] = createSignal<string>("")
-  const [selectedPreviewName, setSelectedPreviewName] = createSignal("")
+  const [selectedPreviewKey, setSelectedPreviewKey] = createSignal("")
   const getObjsMutex = createMutex()
   const toList = (tree: ObjTree[] | Obj[]): List => {
     let l: List = {}
@@ -425,8 +425,8 @@ const Preview = () => {
   const currentPreview = createMemo(() => {
     const p = previews()
     if (p.length === 0) return null
-    if (selectedPreviewName()) {
-      const found = p.find((item) => item.name === selectedPreviewName())
+    if (selectedPreviewKey()) {
+      const found = p.find((item) => item.key === selectedPreviewKey())
       if (found) return found
     }
     return p[0]
@@ -468,7 +468,7 @@ const Preview = () => {
 
   createEffect(() => {
     selectedFile()
-    setSelectedPreviewName("")
+    setSelectedPreviewKey("")
   })
   return (
     <VStack spacing="$2" w="$full">
@@ -574,12 +574,10 @@ const Preview = () => {
                 <HStack w="$full" justifyContent="center" spacing="$2" p="$2">
                   <Show when={previews().length > 1}>
                     <SelectWrapper
-                      value={currentPreview()?.name || ""}
-                      onChange={(value) =>
-                        setSelectedPreviewName(String(value))
-                      }
+                      value={currentPreview()?.key || ""}
+                      onChange={(value) => setSelectedPreviewKey(String(value))}
                       options={previews().map((p) => ({
-                        value: p.name,
+                        value: p.key,
                         label: p.name,
                       }))}
                     />

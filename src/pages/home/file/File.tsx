@@ -18,11 +18,14 @@ const File = () => {
         <HStack w="$full" spacing="$2">
           <SelectWrapper
             alwaysShowBorder
-            value={cur().name}
-            onChange={(name) => {
-              setCur(previews().find((p) => p.name === name)!)
+            value={cur().key}
+            onChange={(key) => {
+              setCur(previews().find((p) => p.key === key)!)
             }}
-            options={previews().map((item) => ({ value: item.name }))}
+            options={previews().map((item) => ({
+              value: item.key,
+              label: item.name,
+            }))}
           />
           <OpenWith />
         </HStack>
