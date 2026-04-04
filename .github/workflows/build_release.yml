@@ -27,7 +27,22 @@ on:
       version:
         description: |
           Target version (e.g., 1.0.0), will create a tag named 'v<version>' and update package.json version
-        required: true
+        required: false
+        default: "1.0.0"
+        type: string
+      prerelease:
+        description: "Create pre-release (beta/alpha)"
+        required: false
+        default: false
+        type: boolean
+      draft:
+        description: "Create draft release"
+        required: false
+        default: true
+        type: boolean
+      release_notes:
+        description: "Custom release notes (supports Markdown)"
+        required: false
         type: string
 
 jobs:
