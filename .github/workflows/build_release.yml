@@ -55,6 +55,22 @@ jobs:
           chmod +x build.sh
           ./build.sh --release --compress
 
+      - name: Move regular build
+        run: |
+          mkdir -p regular-dist
+          mv dist/* regular-dist/
+
+      - name: Build Lite Release
+        run: |
+          chmod +x build.sh
+          ./build.sh --release --compress --lite
+
+      - name: Move lite build and restore regular build
+        run: |
+          mkdir -p lite-dist
+          mv dist/* lite-dist/
+          mv regular-dist/* dist/
+
       - name: Download i18n.tar.gz from latest release
         run: |
           echo "Downloading i18n.tar.gz from latest release..."
@@ -74,6 +90,7 @@ jobs:
             --title "Release ${{ steps.tag.outputs.tag }}" \
             ${{ steps.tag.outputs.tag }} \
             dist/openlist-frontend-dist-v*.tar.gz \
+            lite-dist/openlist-frontend-dist-lite-v*.tar.gz \
             dist/i18n.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
