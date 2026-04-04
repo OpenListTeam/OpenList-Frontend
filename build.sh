@@ -105,6 +105,13 @@ enforce_git_tag() {
 validate_git_tag() {
     package_version=$(grep '"version":' package.json | sed 's/.*"version": *"\([^"]*\)".*/\1/')
     git_version_clean=${git_version#v}
+    
+    # 检查是否为时间戳格式（纯数字），如果是则跳过版本验证
+    if [[ "$git_version_clean" =~ ^[0-9]+$ ]]; then
+        log_info "Timestamp tag detected (${git_version_clean}), skipping version validation"
+        return 0
+    fi
+    
     if [[ "$git_version_clean" != "$package_version" ]]; then
         log_error "Package.json version (${package_version}) does not match git tag (${git_version_clean})."
         exit 1
