@@ -1,21 +1,3 @@
-# This workflow is used to create a (pre-)release build of the OpenList frontend.
-#
-# This will:
-#
-# - Update the `package.json` version to the specified version (when triggered
-#   by `workflow_dispatch`), commit the changes and tag it.
-# - Upload the release assets to GitHub.
-# - Publish the package to npm.
-#
-# # Usage
-#
-# This workflow can be triggered by:
-#
-# - Pushing a tag that matches the pattern `v[0-9]+.[0-9]+.[0-9]+*` (semver format).
-# - Manually via the GitHub Actions UI with a version input.
-#
-# To create (pre-)release builds, we recommend that you use the `workflow_dispatch`.
-
 name: Release Build
 
 on:
@@ -25,24 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: |
-          Target version (e.g., 1.0.0), will create a tag named 'v<version>' and update package.json version
+        description: "Target version (e.g., 1.0.0)"
         required: false
         default: "1.0.0"
-        type: string
-      prerelease:
-        description: "Create pre-release (beta/alpha)"
-        required: false
-        default: false
-        type: boolean
-      draft:
-        description: "Create draft release"
-        required: false
-        default: true
-        type: boolean
-      release_notes:
-        description: "Custom release notes (supports Markdown)"
-        required: false
         type: string
 
 jobs:
@@ -52,154 +19,35 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          submodules: recursive
-
-      - name: Validate and trim semver
-        id: semver
-        uses: matt-usurp/validate-semver@v2
-        with:
-          version: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
-
-      - name: Check if version is pre-release
-        id: check_pre_release
-        run: |
-          if [[ -z "${{ steps.semver.outputs.prerelease }}" && -z "${{ steps.semver.outputs.build }}" ]]; then
-            echo "is_pre_release=false" >> $GITHUB_OUTPUT
-          else
-            echo "is_pre_release=true" >> $GITHUB_OUTPUT
-          fi
 
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
           node-version: "24.14.1"
-          registry-url: "https://registry.npmjs.org"
 
       - name: Install pnpm
         uses: pnpm/action-setup@v5
-        with:
-          run_install: false
-
-      - name: Import GPG key
-        if: github.event_name == 'workflow_dispatch'
-        uses: crazy-max/ghaction-import-gpg@v7
-        with:
-          gpg_private_key: ${{ secrets.BOT_GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.BOT_GPG_PASSPHRASE }}
-          git_user_signingkey: true
-          git_commit_gpgsign: true
-          git_tag_gpgsign: true
-
-      - name: Setup CI Bot
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          git config user.name "${{ secrets.BOT_USERNAME }}"
-          git config user.email "${{ secrets.BOT_USEREMAIL }}"
-
-      - name: Update package.json and commit
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          jq --arg version "${{ steps.semver.outputs.version }}" '.version = $version' package.json > package.json.tmp && mv package.json.tmp package.json
-          git add package.json
-          git commit -S -m "chore: release v${{ steps.semver.outputs.version }}" --no-verify
-          git push
-
-          # For local build, needn't push, the tag will be created by `gh release create`
-          git tag -s "v${{ steps.semver.outputs.version }}" -m "Release v${{ steps.semver.outputs.version }}"
-
-      - name: Get current tag
-        id: get_current_tag
-        run: |
-          # Remove existing tag `rolling`, since `rolling` should always point to the latest commit
-          # This is necessary to avoid conflicts with the changelog generation
-          git tag -d rolling 2>/dev/null || true
-
-          # Get the current tag
-          CURRENT_TAG=$(git describe --tags --abbrev=0)
-          echo "current_tag=$CURRENT_TAG" >> $GITHUB_OUTPUT
-
-          # Temporarily remove all pre-release tags (tags containing '-' / '+')
-          # This prevents them from interfering with changelog generation
-          PRE_RELEASE_TAGS=$(git tag -l | grep -E "(-|\+)" || true)
-          if [ -n "$PRE_RELEASE_TAGS" ]; then
-            echo "Temporarily removing pre-release tags: $PRE_RELEASE_TAGS"
-            echo "$PRE_RELEASE_TAGS" | xargs -r git tag -d
-          fi
-
-          # Add back the current tag if is a pre-release
-          # Should not add `-f`, as it will overwrite the existing tag
-          if [[ "${{ steps.check_pre_release.outputs.is_pre_release }}" == "true" ]]; then
-            git tag -s "$CURRENT_TAG" -m "Release $CURRENT_TAG"
-          fi
-
-      - name: Generate changelog
-        id: generate_changelog
-        run: |
-          npx changelogithub --output ${{ github.workspace }}-CHANGELOG.txt || echo "" > ${{ github.workspace }}-CHANGELOG.txt
 
       - name: Build Release
         run: |
           chmod +x build.sh
           ./build.sh --release --compress
 
-      - name: Move regular build
+      - name: Download i18n.tar.gz from latest release
         run: |
-          mkdir -p regular-dist
-          mv dist/* regular-dist/
-
-      - name: Build Lite Release
-        run: |
-          chmod +x build.sh
-          ./build.sh --release --compress --lite
-
-      - name: Move lite build and restore regular build
-        run: |
-          mkdir -p lite-dist
-          mv dist/* lite-dist/
-          mv regular-dist/* dist/
-
-      - name: Upload Release Assets
-        run: |
-          # Delete local tag, or gh cli will complain about it.
-          git tag -d ${{ steps.get_current_tag.outputs.current_tag }}
-          gh release create \
-            --title "Release ${{ steps.get_current_tag.outputs.current_tag }}" \
-            --notes-file "${{ github.workspace }}-CHANGELOG.txt" \
-            --prerelease=${{ steps.check_pre_release.outputs.is_pre_release }} \
-            ${{ steps.get_current_tag.outputs.current_tag }} \
-            dist/openlist-frontend-dist-v*.tar.gz lite-dist/openlist-frontend-dist-lite-v*.tar.gz dist/i18n.tar.gz
+          LATEST_RELEASE=$(gh release list --limit 1 --json tagName | jq -r '.[0].tagName')
+          echo "Downloading i18n.tar.gz from release: $LATEST_RELEASE"
+          gh release download "$LATEST_RELEASE" --pattern "i18n.tar.gz" --dir dist/ || echo "i18n.tar.gz not found in latest release"
+          ls -la dist/i18n.tar.gz 2>/dev/null || echo "No i18n.tar.gz downloaded"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Prepare for npm
+      - name: Upload Release Assets
         run: |
-          # Delete the generated dist tarball
-          rm -f dist/openlist-frontend-dist-v*.tar.gz
-          rm -f lite-dist/openlist-frontend-dist-lite-v*.tar.gz
-          # Copy the lite version
-          mkdir dist/lite
-          cp -r lite-dist/. dist/lite/
-
-          if ! jq -e '.name and .version' package.json > /dev/null; then
-            echo "Error: Invalid package.json"
-            exit 1
-          fi
-
-      - name: Publish npm
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
-
-          if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
-            echo "NPM_TOKEN not set, performing dry run"
-            pnpm publish --dry-run --no-git-checks --access public
-          else
-            echo "Publishing to npm..."
-            pnpm publish --no-git-checks --access public
-          fi
+          gh release create \
+            --title "Release ${{ github.ref_name }}" \
+            ${{ github.ref_name }} \
+            dist/openlist-frontend-dist-v*.tar.gz \
+            dist/i18n.tar.gz
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-permissions:
-  contents: write
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
