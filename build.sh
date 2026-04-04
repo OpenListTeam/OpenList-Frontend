@@ -95,9 +95,8 @@ check_git_version_and_commit() {
 # Enforce git tag for release builds
 enforce_git_tag() {
     if ! git_version=$(git describe --abbrev=0 --tags 2>/dev/null); then
-        log_error "No git tags found. Release build requires a git tag."
-        log_warning "Please create a tag first, or use --dev for development builds."
-        exit 1
+        log_warning "No git tags found. Using version from package.json."
+        git_version="v$(grep '"version":' package.json | sed 's/.*"version": *"\([^"]*\)".*/\1/')"
     fi
     validate_git_tag
 }
@@ -146,14 +145,7 @@ build_project() {
     log_step "==== Installing dependencies ===="
     pnpm install
 
-    log_step "==== Building i18n ===="
-    if [[ "$SKIP_I18N" == "false" ]]; then
-        pnpm i18n:release
-    else
-        fetch_i18n_from_release
-    fi
-
-    log_step "==== Building project ===="
+    log_step "==== Building project (English only, no crowdin) ===="
     if [[ "$LITE_FLAG" == "true" ]]; then
         pnpm build:lite
     else
