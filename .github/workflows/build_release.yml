@@ -60,11 +60,17 @@ jobs:
           curl -L -o dist/i18n.tar.gz "https://github.com/OpenListTeam/OpenList-Frontend/releases/latest/download/i18n.tar.gz" || echo "Failed to download i18n.tar.gz"
           ls -la dist/i18n.tar.gz 2>/dev/null || echo "No i18n.tar.gz downloaded"
 
+      - name: Delete existing release (if any)
+        run: |
+          if gh release view ${{ steps.tag.outputs.tag }} --json isDraft --quiet 2>/dev/null; then
+            echo "Deleting existing release: ${{ steps.tag.outputs.tag }}"
+            gh release delete ${{ steps.tag.outputs.tag }} --cleanup-tag=false --yes 2>/dev/null || true
+          fi
+
       - name: Upload Release Assets
         run: |
           gh release create \
             --title "Release ${{ steps.tag.outputs.tag }}" \
-            --clobber \
             ${{ steps.tag.outputs.tag }} \
             dist/openlist-frontend-dist-v*.tar.gz \
             dist/i18n.tar.gz
