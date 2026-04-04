@@ -42,6 +42,7 @@ jobs:
             TAG="v${TIMESTAMP}"
             echo "Creating timestamp tag: $TAG"
             git tag -a "$TAG" -m "Release $TAG"
+            git push origin "$TAG"
             echo "tag=$TAG" >> $GITHUB_OUTPUT
           else
             TAG="${{ github.ref_name }}"
