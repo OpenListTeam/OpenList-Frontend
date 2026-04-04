@@ -45,6 +45,12 @@ export const players: {
     platforms: ["Windows", "MacOS", "Linux", "Android", "iOS"],
   },
   {
+    icon: "android",
+    name: "Android",
+    scheme: "intent:$durl#Intent;type=video/*;S.title=$name;end",
+    platforms: ["Android"],
+  },
+  {
     icon: "nplayer",
     name: "nPlayer",
     scheme: "nplayer-$durl",
@@ -109,7 +115,7 @@ export const AutoHeightPlugin = (player: Artplayer) => {
   player.on("ready", () => {
     const offsetBottom = "1.75rem" // position bottom of "More" button + padding
     $videoBox.style.maxHeight = `calc(100vh - ${$videoBox.offsetTop}px - ${offsetBottom})`
-    $videoBox.style.minHeight = "320px" // min width of mobie phone
+    $videoBox.style.minHeight = "320px" // min width of mobile phone
     player.autoHeight()
   })
   player.on("resize", () => {

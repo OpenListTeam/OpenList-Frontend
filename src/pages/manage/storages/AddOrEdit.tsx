@@ -1,6 +1,13 @@
-import { Alert, AlertIcon, Button, Heading, VStack } from "@hope-ui/solid"
+import {
+  Alert,
+  AlertIcon,
+  Button,
+  Heading,
+  HStack,
+  VStack,
+} from "@hope-ui/solid"
 import { createMemo, createSignal, For, Show } from "solid-js"
-import { MaybeLoading } from "~/components"
+import { MaybeLoading, ModalInput } from "~/components"
 import { useFetch, useRouter, useT } from "~/hooks"
 import { handleResp, joinBase, notify, r } from "~/utils"
 import {
@@ -100,6 +107,8 @@ const AddOrEdit = () => {
       return i.split("|")[0]
     }
   })
+  const [exportOpened, setExportOpened] = createSignal(false)
+  const [importOpened, setImportOpened] = createSignal(false)
   return (
     <MaybeLoading
       loading={id ? storageLoading() || driverLoading() : driversLoading()}
@@ -177,32 +186,92 @@ const AddOrEdit = () => {
           </For>
         </Show>
       </ResponsiveGrid>
-      <Button
+      <HStack
         mt="$2"
-        loading={okLoading()}
-        onClick={async () => {
-          if (drivers()[storage.driver].config.need_ms) {
-            notify.info(t("manage.add_storage-tips"))
-            window.open(joinBase("/@manage/messenger"), "_blank")
-          }
-          const resp = await ok()
-          // TODO maybe can use handleRrespWithNotifySuccess
-          handleResp(
-            resp,
-            () => {
-              notify.success(t("global.save_success"))
-              back()
-            },
-            (msg, code) => {
-              if (resp.data.id) {
-                to(`/@manage/storages/edit/${resp.data.id}`)
-              }
-            },
-          )
+        spacing="$2"
+        gap="$2"
+        w="$full"
+        wrap={{
+          "@initial": "wrap",
+          "@md": "unset",
         }}
       >
-        {t(`global.${id ? "save" : "add"}`)}
-      </Button>
+        <Button
+          loading={okLoading()}
+          onClick={async () => {
+            if (drivers()[storage.driver].config.need_ms) {
+              notify.info(t("manage.add_storage-tips"))
+              window.open(joinBase("/@manage/messenger"), "_blank")
+            }
+            const resp = await ok()
+            // TODO maybe can use handleRrespWithNotifySuccess
+            handleResp(
+              resp,
+              () => {
+                notify.success(t("global.save_success"))
+                back()
+              },
+              (msg, code) => {
+                if (resp.data.id) {
+                  to(`/@manage/storages/edit/${resp.data.id}`)
+                }
+              },
+            )
+          }}
+        >
+          {t(`global.${id ? "save" : "add"}`)}
+        </Button>
+        <Button
+          colorScheme="accent"
+          loading={okLoading()}
+          onClick={async () => {
+            setExportOpened(true)
+          }}
+        >
+          {t("storages.common.export")}
+        </Button>
+        <Button
+          colorScheme="primary"
+          loading={okLoading()}
+          onClick={async () => {
+            setImportOpened(true)
+          }}
+        >
+          {t("storages.common.import")}
+        </Button>
+      </HStack>
+      <Show when={exportOpened()}>
+        <ModalInput
+          opened={exportOpened()}
+          onClose={() => setExportOpened(false)}
+          title={t("storages.common.export_title")}
+          type="text"
+          tips={t("storages.common.export_tips")}
+          defaultValue={JSON.stringify(storage)}
+          onSubmit={() => {
+            setExportOpened(false)
+          }}
+        />
+      </Show>
+      <ModalInput
+        opened={importOpened()}
+        onClose={() => setImportOpened(false)}
+        title={t("storages.common.import_title")}
+        type="text"
+        tips={t("storages.common.import_tips")}
+        onSubmit={(text: string) => {
+          try {
+            const { id, disabled, modified, status, ...obj }: Storage =
+              JSON.parse(text)
+            setStorage(obj)
+            setAddition(JSON.parse(obj.addition))
+            setImportOpened(false)
+            notify.success(t("storages.common.import_success"))
+          } catch (e: any) {
+            notify.error(`Invalid storage format: ${e.message}`)
+          }
+        }}
+      />
     </MaybeLoading>
   )
 }

@@ -24,11 +24,15 @@ export const FormUpload: Upload = async (
     Overwrite: overwrite.toString(),
   }
   if (rapid) {
-    const { md5, sha1, sha256 } = await calculateHash(file)
+    setUpload("status", "hashing")
+    const { md5, sha1, sha256 } = await calculateHash(file, (p) => {
+      setUpload("progress", p | 0)
+    })
     headers["X-File-Md5"] = md5
     headers["X-File-Sha1"] = sha1
     headers["X-File-Sha256"] = sha256
   }
+  setUpload("status", "uploading")
   const resp: EmptyResp = await r.put("/fs/form", form, {
     headers: headers,
     onUploadProgress: (progressEvent) => {

@@ -176,6 +176,7 @@ export const usePath = () => {
         ObjStore.setReadme(data.readme)
         ObjStore.setHeader(data.header)
         ObjStore.setWrite(data.write)
+        ObjStore.setWriteContentBypass(data.write_content_bypass)
         ObjStore.setProvider(data.provider)
         ObjStore.setDirectUploadTools(data.direct_upload_tools)
         ObjStore.setState(State.Folder)

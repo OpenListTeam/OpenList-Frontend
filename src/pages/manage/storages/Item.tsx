@@ -9,6 +9,7 @@ import {
   Textarea,
 } from "@hope-ui/solid"
 import { Match, Show, Switch } from "solid-js"
+import type { Accessor } from "solid-js"
 import { useT } from "~/hooks"
 import { DriverItem, Type } from "~/types"
 import { SelectOptions } from "~/components"
@@ -22,33 +23,35 @@ export type ItemProps = DriverItem & {
     | {
         type: Type.Bool
         onChange?: (value: boolean) => void
-        value: boolean
+        value: boolean | Accessor<boolean>
       }
     | {
         type: Type.Number
         onChange?: (value: number) => void
-        value: number
+        value: number | Accessor<number>
       }
     | {
         type: Type.Float
         onChange?: (value: number) => void
-        value: number
+        value: number | Accessor<number>
       }
     | {
         type: Type.String | Type.Text
         onChange?: (value: string) => void
-        value: string
+        value: string | Accessor<string>
       }
     | {
         type: Type.Select
         searchable?: boolean
         onChange?: (value: string) => void
-        value: string
+        value: string | Accessor<string>
       }
   )
 
 const Item = (props: ItemProps) => {
   const t = useT()
+  const getVal = <T,>(v: T | Accessor<T>) =>
+    (typeof v === "function" ? (v as Accessor<T>)() : v) as T
   return (
     <FormControl
       w="$full"
@@ -69,7 +72,7 @@ const Item = (props: ItemProps) => {
             id={props.name}
             type={props.name == "password" ? "password" : "text"}
             readOnly={props.readonly}
-            value={props.value as string}
+            value={getVal(props.value as string | Accessor<string>)}
             onChange={
               props.type === Type.String
                 ? (e) => props.onChange?.(e.currentTarget.value)
@@ -82,7 +85,7 @@ const Item = (props: ItemProps) => {
             type="number"
             id={props.name}
             readOnly={props.readonly}
-            value={props.value as number}
+            value={getVal(props.value as number | Accessor<number>)}
             onInput={
               props.type === Type.Number
                 ? (e) => props.onChange?.(parseInt(e.currentTarget.value))
@@ -95,7 +98,7 @@ const Item = (props: ItemProps) => {
             type="number"
             id={props.name}
             readOnly={props.readonly}
-            value={props.value as number}
+            value={getVal(props.value as number | Accessor<number>)}
             onInput={
               props.type === Type.Float
                 ? (e) => props.onChange?.(parseFloat(e.currentTarget.value))
@@ -107,7 +110,7 @@ const Item = (props: ItemProps) => {
           <HopeSwitch
             id={props.name}
             readOnly={props.readonly}
-            defaultChecked={props.value as boolean}
+            checked={getVal(props.value as boolean | Accessor<boolean>)}
             onChange={
               props.type === Type.Bool
                 ? (e: any) => props.onChange?.(e.currentTarget.checked)
@@ -119,7 +122,7 @@ const Item = (props: ItemProps) => {
           <Textarea
             id={props.name}
             readOnly={props.readonly}
-            value={props.value as string}
+            value={getVal(props.value as string | Accessor<string>)}
             onChange={
               props.type === Type.Text
                 ? (e) => props.onChange?.(e.currentTarget.value)
@@ -131,7 +134,7 @@ const Item = (props: ItemProps) => {
           <Select
             id={props.name}
             readOnly={props.readonly}
-            defaultValue={props.value}
+            value={getVal(props.value as string | Accessor<string>)}
             onChange={
               props.type === Type.Select
                 ? (e) => props.onChange?.(e)

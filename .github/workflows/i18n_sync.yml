@@ -59,7 +59,7 @@ jobs:
 
       - name: Import GPG key
         if: steps.verify-changed-files.outputs.changed == 'true'
-        uses: crazy-max/ghaction-import-gpg@v6
+        uses: crazy-max/ghaction-import-gpg@v7
         with:
           gpg_private_key: ${{ secrets.BOT_GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.BOT_GPG_PASSPHRASE }}
@@ -83,31 +83,12 @@ jobs:
             git push
           fi
 
-      - name: Setup Node
-        if: steps.verify-changed-files.outputs.changed == 'true'
-        uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-          registry-url: "https://registry.npmjs.org"
-
-      - name: Install pnpm
-        if: steps.verify-changed-files.outputs.changed == 'true'
-        uses: pnpm/action-setup@v4
-        with:
-          # version: 9.9.0
-          run_install: false
-
-      - name: Install dependencies
-        if: steps.verify-changed-files.outputs.changed == 'true'
-        run: pnpm install
-
       - name: Sync to Crowdin
-        if: steps.verify-changed-files.outputs.changed == 'true'
-        run: |
-          pnpm crowdin:upload
-        env:
-          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
-          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+        if: ${{ steps.verify-changed-files.outputs.changed == 'true' || github.event_name == 'push' }}
+        uses: ./.github/actions/sync_to_crowdin
+        with:
+          crowdin_project_id: ${{ secrets.CROWDIN_PROJECT_ID }}
+          crowdin_personal_token: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
 
 permissions:
   contents: write

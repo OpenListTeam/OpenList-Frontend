@@ -97,7 +97,7 @@ function artplayerPluginAss(options) {
     // set subtitle offset
     art.on("subtitleOffset", (offset) => (instance.timeOffset = offset))
 
-    // when player destory
+    // when player destroy
     art.on("destroy", () => instance.dispose())
 
     return {

@@ -11,7 +11,7 @@ import { layout } from "~/store"
 import { ContextMenu } from "./context-menu"
 import { Pager } from "./Pager"
 import { useLink, useT } from "~/hooks"
-import { objStore } from "~/store"
+import { objStore, local } from "~/store"
 import { ObjType } from "~/types"
 import { bus } from "~/utils"
 import lightGallery from "lightgallery"
@@ -39,7 +39,7 @@ const Folder = () => {
     dynamicGallery = lightGallery(document.createElement("div"), {
       addClass: "lightgallery-container",
       dynamic: true,
-      thumbnail: true,
+      thumbnail: local["show_gallery_thumbnails"] === "visible",
       plugins: [lgZoom, lgThumbnail, lgRotate, lgAutoplay, lgFullscreen],
       dynamicEl: images().map((obj) => {
         const raw = rawLink(obj, true)
@@ -52,7 +52,7 @@ const Folder = () => {
     })
   }
   createEffect(
-    on(images, () => {
+    on([images, () => local["show_gallery_thumbnails"]], () => {
       dynamicGallery?.destroy()
       dynamicGallery = undefined
     }),

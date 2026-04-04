@@ -3,7 +3,7 @@
     "see_hides": "Can see hiddens",
     "access_without_password": "Access without password",
     "offline_download": "Add offline download tasks",
-    "write": "Make dir or upload",
+    "write_content": "Write content (Create / Upload / Modify)",
     "rename": "Rename",
     "move": "Move",
     "copy": "Copy",

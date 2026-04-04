@@ -21,7 +21,7 @@ export const UserPermissions = [
   "see_hides",
   "access_without_password",
   "offline_download",
-  "write",
+  "write_content",
   "rename",
   "move",
   "copy",

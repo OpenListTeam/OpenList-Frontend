@@ -1,6 +1,13 @@
 import { Box, HStack, useColorModeValue } from "@hope-ui/solid"
 import { createMemo, For, Show } from "solid-js"
-import { checkboxOpen, haveSelected, objStore, selectAll, State } from "~/store"
+import {
+  checkboxOpen,
+  haveSelected,
+  objStore,
+  selectAll,
+  State,
+  userCan,
+} from "~/store"
 import { CopyLink } from "./CopyLink"
 import { CenterIcon } from "./Icon"
 import { bus } from "~/utils"
@@ -27,7 +34,7 @@ export const Center = () => {
           w="max-content"
           color="$neutral11"
           as={Motion.div}
-          initial={{ opacity: 0, scale: 0.9, x: "50% ", y: 10 }}
+          initial={{ opacity: 0, scale: 0.9, x: "50%", y: 10 }}
           animate={{ opacity: 1, scale: 1, x: "50%", y: 0 }}
           exit={{ opacity: 0, scale: 0.9 }}
           // @ts-ignore
@@ -43,28 +50,31 @@ export const Center = () => {
               backdropFilter: "blur(8px)",
             }}
           >
-            <Show when={!isShare()}>
+            <Show when={!isShare() && objStore.write}>
               <For
-                each={[
-                  "rename",
-                  "move",
-                  "copy",
-                  "delete",
-                  "share",
-                  "decompress",
-                ]}
+                each={
+                  ["rename", "move", "copy", "delete", "decompress"] as const
+                }
               >
                 {(name) => {
-                  return (
+                  return userCan(name) ? (
                     <CenterIcon
                       name={name}
                       onClick={() => {
                         bus.emit("tool", name)
                       }}
                     />
-                  )
+                  ) : null
                 }}
               </For>
+            </Show>
+            <Show when={userCan("share")}>
+              <CenterIcon
+                name="share"
+                onClick={() => {
+                  bus.emit("tool", "share")
+                }}
+              />
             </Show>
             <CopyLink />
             <Download />

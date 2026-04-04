@@ -35,6 +35,7 @@ const initialObjStore = {
 const [objStore, setObjStore] = createStore<
   typeof initialObjStore & {
     write?: boolean
+    write_content_bypass?: boolean
   }
 >(initialObjStore)
 
@@ -66,6 +67,8 @@ export const ObjStore = {
   setHeader: (header: string) => setObjStore("header", header),
   setRelated: (related: Obj[]) => setObjStore("related", related),
   setWrite: (write: boolean) => setObjStore("write", write),
+  setWriteContentBypass: (write_content_bypass: boolean) =>
+    setObjStore("write_content_bypass", write_content_bypass),
   // setGetResp: (resp: FsGetResp) => {
   //   setObjStore("obj", resp.data);
   //   setObjs(resp.data.related);

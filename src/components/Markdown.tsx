@@ -1,23 +1,29 @@
-// @ts-ignore
-import { hljs } from "./highlight.js"
-import SolidMarkdown from "solid-markdown"
-import remarkGfm from "remark-gfm"
-import rehypeRaw from "rehype-raw"
-import "./markdown.css"
-import { For, Show, createEffect, createMemo, createSignal, on } from "solid-js"
-import { clsx } from "clsx"
-import { Anchor, Box, List, ListItem } from "@hope-ui/solid"
-import { useCDN, useParseText, useRouter } from "~/hooks"
-import { EncodingSelect } from "."
-import once from "just-once"
-import { pathDir, pathJoin, api, pathResolve } from "~/utils"
+import { Anchor, Box, List, ListItem, useColorModeValue } from "@hope-ui/solid"
 import { createStorageSignal } from "@solid-primitives/storage"
-import { isMobile } from "~/utils/compatibility.js"
-import { useScrollListener } from "~/pages/home/toolbar/BackTop.jsx"
+import { clsx } from "clsx"
+import once from "just-once"
+import rehypeRaw from "rehype-raw"
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize"
+import rehypeStringify from "rehype-stringify"
+import remarkGfm from "remark-gfm"
+import remarkParse from "remark-parse"
+import remarkRehype from "remark-rehype"
+import { For, Show, createEffect, createMemo, createSignal, on } from "solid-js"
 import { Motion } from "solid-motionone"
+import { unified } from "unified"
+import { useCDN, useParseText, useRouter } from "~/hooks"
+import { useScrollListener } from "~/pages/home/toolbar/BackTop.jsx"
 import { getMainColor, me } from "~/store"
+import { api, notify, pathDir, pathJoin, pathResolve } from "~/utils"
+import { isMobile } from "~/utils/compatibility.js"
+import hljs from "highlight.js"
+import { EncodingSelect } from "."
+import "./markdown.css"
 
 type TocItem = { indent: number; text: string; tagName: string; key: string }
+
+const MERMAID_PATTERN = /```mermaid[\s\S]*?```/i
+const MATH_PATTERN = /\$\$[\s\S]+?\$\$|\$[^$\n]+?\$/
 
 const [isTocVisible, setVisible] = createSignal(false)
 const [isTocDisabled, setTocDisabled] = createStorageSignal(
@@ -35,8 +41,7 @@ function MarkdownToc(props: {
   disabled?: boolean
   markdownRef: HTMLDivElement
 }) {
-  if (props.disabled) return null
-  if (isMobile) return null
+  if (props.disabled || isMobile) return null
 
   const [tocList, setTocList] = createSignal<TocItem[]>([])
 
@@ -49,20 +54,14 @@ function MarkdownToc(props: {
     const $markdown = props.markdownRef.querySelector(".markdown-body")
     if (!$markdown) return
 
-    /**
-     * iterate elements of markdown body to find h1~h6
-     * and put them into a list by order
-     */
     const iterator = document.createNodeIterator(
       $markdown,
       NodeFilter.SHOW_ELEMENT,
       {
-        acceptNode(node) {
-          if (/h1|h2|h3/i.test(node.nodeName)) {
-            return NodeFilter.FILTER_ACCEPT
-          }
-          return NodeFilter.FILTER_REJECT
-        },
+        acceptNode: (node) =>
+          /h[1-3]/i.test(node.nodeName)
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_REJECT,
       },
     )
 
@@ -73,23 +72,17 @@ function MarkdownToc(props: {
     while ($next) {
       const level = Number($next.nodeName.match(/h(\d)/i)![1])
       if (level < minLevel) minLevel = level
-
       items.push({
-        indent: level, // initial indent for following compute
+        indent: level,
         text: $next.textContent!,
         tagName: $next.nodeName.toLowerCase(),
         key: ($next as Element).getAttribute("key")!,
       })
-
       $next = iterator.nextNode()
     }
 
     setTocList(
-      items.map((item) => ({
-        ...item,
-        // reset the indent of item to remove whitespace
-        indent: item.indent - minLevel,
-      })),
+      items.map((item) => ({ ...item, indent: item.indent - minLevel })),
     )
   })
 
@@ -99,13 +92,14 @@ function MarkdownToc(props: {
     )
     if (!$target) return
 
-    // the top of target should scroll to the bottom of nav
-    const $nav = document.querySelector(".nav")
-    let navBottom = $nav?.getBoundingClientRect().bottom ?? 0
-    if (navBottom < 0) navBottom = 0
-
-    const offsetY = $target.getBoundingClientRect().y
-    window.scrollBy({ behavior: "smooth", top: offsetY - navBottom })
+    const navBottom = Math.max(
+      document.querySelector(".nav")?.getBoundingClientRect().bottom ?? 0,
+      0,
+    )
+    window.scrollBy({
+      behavior: "smooth",
+      top: $target.getBoundingClientRect().y - navBottom,
+    })
   }
 
   const initialOffsetX = "calc(100% - 20px)"
@@ -161,11 +155,64 @@ const insertKatexCSS = once(() => {
   document.head.appendChild(link)
 })
 
-const insertMermaidJS = once(() => {
-  const script = document.createElement("script")
-  script.src = mermaidJSPath()
-  document.body.appendChild(script)
-})
+const loadMermaidJS = once(
+  () =>
+    new Promise<void>((resolve, reject) => {
+      if (window.mermaid) return resolve()
+      const script = document.createElement("script")
+      script.src = mermaidJSPath()
+      script.onload = () => resolve()
+      script.onerror = () => reject(new Error("Failed to load mermaid"))
+      document.body.appendChild(script)
+    }),
+)
+
+async function renderMarkdown(
+  content: string,
+): Promise<{ html: string; hasMermaid: boolean }> {
+  let processor = unified()
+
+  processor.use(remarkParse).use(remarkGfm)
+
+  const hasMermaid = MERMAID_PATTERN.test(content)
+  const hasMath = MATH_PATTERN.test(content)
+  if (hasMath) {
+    const { default: remarkMath } = await import("remark-math")
+    processor.use(remarkMath)
+    insertKatexCSS()
+  }
+  if (hasMermaid) {
+    await loadMermaidJS().catch(() =>
+      notify.error(
+        "Failed to load mermaid.js, mermaid diagrams will not be rendered",
+      ),
+    )
+  }
+
+  processor
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeRaw)
+    .use(rehypeSanitize, {
+      ...defaultSchema,
+      attributes: {
+        ...defaultSchema.attributes,
+        code: [
+          ["className", /^language-[\w-]+$/, "math-inline", "math-display"],
+        ],
+      },
+    })
+
+  if (hasMath) {
+    const { default: rehypeKatex } = await import("rehype-katex")
+    processor.use(rehypeKatex)
+  }
+
+  processor.use(rehypeStringify)
+
+  const result = await processor.process(content)
+
+  return { html: String(result), hasMermaid }
+}
 
 export function Markdown(props: {
   children?: string | ArrayBuffer
@@ -176,74 +223,67 @@ export function Markdown(props: {
 }) {
   const [encoding, setEncoding] = createSignal<string>("utf-8")
   const [show, setShow] = createSignal(true)
+  const [markdownHTML, setMarkdownHTML] = createSignal<string>("")
+  const mermaidTheme = useColorModeValue("default", "dark")
   const { isString, text } = useParseText(props.children)
-  const convertToMd = (content: string) => {
-    if (!props.ext || props.ext.toLocaleLowerCase() === "md") {
-      return content
-    }
-    return "```" + props.ext + "\n" + content + "\n```"
-  }
   const { pathname } = useRouter()
+
   const md = createMemo(() => {
-    let content = convertToMd(text(encoding()))
-    content = content.replace(/!\[.*?\]\((.*?)\)/g, (match) => {
+    const raw = text(encoding())
+    const content =
+      !props.ext || props.ext.toLowerCase() === "md"
+        ? raw
+        : `\`\`\`${props.ext}\n${raw}\n\`\`\``
+
+    return content.replace(/!\[.*?\]\((.*?)\)/g, (match) => {
       const name = match.match(/!\[(.*?)\]\(.*?\)/)![1]
-      let url = match.match(/!\[.*?\]\((.*?)\)/)![1]
-      // 检查是否为 base64 编码的图片
-      if (url.startsWith("data:image/")) {
-        return match // 如果是 base64 编码的图片，直接返回原标签
-      }
+      const rawUrl = match.match(/!\[.*?\]\((.*?)\)/)![1]
+
       if (
-        url.startsWith("http://") ||
-        url.startsWith("https://") ||
-        url.startsWith("//")
+        rawUrl.startsWith("data:image/") ||
+        rawUrl.startsWith("http://") ||
+        rawUrl.startsWith("https://") ||
+        rawUrl.startsWith("//")
       ) {
         return match
       }
-      if (url.startsWith("/")) {
-        url = `${api}/d${url}`
-      } else {
-        url = `${api}/d${pathJoin(
-          me().base_path,
-          pathResolve(props.readme ? pathname() : pathDir(pathname()), url),
-        )}`
-      }
+
+      const resolvedPath = rawUrl.startsWith("/")
+        ? rawUrl
+        : pathResolve(props.readme ? pathname() : pathDir(pathname()), rawUrl)
+
+      const url = `${api}/d${pathJoin(me().base_path, resolvedPath)}`
       const ans = `![${name}](${url})`
       console.log(ans)
       return ans
     })
-    return content
   })
-  const [remarkPlugins, setRemarkPlugins] = createSignal<Function[]>([
-    remarkGfm,
-  ])
-  const [rehypePlugins, setRehypePlugins] = createSignal<Function[]>([
-    rehypeRaw,
-  ])
+
   createEffect(
-    on(md, async () => {
+    on([md, mermaidTheme], async () => {
       setShow(false)
-      // lazy for math rendering
-      if (/\$\$[\s\S]+?\$\$|\$[^$\n]+?\$/.test(md())) {
-        const { default: reMarkMath } = await import("remark-math")
-        const { default: rehypeKatex } = await import("rehype-katex")
-        insertKatexCSS()
-        setRemarkPlugins([...remarkPlugins(), reMarkMath])
-        setRehypePlugins([...rehypePlugins(), rehypeKatex])
-      }
-      insertMermaidJS()
+
+      const { html, hasMermaid } = await renderMarkdown(md())
+      setMarkdownHTML(html)
+
       setTimeout(() => {
         setShow(true)
         hljs.highlightAll()
-        window.mermaid &&
-          window.mermaid.run({
-            querySelector: ".language-mermaid",
+        if (hasMermaid && window.mermaid) {
+          window.mermaid.initialize({
+            startOnLoad: false,
+            theme: mermaidTheme(),
           })
-        window.onMDRender && window.onMDRender()
+          window.mermaid.run({ querySelector: ".language-mermaid" })
+        }
+
+        window.onMDRender?.()
       })
     }),
   )
+
   const [markdownRef, setMarkdownRef] = createSignal<HTMLDivElement>()
+
   return (
     <Box
       ref={(r: HTMLDivElement) => setMarkdownRef(r)}
@@ -252,13 +292,9 @@ export function Markdown(props: {
       w="$full"
     >
       <Show when={show()}>
-        <SolidMarkdown
+        <Box
           class={clsx("markdown-body", props.class)}
-          // @ts-ignore
-          remarkPlugins={remarkPlugins()}
-          // @ts-ignore
-          rehypePlugins={rehypePlugins()}
-          children={md()}
+          innerHTML={markdownHTML()}
         />
       </Show>
       <Show when={!isString}>

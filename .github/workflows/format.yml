@@ -13,12 +13,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24.14.1
 
       - name: Install dependencies
         run: pnpm install
@@ -28,7 +28,7 @@ jobs:
 
       - name: "Import GPG key"
         id: import-gpg
-        uses: crazy-max/ghaction-import-gpg@v6
+        uses: crazy-max/ghaction-import-gpg@v7
         with:
           gpg_private_key: ${{ secrets.BOT_GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.BOT_GPG_PASSPHRASE }}
@@ -36,7 +36,7 @@ jobs:
           git_commit_gpgsign: true
 
       - name: Commit and Push
-        uses: stefanzweifel/git-auto-commit-action@v6
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           # TODO: GPG sign: https://github.com/stefanzweifel/git-auto-commit-action?tab=readme-ov-file#signing-commits
           commit_message: "[skip ci] style: format code with prettier"

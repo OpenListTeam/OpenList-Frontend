@@ -81,7 +81,9 @@
     "RefreshToken": "RefreshToken",
     "UploadThread": "UploadThread",
     "UploadThread-tips": "the threads of upload",
-    "root_folder_id": "Root folder id"
+    "api_url_address": "Api url address",
+    "root_folder_id": "Root folder id",
+    "use_online_api": "Use online api"
   },
   "123Pan": {
     "UploadThread": "UploadThread",
@@ -219,12 +221,38 @@
     "download_concurrency-tips": "Need to enable proxy",
     "download_part_size": "Download part size",
     "download_part_size-tips": "Need to enable proxy. Unit: KB",
-    "parallel_write": "Parallel write",
+    "file_consistency_check": "File consistency check",
     "paths": "Paths",
-    "protect_same_name": "Protect same name",
-    "protect_same_name-tips": "Protects same-name files from Delete or Rename",
     "provider_pass_through": "Provider pass through",
-    "writable": "Writable"
+    "put_conflict_policy": "Putting conflict policy",
+    "put_conflict_policy-tips": "How the driver handles identical backend paths when uploading, copying, moving, or decompressing.",
+    "put_conflict_policys": {
+      "all": "Put into all conflict paths",
+      "all_strict": "Allow full conflict paths",
+      "deterministic": "Allow unique path",
+      "deterministic_or_all": "Allow unique path and full conflict paths",
+      "disabled": "Disable putting",
+      "first": "Put into the first conflict path",
+      "quota": "Weighted random load balancing based on remaining space",
+      "quota_strict": "Strict weighted random load balancing based on remaining space",
+      "random": "Random load balancing"
+    },
+    "read_conflict_policy": "Reading conflict policy",
+    "read_conflict_policys": {
+      "all": "Load balancing on a per-part basis",
+      "first": "Get the file corresponding to the first conflict path",
+      "random": "Load balancing on a per-file basis"
+    },
+    "write_conflict_policy": "Writing conflict policy",
+    "write_conflict_policy-tips": "How the driver handles identical backend paths when renaming, removing, or making directories.",
+    "write_conflict_policys": {
+      "all": "Write into all conflict paths",
+      "all_strict": "Allow full conflict paths",
+      "deterministic": "Allow unique path",
+      "deterministic_or_all": "Allow unique path and full conflict paths",
+      "disabled": "Disable writing",
+      "first": "Write into the first conflict path"
+    }
   },
   "Aliyundrive": {
     "internal_upload": "Internal upload",
@@ -309,6 +337,16 @@
     "share_id": "Share id",
     "share_pwd": "Share pwd"
   },
+  "AutoIndex": {
+    "ignore_file_names": "Ignore file names",
+    "item_xpath": "Entry XPath",
+    "modified_time_format": "Modification date format",
+    "modified_time_format-tips": "Must be based on the time point Mon Jan 2 15:04:05 -0700 MST 2006",
+    "modified_xpath": "Modification time XPath",
+    "name_xpath": "File name XPath",
+    "size_xpath": "File size XPath",
+    "url": "URL"
+  },
   "Azure Blob Storage": {
     "access_key": "Access key",
     "access_key-tips": "The access key for Azure Storage, used for authentication. https://learn.microsoft.com/azure/storage/common/storage-account-keys-manage",
@@ -333,7 +371,7 @@
       "crack_video": "Crack video",
       "official": "Official"
     },
-    "low_bandwith_upload_mode": "Low bandwith upload mode",
+    "low_bandwith_upload_mode": "Low bandwidth upload mode",
     "only_list_video_file": "Only list video file",
     "order_by": "Order by",
     "order_bys": {
@@ -515,6 +553,29 @@
     "limit_rate-tips": "limit all api request rate ([limit]r/1s)",
     "root_folder_id": "Root folder id",
     "upload_thread": "Upload thread"
+  },
+  "DoubaoNew": {
+    "app_id": "App id",
+    "app_id-tips": "Doubao App ID",
+    "auth_client_id": "Auth client id",
+    "auth_client_id-tips": "Doubao Biz Auth Client ID",
+    "auth_client_type": "Auth client type",
+    "auth_client_type-tips": "Doubao Biz Auth Client Type",
+    "auth_scope": "Auth scope",
+    "auth_scope-tips": "Doubao Biz Auth Scope",
+    "auth_sdk_source": "Auth sdk source",
+    "auth_sdk_source-tips": "Doubao Biz Auth SDK Source",
+    "auth_sdk_version": "Auth sdk version",
+    "auth_sdk_version-tips": "Doubao Biz Auth SDK Version",
+    "cookie": "Cookie",
+    "cookie-tips": "Web Cookie",
+    "dpop_key_secret": "Dpop key secret",
+    "dpop_key_secret-tips": "DPoP Key Secret for generating DPoP token",
+    "ignore_jwt_check": "Ignore jwt check",
+    "ignore_jwt_check-tips": "Whether to ignore JWT check to prevent time issue",
+    "root_folder_id": "Root folder id",
+    "share_link": "Share link",
+    "share_link-tips": "Whether to use share link for download"
   },
   "DoubaoShare": {
     "cookie": "Cookie",
@@ -757,6 +818,8 @@
   },
   "Mega_nz": {
     "email": "Email",
+    "move_to_trash": "Move to trash",
+    "move_to_trash-tips": "move to trash when deleting files",
     "password": "Password",
     "two_fa_code": "Two fa code",
     "two_fa_code-tips": "2FA 6-digit code, filling in the 2FA code alone will not support reloading driver",
@@ -801,7 +864,7 @@
     "client_id": "Client id",
     "client_secret": "Client secret",
     "custom_host": "Custom host",
-    "custom_host-tips": "Custom host for onedrive download link",
+    "custom_host-tips": "Custom host for OneDrive download link",
     "disable_disk_usage": "Disable disk usage",
     "enable_direct_upload": "Enable direct upload",
     "enable_direct_upload-tips": "Enable direct upload from client to OneDrive",
@@ -829,7 +892,7 @@
     "client_id": "Client id",
     "client_secret": "Client secret",
     "custom_host": "Custom host",
-    "custom_host-tips": "Custom host for onedrive download link",
+    "custom_host-tips": "Custom host for OneDrive download link",
     "disable_disk_usage": "Disable disk usage",
     "email": "Email",
     "enable_direct_upload": "Enable direct upload",
@@ -847,8 +910,9 @@
   "OpenList": {
     "forward_archive_requests": "Forward archive requests",
     "meta_password": "Meta password",
-    "pass_ip_to_upsteam": "Pass ip to upsteam",
-    "pass_ua_to_upsteam": "Pass ua to upsteam",
+    "pass_ip_to_upsteam": "Pass ip to upstream",
+    "pass_refresh_flag_to_upsteam": "Pass refresh flag to upsteam",
+    "pass_ua_to_upsteam": "Pass ua to upstream",
     "password": "Password",
     "root_folder_path": "Root folder path",
     "token": "Token",
@@ -1071,6 +1135,8 @@
     "chunk_size-tips": "Chunk size in MiB",
     "cookie": "Cookie",
     "cookie-tips": "access_token=xxx",
+    "random_chunk_name": "Random chunk name",
+    "random_chunk_name-tips": "Random chunk name",
     "root_folder_path": "Root folder path",
     "upload_concurrency": "Upload concurrency",
     "upload_concurrency-tips": "Concurrency upload requests",
@@ -1411,6 +1477,7 @@
     },
     "AliyundriveOpen": {},
     "AliyundriveShare": {},
+    "AutoIndex": {},
     "Azure Blob Storage": {},
     "BaiduNetdisk": {},
     "BaiduPhoto": {},
@@ -1423,6 +1490,9 @@
     "Degoo": {},
     "Doge": {},
     "Doubao": {},
+    "DoubaoNew": {
+      "alert": "Do not use 302 if the storage is public accessible.\nOtherwise, the download link may leak sensitive information such as access token or signature.\nOthers may use the leaked link to access all your files."
+    },
     "DoubaoShare": {},
     "Dropbox": {},
     "FTP": {},
@@ -1501,6 +1571,7 @@
     "Aliyundrive": "Aliyundrive",
     "AliyundriveOpen": "AliyundriveOpen",
     "AliyundriveShare": "AliyundriveShare",
+    "AutoIndex": "AutoIndex",
     "Azure Blob Storage": "Azure Blob Storage",
     "BaiduNetdisk": "BaiduNetdisk",
     "BaiduPhoto": "BaiduPhoto",
@@ -1513,6 +1584,7 @@
     "Degoo": "Degoo",
     "Doge": "Doge",
     "Doubao": "Doubao",
+    "DoubaoNew": "DoubaoNew",
     "DoubaoShare": "DoubaoShare",
     "Dropbox": "Dropbox",
     "FTP": "FTP",

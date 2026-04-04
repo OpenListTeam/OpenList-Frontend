@@ -59,19 +59,21 @@ export const Right = () => {
           transition={{ duration: 0.2 }}
         >
           <VStack spacing="$1" class="left-toolbar-in">
-            <RightIcon
-              as={RiSystemRefreshLine}
-              tips="refresh"
-              onClick={() => {
-                refresh(undefined, true)
-              }}
-            />
             <Show
               when={
-                isFolder() && !isShare() && (userCan("write") || objStore.write)
+                isFolder() &&
+                !isShare() &&
+                (userCan("write_content") || objStore.write_content_bypass) &&
+                objStore.write
               }
             >
-              {/* <Add /> */}
+              <RightIcon
+                as={RiSystemRefreshLine}
+                tips="refresh"
+                onClick={() => {
+                  refresh(undefined, true)
+                }}
+              />
               <RightIcon
                 as={operations.new_file.icon}
                 tips="new_file"
@@ -87,6 +89,12 @@ export const Right = () => {
                   bus.emit("tool", "mkdir")
                 }}
               />
+            </Show>
+            <Show
+              when={
+                isFolder() && !isShare() && userCan("move") && objStore.write
+              }
+            >
               <RightIcon
                 as={operations.recursive_move.icon}
                 tips="recursive_move"
@@ -94,6 +102,12 @@ export const Right = () => {
                   bus.emit("tool", "recursiveMove")
                 }}
               />
+            </Show>
+            <Show
+              when={
+                isFolder() && !isShare() && userCan("delete") && objStore.write
+              }
+            >
               <RightIcon
                 as={operations.remove_empty_directory.icon}
                 tips="remove_empty_directory"
@@ -101,6 +115,12 @@ export const Right = () => {
                   bus.emit("tool", "removeEmptyDirectory")
                 }}
               />
+            </Show>
+            <Show
+              when={
+                isFolder() && !isShare() && userCan("rename") && objStore.write
+              }
+            >
               <RightIcon
                 as={operations.batch_rename.icon}
                 tips="batch_rename"
@@ -109,6 +129,15 @@ export const Right = () => {
                   bus.emit("tool", "batchRename")
                 }}
               />
+            </Show>
+            <Show
+              when={
+                isFolder() &&
+                !isShare() &&
+                (userCan("write_content") || objStore.write_content_bypass) &&
+                objStore.write
+              }
+            >
               <RightIcon
                 as={AiOutlineCloudUpload}
                 tips="upload"
@@ -118,7 +147,12 @@ export const Right = () => {
               />
             </Show>
             <Show
-              when={isFolder() && !isShare() && userCan("offline_download")}
+              when={
+                isFolder() &&
+                !isShare() &&
+                userCan("offline_download") &&
+                objStore.write
+              }
             >
               <RightIcon
                 as={IoMagnetOutline}

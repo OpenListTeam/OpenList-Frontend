@@ -123,7 +123,12 @@ fallback_git_tag() {
 # Update package.json version
 update_package_version() {
     if [[ "$BUILD_TYPE" == "dev" ]]; then
-        sed -i "s/\"version\": *\"[^\"]*\"/\"version\": \"${git_version_clean}\"/" package.json
+        # Handle both BSD and GNU sed syntax
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i "" "s/\"version\": *\"[^\"]*\"/\"version\": \"${git_version_clean}\"/" package.json
+        else
+            sed -i "s/\"version\": *\"[^\"]*\"/\"version\": \"${git_version_clean}\"/" package.json
+        fi
         log_success "Package.json version updated to ${git_version_clean}"
         version_tag="v${git_version_clean}-${commit}"
         log_build "Building DEV version ${version_tag}..."

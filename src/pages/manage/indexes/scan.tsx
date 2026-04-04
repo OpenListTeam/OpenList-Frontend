@@ -13,6 +13,7 @@ import { useFetch, useT } from "~/hooks"
 import { createSignal, Show } from "solid-js"
 import { Flag, PEmptyResp, PResp, Type } from "~/types"
 import { formatDate, handleResp, handleRespWithNotifySuccess, r } from "~/utils"
+import { FolderChooseInput } from "~/components"
 
 type Progress = {
   obj_count: number
@@ -111,9 +112,9 @@ const Scan = () => {
         <FormLabel display="flex" alignItems="center">
           {t("indexes.path_to_scan")}
         </FormLabel>
-        <Input
+        <FolderChooseInput
           value={scanPath()}
-          onInput={(e) => setScanPath(e.currentTarget.value)}
+          onChange={(path) => setScanPath(path)}
         />
         <FormLabel display="flex" alignItems="center">
           {t("indexes.rate_limit")}

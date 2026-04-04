@@ -92,12 +92,12 @@ const Login = () => {
         },
       ),
   )
-  interface Webauthntemp {
+  interface WebAuthnTemp {
     session: string
     options: CredentialRequestOptionsJSON
   }
   const [, getauthntemp] = useFetch(
-    (username, signal: AbortSignal | undefined): PResp<Webauthntemp> =>
+    (username, signal: AbortSignal | undefined): PResp<WebAuthnTemp> =>
       r.get("/authn/webauthn_begin_login?username=" + username, {
         signal,
       }),

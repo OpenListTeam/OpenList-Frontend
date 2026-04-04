@@ -300,9 +300,9 @@ const BackupRestore = () => {
             appendLog(t("br.wrong_encrypt_password"), "error")
             return
           }
-        const dataasarray = Object.values(data)
-        for (let i = dataasarray.length - 4; i < dataasarray.length; i++) {
-          const obj = dataasarray[i]
+        const dataArray = Object.values(data)
+        for (let i = dataArray.length - 4; i < dataArray.length; i++) {
+          const obj = dataArray[i]
           console.log(obj)
           for (let a = 0; a < obj.length; a++) {
             const obj1 = obj[a]
