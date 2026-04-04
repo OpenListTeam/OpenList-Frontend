@@ -146,14 +146,7 @@ build_project() {
     log_step "==== Installing dependencies ===="
     pnpm install
 
-    log_step "==== Building i18n ===="
-    if [[ "$SKIP_I18N" == "false" ]]; then
-        pnpm i18n:release
-    else
-        fetch_i18n_from_release
-    fi
-
-    log_step "==== Building project ===="
+    log_step "==== Building project (English only, no crowdin) ===="
     if [[ "$LITE_FLAG" == "true" ]]; then
         pnpm build:lite
     else
