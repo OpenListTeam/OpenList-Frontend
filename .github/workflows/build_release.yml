@@ -28,6 +28,22 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v5
 
+      - name: Determine release tag
+        id: tag
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+            TAG="v${VERSION}"
+            echo "Creating new tag: $TAG"
+            git tag -a "$TAG" -m "Release $TAG" || git push --delete "$TAG" 2>/dev/null || true
+            git tag -a "$TAG" -m "Release $TAG"
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+          else
+            TAG="${{ github.ref_name }}"
+            echo "Using existing tag: $TAG"
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build Release
         run: |
           chmod +x build.sh
@@ -42,8 +58,9 @@ jobs:
       - name: Upload Release Assets
         run: |
           gh release create \
-            --title "Release ${{ github.ref_name }}" \
-            ${{ github.ref_name }} \
+            --title "Release ${{ steps.tag.outputs.tag }}" \
+            --clobber \
+            ${{ steps.tag.outputs.tag }} \
             dist/openlist-frontend-dist-v*.tar.gz \
             dist/i18n.tar.gz
         env:
