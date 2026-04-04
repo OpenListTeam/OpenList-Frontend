@@ -32,10 +32,10 @@ jobs:
         id: tag
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            VERSION="${{ github.event.inputs.version }}"
-            TAG="v${VERSION}"
-            echo "Creating new tag: $TAG"
-            git tag -a "$TAG" -m "Release $TAG" || git push --delete "$TAG" 2>/dev/null || true
+            # 使用时间戳作为 tag，避免冲突
+            TIMESTAMP=$(date +%Y%m%d%H%M%S)
+            TAG="v${TIMESTAMP}"
+            echo "Creating timestamp tag: $TAG"
             git tag -a "$TAG" -m "Release $TAG"
             echo "tag=$TAG" >> $GITHUB_OUTPUT
           else
