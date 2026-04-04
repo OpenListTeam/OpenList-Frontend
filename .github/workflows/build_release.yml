@@ -35,12 +35,9 @@ jobs:
 
       - name: Download i18n.tar.gz from latest release
         run: |
-          LATEST_RELEASE=$(gh release list --limit 1 --json tagName | jq -r '.[0].tagName')
-          echo "Downloading i18n.tar.gz from release: $LATEST_RELEASE"
-          gh release download "$LATEST_RELEASE" --pattern "i18n.tar.gz" --dir dist/ || echo "i18n.tar.gz not found in latest release"
+          echo "Downloading i18n.tar.gz from latest release..."
+          curl -L -o dist/i18n.tar.gz "https://github.com/OpenListTeam/OpenList-Frontend/releases/latest/download/i18n.tar.gz" || echo "Failed to download i18n.tar.gz"
           ls -la dist/i18n.tar.gz 2>/dev/null || echo "No i18n.tar.gz downloaded"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Assets
         run: |
