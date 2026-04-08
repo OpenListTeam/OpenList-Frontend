@@ -200,6 +200,59 @@ export const side_menu_items: SideMenuItem[] = [
     component: lazy(() => import("./backup-restore")),
   },
   {
+    title: "manage.sidemenu.media",
+    icon: BsCameraFill,
+    to: "/@manage/media",
+    children: [
+      {
+        title: "manage.sidemenu.media_video",
+        icon: BsCameraFill,
+        to: "/@manage/media/video",
+        component: lazy(() =>
+          import("./media/MediaManage").then((m) => ({
+            default: m.VideoManage,
+          })),
+        ),
+      },
+      {
+        title: "manage.sidemenu.media_music",
+        icon: BsCameraFill,
+        to: "/@manage/media/music",
+        component: lazy(() =>
+          import("./media/MediaManage").then((m) => ({
+            default: m.MusicManage,
+          })),
+        ),
+      },
+      {
+        title: "manage.sidemenu.media_image",
+        icon: BsCameraFill,
+        to: "/@manage/media/image",
+        component: lazy(() =>
+          import("./media/MediaManage").then((m) => ({
+            default: m.ImageManage,
+          })),
+        ),
+      },
+      {
+        title: "manage.sidemenu.media_book",
+        icon: BsCameraFill,
+        to: "/@manage/media/book",
+        component: lazy(() =>
+          import("./media/MediaManage").then((m) => ({
+            default: m.BookManage,
+          })),
+        ),
+      },
+      {
+        title: "manage.sidemenu.media_settings",
+        icon: BsGearFill,
+        to: "/@manage/media/settings",
+        component: () => <CommonSettings group={Group.MEDIA} />,
+      },
+    ],
+  },
+  {
     title: "manage.sidemenu.about",
     icon: BsFront,
     to: "/@manage/about",

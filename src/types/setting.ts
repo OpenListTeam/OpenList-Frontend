@@ -13,6 +13,7 @@ export enum Group {
   S3,
   FTP,
   TRAFFIC,
+  MEDIA,
 }
 export enum Flag {
   PUBLIC,

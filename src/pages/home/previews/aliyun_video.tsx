@@ -8,6 +8,7 @@ import Artplayer from "artplayer"
 import { type Option } from "artplayer/types/option"
 import { type Setting } from "artplayer/types/setting"
 import { type Events } from "artplayer/types/events"
+import artplayerProxyMediabunny from "~/components/artplayer-proxy-mediabunny"
 import artplayerPluginDanmuku from "artplayer-plugin-danmuku"
 import { type Option as DanmukuOption } from "artplayer-plugin-danmuku"
 import artplayerPluginAss from "~/components/artplayer-plugin-ass"
@@ -18,6 +19,20 @@ import { ArtPlayerIconsSubtitle } from "~/components/icons"
 import { useNavigate } from "@solidjs/router"
 import { TiWarning } from "solid-icons/ti"
 import "./artplayer.css"
+import { registerAc3Decoder } from "@mediabunny/ac3"
+
+// MediaBunny 播放器开关：从 localStorage 读取用户偏好
+const MEDIABUNNY_KEY = "use_mediabunny_player"
+function isMediaBunnyEnabled(): boolean {
+  return localStorage.getItem(MEDIABUNNY_KEY) === "true"
+}
+function setMediaBunnyEnabled(enabled: boolean) {
+  localStorage.setItem(MEDIABUNNY_KEY, enabled ? "true" : "false")
+}
+// 仅在启用 MediaBunny 时注册 AC3 解码器
+if (isMediaBunnyEnabled()) {
+  registerAc3Decoder()
+}
 
 export interface Data {
   drive_id: string
@@ -121,6 +136,7 @@ const Preview = () => {
     theme: getMainColor(),
     quality: [],
     plugins: [AutoHeightPlugin],
+    ...(isMediaBunnyEnabled() ? { proxy: artplayerProxyMediabunny() } : {}),
     whitelist: [],
     screenshot: true,
     settings: [],
@@ -301,6 +317,26 @@ const Preview = () => {
       }),
     )
   }
+  // 添加 MediaBunny 播放器开关到设置菜单
+  option.settings?.push({
+    id: "setting_mediabunny",
+    html: "MediaBunny 播放器",
+    tooltip: isMediaBunnyEnabled() ? "已启用" : "已禁用",
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+    switch: isMediaBunnyEnabled(),
+    onSwitch: function (item: Setting) {
+      const newVal = !item.switch
+      setMediaBunnyEnabled(newVal)
+      item.tooltip = newVal ? "已启用" : "已禁用"
+      // 提示用户需要刷新页面
+      setTimeout(() => {
+        if (confirm("切换播放器需要刷新页面才能生效，是否立即刷新？")) {
+          location.reload()
+        }
+      }, 100)
+      return newVal
+    },
+  })
   const [loading, post] = useFetch(
     (): PResp<Data> =>
       r.post("/fs/other", {

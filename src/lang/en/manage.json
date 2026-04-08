@@ -27,7 +27,13 @@
     "ldap": "LDAP",
     "s3": "S3",
     "ftp": "FTP",
-    "traffic": "Traffic"
+    "traffic": "Traffic",
+    "media": "Media Library",
+    "media_video": "Video",
+    "media_music": "Music",
+    "media_image": "Images",
+    "media_book": "Books",
+    "media_settings": "Settings"
   },
   "title": "OpenList Management",
   "not_admin": "You are not an admin user, please login with an admin account.",

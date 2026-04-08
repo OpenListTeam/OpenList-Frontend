@@ -142,5 +142,14 @@
   "version": "Version",
   "video_autoplay": "Video autoplay",
   "video_types": "Video types",
-  "webauthn_login_enabled": "WebAuthn login enabled"
+  "webauthn_login_enabled": "Webauthn login enabled",
+  "media_tmdb_key": "TMDB API Key",
+  "media_discogs_token": "Discogs Token",
+  "media_store_thumbnail": "Store thumbnail",
+  "media_thumbnail_mode": "Thumbnail storage mode",
+  "media_thumbnail_modes": {
+    "base64": "Base64 (Database)",
+    "local": "Local file"
+  },
+  "media_thumbnail_path": "Thumbnail storage path"
 }

@@ -19,11 +19,17 @@ import { base_path, bus, handleRespWithoutAuthAndNotify, r } from "~/utils"
 import { MustUser, UserOrGuest } from "./MustUser"
 import "./index.css"
 import { globalStyles } from "./theme"
+import { MusicPlayer } from "~/pages/media/music/MusicLibrary"
+import { RootLayout } from "./RootLayout"
 
 const Home = lazy(() => import("~/pages/home/Layout"))
 const Manage = lazy(() => import("~/pages/manage"))
 const Login = lazy(() => import("~/pages/login"))
 const Test = lazy(() => import("~/pages/test"))
+const VideoLibrary = lazy(() => import("~/pages/media/video/VideoLibrary"))
+const MusicLibrary = lazy(() => import("~/pages/media/music/MusicLibrary"))
+const ImageLibrary = lazy(() => import("~/pages/media/image/ImageLibrary"))
+const BookLibrary = lazy(() => import("~/pages/media/book/BookLibrary"))
 
 const App: Component = () => {
   const t = useT()
@@ -91,11 +97,58 @@ const App: Component = () => {
                 </MustUser>
               }
             />
+            {/* 带侧边栏的路由：媒体库各页面 */}
+            <Route
+              path="/@media/video/*"
+              element={
+                <MustUser>
+                  <RootLayout>
+                    <MusicPlayer />
+                    <VideoLibrary />
+                  </RootLayout>
+                </MustUser>
+              }
+            />
+            <Route
+              path="/@media/music/*"
+              element={
+                <MustUser>
+                  <RootLayout>
+                    <MusicPlayer />
+                    <MusicLibrary />
+                  </RootLayout>
+                </MustUser>
+              }
+            />
+            <Route
+              path="/@media/image/*"
+              element={
+                <MustUser>
+                  <RootLayout>
+                    <MusicPlayer />
+                    <ImageLibrary />
+                  </RootLayout>
+                </MustUser>
+              }
+            />
+            <Route
+              path="/@media/books/*"
+              element={
+                <MustUser>
+                  <RootLayout>
+                    <MusicPlayer />
+                    <BookLibrary />
+                  </RootLayout>
+                </MustUser>
+              }
+            />
             <Route
               path={["/@s/*", "/%40s/*"]}
               element={
                 <UserOrGuest>
-                  <Home />
+                  <RootLayout>
+                    <Home />
+                  </RootLayout>
                 </UserOrGuest>
               }
             />
@@ -103,7 +156,9 @@ const App: Component = () => {
               path="*"
               element={
                 <MustUser>
-                  <Home />
+                  <RootLayout>
+                    <Home />
+                  </RootLayout>
                 </MustUser>
               }
             />

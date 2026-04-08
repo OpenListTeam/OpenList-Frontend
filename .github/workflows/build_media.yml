@@ -1,0 +1,79 @@
+# This workflow builds a media branch version of the OpenList frontend and publishes it on GitHub.
+#
+# This will:
+#
+# - Upload the release assets to GitHub (always git tagged `beta-media`).
+#
+# This workflow can be triggered on pushes to the `dev-media` branch, or manually via the GitHub Actions UI.
+
+name: Media Build
+
+on:
+  push:
+    branches:
+      - dev-media
+  workflow_dispatch:
+    inputs:
+      draft:
+        description: "Create draft release"
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  media:
+    name: Media Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        id: pnpm-install
+        with:
+          run_install: false
+
+      - name: Build Media Pre-release
+        run: |
+          chmod +x build.sh
+          ./build.sh --dev --compress
+        env:
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
+      - name: Read version and determine tag name
+        id: version
+        run: |
+          version=$(cat dist/VERSION)
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "tag_name=beta-media" >> $GITHUB_OUTPUT
+
+      - name: Remove the existing pre-release
+        run: gh release delete ${{ steps.version.outputs.tag_name }} --cleanup-tag --yes || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish media pre-release on GitHub
+        run: |
+          gh release create \
+            --title "Media Pre-release ${{ steps.version.outputs.version }}" \
+            --notes "Media branch pre-release build for ${{ steps.version.outputs.version }}<br>This is a development build for the media library feature and not intended for production use." \
+            --prerelease \
+            --draft=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.draft || false }} \
+            ${{ steps.version.outputs.tag_name }} \
+            dist/openlist-frontend-dist-v*-*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+permissions:
+  contents: write
