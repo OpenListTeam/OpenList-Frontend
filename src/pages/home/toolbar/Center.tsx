@@ -30,13 +30,13 @@ export const Center = () => {
           class="center-toolbar"
           pos="fixed"
           bottom="$4"
-          right="50%"
+          left="50%"
           w="max-content"
           color="$neutral11"
           as={Motion.div}
-          initial={{ opacity: 0, scale: 0.9, x: "50%", y: 10 }}
-          animate={{ opacity: 1, scale: 1, x: "50%", y: 0 }}
-          exit={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.9, x: "-50%", y: 10 }}
+          animate={{ opacity: 1, scale: 1, x: "-50%", y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, x: "-50%" }}
           // @ts-ignore
           transition={{ duration: 0.2 }}
         >
