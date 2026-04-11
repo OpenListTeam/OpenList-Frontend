@@ -29,8 +29,8 @@ importers:
         specifier: 1.7.0
         version: 1.7.0
       '@ruffle-rs/ruffle':
-        specifier: 0.2.0-nightly.2026.3.23
-        version: 0.2.0-nightly.2026.3.23
+        specifier: 0.2.0-nightly.2026.4.11
+        version: 0.2.0-nightly.2026.4.11
       '@solid-primitives/i18n':
         specifier: ^2.2.1
         version: 2.2.1(solid-js@1.9.12)
@@ -1408,8 +1408,8 @@ packages:
   '@rolldown/pluginutils@1.0.0-rc.12':
     resolution: {integrity: sha512-HHMwmarRKvoFsJorqYlFeFRzXZqCt2ETQlEDOb9aqssrnVBB1/+xgTGtuTrIk5vzLNX1MjMtTf7W9z3tsSbrxw==}
 
-  '@ruffle-rs/ruffle@0.2.0-nightly.2026.3.23':
-    resolution: {integrity: sha512-yAvB3fgN+gWLfr3llUGIpIlgoSj6QVysjrCtM/OP533dutZBZ/Juu6EUykpsVI4/zhjYwKS7t8wwLGBIVGnXcg==}
+  '@ruffle-rs/ruffle@0.2.0-nightly.2026.4.11':
+    resolution: {integrity: sha512-GzkImDQ0QQCtjIqYVIHfJpIBOD9E1hvZHkUIct31n3nCt+8YBVUj65uHxfB2KvsqXAzNV3ea+Vm4aZf7Pvcd+Q==}
 
   '@solid-primitives/event-listener@2.4.5':
     resolution: {integrity: sha512-nwRV558mIabl4yVAhZKY8cb6G+O1F0M6Z75ttTu5hk+SxdOnKSGj+eetDIu7Oax1P138ZdUU01qnBPR8rnxaEA==}
@@ -5142,7 +5142,7 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.0-rc.12': {}
 
-  '@ruffle-rs/ruffle@0.2.0-nightly.2026.3.23': {}
+  '@ruffle-rs/ruffle@0.2.0-nightly.2026.4.11': {}
 
   '@solid-primitives/event-listener@2.4.5(solid-js@1.9.12)':
     dependencies:
