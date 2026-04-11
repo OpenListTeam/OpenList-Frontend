@@ -13,7 +13,7 @@ import { Motion } from "solid-motionone"
 import { unified } from "unified"
 import { useCDN, useParseText, useRouter } from "~/hooks"
 import { useScrollListener } from "~/pages/home/toolbar/BackTop.jsx"
-import { getMainColor, me } from "~/store"
+import { getMainColor, getSettingBool, me } from "~/store"
 import { api, notify, pathDir, pathJoin, pathResolve } from "~/utils"
 import { isMobile } from "~/utils/compatibility.js"
 import hljs from "highlight.js"
@@ -169,6 +169,7 @@ const loadMermaidJS = once(
 
 async function renderMarkdown(
   content: string,
+  sanitize: boolean,
 ): Promise<{ html: string; hasMermaid: boolean }> {
   let processor = unified()
 
@@ -189,10 +190,10 @@ async function renderMarkdown(
     )
   }
 
-  processor
-    .use(remarkRehype, { allowDangerousHtml: true })
-    .use(rehypeRaw)
-    .use(rehypeSanitize, {
+  processor.use(remarkRehype, { allowDangerousHtml: true }).use(rehypeRaw)
+
+  if (sanitize)
+    processor.use(rehypeSanitize, {
       ...defaultSchema,
       attributes: {
         ...defaultSchema.attributes,
@@ -220,6 +221,7 @@ export function Markdown(props: {
   ext?: string
   readme?: boolean
   toc?: boolean
+  sanitize?: boolean
 }) {
   const [encoding, setEncoding] = createSignal<string>("utf-8")
   const [show, setShow] = createSignal(true)
@@ -263,7 +265,10 @@ export function Markdown(props: {
     on([md, mermaidTheme], async () => {
       setShow(false)
 
-      const { html, hasMermaid } = await renderMarkdown(md())
+      const { html, hasMermaid } = await renderMarkdown(
+        md(),
+        props.sanitize || getSettingBool("filter_readme_scripts"),
+      )
       setMarkdownHTML(html)
 
       setTimeout(() => {
