@@ -33,6 +33,7 @@ export const UserPermissions = [
   "read_archives",
   "decompress",
   "share",
+  "customize_share_id",
 ] as const
 
 export const UserMethods = {

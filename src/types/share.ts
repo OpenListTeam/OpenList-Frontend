@@ -1,6 +1,7 @@
 import { ExtractFolder, OrderBy, OrderDirection } from "~/types/storage"
 
 export interface Share {
+  id?: string
   expires: string | null
   pwd: string
   max_accessed: number
@@ -16,6 +17,7 @@ export interface Share {
 
 export interface ShareUpdate extends Share {
   id: string
+  new_id: string
   accessed: number
 }
 

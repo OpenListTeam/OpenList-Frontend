@@ -1,6 +1,7 @@
 {
   "expires": "Expiration time",
   "id": "ID",
+  "id_placeholder": "Custom ID (optional, leave empty for random)",
   "accessed": "Access count",
   "max_accessed": "Maximum access count",
   "pwd": "Share code",
