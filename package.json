@@ -68,7 +68,6 @@
     "@github/webauthn-json": "^2.1.1",
     "@hope-ui/solid": "0.6.7",
     "@monaco-editor/loader": "1.7.0",
-    "@ruffle-rs/ruffle": "0.2.0-nightly.2026.3.23",
     "@solid-primitives/i18n": "^2.2.1",
     "@solid-primitives/keyboard": "^1.3.5",
     "@solid-primitives/storage": "^1.3.11",
