@@ -74,10 +74,6 @@ export default defineConfig({
               dest: "static/mermaid",
             },
             {
-              src: "node_modules/@ruffle-rs/ruffle/*.{js,wasm}",
-              dest: "static/ruffle",
-            },
-            {
               src: "node_modules/libheif-js/libheif-wasm/libheif.{js,wasm}",
               dest: "static/libheif",
             },

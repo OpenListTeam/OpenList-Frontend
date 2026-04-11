@@ -31,16 +31,6 @@ export const useCDN = () => {
       : `${static_path}/mermaid/mermaid.min.js`
   }
 
-  const ruffleJSPath = () => {
-    return import.meta.env.VITE_LITE === "true"
-      ? npm(
-          packageJson.name,
-          packageJson.version,
-          "dist/static/ruffle/ruffle.js",
-        )
-      : `${static_path}/ruffle/ruffle.js`
-  }
-
   const libHeifPath = () => {
     return import.meta.env.VITE_LITE === "true"
       ? npm(packageJson.name, packageJson.version, "dist/static/libheif")
@@ -64,7 +54,6 @@ export const useCDN = () => {
     monacoPath,
     katexCSSPath,
     mermaidJSPath,
-    ruffleJSPath,
     libHeifPath,
     libAssPath,
     fontsPath,
