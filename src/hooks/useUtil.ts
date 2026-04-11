@@ -34,14 +34,10 @@ export const useUtil = () => {
   }
 }
 
-export function useFetchText(raw?: boolean) {
+export function useFetchText() {
   const { proxyLink } = useLink()
   const fetchContent = async () => {
     let fileurl = proxyLink(objStore.obj, true)
-    if (raw) {
-      const separator = fileurl.includes("?") ? "&" : "?"
-      fileurl = `${fileurl}${separator}raw=true`
-    }
     return fetchText(fileurl)
   }
   return createResource("", fetchContent)
