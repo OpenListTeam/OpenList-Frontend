@@ -11,9 +11,11 @@ export const useLoading = <T>(
     loading,
     async (...arg: any[]) => {
       setLoading(true)
-      const data = await p(...arg)
-      setLoading(false)
-      return data
+      try {
+        return await p(...arg)
+      } finally {
+        setLoading(false)
+      }
     },
   ]
 }
@@ -35,9 +37,11 @@ const useListLoading = <T, K>(
     loading,
     async (key: K, ...arg: any[]) => {
       setLoading(() => key)
-      const data = await p(key, ...arg)
-      setLoading(undefined)
-      return data
+      try {
+        return await p(key, ...arg)
+      } finally {
+        setLoading(undefined)
+      }
     },
   ]
 }
