@@ -19,7 +19,7 @@ import {
   changeToken,
   r,
   notify,
-  handleRespWithoutNotify,
+  handleRespWithoutAuthAndNotify,
   base_path,
   handleResp,
   hashPwd,
@@ -154,14 +154,20 @@ const Login = () => {
           username_login,
           controller.signal,
         )
-        handleRespWithoutNotify(resp, (data) => {
-          notify.success(t("login.success"))
-          changeToken(data.token)
-          to(
-            decodeURIComponent(searchParams.redirect || base_path || "/"),
-            true,
-          )
-        })
+        handleRespWithoutAuthAndNotify(
+          resp,
+          (data) => {
+            notify.success(t("login.success"))
+            changeToken(data.token)
+            to(
+              decodeURIComponent(searchParams.redirect || base_path || "/"),
+              true,
+            )
+          },
+          (msg) => {
+            notify.error(msg)
+          },
+        )
       } catch (error: unknown) {
         if (error instanceof Error && error.name != "AbortError")
           notify.error(error.message)
@@ -190,7 +196,7 @@ const Login = () => {
         localStorage.removeItem("password")
       }
       const resp = await data()
-      handleRespWithoutNotify(
+      handleRespWithoutAuthAndNotify(
         resp,
         (data) => {
           notify.success(t("login.success"))
