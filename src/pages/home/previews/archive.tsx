@@ -582,13 +582,7 @@ const Preview = () => {
                       }))}
                     />
                   </Show>
-                  <OpenWith
-                    file={{
-                      name: selectedFile(),
-                      raw_url: objStore.raw_url,
-                      d_url: objStore.raw_url,
-                    }}
-                  />
+                  <OpenWith />
                 </HStack>
               </VStack>
             </Show>
