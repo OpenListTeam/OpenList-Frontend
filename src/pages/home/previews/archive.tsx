@@ -395,7 +395,13 @@ const Preview = () => {
     const innerPath =
       innerPaths().length > 0 ? "/" + innerPaths().join("/") : ""
 
-    return { ...obj, sign: sign, inner_path: innerPath, archive: originalObj }
+    return {
+      ...obj,
+      sign: sign,
+      inner_path: innerPath,
+      archive: originalObj,
+      pass: archive_pass,
+    }
   }
 
   const sortObjs = (orderBy: OrderBy, reverse?: boolean) => {

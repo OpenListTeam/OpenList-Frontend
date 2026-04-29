@@ -29,6 +29,7 @@ export type StoreObj = Obj & {
 export type ArchiveObj = Obj & {
   inner_path?: string
   archive?: Obj
+  pass?: string
 }
 
 export type RenameObj = {
