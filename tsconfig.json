@@ -13,6 +13,7 @@
     "isolatedModules": false,
     "paths": {
       "@hope-ui/solid": ["./node_modules/@hope-ui/solid/dist/index.d.ts"],
+      "solid-contextmenu": ["./node_modules/solid-contextmenu/dist/index.d.ts"],
       "~/*": ["./src/*"]
       // "@solidjs/router": ["./solid-router/src/index.tsx"]
     },
