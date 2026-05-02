@@ -17,7 +17,7 @@ import { createSignal, Show } from "solid-js"
 import { BsQrCode } from "solid-icons/bs"
 import QRCode from "qrcode"
 
-export const Download = () => {
+export const Download = (props: { openWith?: boolean }) => {
   const t = useT()
   const { copyCurrentRawLink } = useCopyLink()
   const [qrUrl, setQrUrl] = createSignal("")
@@ -61,6 +61,9 @@ export const Download = () => {
           </PopoverContent>
         </Popover>
       </HStack>
+      <Show when={props.openWith}>
+        <OpenWith />
+      </Show>
     </FileInfo>
   )
 }
