@@ -274,22 +274,22 @@ const Preview = () => {
     })
     return l
   }
-  function dealWithError<T>(resp: Resp<T>): boolean {
-    let err = false
-    handleRespWithoutNotify(resp, undefined, (message, code) => {
-      err = true
-      if (code === 202) {
-        batch(() => {
-          if (archive_pass !== "") {
-            setWrongPassword(true)
-          }
-          setRequiringPassword(true)
-          setError("")
-        })
-      } else {
-        setError(message)
-      }
-    })
+  const handleErrorResponse = (message: string, code: number | undefined) => {
+    if (code === 202) {
+      batch(() => {
+        if (archive_pass !== "") {
+          setWrongPassword(true)
+        }
+        setRequiringPassword(true)
+        setError("")
+      })
+    } else {
+      setError(message)
+    }
+  }
+  const dealWithError = <T,>(resp: Resp<T>): boolean => {
+    let err = true
+    handleRespWithoutNotify(resp, () => (err = false), handleErrorResponse)
     return err
   }
   const getObjs = async (innerPath: string[]) => {
