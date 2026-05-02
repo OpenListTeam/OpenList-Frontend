@@ -301,7 +301,7 @@ const Preview = () => {
       }),
     )
   }
-  const [loading, post] = useFetch(
+  const [, post] = useFetch(
     (): PResp<Data> =>
       r.post("/fs/other", {
         path: pathname(),

@@ -40,6 +40,7 @@ import {
   UserPermissions,
   ObjType,
   ArchiveObj,
+  Resp,
 } from "~/types"
 import { useFetch, useRouter, useT, useUtil, useLink } from "~/hooks"
 import { ListTitle } from "~/pages/home/folder/List"
@@ -53,6 +54,7 @@ import {
   fsArchiveList,
   fsArchiveMeta,
   getFileSize,
+  handleRespWithoutNotify,
   hoverColor,
 } from "~/utils"
 import naturalSort from "typescript-natural-sort"
@@ -272,20 +274,23 @@ const Preview = () => {
     })
     return l
   }
-  const dealWithError = (resp: { code: number; message: string }): boolean => {
-    if (resp.code === 200) return false
-    if (resp.code === 202) {
-      batch(() => {
-        if (archive_pass !== "") {
-          setWrongPassword(true)
-        }
-        setRequiringPassword(true)
-        setError("")
-      })
-    } else {
-      setError(resp.message)
-    }
-    return true
+  function dealWithError<T>(resp: Resp<T>): boolean {
+    let err = false
+    handleRespWithoutNotify(resp, undefined, (message, code) => {
+      err = true
+      if (code === 202) {
+        batch(() => {
+          if (archive_pass !== "") {
+            setWrongPassword(true)
+          }
+          setRequiringPassword(true)
+          setError("")
+        })
+      } else {
+        setError(message)
+      }
+    })
+    return err
   }
   const getObjs = async (innerPath: string[]) => {
     await getObjsMutex.acquire()
