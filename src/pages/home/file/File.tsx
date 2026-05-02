@@ -14,8 +14,11 @@ const File = () => {
   const cur = createMemo(() => {
     if (!previews.length) return undefined
     const selected = searchParams["preview"]
-    if (!selected) return previews[0]
-    return previews.find((p) => p.key === selected) || previews[0]
+    if (selected) {
+      const found = previews.find((item) => item.key === selected)
+      if (found) return found
+    }
+    return previews[0]
   })
 
   return (
