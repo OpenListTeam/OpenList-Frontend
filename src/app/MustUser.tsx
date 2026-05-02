@@ -7,12 +7,11 @@ import { r, handleResp, handleRespWithoutAuthAndNotify } from "~/utils"
 
 const MustUser = (props: { children: JSXElement }) => {
   const t = useT()
-  const [loading, data] = useFetch((): PResp<Me> => r.get("/me"))
+  const [loading, data] = useFetch((): PResp<Me> => r.get("/me"), true)
   const [err, setErr] = createSignal<string>()
-  ;(async () => {
-    // const resp: Resp<User> = await data();
+  onMount(async () => {
     handleResp(await data(), setMe, setErr)
-  })()
+  })
   return (
     <Switch fallback={props.children}>
       <Match when={loading()}>
@@ -26,7 +25,8 @@ const MustUser = (props: { children: JSXElement }) => {
 }
 
 const UserOrGuest = (props: { children: JSXElement }) => {
-  const [loading, data] = useFetch((): PResp<Me> => r.get("/me"))
+  // 将loading默认设置为true，修复children被提前渲染，明显症状：两个公告
+  const [loading, data] = useFetch((): PResp<Me> => r.get("/me"), true)
   const [skipLogin, setSkipLogin] = createSignal(false)
   onMount(async () => {
     handleRespWithoutAuthAndNotify(await data(), setMe, (_msg, _code) => {
@@ -40,6 +40,7 @@ const UserOrGuest = (props: { children: JSXElement }) => {
         permission: 0,
         sso_id: "",
         otp: false,
+        allow_ldap: false,
       })
       setSkipLogin(true)
     })
