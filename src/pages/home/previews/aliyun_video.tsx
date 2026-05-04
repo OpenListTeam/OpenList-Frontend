@@ -78,7 +78,6 @@ const Preview = () => {
   let option: Option = {
     id: pathname(),
     container: "#video-player",
-    title: objStore.obj.name,
     volume: 1.0,
     autoplay: getSettingBool("video_autoplay"),
     autoSize: false,
@@ -420,7 +419,13 @@ const Preview = () => {
     })
   }
   onCleanup(() => {
-    player?.destroy()
+    if (player) {
+      player.fullscreenWeb = false
+      player.fullscreen = false
+      player.pip = false
+      if (player.video) player.video.src = ""
+      player.destroy()
+    }
     window.clearInterval(interval)
   })
   const [autoNext, setAutoNext] = createSignal()
