@@ -14,7 +14,7 @@ import {
   objStore,
   setShouldKeepState,
 } from "~/store"
-import { ObjType } from "~/types"
+import { Obj, ObjType } from "~/types"
 import { ext, pathDir, pathJoin } from "~/utils"
 import Artplayer from "artplayer"
 import { type Option } from "artplayer"
@@ -121,9 +121,7 @@ const Preview = () => {
     },
     customType: {
       flv: function (video: HTMLMediaElement, url: string) {
-        if (flvPlayer) {
-          flvPlayer.destroy()
-        }
+        flvPlayer?.destroy()
         flvPlayer = mpegts.createPlayer(
           {
             type: "flv",
@@ -135,9 +133,7 @@ const Preview = () => {
         flvPlayer.load()
       },
       m3u8: function (video: HTMLMediaElement, url: string) {
-        if (hlsPlayer) {
-          hlsPlayer.destroy()
-        }
+        hlsPlayer?.destroy()
         hlsPlayer = new Hls()
         hlsPlayer.loadSource(url)
         hlsPlayer.attachMedia(video)
@@ -155,31 +151,32 @@ const Preview = () => {
     autoOrientation: true,
     airplay: true,
   }
-  const subtitle = objStore.related.filter((obj) => {
-    for (const ext of [".srt", ".ass", ".vtt"]) {
-      if (obj.name.endsWith(ext)) {
-        return true
+  const subtitleAndDanmu = createMemo(() => {
+    const subtitle: Obj[] = []
+    let danmu: Obj | undefined
+    for (const obj of objStore.related) {
+      const name = obj.name.toLowerCase()
+      if (
+        name.endsWith(".srt") ||
+        name.endsWith(".ass") ||
+        name.endsWith(".vtt")
+      ) {
+        subtitle.push(obj)
+      } else if (!danmu && name.endsWith(".xml")) {
+        danmu = obj
       }
     }
-    return false
-  })
-  const danmu = objStore.related.find((obj) => {
-    for (const ext of [".xml"]) {
-      if (obj.name.endsWith(ext)) {
-        return true
-      }
-    }
-    return false
+    return { subtitle, danmu }
   })
 
   // TODO: add a switch in manage panel to choose whether to enable `libass-wasm`
   const enableEnhanceAss = true
 
-  if (subtitle.length != 0) {
+  if (subtitleAndDanmu().subtitle.length) {
     let isEnhanceAssMode = false
 
     // set default subtitle
-    const defaultSubtitle = subtitle[0]
+    const defaultSubtitle = subtitleAndDanmu().subtitle[0]
     if (enableEnhanceAss && ext(defaultSubtitle.name).toLowerCase() === "ass") {
       isEnhanceAssMode = true
       option.plugins?.push(
@@ -217,7 +214,7 @@ const Preview = () => {
         },
       },
     ]
-    subtitle.forEach((item, i) => {
+    subtitleAndDanmu().subtitle.forEach((item, i) => {
       innerMenu.push({
         default: i === 0,
         html: (
@@ -288,86 +285,36 @@ const Preview = () => {
       }
     }
   }
+  const switchUrl = (url: string) => {
+    const { playing } = player
+    player.pause()
+    player.option.id = ""
+    player.reset()
 
-  if (danmu) {
-    option.plugins?.push(
-      artplayerPluginDanmuku({
-        speed: 5,
-        opacity: 1,
-        fontSize: 25,
-        mode: 0,
-        antiOverlap: false,
-        synchronousPlayback: false,
-        theme: "dark",
-        heatmap: true,
-        ...JSON.parse(localStorage.getItem("danmuku_config") || "{}"),
-        emitter: false,
-        danmuku: proxyLink(danmu, true),
-      }),
-    )
-  }
-  onMount(() => {
-    player = new Artplayer(option)
-    let auto_fullscreen: boolean
-    switch (searchParams["auto_fullscreen"]) {
-      case "true":
-        auto_fullscreen = true
-      case "false":
-        auto_fullscreen = false
-      default:
-        auto_fullscreen = false
-    }
-    player.on("ready", () => {
-      player.fullscreen = auto_fullscreen
-    })
-    player.on("fullscreen", (state) => setShouldKeepState(state))
-    player.on("fullscreenWeb", (state) => setShouldKeepState(state))
-    player.on("mini", () => setShouldKeepState(false))
-    let isFirstUrlLoad = true
-    createEffect(
-      on([() => objStore.raw_url], ([url]) => {
-        player.option.id = pathname()
-        player.option.type = ext(objStore.obj.name)
-        if (!isFirstUrlLoad) {
-          const newSubtitles = objStore.related.filter((obj) =>
-            [".srt", ".ass", ".vtt"].some((e) => obj.name.endsWith(e)),
-          )
-          if (newSubtitles.length > 0) {
-            const defaultSub = newSubtitles[0]
-            if (
-              enableEnhanceAss &&
-              ext(defaultSub.name).toLowerCase() === "ass"
-            ) {
-              player.emit(
-                "artplayer-plugin-ass:switch" as keyof Events,
-                proxyLink(defaultSub, true),
-              )
-            } else {
-              player.emit("artplayer-plugin-ass:visible" as keyof Events, false)
-              player.subtitle.switch(proxyLink(defaultSub, true), {
-                name: defaultSub.name,
-              })
-            }
-          } else {
-            player.emit("artplayer-plugin-ass:visible" as keyof Events, false)
-            player.subtitle.show = false
-          }
-          const newDanmu = objStore.related.find((obj) =>
-            obj.name.endsWith(".xml"),
-          )
-          if (player.plugins?.artplayerPluginDanmuku) {
-            const danmukuPlugin = player.plugins
-              .artplayerPluginDanmuku as ReturnType<
-              ReturnType<typeof artplayerPluginDanmuku>
-            >
-            danmukuPlugin.load(newDanmu ? proxyLink(newDanmu, true) : [])
-          }
-        }
-        isFirstUrlLoad = false
-        player.switchUrl(url)
-      }),
-    )
-    if (danmu) {
+    const danmukuPlugin = player.plugins.artplayerPluginDanmuku as ReturnType<
+      ReturnType<typeof artplayerPluginDanmuku>
+    >
+    const { danmu } = subtitleAndDanmu()
+    if (danmukuPlugin) {
+      danmukuPlugin.reset()
+      danmukuPlugin.option.danmuku = []
+      danmukuPlugin.load(danmu ? proxyLink(danmu, true) : undefined)
+    } else if (danmu) {
+      player.plugins.add(
+        artplayerPluginDanmuku({
+          speed: 5,
+          opacity: 1,
+          fontSize: 25,
+          mode: 0,
+          antiOverlap: false,
+          synchronousPlayback: false,
+          theme: "dark",
+          heatmap: true,
+          ...JSON.parse(localStorage.getItem("danmuku_config") || "{}"),
+          emitter: false,
+          danmuku: proxyLink(danmu, true),
+        }),
+      )
       player.on("artplayerPluginDanmuku:config", (option) => {
         const {
           speed,
@@ -398,6 +345,32 @@ const Preview = () => {
         )
       })
     }
+
+    player.option.id = pathname()
+    player.option.type = ext(objStore.obj.name)
+    player.switchUrl(url)
+    playing && player.play()
+  }
+
+  onMount(() => {
+    player = new Artplayer(option)
+    createEffect(on(() => objStore.raw_url, switchUrl))
+    let auto_fullscreen: boolean
+    switch (searchParams["auto_fullscreen"]) {
+      case "true":
+        auto_fullscreen = true
+      case "false":
+        auto_fullscreen = false
+      default:
+        auto_fullscreen = false
+    }
+    player.on("ready", () => {
+      player.fullscreen = auto_fullscreen
+    })
+    const onFullscreen = () =>
+      setShouldKeepState(player.fullscreen || player.fullscreenWeb)
+    player.on("fullscreen", onFullscreen)
+    player.on("fullscreenWeb", onFullscreen)
     player.on("video:ended", () => {
       if (!autoNext()) return
       next_video()
@@ -416,7 +389,7 @@ const Preview = () => {
     if (player) {
       player.fullscreenWeb = false
       player.fullscreen = false
-      player.pip = false
+      player.pip && (player.pip = false)
       if (player.video) player.video.src = ""
       player.destroy()
     }
