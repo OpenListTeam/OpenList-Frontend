@@ -121,6 +121,9 @@ const Preview = () => {
     },
     customType: {
       flv: function (video: HTMLMediaElement, url: string) {
+        if (flvPlayer) {
+          flvPlayer.destroy()
+        }
         flvPlayer = mpegts.createPlayer(
           {
             type: "flv",
@@ -132,6 +135,9 @@ const Preview = () => {
         flvPlayer.load()
       },
       m3u8: function (video: HTMLMediaElement, url: string) {
+        if (hlsPlayer) {
+          hlsPlayer.destroy()
+        }
         hlsPlayer = new Hls()
         hlsPlayer.loadSource(url)
         hlsPlayer.attachMedia(video)
@@ -317,10 +323,47 @@ const Preview = () => {
     player.on("fullscreen", (state) => setShouldKeepState(state))
     player.on("fullscreenWeb", (state) => setShouldKeepState(state))
     player.on("mini", () => setShouldKeepState(false))
+    let isFirstUrlLoad = true
     createEffect(
-      on([() => objStore.raw_url], async ([url]) => {
+      on([() => objStore.raw_url], ([url]) => {
         player.option.id = pathname()
         player.option.type = ext(objStore.obj.name)
+        if (!isFirstUrlLoad) {
+          const newSubtitles = objStore.related.filter((obj) =>
+            [".srt", ".ass", ".vtt"].some((e) => obj.name.endsWith(e)),
+          )
+          if (newSubtitles.length > 0) {
+            const defaultSub = newSubtitles[0]
+            if (
+              enableEnhanceAss &&
+              ext(defaultSub.name).toLowerCase() === "ass"
+            ) {
+              player.emit(
+                "artplayer-plugin-ass:switch" as keyof Events,
+                proxyLink(defaultSub, true),
+              )
+            } else {
+              player.emit("artplayer-plugin-ass:visible" as keyof Events, false)
+              player.subtitle.switch(proxyLink(defaultSub, true), {
+                name: defaultSub.name,
+              })
+            }
+          } else {
+            player.emit("artplayer-plugin-ass:visible" as keyof Events, false)
+            player.subtitle.show = false
+          }
+          const newDanmu = objStore.related.find((obj) =>
+            obj.name.endsWith(".xml"),
+          )
+          if (player.plugins?.artplayerPluginDanmuku) {
+            const danmukuPlugin = player.plugins
+              .artplayerPluginDanmuku as ReturnType<
+              ReturnType<typeof artplayerPluginDanmuku>
+            >
+            danmukuPlugin.load(newDanmu ? proxyLink(newDanmu, true) : [])
+          }
+        }
+        isFirstUrlLoad = false
         player.switchUrl(url)
       }),
     )
