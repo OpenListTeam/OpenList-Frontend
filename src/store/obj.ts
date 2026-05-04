@@ -281,3 +281,5 @@ export const [uploadConfig, setUploadConfig] = createStore({
   overwrite: false,
   rapid: true,
 })
+
+export const [shouldKeepState, setShouldKeepState] = createSignal(false)

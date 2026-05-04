@@ -11,6 +11,7 @@ import {
   recoverHistory,
   clearHistory,
   me,
+  shouldKeepState,
 } from "~/store"
 import {
   fsGet,
@@ -120,7 +121,7 @@ export const usePath = () => {
 
   // handle enter obj that don't know if it is dir or file
   const handleObj = async (path: string, index?: number) => {
-    ObjStore.setState(State.FetchingObj)
+    shouldKeepState() || ObjStore.setState(State.FetchingObj)
     const resp = await getObj(path)
     handleRespWithoutNotify(
       resp,
@@ -135,7 +136,7 @@ export const usePath = () => {
           ObjStore.setHeader(data.header)
           ObjStore.setRelated(data.related ?? [])
           ObjStore.setRawUrl(data.raw_url)
-          ObjStore.setState(State.File)
+          shouldKeepState() || ObjStore.setState(State.File)
         }
       },
       handleErr,
@@ -149,7 +150,6 @@ export const usePath = () => {
     size?: number,
     append = false,
     force?: boolean,
-    onlyList = false,
   ) => {
     if (!size) {
       size = pagination.size
@@ -157,7 +157,7 @@ export const usePath = () => {
     if (size !== undefined && pagination.type === "all") {
       size = undefined
     }
-    !onlyList &&
+    shouldKeepState() ||
       ObjStore.setState(append ? State.FetchingMore : State.FetchingObjs)
     const resp = await getObjs({ path, index, size, force })
     handleRespWithoutNotify(
@@ -170,7 +170,7 @@ export const usePath = () => {
           ObjStore.setObjs(data.content ?? [])
           ObjStore.setTotal(data.total)
         }
-        if (onlyList) {
+        if (shouldKeepState()) {
           return
         }
         ObjStore.setReadme(data.readme)

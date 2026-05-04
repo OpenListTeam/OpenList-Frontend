@@ -1,7 +1,19 @@
 import { Box } from "@hope-ui/solid"
-import { createMemo, createSignal, onCleanup, onMount } from "solid-js"
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  on,
+  onCleanup,
+  onMount,
+} from "solid-js"
 import { useRouter, useLink } from "~/hooks"
-import { getMainColor, getSettingBool, objStore } from "~/store"
+import {
+  getMainColor,
+  getSettingBool,
+  objStore,
+  setShouldKeepState,
+} from "~/store"
 import { ObjType } from "~/types"
 import { ext, pathDir, pathJoin } from "~/utils"
 import Artplayer from "artplayer"
@@ -50,9 +62,7 @@ const Preview = () => {
   let flvPlayer: mpegts.Player
   let hlsPlayer: Hls
   let option: Option = {
-    id: pathname(),
     container: "#video-player",
-    url: objStore.raw_url,
     volume: 1.0,
     autoplay: getSettingBool("video_autoplay"),
     autoSize: false,
@@ -109,7 +119,6 @@ const Preview = () => {
       playsInline: true,
       crossOrigin: "anonymous",
     },
-    type: ext(objStore.obj.name),
     customType: {
       flv: function (video: HTMLMediaElement, url: string) {
         flvPlayer = mpegts.createPlayer(
@@ -305,6 +314,16 @@ const Preview = () => {
     player.on("ready", () => {
       player.fullscreen = auto_fullscreen
     })
+    player.on("fullscreen", (state) => setShouldKeepState(state))
+    player.on("fullscreenWeb", (state) => setShouldKeepState(state))
+    player.on("mini", () => setShouldKeepState(false))
+    createEffect(
+      on([() => objStore.raw_url], async ([url]) => {
+        player.option.id = pathname()
+        player.option.type = ext(objStore.obj.name)
+        player.switchUrl(url)
+      }),
+    )
     if (danmu) {
       player.on("artplayerPluginDanmuku:config", (option) => {
         const {
@@ -350,6 +369,7 @@ const Preview = () => {
     })
   })
   onCleanup(() => {
+    setShouldKeepState(false)
     if (player) {
       player.fullscreenWeb = false
       player.fullscreen = false

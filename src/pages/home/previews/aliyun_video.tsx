@@ -1,7 +1,13 @@
 import { Box, Center } from "@hope-ui/solid"
 import { Show, createMemo, createSignal, onCleanup, onMount } from "solid-js"
 import { useRouter, useLink, useFetch } from "~/hooks"
-import { getMainColor, getSettingBool, objStore, password } from "~/store"
+import {
+  getMainColor,
+  getSettingBool,
+  objStore,
+  password,
+  setShouldKeepState,
+} from "~/store"
 import { ObjType, PResp } from "~/types"
 import { ext, handleResp, notify, r, pathDir, pathJoin } from "~/utils"
 import Artplayer from "artplayer"
@@ -419,6 +425,7 @@ const Preview = () => {
     })
   }
   onCleanup(() => {
+    setShouldKeepState(false)
     if (player) {
       player.fullscreenWeb = false
       player.fullscreen = false

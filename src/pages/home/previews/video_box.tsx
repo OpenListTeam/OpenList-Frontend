@@ -11,7 +11,7 @@ import {
 } from "@hope-ui/solid"
 import { For, JSXElement, createSignal, createMemo, Show } from "solid-js"
 import { useRouter, useLink, useT, usePath, getGlobalPage } from "~/hooks"
-import { getPagination, objStore } from "~/store"
+import { getPagination, objStore, setShouldKeepState } from "~/store"
 import { ObjType } from "~/types"
 import { convertURL, getPlatform, pathDir } from "~/utils"
 import Artplayer from "artplayer"
@@ -160,14 +160,15 @@ export const VideoBox = (props: {
         return videos
       }
       const append = objStore.objs.length > 0
+      setShouldKeepState(true)
       handleFolder(
         pathDir(path),
         getGlobalPage() + (append ? 1 : 0),
         undefined,
         append,
-        false,
-        true,
-      )
+      ).finally(() => {
+        setShouldKeepState(false)
+      })
     }
     return videos
   })
