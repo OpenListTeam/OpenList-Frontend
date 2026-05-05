@@ -172,103 +172,16 @@ const Preview = () => {
   // TODO: add a switch in manage panel to choose whether to enable `libass-wasm`
   const enableEnhanceAss = true
 
-  if (subtitleAndDanmu().subtitle.length) {
+  const switchUrl = (url: string) => {
+    const { playing } = player
+    player.pause()
+    player.option.id = pathname()
+    player.option.type = ext(objStore.obj.name)
+    player.switchUrl(url).finally(() => playing && player.play())
+
+    const { subtitle, danmu } = subtitleAndDanmu()
     let isEnhanceAssMode = false
-
-    // set default subtitle
-    const defaultSubtitle = subtitleAndDanmu().subtitle[0]
-    if (enableEnhanceAss && ext(defaultSubtitle.name).toLowerCase() === "ass") {
-      isEnhanceAssMode = true
-      option.plugins?.push(
-        artplayerPluginAss({
-          // debug: true,
-          subUrl: proxyLink(defaultSubtitle, true),
-        }),
-      )
-    } else {
-      option.subtitle = {
-        url: proxyLink(defaultSubtitle, true),
-        type: ext(defaultSubtitle.name),
-        escape: false,
-      }
-    }
-
-    // render subtitle toggle menu
-    const innerMenu: Setting[] = [
-      {
-        id: "setting_subtitle_display",
-        html: "Display",
-        tooltip: "Show",
-        switch: true,
-        onSwitch: function (item: Setting) {
-          item.tooltip = item.switch ? "Hide" : "Show"
-          setSubtitleVisible(!item.switch)
-
-          // sync menu subtitle tooltip
-          const menu_sub = option.settings?.find(
-            (_) => _.id === "setting_subtitle",
-          )
-          menu_sub && (menu_sub.tooltip = item.tooltip)
-
-          return !item.switch
-        },
-      },
-    ]
-    subtitleAndDanmu().subtitle.forEach((item, i) => {
-      innerMenu.push({
-        default: i === 0,
-        html: (
-          <span
-            title={item.name}
-            style={{
-              "max-width": "200px",
-              overflow: "hidden",
-              "text-overflow": "ellipsis",
-              "word-break": "break-all",
-              "white-space": "normal",
-              display: "-webkit-box",
-              "-webkit-line-clamp": "2",
-              "-webkit-box-orient": "vertical",
-              "font-size": "12px",
-            }}
-          >
-            {item.name}
-          </span>
-        ) as HTMLElement,
-        name: item.name,
-        url: proxyLink(item, true),
-      })
-    })
-
-    option.settings?.push({
-      id: "setting_subtitle",
-      html: "Subtitle",
-      tooltip: "Show",
-      icon: ArtPlayerIconsSubtitle({ size: 24 }) as HTMLElement,
-      selector: innerMenu,
-      onSelect: function (item: Setting) {
-        if (enableEnhanceAss && ext(item.name).toLowerCase() === "ass") {
-          isEnhanceAssMode = true
-          this.emit("artplayer-plugin-ass:switch" as keyof Events, item.url)
-          setSubtitleVisible(true)
-        } else {
-          isEnhanceAssMode = false
-          this.subtitle.switch(item.url, { name: item.name })
-          this.once("subtitleLoad", setSubtitleVisible.bind(this, true))
-        }
-
-        const switcher = innerMenu.find(
-          (_) => _.id === "setting_subtitle_display",
-        )
-
-        if (switcher && !switcher.switch) switcher.$html?.click?.()
-
-        // sync from display switcher
-        return switcher?.tooltip
-      },
-    })
-
-    function setSubtitleVisible(visible: boolean) {
+    const setSubtitleVisible = (visible: boolean) => {
       const type = isEnhanceAssMode ? "ass" : "webvtt"
 
       switch (type) {
@@ -284,17 +197,93 @@ const Preview = () => {
           break
       }
     }
-  }
-  const switchUrl = (url: string) => {
-    const { playing } = player
-    player.pause()
-    player.option.id = ""
-    player.reset()
+    if (subtitle.length) {
+      // render subtitle toggle menu
+      const innerMenu: Setting[] = [
+        {
+          name: "setting_subtitle_display",
+          html: "Display",
+          tooltip: "Show",
+          switch: true,
+          onSwitch: function (item: Setting) {
+            item.tooltip = item.switch ? "Hide" : "Show"
+            setSubtitleVisible(!item.switch)
 
+            // sync menu subtitle tooltip
+            const menu_sub = this.setting.find("setting_subtitle")
+            menu_sub && (menu_sub.tooltip = item.tooltip)
+
+            return !item.switch
+          },
+        },
+      ]
+      subtitle.forEach((item, i) => {
+        innerMenu.push({
+          default: i === 0,
+          html: (
+            <span
+              title={item.name}
+              style={{
+                "max-width": "200px",
+                overflow: "hidden",
+                "text-overflow": "ellipsis",
+                "word-break": "break-all",
+                "white-space": "normal",
+                display: "-webkit-box",
+                "-webkit-line-clamp": "2",
+                "-webkit-box-orient": "vertical",
+                "font-size": "12px",
+              }}
+            >
+              {item.name}
+            </span>
+          ) as HTMLElement,
+          name: item.name,
+          url: proxyLink(item, true),
+        })
+      })
+
+      const onSelect = function (this: Artplayer, item: Setting) {
+        if (enableEnhanceAss && ext(item.name).toLowerCase() === "ass") {
+          isEnhanceAssMode = true
+          if (!player.plugins.artplayerPluginAss) {
+            player.plugins.add(artplayerPluginAss({ subUrl: item.url }))
+          } else {
+            this.emit("artplayer-plugin-ass:switch" as keyof Events, item.url)
+          }
+          setSubtitleVisible(true)
+        } else {
+          isEnhanceAssMode = false
+          this.subtitle.switch(item.url, { name: item.name })
+          this.once("subtitleLoad", setSubtitleVisible.bind(this, true))
+        }
+
+        const switcher = innerMenu.find(
+          (_) => _.name === "setting_subtitle_display",
+        )
+
+        if (switcher && !switcher.switch) switcher.$html?.click?.()
+
+        // sync from display switcher
+        return switcher?.tooltip
+      }
+      player.setting.update({
+        name: "setting_subtitle",
+        html: "Subtitle",
+        tooltip: "Show",
+        icon: ArtPlayerIconsSubtitle({ size: 24 }) as HTMLElement,
+        selector: innerMenu,
+        onSelect,
+      })
+      onSelect.call(player, innerMenu[1])
+    } else {
+      player.setting.find("setting_subtitle") &&
+        player.setting.remove("setting_subtitle")
+      setSubtitleVisible(false)
+    }
     const danmukuPlugin = player.plugins.artplayerPluginDanmuku as ReturnType<
       ReturnType<typeof artplayerPluginDanmuku>
     >
-    const { danmu } = subtitleAndDanmu()
     if (danmukuPlugin) {
       danmukuPlugin.reset()
       danmukuPlugin.option.danmuku = []
@@ -345,11 +334,6 @@ const Preview = () => {
         )
       })
     }
-
-    player.option.id = pathname()
-    player.option.type = ext(objStore.obj.name)
-    player.switchUrl(url)
-    playing && player.play()
   }
 
   onMount(() => {
