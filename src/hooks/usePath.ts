@@ -150,6 +150,7 @@ export const usePath = () => {
     size?: number,
     append = false,
     force?: boolean,
+    onlyList = false,
   ) => {
     if (!size) {
       size = pagination.size
@@ -157,7 +158,7 @@ export const usePath = () => {
     if (size !== undefined && pagination.type === "all") {
       size = undefined
     }
-    shouldKeepState() ||
+    if (!onlyList && !shouldKeepState())
       ObjStore.setState(append ? State.FetchingMore : State.FetchingObjs)
     const resp = await getObjs({ path, index, size, force })
     handleRespWithoutNotify(
@@ -170,7 +171,7 @@ export const usePath = () => {
           ObjStore.setObjs(data.content ?? [])
           ObjStore.setTotal(data.total)
         }
-        if (shouldKeepState()) {
+        if (onlyList) {
           return
         }
         ObjStore.setReadme(data.readme)
@@ -179,7 +180,7 @@ export const usePath = () => {
         ObjStore.setWriteContentBypass(data.write_content_bypass)
         ObjStore.setProvider(data.provider)
         ObjStore.setDirectUploadTools(data.direct_upload_tools)
-        ObjStore.setState(State.Folder)
+        shouldKeepState() || ObjStore.setState(State.Folder)
       },
       handleErr,
     )

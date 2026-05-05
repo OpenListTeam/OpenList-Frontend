@@ -161,15 +161,14 @@ export const VideoBox = (props: {
         return videos
       }
       const append = objStore.objs.length > 0
-      setShouldKeepState(true)
       handleFolder(
         pathDir(path),
         getGlobalPage() + (append ? 1 : 0),
         undefined,
         append,
-      ).finally(() => {
-        setShouldKeepState(false)
-      })
+        false,
+        true,
+      )
     }
     return videos
   })

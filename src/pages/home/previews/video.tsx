@@ -374,7 +374,6 @@ const Preview = () => {
       player.fullscreenWeb = false
       player.fullscreen = false
       player.pip && (player.pip = false)
-      if (player.video) player.video.src = ""
       player.destroy()
     }
     flvPlayer?.destroy()
