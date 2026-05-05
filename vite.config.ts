@@ -78,7 +78,7 @@ export default defineConfig({
               dest: "static/libheif",
             },
             {
-              src: "node_modules/libass-wasm/dist/js/subtitles-octopus-worker.{js,wasm}",
+              src: "node_modules/@jellyfin/libass-wasm/dist/js/subtitles-octopus-worker.{js,wasm}",
               dest: "static/libass-wasm",
             },
             {

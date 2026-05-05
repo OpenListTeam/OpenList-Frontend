@@ -25,6 +25,9 @@ importers:
       '@hope-ui/solid':
         specifier: 0.6.7
         version: 0.6.7(@stitches/core@1.2.8)(solid-js@1.9.12)(solid-transition-group@0.3.0(solid-js@1.9.12))
+      '@jellyfin/libass-wasm':
+        specifier: ^4.2.4
+        version: 4.2.4
       '@monaco-editor/loader':
         specifier: 1.7.0
         version: 1.7.0
@@ -103,9 +106,6 @@ importers:
       katex:
         specifier: ^0.16.44
         version: 0.16.44
-      libass-wasm:
-        specifier: ^4.1.0
-        version: 4.1.0
       libheif-js:
         specifier: ^1.19.8
         version: 1.19.8
@@ -1211,6 +1211,9 @@ packages:
   '@isaacs/fs-minipass@4.0.1':
     resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==}
     engines: {node: '>=18.0.0'}
+
+  '@jellyfin/libass-wasm@4.2.4':
+    resolution: {integrity: sha512-xgOxp0Lmg7djdRpC+RRFaN28QeoMr46tOgL9/xbXqM46RjjVruFC3iK7K8AuGNUZ11Ysil23p0kACQw06GuaRw==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -2636,9 +2639,6 @@ packages:
 
   layout-base@2.0.1:
     resolution: {integrity: sha512-dp3s92+uNI1hWIpPGH3jK2kxE2lMjdXdr+DH8ynZHpd6PUlH6x6cbuXnoMmiNumznqaNO31xu9e79F0uuZ0JFg==}
-
-  libass-wasm@4.1.0:
-    resolution: {integrity: sha512-+RbYT/uuI6VHExCmGyUuMg3A2gQOaCRTzSn8GGDSf3q4cEoUNiINd9u4RGfZXA1UKafW+Hv8bmcKIX4FKbSh0Q==}
 
   libheif-js@1.19.8:
     resolution: {integrity: sha512-vQJWusIxO7wavpON1dusciL8Go9jsIQ+EUrckauFYAiSTjcmLAsuJh3SszLpvkwPci3JcL41ek2n+LUZGFpPIQ==}
@@ -4904,6 +4904,8 @@ snapshots:
     dependencies:
       minipass: 7.1.2
 
+  '@jellyfin/libass-wasm@4.2.4': {}
+
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -6358,8 +6360,6 @@ snapshots:
   layout-base@1.0.2: {}
 
   layout-base@2.0.1: {}
-
-  libass-wasm@4.1.0: {}
 
   libheif-js@1.19.8: {}
 
