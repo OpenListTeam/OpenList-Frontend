@@ -296,9 +296,7 @@ export const torrentUploadParse = (
 ): PResp<TorrentUploadParseResult> => {
   const formData = new FormData()
   formData.append("torrent", file)
-  return r.post("/fs/torrent/upload_parse", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  })
+  return r.post("/fs/torrent/upload_parse", formData)
 }
 
 export const torrentRapidUpload = (

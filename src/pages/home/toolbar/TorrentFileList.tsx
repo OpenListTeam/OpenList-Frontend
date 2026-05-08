@@ -11,6 +11,7 @@ interface TreeNode {
   size: number
   children: TreeNode[]
   fileIndex?: number // 对应 files 数组中的索引（仅叶子节点）
+  allIndices?: number[] // 目录下所有文件索引（仅目录节点，构建时缓存）
 }
 
 // 将扁平文件列表构建为树形结构
@@ -56,16 +57,17 @@ function buildFileTree(files: TorrentFile[]): TreeNode[] {
     })
   })
 
-  // 计算目录大小
-  function calcDirSize(node: TreeNode): number {
+  // 计算目录大小并缓存目录的所有子文件索引
+  function calcDirMetadata(node: TreeNode): number {
     if (!node.isDir) return node.size
     node.size = node.children.reduce(
-      (sum, child) => sum + calcDirSize(child),
+      (sum, child) => sum + calcDirMetadata(child),
       0,
     )
+    node.allIndices = getAllFileIndices(node)
     return node.size
   }
-  root.children.forEach(calcDirSize)
+  root.children.forEach(calcDirMetadata)
 
   // 如果只有一个根目录，直接返回其子节点
   if (root.children.length === 1 && root.children[0].isDir) {
@@ -101,6 +103,9 @@ export const TorrentFileList = (props: TorrentFileListProps) => {
 
   const tree = createMemo(() => buildFileTree(props.files))
 
+  // 使用 Set 加速成员检测
+  const selectedSet = createMemo(() => new Set(props.selectedFiles))
+
   const allSelected = createMemo(
     () => props.selectedFiles.length === props.files.length,
   )
@@ -115,20 +120,22 @@ export const TorrentFileList = (props: TorrentFileListProps) => {
   }
 
   const toggleFile = (index: number) => {
-    const current = props.selectedFiles
-    if (current.includes(index)) {
-      props.onSelectionChange(current.filter((i) => i !== index))
+    const set = selectedSet()
+    if (set.has(index)) {
+      props.onSelectionChange(props.selectedFiles.filter((i) => i !== index))
     } else {
-      props.onSelectionChange([...current, index])
+      props.onSelectionChange([...props.selectedFiles, index])
     }
   }
 
   const toggleDir = (node: TreeNode) => {
-    const indices = getAllFileIndices(node)
-    const allChecked = indices.every((i) => props.selectedFiles.includes(i))
+    const indices = node.allIndices ?? getAllFileIndices(node)
+    const set = selectedSet()
+    const allChecked = indices.every((i) => set.has(i))
     if (allChecked) {
+      const removeSet = new Set(indices)
       props.onSelectionChange(
-        props.selectedFiles.filter((i) => !indices.includes(i)),
+        props.selectedFiles.filter((i) => !removeSet.has(i)),
       )
     } else {
       const newSelection = [...new Set([...props.selectedFiles, ...indices])]
@@ -172,7 +179,7 @@ export const TorrentFileList = (props: TorrentFileListProps) => {
           {(node) => (
             <TreeNodeItem
               node={node}
-              selectedFiles={props.selectedFiles}
+              selectedSet={selectedSet()}
               onToggleFile={toggleFile}
               onToggleDir={toggleDir}
               depth={0}
@@ -187,7 +194,7 @@ export const TorrentFileList = (props: TorrentFileListProps) => {
 // 树节点组件
 function TreeNodeItem(props: {
   node: TreeNode
-  selectedFiles: number[]
+  selectedSet: Set<number>
   onToggleFile: (index: number) => void
   onToggleDir: (node: TreeNode) => void
   depth: number
@@ -196,18 +203,16 @@ function TreeNodeItem(props: {
 
   const isChecked = createMemo(() => {
     if (!props.node.isDir) {
-      return props.selectedFiles.includes(props.node.fileIndex!)
+      return props.selectedSet.has(props.node.fileIndex!)
     }
-    const indices = getAllFileIndices(props.node)
-    return indices.every((i) => props.selectedFiles.includes(i))
+    const indices = props.node.allIndices ?? getAllFileIndices(props.node)
+    return indices.length > 0 && indices.every((i) => props.selectedSet.has(i))
   })
 
   const isIndeterminate = createMemo(() => {
     if (!props.node.isDir) return false
-    const indices = getAllFileIndices(props.node)
-    const checkedCount = indices.filter((i) =>
-      props.selectedFiles.includes(i),
-    ).length
+    const indices = props.node.allIndices ?? getAllFileIndices(props.node)
+    const checkedCount = indices.filter((i) => props.selectedSet.has(i)).length
     return checkedCount > 0 && checkedCount < indices.length
   })
 
@@ -284,7 +289,7 @@ function TreeNodeItem(props: {
           {(child) => (
             <TreeNodeItem
               node={child}
-              selectedFiles={props.selectedFiles}
+              selectedSet={props.selectedSet}
               onToggleFile={props.onToggleFile}
               onToggleDir={props.onToggleDir}
               depth={props.depth + 1}

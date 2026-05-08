@@ -73,7 +73,8 @@ function toMagnetUrl(torrentBuffer: Uint8Array) {
   if (data.announce) {
     params.tr = utf8Decode(data.announce)
   }
-  return `magnet:?xt=urn:btih:${infoHash}&${new URLSearchParams(params).toString()}`
+  const paramStr = new URLSearchParams(params).toString()
+  return `magnet:?xt=urn:btih:${infoHash}${paramStr ? "&" + paramStr : ""}`
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -128,6 +129,9 @@ export const OfflineDownloadEnhanced = () => {
   // 秒传状态
   const [rapidUploading, setRapidUploading] = createSignal(false)
   const [rapidUploadResult, setRapidUploadResult] = createSignal<string>("")
+  // 秒传失败后允许回退到普通离线下载
+  const [casRapidUploadFailed, setCasRapidUploadFailed] =
+    createSignal<boolean>(false)
 
   // 检测输入中是否包含 ed2k 链接
   const hasEd2kLinks = createMemo(() => {
@@ -136,9 +140,13 @@ export const OfflineDownloadEnhanced = () => {
       .some((line) => line.trim().toLowerCase().startsWith("ed2k://"))
   })
 
-  // 当有 CAS 信息时，默认使用天翼云秒传（不需要 aria2）
+  // 当有 CAS 信息且秒传尚未失败时，默认使用天翼云秒传（不需要 aria2）
   const shouldUseCasRapidUpload = createMemo(() => {
-    return activeTab() === "bt" && !!torrentInfo()?.has_cas
+    return (
+      activeTab() === "bt" &&
+      !!torrentInfo()?.has_cas &&
+      !casRapidUploadFailed()
+    )
   })
 
   // 检测输入中是否包含磁力链
@@ -212,6 +220,7 @@ export const OfflineDownloadEnhanced = () => {
     setTorrentData("")
     setSelectedFiles([])
     setRapidUploadResult("")
+    setCasRapidUploadFailed(false)
   }
 
   const handleClose = () => {
@@ -255,35 +264,37 @@ export const OfflineDownloadEnhanced = () => {
   const handleDrop = (e: DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (e.dataTransfer?.files.length) {
+    if (!e.dataTransfer?.files.length) return
+
+    if (activeTab() === "bt") {
+      // BT Tab: 解析第一个 torrent 文件
       for (const file of e.dataTransfer.files) {
         if (file.name.toLowerCase().endsWith(".torrent")) {
           handleTorrentFile(file)
           return
         }
       }
-      // 如果在链接 Tab 中拖入 torrent，转换为磁力链
-      if (activeTab() === "link") {
+    } else {
+      // Link Tab: 将 torrent 文件转换为磁力链追加到输入框
+      const processFiles = async () => {
         const values: string[] = []
-        const processFiles = async () => {
-          for (const file of e.dataTransfer!.files) {
-            if (file.name.toLowerCase().endsWith(".torrent")) {
-              try {
-                const buffer = await file.arrayBuffer()
-                values.push(toMagnetUrl(new Uint8Array(buffer)))
-              } catch (err) {
-                console.error("Failed to convert torrent:", err)
-              }
+        for (const file of e.dataTransfer!.files) {
+          if (file.name.toLowerCase().endsWith(".torrent")) {
+            try {
+              const buffer = await file.arrayBuffer()
+              values.push(toMagnetUrl(new Uint8Array(buffer)))
+            } catch (err) {
+              console.error("Failed to convert torrent:", err)
             }
           }
-          if (values.length) {
-            setLinkValue((prev) =>
-              prev ? prev + "\n" + values.join("\n") : values.join("\n"),
-            )
-          }
         }
-        processFiles()
+        if (values.length) {
+          setLinkValue((prev) =>
+            prev ? prev + "\n" + values.join("\n") : values.join("\n"),
+          )
+        }
       }
+      processFiles()
     }
   }
 
@@ -320,8 +331,8 @@ export const OfflineDownloadEnhanced = () => {
 
     setBtLoading(true)
     try {
-      // 有 CAS 信息时，默认直接走天翼云秒传
-      if (info.has_cas) {
+      // 有 CAS 信息且秒传尚未失败时，默认直接走天翼云秒传
+      if (info.has_cas && !casRapidUploadFailed()) {
         setRapidUploading(true)
         try {
           const resp = await torrentRapidUpload(torrentData(), savePath())
@@ -337,7 +348,8 @@ export const OfflineDownloadEnhanced = () => {
             handleClose()
             return
           } else {
-            // 秒传失败，提示用户
+            // 秒传失败，标记允许回退到普通离线下载
+            setCasRapidUploadFailed(true)
             notificationService.show({
               status: "warning",
               title: t(
@@ -347,7 +359,8 @@ export const OfflineDownloadEnhanced = () => {
             })
           }
         } catch (err) {
-          // 秒传异常，提示用户
+          // 秒传异常，标记允许回退到普通离线下载
+          setCasRapidUploadFailed(true)
           notificationService.show({
             status: "danger",
             title: t(
@@ -358,11 +371,11 @@ export const OfflineDownloadEnhanced = () => {
         } finally {
           setRapidUploading(false)
         }
-        // CAS 秒传失败后不自动回退，直接返回让用户决定
+        // 秒传失败后返回，让用户选择是否继续普通离线下载
         return
       }
 
-      // 无 CAS 信息时，走正常离线下载流程
+      // 无 CAS 信息或秒传失败后，走正常离线下载流程
       // SimpleHttp 不支持磁力链/BT 下载
       if (tool() === "SimpleHttp") {
         notificationService.show({
@@ -532,6 +545,11 @@ export const OfflineDownloadEnhanced = () => {
                     selectedFiles={selectedFiles()}
                     onSelectionChange={setSelectedFiles}
                   />
+                  <Text fontSize="$xs" color="$neutral9" mt="$1">
+                    {t(
+                      "home.toolbar.offline_download_enhanced.file_selection_hint",
+                    )}
+                  </Text>
                 </VStack>
               </Show>
             </VStack>
@@ -628,6 +646,28 @@ export const OfflineDownloadEnhanced = () => {
               </Box>
             </Show>
 
+            {/* CAS 秒传失败后，提示用户可继续普通离线下载 */}
+            <Show
+              when={
+                activeTab() === "bt" &&
+                torrentInfo()?.has_cas &&
+                casRapidUploadFailed()
+              }
+            >
+              <Box
+                p="$2"
+                bg="$warning3"
+                borderRadius="$sm"
+                border="1px solid $warning7"
+              >
+                <Text fontSize="$sm" color="$warning11">
+                  {t(
+                    "home.toolbar.offline_download_enhanced.cas_failed_fallback_hint",
+                  )}
+                </Text>
+              </Box>
+            </Show>
+
             <Show
               when={
                 activeTab() === "bt" && torrentInfo() && !torrentInfo()!.has_cas
@@ -686,10 +726,10 @@ export const OfflineDownloadEnhanced = () => {
             <Button
               loading={btLoading() || rapidUploading()}
               onClick={handleBtSubmit}
-              disabled={!torrentInfo() || selectedFiles().length === 0}
+              disabled={!torrentInfo()}
             >
               <Show
-                when={torrentInfo()?.has_cas && !rapidUploading()}
+                when={shouldUseCasRapidUpload() && !rapidUploading()}
                 fallback={t(
                   "home.toolbar.offline_download_enhanced.start_download",
                 )}
