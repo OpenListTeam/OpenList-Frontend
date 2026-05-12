@@ -166,6 +166,12 @@ const previews: Preview[] = [
     prior: true,
   },
   {
+    key: "torrent",
+    exts: ["torrent"],
+    component: lazy(() => import("./torrent")),
+    prior: true,
+  },
+  {
     key: "archive",
     exts: (name: string) => {
       const index = UserPermissions.findIndex(

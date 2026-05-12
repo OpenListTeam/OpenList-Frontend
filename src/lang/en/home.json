@@ -44,7 +44,8 @@
       "doc": "DOC Previewer",
       "asciinema": "Asciinema Player",
       "video360": "Video360 Player",
-      "archive": "Archive Previewer"
+      "archive": "Archive Previewer",
+      "torrent": "Torrent Previewer"
     }
   },
   "layouts": {
@@ -92,7 +93,7 @@
     "cancel_select": "Cancel Select",
     "offline_download": "Offline download",
     "offline_download-tips": "One URL per line",
-    "offline_download_torrent": "BT Offline Download",
+    "offline_download_torrent": "BT Fetch",
     "offline_download_enhanced": {
       "tab_link": "Link Download",
       "tab_bt": "BT Download",
@@ -118,8 +119,11 @@
       "no_cas_hint": "No CAS info found. Files will be downloaded first, then uploaded.",
       "reselect": "Reselect",
       "simplehttp_not_supported": "SimpleHttp does not support BT/magnet downloads. Please select aria2 or another tool.",
-      "ed2k_tool_hint": "ed2k links detected. aria2/qBittorrent do not support ed2k protocol. The system will automatically try Thunder tools, or you can manually select Thunder/ThunderX/ThunderBrowser."
-    },
+    "ed2k_tool_hint": "ed2k links detected. aria2/qBittorrent do not support ed2k protocol. The system will automatically try Thunder tools, or you can manually select Thunder/ThunderX/ThunderBrowser.",
+    "generate_cas_file": "Generate CAS File",
+    "cas_file_generated": "CAS file generated successfully",
+    "cas_file_generate_failed": "Failed to generate CAS file"
+  },
     "delete_policy": {
       "delete_on_upload_succeed": "Delete on upload succeed",
       "delete_on_upload_failed": "Delete on upload failed",

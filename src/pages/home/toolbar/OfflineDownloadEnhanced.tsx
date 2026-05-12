@@ -205,6 +205,42 @@ export const OfflineDownloadEnhanced = () => {
     bus.off("torrent_parsed", torrentHandler)
   })
 
+  // 生成 CAS 文件并下载（纯前端）
+  const handleGenerateCASFile = () => {
+    const info = torrentInfo()
+    if (!info?.has_cas || !info.cas) return
+    try {
+      const casJson = JSON.stringify({
+        md5: info.cas.file_md5,
+        name: info.name,
+        size: info.total_size,
+        sliceMd5: info.cas.slice_md5,
+      })
+      const casContent = btoa(casJson)
+      const blob = new Blob([casContent], { type: "text/plain;charset=utf-8" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${info.name}.cas`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      notificationService.show({
+        status: "success",
+        title: t("home.toolbar.offline_download_enhanced.cas_file_generated"),
+      })
+    } catch (err) {
+      notificationService.show({
+        status: "danger",
+        title: t(
+          "home.toolbar.offline_download_enhanced.cas_file_generate_failed",
+        ),
+        description: String(err),
+      })
+    }
+  }
+
   // 重置状态
   const resetState = () => {
     setLinkValue("")
@@ -626,6 +662,14 @@ export const OfflineDownloadEnhanced = () => {
                   )}
                 </Text>
               </Box>
+              {/* 生成 CAS 文件按钮 */}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleGenerateCASFile}
+              >
+                {t("home.toolbar.offline_download_enhanced.generate_cas_file")}
+              </Button>
             </Show>
 
             <Show

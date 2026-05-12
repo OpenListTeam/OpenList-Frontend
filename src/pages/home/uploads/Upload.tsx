@@ -102,6 +102,8 @@ const Upload = () => {
       console.log(ms)
     }
     refresh()
+    // 再次延迟刷新一次，以便能看到后端异步生成的 BT 文件（如 189/189pc 驱动的 .cas.torrent）
+    setTimeout(() => refresh(undefined, true), 5000)
   }
   const setUpload = (path: string, key: keyof UploadFileProps, value: any) => {
     setUploadFiles("uploads", (upload) => upload.path === path, key, value)
