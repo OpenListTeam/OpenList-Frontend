@@ -152,8 +152,8 @@ importers:
         specifier: 0.0.2
         version: 0.0.2(solid-js@1.9.12)(solid-transition-group@0.3.0(solid-js@1.9.12))
       solid-icons:
-        specifier: ^1.1.0
-        version: 1.1.0(solid-js@1.9.12)
+        specifier: ^1.2.0
+        version: 1.2.0(solid-js@1.9.12)
       solid-js:
         specifier: ^1.9.12
         version: 1.9.12
@@ -3256,8 +3256,8 @@ packages:
       solid-js: ^1.4.8
       solid-transition-group: ^0.0.10
 
-  solid-icons@1.1.0:
-    resolution: {integrity: sha512-IesTfr/F1ElVwH2E1110s2RPXH4pujKfSs+koT8rwuTAdleO5s26lNSpqJV7D1+QHooJj18mcOiz2PIKs0ic+A==}
+  solid-icons@1.2.0:
+    resolution: {integrity: sha512-yjQxWQMi9l19P5Af9vjsvalTMDFPDL4XD6etrUdNxNVhFp1bMYF0SFwUa5VYDfJ7u0SF3Qkz/F7BZxqcLUwklw==}
     peerDependencies:
       solid-js: '*'
 
@@ -7097,7 +7097,7 @@ snapshots:
       solid-js: 1.9.12
       solid-transition-group: 0.3.0(solid-js@1.9.12)
 
-  solid-icons@1.1.0(solid-js@1.9.12):
+  solid-icons@1.2.0(solid-js@1.9.12):
     dependencies:
       solid-js: 1.9.12
 
