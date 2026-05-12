@@ -36,7 +36,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@crowdin/cli": "^4.14.1",
+    "@crowdin/cli": "^4.14.2",
     "@types/bencode": "^2.0.4",
     "@types/crypto-js": "^4.2.2",
     "@types/mark.js": "^8.11.12",
