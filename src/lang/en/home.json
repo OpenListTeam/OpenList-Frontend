@@ -116,14 +116,16 @@
       "cas_hint": "This torrent contains CAS info, will try rapid upload to Cloud189 first.",
       "cas_rapid_upload_mode": "CAS info detected. Will directly use Cloud189 rapid upload (no download tool needed).",
       "cas_rapid_upload_failed": "CAS rapid upload failed. Please check if the save path is a Cloud189 storage, or try downloading manually.",
+      "cas_failed_fallback_hint": "CAS rapid upload failed. You can now select a download tool and start a normal offline download.",
       "no_cas_hint": "No CAS info found. Files will be downloaded first, then uploaded.",
       "reselect": "Reselect",
       "simplehttp_not_supported": "SimpleHttp does not support BT/magnet downloads. Please select aria2 or another tool.",
-    "ed2k_tool_hint": "ed2k links detected. aria2/qBittorrent do not support ed2k protocol. The system will automatically try Thunder tools, or you can manually select Thunder/ThunderX/ThunderBrowser.",
-    "generate_cas_file": "Generate CAS File",
-    "cas_file_generated": "CAS file generated successfully",
-    "cas_file_generate_failed": "Failed to generate CAS file"
-  },
+      "ed2k_tool_hint": "ed2k links detected. aria2/qBittorrent do not support ed2k protocol. The system will automatically try Thunder tools, or you can manually select Thunder/ThunderX/ThunderBrowser.",
+      "generate_cas_file": "Generate CAS File",
+      "cas_file_generated": "CAS file generated successfully",
+      "cas_file_generate_failed": "Failed to generate CAS file"
+      "file_selection_hint": "Note: The torrent file list is for reference only. Partial file selection is not yet supported — all files in the torrent will be downloaded."
+    },
     "delete_policy": {
       "delete_on_upload_succeed": "Delete on upload succeed",
       "delete_on_upload_failed": "Delete on upload failed",

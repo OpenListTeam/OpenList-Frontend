@@ -93,6 +93,8 @@ export const ContextMenu = () => {
         hidden={() => {
           return (
             isShare() ||
+            !userCan("offline_download") ||
+            !objStore.write ||
             !oneChecked() ||
             selectedObjs().some((o) => o.is_dir) ||
             !selectedObjs().every((o) =>
