@@ -207,7 +207,7 @@ importers:
         specifier: ^16.4.0
         version: 16.4.0
       mermaid:
-        specifier: ^11.14.0
+        specifier: ^11.15.0
         version: 11.15.0
       prettier:
         specifier: 3.8.1
