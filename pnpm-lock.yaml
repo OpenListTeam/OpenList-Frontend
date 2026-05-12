@@ -5,9 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  vite-plugin-dynamic-base:
-    hash: 66b8690f2fc12c4b06543392adc3a5449c39a9224917e837dfb6e32773454c5c
-    path: patches/vite-plugin-dynamic-base.patch
+  vite-plugin-dynamic-base: 66b8690f2fc12c4b06543392adc3a5449c39a9224917e837dfb6e32773454c5c
 
 importers:
 
@@ -3579,7 +3577,7 @@ packages:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
 
   webworkify-webpack@https://codeload.github.com/xqq/webworkify-webpack/tar.gz/24d1e719b4a6cac37a518b2bb10fe124527ef4ef:
-    resolution: {tarball: https://codeload.github.com/xqq/webworkify-webpack/tar.gz/24d1e719b4a6cac37a518b2bb10fe124527ef4ef}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/xqq/webworkify-webpack/tar.gz/24d1e719b4a6cac37a518b2bb10fe124527ef4ef}
     version: 2.1.5
 
   whatwg-url@5.0.0:
