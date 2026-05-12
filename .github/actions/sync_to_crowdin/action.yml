@@ -20,7 +20,6 @@ runs:
     - name: Install pnpm
       uses: pnpm/action-setup@v6
       with:
-        # version: 9.9.0
         run_install: false
 
     - name: Install dependencies
