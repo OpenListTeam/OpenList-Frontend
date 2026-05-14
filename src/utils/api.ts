@@ -281,3 +281,11 @@ export const updateIndex = async (paths = [], max_depth = -1): PEmptyResp => {
     max_depth,
   })
 }
+
+export const fsRecurseList = (
+  path: string,
+  refresh: boolean,
+  interval_sec: number,
+): PEmptyResp => {
+  return r.post("/fs/recurse_list", { path, refresh, interval_sec })
+}
