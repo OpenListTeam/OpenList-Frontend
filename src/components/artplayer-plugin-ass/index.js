@@ -1,6 +1,6 @@
-import SubtitlesOctopus from "libass-wasm"
-// import workerUrl from "libass-wasm/dist/js/subtitles-octopus-worker.js?url"
-// import wasmUrl from "libass-wasm/dist/js/subtitles-octopus-worker.wasm?url"
+import SubtitlesOctopus from "@jellyfin/libass-wasm"
+// import workerUrl from "@jellyfin/libass-wasm/dist/js/subtitles-octopus-worker.js?url"
+// import wasmUrl from "@jellyfin/libass-wasm/dist/js/subtitles-octopus-worker.wasm?url"
 
 // import TimesNewRomanFont from "./fonts/TimesNewRoman.ttf?url"
 // import fallbackFont from "./fonts/SourceHanSansCN-Bold.woff2?url"
@@ -91,13 +91,13 @@ function artplayerPluginAss(options) {
     })
 
     // set subtitle visible
-    art.on("subtitle", (visible) => setVisible(visible))
+    // art.on("subtitle", (visible) => setVisible(visible))
     art.on("artplayer-plugin-ass:visible", (visible) => setVisible(visible))
 
     // set subtitle offset
     art.on("subtitleOffset", (offset) => (instance.timeOffset = offset))
 
-    // when player destory
+    // when player destroy
     art.on("destroy", () => instance.dispose())
 
     return {

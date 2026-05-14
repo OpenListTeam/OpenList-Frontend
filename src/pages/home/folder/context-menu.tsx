@@ -5,13 +5,15 @@ import { HStack, Icon, Text, useColorMode, Image } from "@hope-ui/solid"
 import { operations } from "../toolbar/operations"
 import { For, Show } from "solid-js"
 import { bus, convertURL, notify } from "~/utils"
-import { ObjType, UserMethods, UserPermissions } from "~/types"
+import { ObjType, UserMethods } from "~/types"
 import {
   getSettingBool,
   haveSelected,
   me,
+  objStore,
   oneChecked,
   selectedObjs,
+  userCan,
 } from "~/store"
 import { players } from "../previews/video_box"
 import { BsPlayCircleFill } from "solid-icons/bs"
@@ -50,13 +52,10 @@ export const ContextMenu = () => {
       theme={colorMode() !== "dark" ? "light" : "dark"}
       style="z-index: var(--hope-zIndices-popover)"
     >
-      <For each={["rename", "move", "copy", "delete", "share"]}>
+      <For each={["rename", "move", "copy", "delete"] as const}>
         {(name) => (
           <Item
-            hidden={() => {
-              const index = UserPermissions.findIndex((item) => item === name)
-              return isShare() || !UserMethods.can(me(), index)
-            }}
+            hidden={!userCan(name) || !objStore.write || isShare()}
             onClick={() => {
               bus.emit("tool", name)
             }}
@@ -66,13 +65,19 @@ export const ContextMenu = () => {
         )}
       </For>
       <Item
+        hidden={!userCan("share")}
+        onClick={() => {
+          bus.emit("tool", "share")
+        }}
+      >
+        <ItemContent name="share" />
+      </Item>
+      <Item
         hidden={() => {
-          const index = UserPermissions.findIndex(
-            (item) => item === "decompress",
-          )
           return (
             isShare() ||
-            !UserMethods.can(me(), index) ||
+            !userCan("decompress") ||
+            !objStore.write ||
             selectedObjs().some((o) => o.is_dir) ||
             selectedObjs().some((o) => !isArchive(o.name))
           )

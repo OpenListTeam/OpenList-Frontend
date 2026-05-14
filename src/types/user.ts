@@ -21,7 +21,7 @@ export const UserPermissions = [
   "see_hides",
   "access_without_password",
   "offline_download",
-  "write",
+  "write_content",
   "rename",
   "move",
   "copy",
@@ -33,6 +33,7 @@ export const UserPermissions = [
   "read_archives",
   "decompress",
   "share",
+  "customize_share_id",
 ] as const
 
 export const UserMethods = {

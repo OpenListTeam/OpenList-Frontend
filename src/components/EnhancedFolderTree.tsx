@@ -37,8 +37,10 @@ export interface EnhancedFolderTreeProps {
   showHiddenFolder?: boolean
 }
 
-interface EnhancedFolderTreeContext
-  extends Omit<EnhancedFolderTreeProps, "handle"> {
+interface EnhancedFolderTreeContext extends Omit<
+  EnhancedFolderTreeProps,
+  "handle"
+> {
   value: Accessor<string>
 }
 

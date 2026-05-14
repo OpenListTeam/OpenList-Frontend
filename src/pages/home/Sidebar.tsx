@@ -15,7 +15,7 @@ import { useRouter } from "~/hooks"
 import { local, objStore } from "~/store"
 import { objBoxRef } from "./Obj"
 
-function SidebarPannel() {
+function SidebarPanel() {
   const { to } = useRouter()
   const location = useLocation()
 
@@ -104,7 +104,7 @@ export function Sidebar() {
 
   return (
     <Show when={visible()}>
-      <SidebarPannel />
+      <SidebarPanel />
     </Show>
   )
 }

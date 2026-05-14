@@ -29,7 +29,7 @@ const TwoFA = () => {
   }
   const [code, setCode] = createSignal("")
   init()
-  const [verifyLoadind, verify] = useFetch(
+  const [verifyLoading, verify] = useFetch(
     (): PEmptyResp =>
       r.post("/auth/2fa/verify", {
         code: code(),
@@ -64,7 +64,7 @@ const TwoFA = () => {
               }
             }}
           />
-          <Button loading={verifyLoadind()} onClick={verify2FA}>
+          <Button loading={verifyLoading()} onClick={verify2FA}>
             {t("users.verify")}
           </Button>
         </VStack>

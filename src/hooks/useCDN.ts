@@ -21,24 +21,14 @@ export const useCDN = () => {
 
   const katexCSSPath = () => {
     return import.meta.env.VITE_LITE === "true"
-      ? npm("katex", "0.16.11", "dist/katex.min.css")
+      ? npm("katex", "0.16.45", "dist/katex.min.css")
       : `${static_path}/katex/katex.min.css`
   }
 
   const mermaidJSPath = () => {
     return import.meta.env.VITE_LITE === "true"
-      ? npm("mermaid", "11.1.0", "dist/mermaid.min.js")
+      ? npm("mermaid", "11.15.0", "dist/mermaid.min.js")
       : `${static_path}/mermaid/mermaid.min.js`
-  }
-
-  const ruffleJSPath = () => {
-    return import.meta.env.VITE_LITE === "true"
-      ? npm(
-          packageJson.name,
-          packageJson.version,
-          "dist/static/ruffle/ruffle.js",
-        )
-      : `${static_path}/ruffle/ruffle.js`
   }
 
   const libHeifPath = () => {
@@ -64,7 +54,6 @@ export const useCDN = () => {
     monacoPath,
     katexCSSPath,
     mermaidJSPath,
-    ruffleJSPath,
     libHeifPath,
     libAssPath,
     fontsPath,

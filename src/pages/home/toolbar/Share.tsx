@@ -123,6 +123,16 @@ export const Share = () => {
           <Match when={link() === ""}>
             <ModalBody>
               <VStack spacing="$1" alignItems="flex-start">
+                <Text size="sm">{t("shares.id")}</Text>
+                <Input
+                  size="sm"
+                  value={share.id ?? ""}
+                  maxLength={64}
+                  placeholder={t("shares.id_placeholder")}
+                  onInput={(e) => {
+                    setShare("id", e.currentTarget.value)
+                  }}
+                />
                 <Text size="sm">{t("shares.remark")}</Text>
                 <Textarea
                   size="sm"

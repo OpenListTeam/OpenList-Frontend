@@ -3,15 +3,17 @@
     "strict": true,
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "types": ["vite/client", "@hrgui/libass-wasm-ts"],
+    "types": ["vite/client"],
     "noEmit": true,
     "isolatedModules": false,
     "paths": {
+      "@hope-ui/solid": ["./node_modules/@hope-ui/solid/dist/index.d.ts"],
+      "solid-contextmenu": ["./node_modules/solid-contextmenu/dist/index.d.ts"],
       "~/*": ["./src/*"]
       // "@solidjs/router": ["./solid-router/src/index.tsx"]
     },

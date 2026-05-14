@@ -40,6 +40,7 @@ import {
   UserPermissions,
   ObjType,
   ArchiveObj,
+  Resp,
 } from "~/types"
 import { useFetch, useRouter, useT, useUtil, useLink } from "~/hooks"
 import { ListTitle } from "~/pages/home/folder/List"
@@ -53,6 +54,7 @@ import {
   fsArchiveList,
   fsArchiveMeta,
   getFileSize,
+  handleRespWithoutNotify,
   hoverColor,
 } from "~/utils"
 import naturalSort from "typescript-natural-sort"
@@ -260,7 +262,7 @@ const Preview = () => {
     "",
   )
   const [selectedFile, setSelectedFile] = createSignal<string>("")
-  const [selectedPreviewName, setSelectedPreviewName] = createSignal("")
+  const [selectedPreviewKey, setSelectedPreviewKey] = createSignal("")
   const getObjsMutex = createMutex()
   const toList = (tree: ObjTree[] | Obj[]): List => {
     let l: List = {}
@@ -272,9 +274,8 @@ const Preview = () => {
     })
     return l
   }
-  const dealWithError = (resp: { code: number; message: string }): boolean => {
-    if (resp.code === 200) return false
-    if (resp.code === 202) {
+  const handleErrorResponse = (message: string, code: number | undefined) => {
+    if (code === 202) {
       batch(() => {
         if (archive_pass !== "") {
           setWrongPassword(true)
@@ -283,9 +284,13 @@ const Preview = () => {
         setError("")
       })
     } else {
-      setError(resp.message)
+      setError(message)
     }
-    return true
+  }
+  const dealWithError = <T,>(resp: Resp<T>): boolean => {
+    let err = true
+    handleRespWithoutNotify(resp, () => (err = false), handleErrorResponse)
+    return err
   }
   const getObjs = async (innerPath: string[]) => {
     await getObjsMutex.acquire()
@@ -395,7 +400,13 @@ const Preview = () => {
     const innerPath =
       innerPaths().length > 0 ? "/" + innerPaths().join("/") : ""
 
-    return { ...obj, sign: sign, inner_path: innerPath, archive: originalObj }
+    return {
+      ...obj,
+      sign: sign,
+      inner_path: innerPath,
+      archive: originalObj,
+      pass: archive_pass,
+    }
   }
 
   const sortObjs = (orderBy: OrderBy, reverse?: boolean) => {
@@ -425,8 +436,8 @@ const Preview = () => {
   const currentPreview = createMemo(() => {
     const p = previews()
     if (p.length === 0) return null
-    if (selectedPreviewName()) {
-      const found = p.find((item) => item.name === selectedPreviewName())
+    if (selectedPreviewKey()) {
+      const found = p.find((item) => item.key === selectedPreviewKey())
       if (found) return found
     }
     return p[0]
@@ -468,7 +479,7 @@ const Preview = () => {
 
   createEffect(() => {
     selectedFile()
-    setSelectedPreviewName("")
+    setSelectedPreviewKey("")
   })
   return (
     <VStack spacing="$2" w="$full">
@@ -558,42 +569,32 @@ const Preview = () => {
               </MaybeLoading>
             }
           >
-            <Show when={selectedFile()} fallback={<FullLoading />}>
-              <VStack w="$full" spacing="$2" alignItems="center">
-                <Show when={currentPreview()}>
-                  <Suspense fallback={<FullLoading />}>
-                    <Dynamic
-                      component={currentPreview()?.component}
-                      images={files().filter((f) => f.type === ObjType.IMAGE)}
-                      navigate={(name) => {
-                        changeFile(name)
-                      }}
-                    />
-                  </Suspense>
-                </Show>
-                <HStack w="$full" justifyContent="center" spacing="$2" p="$2">
-                  <Show when={previews().length > 1}>
-                    <SelectWrapper
-                      value={currentPreview()?.name || ""}
-                      onChange={(value) =>
-                        setSelectedPreviewName(String(value))
-                      }
-                      options={previews().map((p) => ({
-                        value: p.name,
-                        label: p.name,
-                      }))}
-                    />
-                  </Show>
-                  <OpenWith
-                    file={{
-                      name: selectedFile(),
-                      raw_url: objStore.raw_url,
-                      d_url: objStore.raw_url,
+            <VStack w="$full" spacing="$2" alignItems="center">
+              <Show when={currentPreview()}>
+                <Suspense fallback={<FullLoading />}>
+                  <Dynamic
+                    component={currentPreview()?.component}
+                    images={files().filter((f) => f.type === ObjType.IMAGE)}
+                    navigate={(name) => {
+                      changeFile(name)
                     }}
                   />
-                </HStack>
-              </VStack>
-            </Show>
+                </Suspense>
+              </Show>
+              <HStack w="$full" justifyContent="center" spacing="$2" p="$2">
+                <Show when={previews().length > 1}>
+                  <SelectWrapper
+                    value={currentPreview()?.key || ""}
+                    onChange={(value) => setSelectedPreviewKey(String(value))}
+                    options={previews().map((p) => ({
+                      value: p.key,
+                      label: p.name,
+                    }))}
+                  />
+                </Show>
+                <OpenWith />
+              </HStack>
+            </VStack>
           </Show>
         </Match>
       </Switch>

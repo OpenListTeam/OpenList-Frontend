@@ -10,13 +10,23 @@ import {
   Flex,
   Textarea,
   FormHelperText,
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectListbox,
+  SelectOption,
+  SelectOptionText,
+  SelectOptionIndicator,
+  SelectValue,
+  SelectIcon,
+  SelectPlaceholder,
 } from "@hope-ui/solid"
 import { MaybeLoading, FolderChooseInput } from "~/components"
 import { useFetch, useRouter, useT } from "~/hooks"
 import { handleResp, notify, r } from "~/utils"
-import { Meta, PEmptyResp, PResp } from "~/types"
+import { Meta, PEmptyResp, PPageResp, PResp, User } from "~/types"
 import { createStore } from "solid-js/store"
-import { For, Show } from "solid-js"
+import { createSignal, For, Show } from "solid-js"
 
 type ItemProps = {
   name: string
@@ -27,67 +37,101 @@ type ItemProps = {
   | { type: "string"; value: string; onChange: (val: string) => void }
   | { type: "text"; value: string; onChange: (val: string) => void }
   | { type: "bool"; value: boolean; onChange: (val: boolean) => void }
+  | { type: "users"; value: number[]; onChange: (val: number[]) => void }
 )
-const Item = (props: ItemProps) => {
-  const t = useT()
-  return (
-    <FormControl w="$full" display="flex" flexDirection="column">
-      <FormLabel for={props.name} display="flex" alignItems="center">
-        {t(`metas.${props.name}`)}
-      </FormLabel>
-      <Flex
-        w="$full"
-        direction={
-          props.type === "bool" ? "row" : { "@initial": "column", "@md": "row" }
-        }
-        gap="$2"
-      >
-        {props.type === "string" ? (
-          <Input
-            id={props.name}
-            value={props.value}
-            onInput={(e) => props.onChange(e.currentTarget.value)}
-          />
-        ) : props.type === "bool" ? (
-          <HopeSwitch
-            id={props.name}
-            checked={props.value}
-            onChange={(e: any) => props.onChange(e.currentTarget.checked)}
-          />
-        ) : (
-          <Textarea
-            id={props.name}
-            value={props.value}
-            onChange={(e) => props.onChange(e.currentTarget.value)}
-          />
-        )}
-        <FormControl w="fit-content" display="flex">
-          <Checkbox
-            css={{ whiteSpace: "nowrap" }}
-            id={`${props.name}_sub`}
-            onChange={(e: any) => props.onSub(e.currentTarget.checked)}
-            color="$neutral10"
-            fontSize="$sm"
-            checked={props.sub}
-          >
-            {t("metas.apply_sub")}
-          </Checkbox>
-        </FormControl>
-      </Flex>
-      <Show when={props.help}>
-        <FormHelperText>{t(`metas.${props.name}_help`)}</FormHelperText>
-      </Show>
-    </FormControl>
-  )
-}
 
 const AddOrEdit = () => {
+  const Item = (props: ItemProps) => {
+    const t = useT()
+    return (
+      <FormControl w="$full" display="flex" flexDirection="column">
+        <FormLabel for={props.name} display="flex" alignItems="center">
+          {t(`metas.${props.name}`)}
+        </FormLabel>
+        <Flex
+          w="$full"
+          direction={
+            props.type === "bool"
+              ? "row"
+              : { "@initial": "column", "@md": "row" }
+          }
+          gap="$2"
+        >
+          {props.type === "string" ? (
+            <Input
+              id={props.name}
+              value={props.value}
+              onInput={(e) => props.onChange(e.currentTarget.value)}
+            />
+          ) : props.type === "bool" ? (
+            <HopeSwitch
+              id={props.name}
+              checked={props.value}
+              onChange={(e: any) => props.onChange(e.currentTarget.checked)}
+            />
+          ) : props.type === "text" ? (
+            <Textarea
+              id={props.name}
+              value={props.value}
+              onChange={(e) => props.onChange(e.currentTarget.value)}
+            />
+          ) : props.type === "users" ? (
+            <Select
+              value={props.value}
+              multiple
+              onChange={(value: any) => props.onChange(value)}
+            >
+              <SelectTrigger>
+                <SelectPlaceholder>
+                  {t(`metas.all_permitted_users`)}
+                </SelectPlaceholder>
+                <SelectValue />
+                <SelectIcon />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectListbox>
+                  <For each={users()}>
+                    {(item) => (
+                      <SelectOption value={item.id}>
+                        <SelectOptionText>{item.username}</SelectOptionText>
+                        <SelectOptionIndicator />
+                      </SelectOption>
+                    )}
+                  </For>
+                </SelectListbox>
+              </SelectContent>
+            </Select>
+          ) : null}
+          <FormControl w="fit-content" display="flex">
+            <Checkbox
+              css={{ whiteSpace: "nowrap" }}
+              id={`${props.name}_sub`}
+              onChange={(e: any) => props.onSub(e.currentTarget.checked)}
+              color="$neutral10"
+              fontSize="$sm"
+              checked={props.sub}
+            >
+              {t("metas.apply_sub")}
+            </Checkbox>
+          </FormControl>
+        </Flex>
+        <Show when={props.help}>
+          <FormHelperText>{t(`metas.${props.name}_help`)}</FormHelperText>
+        </Show>
+      </FormControl>
+    )
+  }
+
   const t = useT()
   const { params, back } = useRouter()
   const { id } = params
   const [meta, setMeta] = createStore<Meta>({
     id: 0,
     path: "",
+    read_users: [],
+    read_users_sub: false,
+    write_users: [],
+    write_users_sub: false,
     password: "",
     p_sub: false,
     write: false,
@@ -102,19 +146,30 @@ const AddOrEdit = () => {
   const [metaLoading, loadMeta] = useFetch(
     (): PResp<Meta> => r.get(`/admin/meta/get?id=${id}`),
   )
+  const [users, setUsers] = createSignal<User[]>([])
+  const [getUsersLoading, getUsers] = useFetch(
+    (): PPageResp<User> => r.get("/admin/user/list"),
+  )
 
   const initEdit = async () => {
-    const resp = await loadMeta()
-    handleResp<Meta>(resp, setMeta)
+    const respMeta = await loadMeta()
+    handleResp<Meta>(respMeta, setMeta)
   }
+  const initUsers = async () => {
+    const respUsers = await getUsers()
+    handleResp(respUsers, (data) => setUsers(data.content))
+  }
+
   if (id) {
     initEdit()
   }
+  initUsers()
+
   const [okLoading, ok] = useFetch((): PEmptyResp => {
     return r.post(`/admin/meta/${id ? "update" : "create"}`, meta)
   })
   return (
-    <MaybeLoading loading={metaLoading()}>
+    <MaybeLoading loading={metaLoading() || getUsersLoading()}>
       <VStack w="$full" alignItems="start" spacing="$2">
         <Heading>{t(`global.${id ? "edit" : "add"}`)}</Heading>
         <FormControl w="$full" display="flex" flexDirection="column" required>
@@ -142,7 +197,19 @@ const AddOrEdit = () => {
           each={
             [
               { name: "password", type: "string", sub: "p_sub" },
-              { name: "write", type: "bool", sub: "w_sub" },
+              {
+                name: "read_users",
+                type: "users",
+                sub: "read_users_sub",
+                help: true,
+              },
+              {
+                name: "write_users",
+                type: "users",
+                sub: "write_users_sub",
+                help: true,
+              },
+              { name: "write", type: "bool", sub: "w_sub", help: true },
               { name: "hide", type: "text", sub: "h_sub", help: true },
               { name: "header", type: "text", sub: "header_sub", help: true },
               { name: "readme", type: "text", sub: "r_sub", help: true },

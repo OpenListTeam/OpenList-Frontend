@@ -1,13 +1,19 @@
 import { Box, Center } from "@hope-ui/solid"
 import { Show, createMemo, createSignal, onCleanup, onMount } from "solid-js"
 import { useRouter, useLink, useFetch } from "~/hooks"
-import { getMainColor, getSettingBool, objStore, password } from "~/store"
+import {
+  getMainColor,
+  getSettingBool,
+  objStore,
+  password,
+  setShouldKeepState,
+} from "~/store"
 import { ObjType, PResp } from "~/types"
 import { ext, handleResp, notify, r, pathDir, pathJoin } from "~/utils"
 import Artplayer from "artplayer"
-import { type Option } from "artplayer/types/option"
-import { type Setting } from "artplayer/types/setting"
-import { type Events } from "artplayer/types/events"
+import { type Option } from "artplayer"
+import { type Setting } from "artplayer"
+import { type Events } from "artplayer"
 import artplayerPluginDanmuku from "artplayer-plugin-danmuku"
 import { type Option as DanmukuOption } from "artplayer-plugin-danmuku"
 import artplayerPluginAss from "~/components/artplayer-plugin-ass"
@@ -78,7 +84,6 @@ const Preview = () => {
   let option: Option = {
     id: pathname(),
     container: "#video-player",
-    title: objStore.obj.name,
     volume: 1.0,
     autoplay: getSettingBool("video_autoplay"),
     autoSize: false,
@@ -301,7 +306,7 @@ const Preview = () => {
       }),
     )
   }
-  const [loading, post] = useFetch(
+  const [, post] = useFetch(
     (): PResp<Data> =>
       r.post("/fs/other", {
         path: pathname(),
@@ -420,7 +425,14 @@ const Preview = () => {
     })
   }
   onCleanup(() => {
-    player?.destroy()
+    setShouldKeepState(false)
+    if (player) {
+      player.fullscreenWeb = false
+      player.fullscreen = false
+      player.pip = false
+      if (player.video) player.video.src = ""
+      player.destroy()
+    }
     window.clearInterval(interval)
   })
   const [autoNext, setAutoNext] = createSignal()

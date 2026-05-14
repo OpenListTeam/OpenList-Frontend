@@ -1,4 +1,4 @@
-import { ObjStore, objStore, State } from "~/store/obj"
+import { shouldKeepState, ObjStore, objStore, State } from "~/store/obj"
 import { getGlobalPage, setGlobalPage } from "~/hooks"
 
 interface History {
@@ -40,10 +40,10 @@ export const recordHistory = (path: string, page?: number) => {
 
 export const recoverHistory = async (path: string, page?: number) => {
   const key = getHistoryKey(path, page)
-  if (!HistoryMap.has(key)) return
-  const history = HistoryMap.get(key)!
+  const history = HistoryMap.get(key)
+  if (!history) return
   setGlobalPage(history.page)
-  ObjStore.setState(State.Initial)
+  shouldKeepState() || ObjStore.setState(State.Initial)
   await waitForNextFrame()
   ObjStore.set(JSON.parse(JSON.stringify(history.obj)))
   await waitForNextFrame()

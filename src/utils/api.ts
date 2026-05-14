@@ -8,7 +8,7 @@ import {
   FsSearchResp,
   RenameObj,
   ArchiveMeta,
-  ArchiveList,
+  PPageResp,
 } from "~/types"
 import { r } from "."
 
@@ -172,7 +172,7 @@ export const fsArchiveList = (
   per_page = 0,
   refresh = false,
   cancelToken?: CancelToken,
-): PResp<ArchiveList> => {
+): PPageResp<Obj> => {
   return r.post(
     "/fs/archive/list",
     {

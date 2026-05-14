@@ -1,10 +1,12 @@
 import { UploadFileProps } from "./types"
-import { createMD5, createSHA1, createSHA256 } from "hash-wasm"
+import type { WorkerMessage } from "./hash-worker"
+import HashWorker from "./hash-worker?worker&inline"
 
 export const traverseFileTree = async (entry: FileSystemEntry) => {
-  let res: File[] = []
+  const res: File[] = []
+
   const internalProcess = async (entry: FileSystemEntry, path: string) => {
-    const promise = new Promise<{}>((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const errorCallback: ErrorCallback = (e) => {
         console.error(e)
         reject(e)
@@ -16,7 +18,7 @@ export const traverseFileTree = async (entry: FileSystemEntry) => {
           })
           res.push(newFile)
           console.log(newFile)
-          resolve({})
+          resolve()
         }, errorCallback)
       } else if (entry.isDirectory) {
         const dirReader = (entry as FileSystemDirectoryEntry).createReader()
@@ -28,10 +30,9 @@ export const traverseFileTree = async (entry: FileSystemEntry) => {
             if (entries.length > 0) {
               readEntries()
             } else {
-              resolve({})
+              resolve()
             }
 
-            /*  resolve({})
             /**
             why? https://stackoverflow.com/questions/3590058/does-html5-allow-drag-drop-upload-of-folders-or-a-folder-tree/53058574#53058574
             Unfortunately none of the existing answers are completely correct because 
@@ -42,16 +43,12 @@ export const traverseFileTree = async (entry: FileSystemEntry) => {
             until it returns an empty array. If we don't, we will miss some files/sub-directories in a directory 
             e.g. in Chrome, readEntries will only return at most 100 entries at a time.
             
-            if (entries.length > 0) {
-              readEntries()
-            }
             */
           }, errorCallback)
         }
         readEntries()
       }
     })
-    await promise
   }
   await internalProcess(entry, "")
   return res
@@ -60,7 +57,7 @@ export const traverseFileTree = async (entry: FileSystemEntry) => {
 export const File2Upload = (file: File): UploadFileProps => {
   return {
     name: file.name,
-    path: file.webkitRelativePath ? file.webkitRelativePath : file.name,
+    path: file.webkitRelativePath || file.name,
     size: file.size,
     progress: 0,
     speed: 0,
@@ -68,24 +65,37 @@ export const File2Upload = (file: File): UploadFileProps => {
   }
 }
 
-export const calculateHash = async (file: File) => {
-  const md5Digest = await createMD5()
-  const sha1Digest = await createSHA1()
-  const sha256Digest = await createSHA256()
-  const reader = file.stream().getReader()
-  const read = async () => {
-    const { done, value } = await reader.read()
-    if (done) {
-      return
-    }
-    md5Digest.update(value)
-    sha1Digest.update(value)
-    sha256Digest.update(value)
-    await read()
-  }
-  await read()
-  const md5 = md5Digest.digest("hex")
-  const sha1 = sha1Digest.digest("hex")
-  const sha256 = sha256Digest.digest("hex")
-  return { md5, sha1, sha256 }
+export const calculateHash = async (
+  file: File,
+  onProgress?: (progress: number) => void,
+) => {
+  return new Promise<{ md5: string; sha1: string; sha256: string }>(
+    (resolve, reject) => {
+      const worker = new HashWorker()
+
+      const terminate = (fn: () => void) => {
+        worker.terminate()
+        fn()
+      }
+
+      worker.postMessage({ file })
+
+      worker.onmessage = (e: MessageEvent<WorkerMessage>) => {
+        const data = e.data
+        switch (data.type) {
+          case "progress":
+            onProgress?.(data.progress)
+            break
+          case "result":
+            terminate(() => resolve(data.hash))
+            break
+          case "error":
+            terminate(() => reject(new Error(data.error)))
+            break
+        }
+      }
+
+      worker.onerror = (e) => terminate(() => reject(e))
+    },
+  )
 }

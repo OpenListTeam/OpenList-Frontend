@@ -3,7 +3,7 @@ import { getIframePreviews, me, getSettingBool, isArchive } from "~/store"
 import { Obj, ObjType, UserMethods, UserPermissions, ArchiveObj } from "~/types"
 import { ext } from "~/utils"
 import { generateIframePreview } from "./iframe"
-import { useRouter } from "~/hooks"
+import { useRouter, useT } from "~/hooks"
 
 type Ext = string[] | "*" | ((name: string) => boolean)
 type Prior = boolean | (() => boolean)
@@ -28,7 +28,7 @@ const isPrior = (p: Prior): boolean => {
 }
 
 export interface Preview {
-  name: string
+  key: string
   type?: ObjType
   exts?: Ext
   provider?: RegExp
@@ -37,48 +37,52 @@ export interface Preview {
   availableInArchive?: boolean
 }
 
-export type PreviewComponent = Pick<Preview, "name" | "component">
+export interface PreviewComponent {
+  key: string
+  name: string
+  component: Component
+}
 
 const previews: Preview[] = [
   {
-    name: "HTML render",
+    key: "html",
     exts: ["html"],
     component: lazy(() => import("./html")),
     prior: true,
   },
   {
-    name: "Aliyun Video Previewer",
+    key: "aliyun_video",
     type: ObjType.VIDEO,
     provider: /^Aliyundrive(Open)?$/,
     component: lazy(() => import("./aliyun_video")),
     prior: true,
   },
   {
-    name: "Markdown",
+    key: "markdown",
     type: ObjType.TEXT,
     component: lazy(() => import("./markdown")),
     prior: true,
   },
   {
-    name: "Flash",
+    key: "flash",
     exts: ["swf"],
     component: lazy(() => import("./flash")),
     prior: true,
   },
   {
-    name: "Markdown with word wrap",
+    key: "markdown_with_word_wrap",
     type: ObjType.TEXT,
     component: lazy(() => import("./markdown_with_word_wrap")),
     prior: true,
   },
   {
-    name: "Url Open",
+    key: "url_open",
     exts: ["url"],
     component: lazy(() => import("./url")),
     prior: true,
   },
   {
-    name: "Text Editor",
+    key: "text_editor",
     type: ObjType.TEXT,
     exts: ["url"],
     component: lazy(() => import("./text-editor")),
@@ -86,73 +90,83 @@ const previews: Preview[] = [
     availableInArchive: false,
   },
   {
-    name: "Image",
+    key: "image",
     type: ObjType.IMAGE,
     component: lazy(() => import("./image")),
     prior: true,
   },
   {
-    name: "Video",
+    key: "video",
     type: ObjType.VIDEO,
     component: lazy(() => import("./video")),
     prior: true,
   },
   {
-    name: "Audio",
+    key: "audio",
     type: ObjType.AUDIO,
     component: lazy(() => import("./audio")),
     prior: true,
   },
   {
-    name: "Ipa",
+    key: "ipa",
     exts: ["ipa", "tipa"],
     component: lazy(() => import("./ipa")),
     prior: true,
   },
   {
-    name: "Plist",
+    key: "plist",
     exts: ["plist"],
     component: lazy(() => import("./plist")),
     prior: true,
   },
   {
-    name: "HEIC",
+    key: "heic",
     exts: ["heic", "heif", "avif", "vvc", "avc", "jpeg", "jpg"],
     component: lazy(() => import("./heic")),
     prior: true,
   },
+  ...(import.meta.env.VITE_LITE === "true"
+    ? []
+    : [
+        {
+          key: "pdf",
+          exts: ["pdf"],
+          component: lazy(() => import("./pdf")),
+          prior: true,
+        },
+      ]),
   {
-    name: "PPT Preview",
+    key: "ppt",
     exts: ["pptx"],
     component: lazy(() => import("./ppt")),
     prior: true,
   },
   {
-    name: "XLS Preview",
+    key: "xls",
     exts: ["xlsx", "xls"],
     component: lazy(() => import("./xls")),
     prior: true,
   },
   {
-    name: "DOC Preview",
+    key: "doc",
     exts: ["docx", "doc"],
     component: lazy(() => import("./doc")),
     prior: true,
   },
   {
-    name: "Asciinema",
+    key: "asciinema",
     exts: ["cast"],
     component: lazy(() => import("./asciinema")),
     prior: true,
   },
   {
-    name: "Video360",
+    key: "video360",
     type: ObjType.VIDEO,
     component: lazy(() => import("./video360")),
     prior: true,
   },
   {
-    name: "Archive Preview",
+    key: "archive",
     exts: (name: string) => {
       const index = UserPermissions.findIndex(
         (item) => item === "read_archives",
@@ -182,6 +196,7 @@ export const getPreviews = (
   file: Obj & { provider: string },
 ): PreviewComponent[] => {
   const { searchParams, isShare } = useRouter()
+  const t = useT()
   const typeOverride =
     ObjType[searchParams["type"]?.toUpperCase() as keyof typeof ObjType]
   const res: PreviewComponent[] = []
@@ -201,7 +216,11 @@ export const getPreviews = (
         (typeOverride && preview.type === typeOverride) ||
         extsContains(preview.exts, file.name)
       ) {
-        const r = { name: preview.name, component: preview.component }
+        const r = {
+          key: preview.key,
+          name: t(`home.preview.names.${preview.key}`),
+          component: preview.component,
+        }
         // Skip previews that are not available in archive when file is in archive
         if (isInArchive && preview.availableInArchive === false) {
           return
@@ -217,7 +236,8 @@ export const getPreviews = (
   // iframe previews
   const iframePreviews = getIframePreviews(file.name)
   const matchedIframePreviews = iframePreviews.map((preview) => ({
-    name: preview.key,
+    key: `iframe-${preview.key}`,
+    name: preview.key, // TODO: Add name field to backend
     component: generateIframePreview(preview.value),
   }))
   // Condition for iframe previews to respect the "preview_download_by_default" setting
@@ -229,7 +249,8 @@ export const getPreviews = (
 
   // download page
   const downloadComponent: PreviewComponent = {
-    name: "Download",
+    key: "download",
+    name: t("home.preview.names.download"),
     component: lazy(() => import("./download")),
   }
 
@@ -252,11 +273,15 @@ export const getPreviews = (
     if (!isShare() || getSettingBool("share_preview")) {
       const textPreviewsToAdd = previews
         .filter((p) =>
-          ["Markdown", "Markdown with word wrap", "Text Editor"].includes(
-            p.name,
+          ["markdown", "markdown_with_word_wrap", "text_editor"].includes(
+            p.key,
           ),
         )
-        .map((p) => ({ name: p.name, component: p.component }))
+        .map((p) => ({
+          key: p.key,
+          name: t(`home.preview.names.${p.key}`),
+          component: p.component,
+        }))
       res.push(...textPreviewsToAdd)
     }
   } else {

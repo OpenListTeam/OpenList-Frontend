@@ -59,17 +59,17 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24.15.0"
           registry-url: "https://registry.npmjs.org"
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           run_install: false
 
       - name: Import GPG key
         if: github.event_name == 'workflow_dispatch'
-        uses: crazy-max/ghaction-import-gpg@v6
+        uses: crazy-max/ghaction-import-gpg@v7
         with:
           gpg_private_key: ${{ secrets.BOT_GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.BOT_GPG_PASSPHRASE }}
@@ -178,19 +178,16 @@ jobs:
             exit 1
           fi
 
-      - name: Publish npm
+      - name: Publish npm (Trusted publishing)
         run: |
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
-
-          if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
-            echo "NPM_TOKEN not set, performing dry run"
-            pnpm publish --dry-run --no-git-checks --access public
+          if [ "${{ secrets[format('{0}', 'NPM_PUBLISH')] }}" = "yes" ]; then
+            echo "NPM_PUBLISH=yes, publishing to npm with trusted publishing..."
+            pnpm publish --no-git-checks --access public --provenance
           else
-            echo "Publishing to npm..."
-            pnpm publish --no-git-checks --access public
+            echo "NPM_PUBLISH is not yes, performing dry run"
+            pnpm publish --dry-run --no-git-checks --access public
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
 permissions:
   contents: write
+  id-token: write
