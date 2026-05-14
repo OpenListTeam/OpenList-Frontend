@@ -65,7 +65,7 @@ export const ContextMenu = () => {
         )}
       </For>
       <Item
-        hidden={!userCan("share")}
+        hidden={!userCan("share") || isShare()}
         onClick={() => {
           bus.emit("tool", "share")
         }}
