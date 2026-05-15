@@ -59,7 +59,7 @@ const Profile = () => {
 
   interface Webauthntemp {
     session: string
-    options: PublicKeyCredentialCreationOptionsJSON
+    options: { publicKey: PublicKeyCredentialCreationOptionsJSON }
   }
 
   const [getauthncredentialsloading, getauthncredentials] = useFetch(
@@ -281,7 +281,7 @@ const Profile = () => {
               try {
                 const browserresponse = (await navigator.credentials.create({
                   publicKey: PublicKeyCredential.parseCreationOptionsFromJSON(
-                    data.options,
+                    data.options.publicKey,
                   ),
                 })) as PublicKeyCredential
                 handleResp(

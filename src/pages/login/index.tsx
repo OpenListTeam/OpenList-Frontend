@@ -89,7 +89,7 @@ const Login = () => {
   )
   interface WebAuthnTemp {
     session: string
-    options: PublicKeyCredentialRequestOptionsJSON
+    options: { publicKey: PublicKeyCredentialRequestOptionsJSON }
   }
   const [, getauthntemp] = useFetch(
     (username, signal: AbortSignal | undefined): PResp<WebAuthnTemp> =>
@@ -137,7 +137,7 @@ const Login = () => {
       try {
         const requestOptions: CredentialRequestOptions = {
           publicKey: PublicKeyCredential.parseRequestOptionsFromJSON(
-            data.options,
+            data.options.publicKey,
           ),
           signal: controller.signal,
         }
