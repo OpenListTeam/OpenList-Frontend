@@ -30,13 +30,8 @@ import { createStorageSignal } from "@solid-primitives/storage"
 import { getSetting, getSettingBool } from "~/store"
 import { SSOLogin } from "./SSOLogin"
 import { IoFingerPrint } from "solid-icons/io"
-import {
-  parseRequestOptionsFromJSON,
-  get,
-  AuthenticationPublicKeyCredential,
-  supported,
-  CredentialRequestOptionsJSON,
-} from "@github/webauthn-json/browser-ponyfill"
+const supported = () =>
+  !!globalThis.PublicKeyCredential?.parseRequestOptionsFromJSON
 
 const Login = () => {
   const logos = getSetting("logo").split("\n")
@@ -77,13 +72,13 @@ const Login = () => {
   const [, postauthnlogin] = useFetch(
     (
       session: string,
-      credentials: AuthenticationPublicKeyCredential,
+      credentials: PublicKeyCredential,
       username: string,
       signal: AbortSignal | undefined,
     ): Promise<Resp<{ token: string }>> =>
       r.post(
         "/authn/webauthn_finish_login?username=" + username,
-        JSON.stringify(credentials),
+        JSON.stringify(credentials.toJSON()),
         {
           headers: {
             session: session,
@@ -94,7 +89,7 @@ const Login = () => {
   )
   interface WebAuthnTemp {
     session: string
-    options: CredentialRequestOptionsJSON
+    options: PublicKeyCredentialRequestOptionsJSON
   }
   const [, getauthntemp] = useFetch(
     (username, signal: AbortSignal | undefined): PResp<WebAuthnTemp> =>
@@ -108,7 +103,6 @@ const Login = () => {
       PublicKeyCredential &&
       "isConditionalMediationAvailable" in PublicKeyCredential
     ) {
-      // @ts-expect-error
       return await PublicKeyCredential.isConditionalMediationAvailable()
     } else {
       return false
@@ -141,13 +135,18 @@ const Login = () => {
     const resp = await getauthntemp(username_login, controller.signal)
     handleResp(resp, async (data) => {
       try {
-        const options = parseRequestOptionsFromJSON(data.options)
-        options.signal = controller.signal
-        if (conditional) {
-          // @ts-expect-error
-          options.mediation = "conditional"
+        const requestOptions: CredentialRequestOptions = {
+          publicKey: PublicKeyCredential.parseRequestOptionsFromJSON(
+            data.options,
+          ),
+          signal: controller.signal,
         }
-        const credentials = await get(options)
+        if (conditional) {
+          requestOptions.mediation = "conditional"
+        }
+        const credentials = (await navigator.credentials.get(
+          requestOptions,
+        )) as PublicKeyCredential
         const resp = await postauthnlogin(
           data.session,
           credentials,
