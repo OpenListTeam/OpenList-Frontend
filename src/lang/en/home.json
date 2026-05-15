@@ -123,7 +123,7 @@
       "ed2k_tool_hint": "ed2k links detected. aria2/qBittorrent do not support ed2k protocol. The system will automatically try Thunder tools, or you can manually select Thunder/ThunderX/ThunderBrowser.",
       "generate_cas_file": "Generate CAS File",
       "cas_file_generated": "CAS file generated successfully",
-      "cas_file_generate_failed": "Failed to generate CAS file"
+      "cas_file_generate_failed": "Failed to generate CAS file",
       "file_selection_hint": "Note: The torrent file list is for reference only. Partial file selection is not yet supported — all files in the torrent will be downloaded."
     },
     "delete_policy": {
