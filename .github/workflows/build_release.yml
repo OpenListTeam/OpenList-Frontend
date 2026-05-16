@@ -43,7 +43,7 @@ jobs:
 
       - name: Validate and trim semver
         id: semver
-        uses: matt-usurp/validate-semver@v2
+        uses: matt-usurp/validate-semver@v3.0.0
         with:
           version: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
 
