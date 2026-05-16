@@ -132,6 +132,18 @@ const Preview = () => {
         flvPlayer.attachMediaElement(video)
         flvPlayer.load()
       },
+      m2ts: function (video: HTMLMediaElement, url: string) {
+        flvPlayer?.destroy()
+        flvPlayer = mpegts.createPlayer(
+          {
+            type: "m2ts",
+            url: url,
+          },
+          { referrerPolicy: "same-origin" },
+        )
+        flvPlayer.attachMediaElement(video)
+        flvPlayer.load()
+      },
       m3u8: function (video: HTMLMediaElement, url: string) {
         hlsPlayer?.destroy()
         hlsPlayer = new Hls()
