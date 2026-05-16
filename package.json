@@ -97,7 +97,7 @@
     "mark.js": "^8.11.1",
     "mitt": "^3.0.1",
     "monaco-editor": "0.55.1",
-    "mpegts.js": "^1.8.0",
+    "mpegts.js": "github:xqq/mpegts.js#c91ab33a98f63a5b2fda7fcad9836c628eb328b9",
     "qrcode": "^1.5.4",
     "rehype-katex": "7.0.1",
     "rehype-raw": "^7.0.0",
