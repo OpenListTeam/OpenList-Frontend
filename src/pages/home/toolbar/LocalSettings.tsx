@@ -102,6 +102,7 @@ function LocalSettingEdit(props: LocalSetting) {
               }}
               style={{
                 "-moz-appearance": "textfield",
+                // @ts-ignore
                 "::-webkit-inner-spin-button": { display: "none" },
                 "::-webkit-outer-spin-button": { display: "none" },
               }}
