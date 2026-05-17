@@ -238,10 +238,9 @@ export const fetchText = async (
         : undefined,
     })
     const content = await resp.data.arrayBuffer()
+    const rawContentType = resp.headers["content-type"]
     const contentType =
-      typeof resp.headers["Content-Type"] === "string"
-        ? resp.headers["Content-Type"]
-        : undefined
+      typeof rawContentType === "string" ? rawContentType : undefined
     return { content, contentType }
   } catch (e) {
     return ts
