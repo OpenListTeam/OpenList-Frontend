@@ -18,8 +18,8 @@ importers:
         specifier: ^2.14.2
         version: 2.14.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.46.1)(vue@3.5.26(typescript@5.9.3))
       '@hope-ui/solid':
-        specifier: github:OpenListTeam/hope-ui#afd4f5a0ba33b40bfe1557c5960744fe72486372
-        version: https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/afd4f5a0ba33b40bfe1557c5960744fe72486372(@stitches/core@1.2.8)(solid-js@1.9.13)(solid-transition-group@0.3.0(solid-js@1.9.13))
+        specifier: github:OpenListTeam/hope-ui#31b436e36ae5d266016814ba71a442ffa9d91181
+        version: https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/31b436e36ae5d266016814ba71a442ffa9d91181(@stitches/core@1.2.8)(solid-js@1.9.13)(solid-transition-group@0.3.0(solid-js@1.9.13))
       '@jellyfin/libass-wasm':
         specifier: ^4.2.4
         version: 4.2.4
@@ -148,7 +148,7 @@ importers:
         version: 0.0.2(solid-js@1.9.13)(solid-transition-group@0.3.0(solid-js@1.9.13))
       solid-icons:
         specifier: ^1.1.0
-        version: 1.1.0(solid-js@1.9.13)
+        version: 1.2.0(solid-js@1.9.13)
       solid-js:
         specifier: ^1.9.13
         version: 1.9.13
@@ -1168,8 +1168,8 @@ packages:
   '@floating-ui/dom@0.4.4':
     resolution: {integrity: sha512-0Ulu3B/dqQplUUSqnTx0foSrlYuMN+GTtlJWvNJwt6Fr7/PqmlR/Y08o6/+bxDWr6p3roBJRaQ51MDZsNmEhhw==}
 
-  '@hope-ui/solid@https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/afd4f5a0ba33b40bfe1557c5960744fe72486372':
-    resolution: {gitHosted: true, integrity: sha512-VxpN0Cc/ESSa9NNXhZLQX9NxEHa4gMjXXSQSZjT6/DV1FJUwWimPBji5YDjayG6ZpvDggJ5hyTvYO7AOquQkkQ==, tarball: https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/afd4f5a0ba33b40bfe1557c5960744fe72486372}
+  '@hope-ui/solid@https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/31b436e36ae5d266016814ba71a442ffa9d91181':
+    resolution: {gitHosted: true, integrity: sha512-9/mjxC68etkyl9un/eNBaW7zSALOs6KJKMfbD+B+Ufv7QnwqVufTl6wzI7q32/GFIcWPdbwZ1TvfzLngOGoWzA==, tarball: https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/31b436e36ae5d266016814ba71a442ffa9d91181}
     version: 0.6.7
     peerDependencies:
       '@stitches/core': ^1.2.8
@@ -3251,8 +3251,8 @@ packages:
       solid-js: ^1.4.8
       solid-transition-group: ^0.0.10
 
-  solid-icons@1.1.0:
-    resolution: {integrity: sha512-IesTfr/F1ElVwH2E1110s2RPXH4pujKfSs+koT8rwuTAdleO5s26lNSpqJV7D1+QHooJj18mcOiz2PIKs0ic+A==}
+  solid-icons@1.2.0:
+    resolution: {integrity: sha512-yjQxWQMi9l19P5Af9vjsvalTMDFPDL4XD6etrUdNxNVhFp1bMYF0SFwUa5VYDfJ7u0SF3Qkz/F7BZxqcLUwklw==}
     peerDependencies:
       solid-js: '*'
 
@@ -4779,7 +4779,7 @@ snapshots:
     dependencies:
       '@floating-ui/core': 0.6.2
 
-  '@hope-ui/solid@https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/afd4f5a0ba33b40bfe1557c5960744fe72486372(@stitches/core@1.2.8)(solid-js@1.9.13)(solid-transition-group@0.3.0(solid-js@1.9.13))':
+  '@hope-ui/solid@https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/31b436e36ae5d266016814ba71a442ffa9d91181(@stitches/core@1.2.8)(solid-js@1.9.13)(solid-transition-group@0.3.0(solid-js@1.9.13))':
     dependencies:
       '@floating-ui/dom': 0.4.4
       '@stitches/core': 1.2.8
@@ -7089,7 +7089,7 @@ snapshots:
       solid-js: 1.9.13
       solid-transition-group: 0.3.0(solid-js@1.9.13)
 
-  solid-icons@1.1.0(solid-js@1.9.13):
+  solid-icons@1.2.0(solid-js@1.9.13):
     dependencies:
       solid-js: 1.9.13
 
