@@ -18,8 +18,8 @@ importers:
         specifier: ^2.14.2
         version: 2.14.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.46.1)(vue@3.5.26(typescript@5.9.3))
       '@hope-ui/solid':
-        specifier: github:OpenListTeam/hope-ui#31b436e36ae5d266016814ba71a442ffa9d91181
-        version: https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/31b436e36ae5d266016814ba71a442ffa9d91181(@stitches/core@1.2.8)(solid-js@1.9.13)(solid-transition-group@0.3.0(solid-js@1.9.13))
+        specifier: github:OpenListTeam/hope-ui#4c8da4608df067d3dc5851e07085a6b05a36f5fc
+        version: hope-ui-monorepo@https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/4c8da4608df067d3dc5851e07085a6b05a36f5fc
       '@jellyfin/libass-wasm':
         specifier: ^4.2.4
         version: 4.2.4
@@ -1161,20 +1161,6 @@ packages:
 
   '@epic-web/invariant@1.0.0':
     resolution: {integrity: sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA==}
-
-  '@floating-ui/core@0.6.2':
-    resolution: {integrity: sha512-jktYRmZwmau63adUG3GKOAVCofBXkk55S/zQ94XOorAHhwqFIOFAy1rSp2N0Wp6/tGbe9V3u/ExlGZypyY17rg==}
-
-  '@floating-ui/dom@0.4.4':
-    resolution: {integrity: sha512-0Ulu3B/dqQplUUSqnTx0foSrlYuMN+GTtlJWvNJwt6Fr7/PqmlR/Y08o6/+bxDWr6p3roBJRaQ51MDZsNmEhhw==}
-
-  '@hope-ui/solid@https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/31b436e36ae5d266016814ba71a442ffa9d91181':
-    resolution: {gitHosted: true, integrity: sha512-9/mjxC68etkyl9un/eNBaW7zSALOs6KJKMfbD+B+Ufv7QnwqVufTl6wzI7q32/GFIcWPdbwZ1TvfzLngOGoWzA==, tarball: https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/31b436e36ae5d266016814ba71a442ffa9d91181}
-    version: 0.6.7
-    peerDependencies:
-      '@stitches/core': ^1.2.8
-      solid-js: ^1.4.0
-      solid-transition-group: ^0.0.10
 
   '@iconify/types@2.0.0':
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
@@ -2342,9 +2328,6 @@ packages:
     resolution: {integrity: sha512-PpOwAdQ/YlXQ2vj8a3h8IipDuYRi3wceVQQGYWxNINccq40Anw7BlsEXCMbt1Zt+OLA6Fq9suIpIWD0OsnISlw==}
     engines: {node: '>=8'}
 
-  focus-trap@7.6.5:
-    resolution: {integrity: sha512-7Ke1jyybbbPZyZXFxEftUtxFGLMpE2n6A+z//m4CRDlj0hW+o3iYSmh8nFlYMurOiJVDmJRilUQtJr08KfIxlg==}
-
   follow-redirects@1.16.0:
     resolution: {integrity: sha512-y5rN/uOsadFT/JfYwhxRS5R7Qce+g3zG97+JrtFZlC9klX/W5hD7iiLzScI4nZqUS7DNUdhPgw4xI8W2LuXlUw==}
     engines: {node: '>=4.0'}
@@ -2476,6 +2459,10 @@ packages:
 
   hls.js@1.6.16:
     resolution: {integrity: sha512-VSIRpLfRwlAAdGL4wiTucx2ScRipo0ed1FBatWkyt832jC4CReKstga6yIhYVwGu9LOBjuX9wzmRMeQdBJtzEA==}
+
+  hope-ui-monorepo@https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/4c8da4608df067d3dc5851e07085a6b05a36f5fc:
+    resolution: {gitHosted: true, integrity: sha512-6Oo96VB5i4qEIk7IyVODre28KoXITYhPUZX1XZzMWbkwqD27iFMw0Hb6qJ5lJHD6PdQsyX++XjaUN0TLjLW9Sg==, tarball: https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/4c8da4608df067d3dc5851e07085a6b05a36f5fc}
+    version: 0.0.0
 
   html-entities@2.3.3:
     resolution: {integrity: sha512-DV5Ln36z34NNTDgnz0EWGBLZENelNAtkiFA4kyNOG2tDI6Mz1uSWiq1wAKdyjnJwyDiDO7Fa2SO1CTxPXL8VxA==}
@@ -2707,9 +2694,6 @@ packages:
 
   lodash.debounce@4.0.8:
     resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
-
-  lodash.merge@4.6.2:
-    resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
 
   log-update@6.1.0:
     resolution: {integrity: sha512-9ie8ItPR6tjY5uYJh8K/Zrv/RMZ5VOlOWvtZdEHYSTFKZfIBPQa9tOAEeAWhd+AnIneLJ22w5fjOYtoutpWq5w==}
@@ -3189,10 +3173,6 @@ packages:
   scheduler@0.27.0:
     resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
 
-  scroll-lock@2.1.5:
-    resolution: {integrity: sha512-GN8Lp0AzXbkrPFUUNkMUruiiv019UvarNKE/SnXi+AxZRjMnDc2R22VB9RcUtL4P/uub04cKibmpHKIKTyWwYQ==}
-    deprecated: 'Please use the new version: https://github.com/fluejs/noscroll'
-
   seemly@0.3.10:
     resolution: {integrity: sha512-2+SMxtG1PcsL0uyhkumlOU6Qo9TAQ/WyH7tthnPIOQB05/12jz9naq6GZ6iZ6ApVsO3rr2gsnTf3++OV63kE1Q==}
 
@@ -3351,9 +3331,6 @@ packages:
 
   systemjs@6.15.1:
     resolution: {integrity: sha512-Nk8c4lXvMB98MtbmjX7JwJRgJOL8fluecYCfCeYBznwmpOs8Bf15hLM6z4z71EDAhQVrQrI+wt1aLWSXZq+hXA==}
-
-  tabbable@6.4.0:
-    resolution: {integrity: sha512-05PUHKSNE8ou2dwIxTngl4EzcnsCDZGJ/iCLtDflR/SHB/ny14rXc+qU5P4mG9JkusiV7EivzY9Mhm55AzAvCg==}
 
   tailwind-merge@3.4.0:
     resolution: {integrity: sha512-uSaO4gnW+b3Y2aWoWfFpX62vn2sR3skfhbjsEnaBI81WD1wBLlHZe5sWf0AqjksNdYTbGBEd0UasQMT3SNV15g==}
@@ -4773,23 +4750,6 @@ snapshots:
 
   '@epic-web/invariant@1.0.0': {}
 
-  '@floating-ui/core@0.6.2': {}
-
-  '@floating-ui/dom@0.4.4':
-    dependencies:
-      '@floating-ui/core': 0.6.2
-
-  '@hope-ui/solid@https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/31b436e36ae5d266016814ba71a442ffa9d91181(@stitches/core@1.2.8)(solid-js@1.9.13)(solid-transition-group@0.3.0(solid-js@1.9.13))':
-    dependencies:
-      '@floating-ui/dom': 0.4.4
-      '@stitches/core': 1.2.8
-      csstype: 3.1.3
-      focus-trap: 7.6.5
-      lodash.merge: 4.6.2
-      scroll-lock: 2.1.5
-      solid-js: 1.9.13
-      solid-transition-group: 0.3.0(solid-js@1.9.13)
-
   '@iconify/types@2.0.0': {}
 
   '@iconify/utils@3.1.3':
@@ -5965,10 +5925,6 @@ snapshots:
       locate-path: 5.0.0
       path-exists: 4.0.0
 
-  focus-trap@7.6.5:
-    dependencies:
-      tabbable: 6.4.0
-
   follow-redirects@1.16.0: {}
 
   form-data@4.0.5:
@@ -6155,6 +6111,8 @@ snapshots:
 
   hls.js@1.6.16: {}
 
+  hope-ui-monorepo@https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/4c8da4608df067d3dc5851e07085a6b05a36f5fc: {}
+
   html-entities@2.3.3: {}
 
   html-void-elements@3.0.0: {}
@@ -6326,8 +6284,6 @@ snapshots:
   lodash-es@4.18.1: {}
 
   lodash.debounce@4.0.8: {}
-
-  lodash.merge@4.6.2: {}
 
   log-update@6.1.0:
     dependencies:
@@ -7039,8 +6995,6 @@ snapshots:
 
   scheduler@0.27.0: {}
 
-  scroll-lock@2.1.5: {}
-
   seemly@0.3.10: {}
 
   semver@6.3.1: {}
@@ -7214,8 +7168,6 @@ snapshots:
       - '@typescript-eslint/types'
 
   systemjs@6.15.1: {}
-
-  tabbable@6.4.0: {}
 
   tailwind-merge@3.4.0: {}
 
