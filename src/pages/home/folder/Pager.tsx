@@ -45,7 +45,7 @@ const AutoLoadMore = () => {
       threshold: 0.1,
     },
   )
-  let el: HTMLDivElement
+  let el!: HTMLDivElement
   onMount(() => {
     if (!allLoaded()) {
       ob.observe(el)

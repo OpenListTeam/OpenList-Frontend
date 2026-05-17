@@ -89,8 +89,8 @@ const Upload = () => {
       ["success", "error"].includes(status),
     )
   }
-  let fileInput: HTMLInputElement
-  let folderInput: HTMLInputElement
+  let fileInput!: HTMLInputElement
+  let folderInput!: HTMLInputElement
   const handleAddFiles = async (files: File[]) => {
     if (files.length === 0) return
     setUploading(true)
@@ -179,7 +179,7 @@ const Upload = () => {
         <Input
           type="file"
           multiple
-          ref={fileInput!}
+          ref={fileInput}
           display="none"
           onChange={(e) => {
             // @ts-ignore
@@ -191,7 +191,7 @@ const Upload = () => {
           multiple
           // @ts-ignore
           webkitdirectory
-          ref={folderInput!}
+          ref={folderInput}
           display="none"
           onChange={(e) => {
             // @ts-ignore
