@@ -1,4 +1,4 @@
-import { BoxWithFullScreen, Error, FullLoading } from "~/components"
+import { BoxWithFullScreen, Error as Erro, FullLoading } from "~/components"
 import { objStore } from "~/store"
 import { Box, IconButton, Tooltip, Button, HStack } from "@hope-ui/solid"
 import { createSignal, onMount, For, Show } from "solid-js"
@@ -295,7 +295,7 @@ const ExcelViewerApp = () => {
 
         {/* 错误状态 */}
         <Show when={error()}>
-          <Error msg={t("preview.failed_load_excel")} h="70vh" />
+          <Erro msg={t("preview.failed_load_excel")} h="70vh" />
         </Show>
       </div>
     </BoxWithFullScreen>

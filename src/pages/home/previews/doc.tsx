@@ -1,4 +1,4 @@
-import { BoxWithFullScreen, Error, FullLoading } from "~/components"
+import { BoxWithFullScreen, FullLoading, Error as Erro } from "~/components"
 import { objStore } from "~/store"
 import { Box, IconButton, Tooltip } from "@hope-ui/solid"
 import { createSignal, onMount, onCleanup, Show } from "solid-js"
@@ -209,7 +209,7 @@ const DocViewerApp = () => {
 
         {/* 错误状态 */}
         <Show when={error()}>
-          <Error msg={t("preview.failed_load_doc")} h="70vh" />
+          <Erro msg={t("preview.failed_load_doc")} h="70vh" />
         </Show>
       </div>
     </BoxWithFullScreen>

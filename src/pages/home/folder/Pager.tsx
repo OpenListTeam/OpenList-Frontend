@@ -59,7 +59,7 @@ const AutoLoadMore = () => {
       when={!allLoaded()}
       fallback={<Text fontStyle="italic">{t("home.no_more")}</Text>}
     >
-      <FullLoading py="$2" size="md" thickness={3} ref={el!} />
+      <FullLoading py="$2" size="md" thickness={3} ref={el} />
     </Show>
   )
 }

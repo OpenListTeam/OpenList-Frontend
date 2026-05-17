@@ -1,4 +1,4 @@
-import { BoxWithFullScreen, Error, FullLoading } from "~/components"
+import { BoxWithFullScreen, Error as Erro, FullLoading } from "~/components"
 import { objStore } from "~/store"
 import { Box, IconButton, Tooltip } from "@hope-ui/solid"
 import { createSignal, onMount, onCleanup, Show } from "solid-js"
@@ -242,7 +242,7 @@ const PPTViewerApp = () => {
 
         {/* 错误状态 */}
         <Show when={error()}>
-          <Error msg={t("preview.failed_load_ppt")} h="70vh" />
+          <Erro msg={t("preview.failed_load_ppt")} h="70vh" />
         </Show>
       </div>
     </BoxWithFullScreen>

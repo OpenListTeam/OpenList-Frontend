@@ -10,5 +10,5 @@ export default function Preview() {
   onMount(() => {
     AsciinemaPlayer.create(objStore.raw_url, d)
   })
-  return <Box w="$full" ref={d!} />
+  return <Box w="$full" ref={d} />
 }
