@@ -54,6 +54,7 @@ const SideMenuItemWithTo = (props: SideMenuItemProps) => {
         onClose()
         if (props.refresh) {
           e.stopPropagation?.()
+          e.preventDefault?.()
           let to = props.to
           if (!to.startsWith("http")) {
             to = joinBase(to)
