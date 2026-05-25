@@ -20,6 +20,7 @@ import { SelectWrapper, FolderChooseInput } from "~/components"
 import { useFetch, useRouter, useT } from "~/hooks"
 import {
   offlineDownload,
+  fsGet,
   torrentParse,
   torrentRapidUpload,
   bus,
@@ -125,6 +126,33 @@ export const OfflineDownloadEnhanced = () => {
 
   // 保存路径
   const [savePath, setSavePath] = createSignal("")
+  const [savePathProvider, setSavePathProvider] = createSignal("")
+
+  let savePathProviderRequestSeq = 0
+  const updateSavePathProvider = async (path: string) => {
+    const normalizedPath = path.trim()
+    if (!normalizedPath) {
+      setSavePathProvider("")
+      return
+    }
+
+    // Clear stale provider immediately to avoid using previous path's provider.
+    setSavePathProvider("")
+    const requestSeq = ++savePathProviderRequestSeq
+    try {
+      const resp = await fsGet(normalizedPath)
+      if (requestSeq !== savePathProviderRequestSeq) {
+        return
+      }
+      if (resp.code === 200) {
+        setSavePathProvider(resp.data.provider || "")
+      }
+    } catch {
+      if (requestSeq === savePathProviderRequestSeq) {
+        setSavePathProvider("")
+      }
+    }
+  }
 
   // 秒传状态
   const [rapidUploading, setRapidUploading] = createSignal(false)
@@ -145,6 +173,7 @@ export const OfflineDownloadEnhanced = () => {
     return (
       activeTab() === "bt" &&
       !!torrentInfo()?.has_cas &&
+      savePathProvider() === "189CloudPC" &&
       !casRapidUploadFailed()
     )
   })
@@ -190,7 +219,9 @@ export const OfflineDownloadEnhanced = () => {
   // 监听 bus 事件
   const handler = (name: string) => {
     if (name === "offline_download") {
-      setSavePath(pathname())
+      const currentPath = pathname()
+      setSavePath(currentPath)
+      void updateSavePathProvider(currentPath)
       onOpen()
     }
   }
@@ -205,7 +236,9 @@ export const OfflineDownloadEnhanced = () => {
     setTorrentInfo(data.info)
     setSelectedFiles(data.info.files.map((_, i) => i))
     setActiveTab("bt")
-    setSavePath(pathname())
+    const currentPath = pathname()
+    setSavePath(currentPath)
+    void updateSavePathProvider(currentPath)
     onOpen()
   }
   bus.on("torrent_parsed", torrentHandler)
@@ -255,6 +288,7 @@ export const OfflineDownloadEnhanced = () => {
     setTorrentInfo(null)
     setTorrentData("")
     setSelectedFiles([])
+    setSavePathProvider("")
     setRapidUploadResult("")
     setCasRapidUploadFailed(false)
   }
@@ -368,7 +402,7 @@ export const OfflineDownloadEnhanced = () => {
     setBtLoading(true)
     try {
       // 有 CAS 信息且秒传尚未失败时，默认直接走天翼云秒传
-      if (info.has_cas && !casRapidUploadFailed()) {
+      if (shouldUseCasRapidUpload()) {
         setRapidUploading(true)
         try {
           const resp = await torrentRapidUpload(torrentData(), savePath())
@@ -600,7 +634,10 @@ export const OfflineDownloadEnhanced = () => {
               </Text>
               <FolderChooseInput
                 value={savePath()}
-                onChange={setSavePath}
+                onChange={(path) => {
+                  setSavePath(path)
+                  void updateSavePathProvider(path)
+                }}
                 id="offline-download-path"
               />
             </Box>
