@@ -127,31 +127,53 @@ export const OfflineDownloadEnhanced = () => {
   // 保存路径
   const [savePath, setSavePath] = createSignal("")
   const [savePathProvider, setSavePathProvider] = createSignal("")
+  const savePathProviderCache = new Map<string, string>()
+  let savePathProviderTimer: ReturnType<typeof setTimeout> | undefined
 
   let savePathProviderRequestSeq = 0
-  const updateSavePathProvider = async (path: string) => {
+  const clearSavePathProviderTimer = () => {
+    if (savePathProviderTimer) {
+      clearTimeout(savePathProviderTimer)
+      savePathProviderTimer = undefined
+    }
+  }
+
+  const updateSavePathProvider = (path: string) => {
     const normalizedPath = path.trim()
+    clearSavePathProviderTimer()
     if (!normalizedPath) {
       setSavePathProvider("")
+      return
+    }
+
+    const cachedProvider = savePathProviderCache.get(normalizedPath)
+    if (cachedProvider !== undefined) {
+      setSavePathProvider(cachedProvider)
       return
     }
 
     // Clear stale provider immediately to avoid using previous path's provider.
     setSavePathProvider("")
     const requestSeq = ++savePathProviderRequestSeq
-    try {
-      const resp = await fsGet(normalizedPath)
-      if (requestSeq !== savePathProviderRequestSeq) {
-        return
+    savePathProviderTimer = setTimeout(async () => {
+      try {
+        const resp = await fsGet(normalizedPath)
+        if (requestSeq !== savePathProviderRequestSeq) {
+          return
+        }
+        if (resp.code === 200) {
+          const provider = resp.data.provider || ""
+          savePathProviderCache.set(normalizedPath, provider)
+          setSavePathProvider(provider)
+        } else {
+          setSavePathProvider("")
+        }
+      } catch {
+        if (requestSeq === savePathProviderRequestSeq) {
+          setSavePathProvider("")
+        }
       }
-      if (resp.code === 200) {
-        setSavePathProvider(resp.data.provider || "")
-      }
-    } catch {
-      if (requestSeq === savePathProviderRequestSeq) {
-        setSavePathProvider("")
-      }
-    }
+    }, 250)
   }
 
   // 秒传状态
@@ -176,6 +198,17 @@ export const OfflineDownloadEnhanced = () => {
       savePathProvider() === "189CloudPC" &&
       !casRapidUploadFailed()
     )
+  })
+
+  // 仅在 BT 且包含 CAS 信息时才查询目标路径 provider，减少无效请求。
+  createEffect(() => {
+    const shouldCheckProvider = activeTab() === "bt" && !!torrentInfo()?.has_cas
+    if (!shouldCheckProvider) {
+      clearSavePathProviderTimer()
+      setSavePathProvider("")
+      return
+    }
+    updateSavePathProvider(savePath())
   })
 
   // 检测输入中是否包含磁力链
@@ -221,7 +254,6 @@ export const OfflineDownloadEnhanced = () => {
     if (name === "offline_download") {
       const currentPath = pathname()
       setSavePath(currentPath)
-      void updateSavePathProvider(currentPath)
       onOpen()
     }
   }
@@ -238,7 +270,6 @@ export const OfflineDownloadEnhanced = () => {
     setActiveTab("bt")
     const currentPath = pathname()
     setSavePath(currentPath)
-    void updateSavePathProvider(currentPath)
     onOpen()
   }
   bus.on("torrent_parsed", torrentHandler)
@@ -284,6 +315,8 @@ export const OfflineDownloadEnhanced = () => {
 
   // 重置状态
   const resetState = () => {
+    clearSavePathProviderTimer()
+    savePathProviderRequestSeq += 1
     setLinkValue("")
     setTorrentInfo(null)
     setTorrentData("")
@@ -297,6 +330,10 @@ export const OfflineDownloadEnhanced = () => {
     resetState()
     onClose()
   }
+
+  onCleanup(() => {
+    clearSavePathProviderTimer()
+  })
 
   // 处理 torrent 文件拖拽/选择
   const handleTorrentFile = async (file: File) => {
@@ -634,10 +671,7 @@ export const OfflineDownloadEnhanced = () => {
               </Text>
               <FolderChooseInput
                 value={savePath()}
-                onChange={(path) => {
-                  setSavePath(path)
-                  void updateSavePathProvider(path)
-                }}
+                onChange={setSavePath}
                 id="offline-download-path"
               />
             </Box>
