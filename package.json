@@ -47,7 +47,7 @@
     "@vitejs/plugin-legacy": "^8.0.2",
     "cross-env": "^10.1.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.4.0",
+    "lint-staged": "^17.0.5",
     "mermaid": "^11.15.0",
     "prettier": "3.8.3",
     "rehype-stringify": "^10.0.1",
