@@ -215,6 +215,12 @@
     "url": "Url",
     "username": "Username"
   },
+  "AliDoc": {
+    "cookie": "Cookie",
+    "cookie-tips": "DingTalk document web cookie",
+    "root_folder_id": "Root folder id",
+    "root_folder_id-tips": "The dentryUuid of the DingTalk document root folder"
+  },
   "Alias": {
     "details_pass_through": "Details pass through",
     "download_concurrency": "Download concurrency",
@@ -1472,6 +1478,9 @@
     "189CloudPC": {},
     "189CloudTV": {},
     "AList V3": {},
+    "AliDoc": {
+      "alert": "If you use PDF preview, please enable proxy, otherwise the preview may fail because of CORS."
+    },
     "Alias": {},
     "Aliyundrive": {
       "alert": "There may be an infinite loop bug in this driver.\nDeprecated, no longer maintained and will be removed in a future version.\nWe recommend using the official driver AliyundriveOpen."
@@ -1568,6 +1577,7 @@
     "189CloudPC": "189CloudPC",
     "189CloudTV": "189CloudTV",
     "AList V3": "AList V3",
+    "AliDoc": "AliDoc",
     "Alias": "Alias",
     "Aliyundrive": "Aliyundrive",
     "AliyundriveOpen": "AliyundriveOpen",
