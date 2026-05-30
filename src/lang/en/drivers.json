@@ -1479,7 +1479,7 @@
     "189CloudTV": {},
     "AList V3": {},
     "AliDoc": {
-      "alert": "If you use PDF preview, please enable proxy, otherwise the preview may fail because of CORS."
+      "alert": "This driver supports accessing DingDrive through DingTalk Docs and is currently read-only."
     },
     "Alias": {},
     "Aliyundrive": {
