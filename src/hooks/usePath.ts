@@ -182,7 +182,13 @@ export const usePath = () => {
         ObjStore.setDirectUploadTools(data.direct_upload_tools)
         shouldKeepState() || ObjStore.setState(State.Folder)
       },
-      handleErr,
+      onlyList
+        ? (msg: string, code?: number) => {
+            if (code !== 403) {
+              handleErr(msg, code)
+            }
+          }
+        : handleErr,
     )
   }
 
