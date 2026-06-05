@@ -18,7 +18,7 @@ import {
 import { createSignal, For, Show } from "solid-js"
 import { useT, useFetch } from "~/hooks"
 import { PEmptyResp } from "~/types"
-import { handleResp, notify, r } from "~/utils"
+import { getFileSize, handleResp, notify, r } from "~/utils"
 import { TaskAttribute, TaskLocalSetter, TasksProps } from "./Tasks"
 import { me } from "~/store"
 
@@ -134,6 +134,9 @@ export const Task = (props: TaskAttribute & TasksProps & TaskLocalSetter) => {
   )
   const title =
     matches === null ? props.name : props.nameAnalyzer.title(matches)
+  const showFileInfo = () =>
+    props.type === "offline_download" && props.done === "undone"
+  const fileSize = () => props.file_size || props.total_bytes
   const startTime =
     props.start_time === null ? -1 : new Date(props.start_time).getTime()
   const endTime =
@@ -320,6 +323,26 @@ export const Task = (props: TaskAttribute & TasksProps & TaskLocalSetter) => {
                   )
                 }}
               </For>
+            </Show>
+            <Show when={showFileInfo() && props.file_name}>
+              <GridItem
+                color="$neutral9"
+                textAlign="right"
+                css={{ whiteSpace: "nowrap" }}
+              >
+                {t(`tasks.attr.offline_download.file_name`)}
+              </GridItem>
+              <GridItem color="$neutral9">{props.file_name}</GridItem>
+            </Show>
+            <Show when={showFileInfo() && fileSize() > 0}>
+              <GridItem
+                color="$neutral9"
+                textAlign="right"
+                css={{ whiteSpace: "nowrap" }}
+              >
+                {t(`tasks.attr.offline_download.file_size`)}
+              </GridItem>
+              <GridItem color="$neutral9">{getFileSize(fileSize())}</GridItem>
             </Show>
             <GridItem
               color="$neutral9"
