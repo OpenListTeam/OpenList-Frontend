@@ -71,7 +71,7 @@ export const ListItem = (props: { obj: StoreObj; index: number }) => {
         data-index={props.index}
         w="$full"
         p="$2"
-        rounded="$lg"
+        rounded="$2xl"
         transition="all 0.3s"
         _hover={{
           transform: "scale(1.01)",

@@ -4,16 +4,26 @@ import { hoverColor } from "~/utils"
 const theme: HopeThemeConfig = {
   initialColorMode: "system",
   lightTheme: {
+    radii: {
+      xl: "14px",
+      "2xl": "16px",
+    },
     colors: {
       // background: "$neutral2",
       background: "#f7f8fa",
+    },
+  },
+  darkTheme: {
+    radii: {
+      xl: "14px",
+      "2xl": "16px",
     },
   },
   components: {
     Button: {
       baseStyle: {
         root: {
-          rounded: "$lg",
+          rounded: "$xl",
           _active: {
             transform: "scale(.95)",
             transition: "0.2s",
@@ -39,7 +49,7 @@ const theme: HopeThemeConfig = {
     Input: {
       baseStyle: {
         input: {
-          rounded: "$lg",
+          rounded: "$xl",
           _focus: {
             boxShadow: "unset",
             borderColor: "$info8",
@@ -54,7 +64,7 @@ const theme: HopeThemeConfig = {
     },
     Textarea: {
       baseStyle: {
-        rounded: "$lg",
+        rounded: "$xl",
         _focus: {
           boxShadow: "unset",
           borderColor: "$info8",
@@ -69,7 +79,7 @@ const theme: HopeThemeConfig = {
     Select: {
       baseStyle: {
         trigger: {
-          rounded: "$lg",
+          rounded: "$2xl",
           _focus: {
             boxShadow: "unset",
             borderColor: "$info8",
@@ -77,7 +87,14 @@ const theme: HopeThemeConfig = {
         },
         content: {
           border: "none",
-          rounded: "$lg",
+          rounded: "$2xl",
+        },
+        option: {
+          rounded: "$xl",
+          mx: "$1",
+          _hover: {
+            rounded: "$xl",
+          },
         },
         optionIndicator: {
           color: "$info10",
@@ -107,13 +124,13 @@ const theme: HopeThemeConfig = {
     Menu: {
       baseStyle: {
         content: {
-          rounded: "$md",
+          rounded: "$2xl",
           minW: "unset",
           border: "unset",
           // py: "0",
         },
         item: {
-          rounded: "$md",
+          rounded: "$xl",
           py: "$1",
           // mx: "0",
         },
@@ -122,7 +139,7 @@ const theme: HopeThemeConfig = {
     Notification: {
       baseStyle: {
         root: {
-          rounded: "$lg",
+          rounded: "$xl",
           border: "unset",
         },
       },
@@ -130,13 +147,13 @@ const theme: HopeThemeConfig = {
     Alert: {
       baseStyle: {
         root: {
-          rounded: "$lg",
+          rounded: "$xl",
         },
       },
     },
     Anchor: {
       baseStyle: {
-        rounded: "$lg",
+        rounded: "$xl",
         px: "$1_5",
         py: "$1",
         _hover: {
@@ -152,7 +169,7 @@ const theme: HopeThemeConfig = {
     Modal: {
       baseStyle: {
         content: {
-          rounded: "$lg",
+          rounded: "$2xl",
         },
       },
     },
@@ -197,6 +214,16 @@ export const globalStyles = globalCss({
         "-webkit-user-drag": "none",
       },
     },
+  },
+  ".solid-contextmenu, .solid-contextmenu .solid-contextmenu__submenu": {
+    borderRadius: "$2xl !important",
+  },
+  ".solid-contextmenu": {
+    padding: "$1 0 !important",
+  },
+  ".solid-contextmenu__item__content": {
+    margin: "0 $1",
+    borderRadius: "$xl",
   },
 })
 
