@@ -7,7 +7,7 @@
     "url": "https://github.com/OpenListTeam"
   },
   "description": "A new AList Fork to Anti Trust Crisis",
-  "packageManager": "pnpm@11.4.0",
+  "packageManager": "pnpm@11.5.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/OpenListTeam/OpenList-Frontend.git"
@@ -56,7 +56,7 @@
     "terser": "^5.47.1",
     "typescript": "^5.9.3",
     "unified": "^11.0.5",
-    "vite": "^8.0.14",
+    "vite": "^8.0.16",
     "vite-plugin-dynamic-base": "^1.3.0",
     "vite-plugin-solid": "^2.11.12",
     "vite-plugin-static-copy": "^3.4.0"
