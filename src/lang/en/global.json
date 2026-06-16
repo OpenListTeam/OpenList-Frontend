@@ -28,6 +28,7 @@
   "close": "Close",
   "no_support_now": "Not currently supported",
   "empty_input": "Please enter",
+  "unsaved_changes_confirm": "You have unsaved changes. Are you sure you want to leave?",
   "invalid_filename_chars": "Filename cannot contain: / \\ ? < > * : | \"",
   "invalid_regex": "Invalid regular expression",
   "name": "Name",

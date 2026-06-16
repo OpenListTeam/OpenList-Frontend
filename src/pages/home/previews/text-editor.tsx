@@ -6,7 +6,15 @@ import {
   useColorMode,
   VStack,
 } from "@hope-ui/solid"
-import { createEffect, createMemo, createSignal, on, Show } from "solid-js"
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  on,
+  onCleanup,
+  Show,
+} from "solid-js"
+import { useBeforeLeave } from "@solidjs/router"
 import { EncodingSelect, MaybeLoading } from "~/components"
 import { MonacoEditorLoader } from "~/components/MonacoEditor"
 import { useFetch, useFetchText, useParseText, useRouter, useT } from "~/hooks"
@@ -44,6 +52,26 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   const [language, setLanguage] = createSignal("")
   const [wordWrap, setWordWrap] = createSignal(false)
   const [fullscreen, setFullscreen] = createSignal(false)
+
+  // Warn on browser close/refresh when there are unsaved changes
+  const beforeUnloadHandler = (e: BeforeUnloadEvent) => {
+    if (modified()) {
+      e.preventDefault()
+    }
+  }
+  window.addEventListener("beforeunload", beforeUnloadHandler)
+  onCleanup(() =>
+    window.removeEventListener("beforeunload", beforeUnloadHandler),
+  )
+
+  // Warn on in-app navigation when there are unsaved changes
+  useBeforeLeave((e) => {
+    if (modified()) {
+      if (!window.confirm(t("global.unsaved_changes_confirm"))) {
+        e.preventDefault()
+      }
+    }
+  })
 
   // Save on Ctrl+S / Cmd+S
   createShortcut(["Control", "S"], (e: KeyboardEvent | null) => {
