@@ -140,8 +140,11 @@
     "username": "Username"
   },
   "189CloudPC": {
+    "access_token": "Access token",
     "family_id": "Family id",
     "family_transfer": "Family transfer",
+    "generate_torrent": "Generate torrent",
+    "generate_torrent-tips": "Generate torrent file with CAS extension after upload",
     "login_type": "Login type",
     "login_types": {
       "password": "Password",
@@ -593,6 +596,19 @@
     "root_folder_path": "Root folder path",
     "use_online_api": "Use online api"
   },
+  "Emby": {
+    "api_key": "Api key",
+    "link_method": "Link method",
+    "link_methods": {
+      "download": "Download",
+      "stream": "Stream"
+    },
+    "password": "Password",
+    "root_folder_id": "Root folder id",
+    "url": "Url",
+    "user_id": "User id",
+    "username": "Username"
+  },
   "FTP": {
     "address": "Address",
     "encoding": "Encoding",
@@ -883,6 +899,9 @@
     "use_online_api": "Use online api"
   },
   "Onedrive Sharelink": {
+    "disable_disk_usage": "Disable disk usage",
+    "enable_direct_upload": "Enable direct upload",
+    "enable_direct_upload-tips": "Allow uploading directly to OneDrive without going through OpenList",
     "password": "Password",
     "root_folder_path": "Root folder path",
     "url": "Url"
@@ -1496,6 +1515,7 @@
     },
     "DoubaoShare": {},
     "Dropbox": {},
+    "Emby": {},
     "FTP": {},
     "FebBox": {},
     "FeijiPan": {},
@@ -1588,6 +1608,7 @@
     "DoubaoNew": "DoubaoNew",
     "DoubaoShare": "DoubaoShare",
     "Dropbox": "Dropbox",
+    "Emby": "Emby",
     "FTP": "FTP",
     "FebBox": "FebBox",
     "FeijiPan": "FeijiPan",
