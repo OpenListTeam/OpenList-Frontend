@@ -12,6 +12,7 @@ export interface MonacoEditorProps {
   theme: "vs" | "vs-dark"
   path?: string
   language?: string
+  onEditorReady?: (editor: monacoType.editor.IStandaloneCodeEditor) => void
 }
 let monaco: typeof monacoType
 
@@ -44,6 +45,21 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
       value: props.value,
       theme: props.theme,
       fontSize: parseInt(local.editor_font_size),
+      minimap: { enabled: true },
+      lineNumbers: "on",
+      scrollBeyondLastLine: false,
+      smoothScrolling: true,
+      cursorBlinking: "smooth",
+      cursorSmoothCaretAnimation: "on",
+      bracketPairColorization: { enabled: true },
+      automaticLayout: true,
+      padding: { top: 8 },
+      wordWrap: "off",
+      renderLineHighlight: "all",
+      scrollbar: {
+        verticalScrollbarSize: 10,
+        horizontalScrollbarSize: 10,
+      },
     })
     model = monaco.editor.createModel(
       props.value,
@@ -54,6 +70,7 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
     monacoEditor.onDidChangeModelContent(() => {
       props.onChange?.(monacoEditor.getValue())
     })
+    props.onEditorReady?.(monacoEditor)
   })
   createEffect(() => {
     monacoEditor.setValue(props.value)
@@ -73,5 +90,5 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
     model && model.dispose()
     monacoEditor && monacoEditor.dispose()
   })
-  return <Box w="$full" h="70vh" ref={monacoEditorDiv!} />
+  return <Box w="$full" flex={1} minH="300px" ref={monacoEditorDiv!} />
 }
