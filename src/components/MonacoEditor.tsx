@@ -1,5 +1,5 @@
 import { Box } from "@hope-ui/solid"
-import { createEffect, createSignal, onCleanup, onMount } from "solid-js"
+import { createEffect, createSignal, on, onCleanup, onMount } from "solid-js"
 import { MaybeLoading } from "./FullLoading"
 import loader from "@monaco-editor/loader"
 import { useCDN } from "~/hooks"
@@ -72,9 +72,15 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
     })
     props.onEditorReady?.(monacoEditor)
   })
-  createEffect(() => {
-    monacoEditor.setValue(props.value)
-  })
+  createEffect(
+    on(
+      () => props.value,
+      (value) => {
+        monacoEditor.setValue(value)
+      },
+      { defer: true },
+    ),
+  )
 
   createEffect(() => {
     monaco.editor.setTheme(props.theme)
