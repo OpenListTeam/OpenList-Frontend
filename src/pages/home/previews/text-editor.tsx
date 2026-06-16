@@ -162,33 +162,15 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
         overflowX="auto"
         flexShrink={0}
       >
-        <Show
-          when={
-            objStore.write &&
-            (userCan("write_content") || objStore.write_content_bypass)
-          }
+        <Button
+          size="sm"
+          colorScheme={modified() ? "info" : "neutral"}
+          loading={loading()}
+          onClick={onSave}
+          leftIcon={<TbDeviceFloppy />}
         >
-          <Button
-            size="sm"
-            loading={loading()}
-            onClick={onSave}
-            leftIcon={<TbDeviceFloppy />}
-          >
-            {t("global.save")}
-            <Show when={modified()}>
-              <Box
-                as="span"
-                ml="$1"
-                display="inline-block"
-                w="8px"
-                h="8px"
-                borderRadius="$full"
-                bg="$warning9"
-                verticalAlign="middle"
-              />
-            </Show>
-          </Button>
-        </Show>
+          {t("global.save")}
+        </Button>
 
         <IconButton
           aria-label={t("global.undo")}
@@ -224,7 +206,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
           color={wordWrap() ? "$info11" : undefined}
         />
 
-        <HStack spacing={0}>
+        <HStack spacing={0} display={{ "@initial": "none", "@sm": "flex" }}>
           <IconButton
             aria-label={t("global.font_size")}
             icon={<FaSolidMinus />}
