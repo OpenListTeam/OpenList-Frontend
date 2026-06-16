@@ -18,6 +18,7 @@ import { createShortcut } from "@solid-primitives/keyboard"
 import { BiRegularRedo, BiRegularUndo } from "solid-icons/bi"
 import { TbDeviceFloppy, TbTextWrap, TbTextWrapDisabled } from "solid-icons/tb"
 import { FaSolidMinus, FaSolidPlus } from "solid-icons/fa"
+import { AiOutlineFullscreen, AiOutlineFullscreenExit } from "solid-icons/ai"
 import type * as monacoType from "monaco-editor/esm/vs/editor/editor.api.js"
 
 function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
@@ -42,6 +43,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   const [wordCount, setWordCount] = createSignal(0)
   const [language, setLanguage] = createSignal("")
   const [wordWrap, setWordWrap] = createSignal(false)
+  const [fullscreen, setFullscreen] = createSignal(false)
 
   // Save on Ctrl+S / Cmd+S
   createShortcut(["Control", "S"], (e: KeyboardEvent | null) => {
@@ -51,6 +53,10 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   createShortcut(["Meta", "S"], (e: KeyboardEvent | null) => {
     e?.preventDefault()
     onSave()
+  })
+  // Escape to exit fullscreen
+  createShortcut(["Escape"], () => {
+    if (fullscreen()) setFullscreen(false)
   })
 
   const [loading, save] = useFetch(
@@ -134,7 +140,17 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   }
 
   return (
-    <VStack w="$full" alignItems="stretch" spacing={0} pos="relative">
+    <VStack
+      w="$full"
+      alignItems="stretch"
+      spacing={0}
+      pos={fullscreen() ? "fixed" : "relative"}
+      top={0}
+      left={0}
+      zIndex={fullscreen() ? "$overlay" : undefined}
+      bg={colorMode() === "light" ? "$neutral1" : "$neutral2"}
+      h={fullscreen() ? "100vh" : undefined}
+    >
       {/* Toolbar */}
       <HStack
         px="$3"
@@ -234,17 +250,36 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
             onClick={() => changeFontSize(1)}
             title={t("global.font_size")}
           />
-
-          <Show when={!isString}>
-            <Box w="$28">
-              <EncodingSelect
-                encoding={encoding()}
-                setEncoding={setEncoding}
-                referenceText={props.data}
-              />
-            </Box>
-          </Show>
         </HStack>
+
+        <Box
+          w="1px"
+          h="$5"
+          bg={colorMode() === "light" ? "$neutral6" : "$neutral4"}
+          mx="$1"
+        />
+
+        <IconButton
+          aria-label="Fullscreen"
+          icon={
+            fullscreen() ? <AiOutlineFullscreenExit /> : <AiOutlineFullscreen />
+          }
+          size="sm"
+          variant="ghost"
+          onClick={() => setFullscreen(!fullscreen())}
+          title="Fullscreen (Esc)"
+          color={fullscreen() ? "$info11" : undefined}
+        />
+
+        <Show when={!isString}>
+          <Box w="$28">
+            <EncodingSelect
+              encoding={encoding()}
+              setEncoding={setEncoding}
+              referenceText={props.data}
+            />
+          </Box>
+        </Show>
       </HStack>
 
       {/* Editor */}
