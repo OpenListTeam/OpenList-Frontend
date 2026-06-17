@@ -166,8 +166,8 @@ importers:
         version: 0.7.2
     devDependencies:
       '@crowdin/cli':
-        specifier: ^4.14.2
-        version: 4.14.2
+        specifier: ^4.14.3
+        version: 4.14.3
       '@types/bencode':
         specifier: ^2.0.4
         version: 2.0.4
@@ -772,8 +772,8 @@ packages:
   '@chevrotain/types@11.1.2':
     resolution: {integrity: sha512-U+HFai5+zmJCkK86QsaJtoITlboZHBqrVketcO2ROv865xfCMSFpELQoz1GkX5GzME8pTa+3kbKrZHQtI0gdbw==}
 
-  '@crowdin/cli@4.14.2':
-    resolution: {integrity: sha512-JRrHvitc0w+r/h6XXSOq917HxsjRoxPEtyNYSmylKirjiPNrRx84VKtqFlOIWIFCOZI5BoXg6hNpE0Zq7CwVBA==}
+  '@crowdin/cli@4.14.3':
+    resolution: {integrity: sha512-a2eXICWwEQX2WVM8+aCiHU2xapLXKmjmKw7V4fIRf4PNssyM82TB/y8KTt5ak1JFjU4tnl4f/HPD8Gob+YI2zg==}
     hasBin: true
 
   '@egjs/component@3.0.5':
@@ -4336,7 +4336,7 @@ snapshots:
 
   '@chevrotain/types@11.1.2': {}
 
-  '@crowdin/cli@4.14.2':
+  '@crowdin/cli@4.14.3':
     dependencies:
       command-exists-promise: 2.0.2
       node-fetch: 2.7.0
