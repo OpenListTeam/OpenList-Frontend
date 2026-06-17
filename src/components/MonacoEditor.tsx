@@ -9,9 +9,9 @@ import { local } from "~/store"
 export interface MonacoEditorProps {
   value: string
   onChange?: (value: string) => void
-  theme: "vs" | "vs-dark"
   path?: string
   language?: string
+  options?: monacoType.editor.IStandaloneEditorConstructionOptions
   onEditorReady?: (editor: monacoType.editor.IStandaloneCodeEditor) => void
 }
 export let monaco: typeof monacoType
@@ -41,26 +41,13 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
   let model: monacoType.editor.ITextModel
 
   onMount(() => {
-    monacoEditor = monaco.editor.create(monacoEditorDiv!, {
+    const constructionOptions = {
+      ...props.options,
       value: props.value,
-      theme: props.theme,
       fontSize: parseInt(local.editor_font_size),
-      minimap: { enabled: true },
-      lineNumbers: "on",
-      scrollBeyondLastLine: false,
-      smoothScrolling: true,
-      cursorBlinking: "smooth",
-      cursorSmoothCaretAnimation: "on",
-      bracketPairColorization: { enabled: true },
       automaticLayout: true,
-      padding: { top: 8 },
-      wordWrap: "off",
-      renderLineHighlight: "all",
-      scrollbar: {
-        verticalScrollbarSize: 10,
-        horizontalScrollbarSize: 10,
-      },
-    })
+    }
+    monacoEditor = monaco.editor.create(monacoEditorDiv!, constructionOptions)
     model = monaco.editor.createModel(
       props.value,
       props.language,
@@ -83,7 +70,7 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
   )
 
   createEffect(() => {
-    monaco.editor.setTheme(props.theme)
+    monaco.editor.setTheme(props.options?.theme ?? "vs")
   })
 
   createEffect(
@@ -101,6 +88,7 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
   createEffect(() => {
     monacoEditor?.updateOptions({
       fontSize: parseInt(local.editor_font_size),
+      ...props.options,
     })
   })
 

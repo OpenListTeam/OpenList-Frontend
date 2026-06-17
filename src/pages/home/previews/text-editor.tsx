@@ -24,7 +24,7 @@ import { useBeforeLeave } from "@solidjs/router"
 import { EncodingSelect, MaybeLoading } from "~/components"
 import { MonacoEditorLoader, monaco } from "~/components/MonacoEditor"
 import { useFetch, useFetchText, useParseText, useRouter, useT } from "~/hooks"
-import { objStore, setLocal, userCan } from "~/store"
+import { objStore, setLocal } from "~/store"
 import { local } from "~/store"
 import { PEmptyResp } from "~/types"
 import { handleResp, notify, r } from "~/utils"
@@ -35,6 +35,8 @@ import {
   TbDeviceFloppy,
   TbTextWrap,
   TbTextWrapDisabled,
+  TbMap,
+  TbMapOff,
 } from "solid-icons/tb"
 import { FaSolidMinus, FaSolidPlus } from "solid-icons/fa"
 import { AiOutlineFullscreen, AiOutlineFullscreenExit } from "solid-icons/ai"
@@ -70,6 +72,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
     [],
   )
   const [wordWrap, setWordWrap] = createSignal(false)
+  const [minimap, setMinimap] = createSignal(true)
   const [fullscreen, setFullscreen] = createSignal(false)
   const [langSearch, setLangSearch] = createSignal("")
   const filteredLanguages = createMemo(() => {
@@ -195,9 +198,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   }
 
   function toggleWordWrap() {
-    const next = !wordWrap()
-    setWordWrap(next)
-    editor()?.updateOptions({ wordWrap: next ? "on" : "off" })
+    setWordWrap(!wordWrap())
   }
 
   function changeFontSize(delta: number) {
@@ -256,12 +257,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
           title={`${t("global.redo")} (Ctrl+Y)`}
         />
 
-        <Box
-          w="1px"
-          h="$5"
-          bg={colorMode() === "light" ? "$neutral6" : "$neutral4"}
-          mx="$1"
-        />
+        <Box w="1px" h="$5" bg="$neutral4" mx="$1" />
 
         <IconButton
           aria-label={t("global.wrap")}
@@ -272,6 +268,18 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
           title={t("global.wrap")}
           color={wordWrap() ? "$info11" : undefined}
         />
+
+        <IconButton
+          aria-label="Minimap"
+          icon={minimap() ? <TbMap /> : <TbMapOff />}
+          size="sm"
+          variant="ghost"
+          onClick={() => setMinimap(!minimap())}
+          title="Minimap"
+          color={minimap() ? "$info11" : undefined}
+        />
+
+        <Box w="1px" h="$5" bg="$neutral4" mx="$1" />
 
         <HStack spacing={0} display={{ "@initial": "none", "@sm": "flex" }}>
           <IconButton
@@ -301,13 +309,6 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
           />
         </HStack>
 
-        <Box
-          w="1px"
-          h="$5"
-          bg={colorMode() === "light" ? "$neutral6" : "$neutral4"}
-          mx="$1"
-        />
-
         <IconButton
           aria-label="Fullscreen"
           icon={
@@ -334,9 +335,13 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
       {/* Editor */}
       <MonacoEditorLoader
         value={text(encoding())}
-        theme={theme()}
         language={language()}
         path={objStore.obj.name}
+        options={{
+          theme: theme(),
+          wordWrap: wordWrap() ? "on" : "off",
+          minimap: { enabled: minimap() },
+        }}
         onChange={(val) => setValue(val)}
         onEditorReady={onEditorReady}
       />
@@ -353,6 +358,11 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
         color="$neutral11"
         flexShrink={0}
       >
+        <Show when={modified()}>
+          <Box color="$warning11" style={{ "white-space": "nowrap" }}>
+            ● {t("global.modified")}
+          </Box>
+        </Show>
         <Box style={{ "white-space": "nowrap" }}>
           Ln {cursorLine()}, Col {cursorColumn()}
         </Box>
@@ -374,7 +384,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
                 <Box>{languageDisplayName()}</Box>
               </HStack>
             </PopoverTrigger>
-            <PopoverContent w="280px" maxH="350px">
+            <PopoverContent w="280px" maxH="350px" borderRadius="$lg">
               <PopoverBody p="$2">
                 <Input
                   size="xs"
@@ -425,12 +435,6 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
               </PopoverBody>
             </PopoverContent>
           </Popover>
-        </Show>
-        <Box style={{ "white-space": "nowrap" }}>{encoding()}</Box>
-        <Show when={modified()}>
-          <Box color="$warning11" style={{ "white-space": "nowrap" }}>
-            ● {t("global.modified")}
-          </Box>
         </Show>
       </HStack>
     </VStack>
