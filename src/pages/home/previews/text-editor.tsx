@@ -3,6 +3,11 @@ import {
   Button,
   HStack,
   IconButton,
+  Input,
+  Popover,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
   useColorMode,
   VStack,
 } from "@hope-ui/solid"
@@ -10,13 +15,14 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  For,
   on,
   onCleanup,
   Show,
 } from "solid-js"
 import { useBeforeLeave } from "@solidjs/router"
 import { EncodingSelect, MaybeLoading } from "~/components"
-import { MonacoEditorLoader } from "~/components/MonacoEditor"
+import { MonacoEditorLoader, monaco } from "~/components/MonacoEditor"
 import { useFetch, useFetchText, useParseText, useRouter, useT } from "~/hooks"
 import { objStore, setLocal, userCan } from "~/store"
 import { local } from "~/store"
@@ -24,10 +30,20 @@ import { PEmptyResp } from "~/types"
 import { handleResp, notify, r } from "~/utils"
 import { createShortcut } from "@solid-primitives/keyboard"
 import { BiRegularRedo, BiRegularUndo } from "solid-icons/bi"
-import { TbDeviceFloppy, TbTextWrap, TbTextWrapDisabled } from "solid-icons/tb"
+import {
+  TbBraces,
+  TbDeviceFloppy,
+  TbTextWrap,
+  TbTextWrapDisabled,
+} from "solid-icons/tb"
 import { FaSolidMinus, FaSolidPlus } from "solid-icons/fa"
 import { AiOutlineFullscreen, AiOutlineFullscreenExit } from "solid-icons/ai"
 import type * as monacoType from "monaco-editor/esm/vs/editor/editor.api.js"
+
+interface LanguageOption {
+  id: string
+  aliases?: string[]
+}
 
 function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   const { colorMode } = useColorMode()
@@ -50,8 +66,25 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   const [cursorColumn, setCursorColumn] = createSignal(1)
   const [wordCount, setWordCount] = createSignal(0)
   const [language, setLanguage] = createSignal("")
+  const [languageOptions, setLanguageOptions] = createSignal<LanguageOption[]>(
+    [],
+  )
   const [wordWrap, setWordWrap] = createSignal(false)
   const [fullscreen, setFullscreen] = createSignal(false)
+  const [langSearch, setLangSearch] = createSignal("")
+  const filteredLanguages = createMemo(() => {
+    const s = langSearch().toLowerCase()
+    if (!s) return languageOptions()
+    return languageOptions().filter(
+      (l) =>
+        l.id.toLowerCase().includes(s) ||
+        l.aliases?.some((a) => a.toLowerCase().includes(s)),
+    )
+  })
+  const languageDisplayName = createMemo(() => {
+    const lang = languageOptions().find((l) => l.id === language())
+    return lang?.aliases?.[0] || language()
+  })
 
   // Warn on browser close/refresh when there are unsaved changes
   const beforeUnloadHandler = (e: BeforeUnloadEvent) => {
@@ -135,6 +168,12 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
     // Detect language from model
     const lang = ed.getModel()?.getLanguageId() ?? ""
     setLanguage(lang)
+
+    // Populate language options from Monaco
+    if (monaco?.languages?.getLanguages) {
+      const langs = monaco.languages.getLanguages() as LanguageOption[]
+      setLanguageOptions(langs.sort((a, b) => a.id.localeCompare(b.id)))
+    }
   }
 
   function updateWordCount(ed: monacoType.editor.IStandaloneCodeEditor) {
@@ -296,6 +335,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
       <MonacoEditorLoader
         value={text(encoding())}
         theme={theme()}
+        language={language()}
         path={objStore.obj.name}
         onChange={(val) => setValue(val)}
         onEditorReady={onEditorReady}
@@ -319,7 +359,72 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
         <Box style={{ "white-space": "nowrap" }}>{wordCount()} words</Box>
         <Box flex="1" />
         <Show when={language()}>
-          <Box style={{ "white-space": "nowrap" }}>{language()}</Box>
+          <Popover placement="top-end" onClose={() => setLangSearch("")}>
+            <PopoverTrigger
+              as={Box}
+              style={{ "white-space": "nowrap", cursor: "pointer" }}
+              px="$1"
+              borderRadius="$sm"
+              _hover={{
+                bg: "$neutral4",
+              }}
+            >
+              <HStack spacing="$1">
+                <TbBraces size={13} />
+                <Box>{languageDisplayName()}</Box>
+              </HStack>
+            </PopoverTrigger>
+            <PopoverContent w="280px" maxH="350px">
+              <PopoverBody p="$2">
+                <Input
+                  size="xs"
+                  placeholder="Search language..."
+                  value={langSearch()}
+                  onInput={(e) => setLangSearch(e.currentTarget.value)}
+                  mb="$2"
+                  autofocus
+                />
+                <VStack
+                  spacing={0}
+                  maxH="280px"
+                  overflowY="auto"
+                  alignItems="stretch"
+                >
+                  <For each={filteredLanguages()}>
+                    {(lang) => (
+                      <Box
+                        px="$2"
+                        py="$1_5"
+                        fontSize="$xs"
+                        borderRadius="$sm"
+                        cursor="pointer"
+                        bg={language() === lang.id ? "$info4" : "transparent"}
+                        _hover={{
+                          bg: "$neutral4",
+                        }}
+                        onClick={() => {
+                          setLanguage(lang.id)
+                          setLangSearch("")
+                        }}
+                      >
+                        {lang.aliases?.[0] || lang.id}
+                        <Show when={lang.aliases?.[0]}>
+                          <Box
+                            as="span"
+                            color="$neutral9"
+                            fontSize="$2xs"
+                            ml="$1"
+                          >
+                            ({lang.id})
+                          </Box>
+                        </Show>
+                      </Box>
+                    )}
+                  </For>
+                </VStack>
+              </PopoverBody>
+            </PopoverContent>
+          </Popover>
         </Show>
         <Box style={{ "white-space": "nowrap" }}>{encoding()}</Box>
         <Show when={modified()}>

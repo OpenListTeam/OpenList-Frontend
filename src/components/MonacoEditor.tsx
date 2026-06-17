@@ -14,7 +14,7 @@ export interface MonacoEditorProps {
   language?: string
   onEditorReady?: (editor: monacoType.editor.IStandaloneCodeEditor) => void
 }
-let monaco: typeof monacoType
+export let monaco: typeof monacoType
 
 export const MonacoEditorLoader = (props: MonacoEditorProps) => {
   const { monacoPath } = useCDN()
@@ -85,6 +85,18 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
   createEffect(() => {
     monaco.editor.setTheme(props.theme)
   })
+
+  createEffect(
+    on(
+      () => props.language,
+      (lang) => {
+        if (lang && model) {
+          monaco.editor.setModelLanguage(model, lang)
+        }
+      },
+      { defer: true },
+    ),
+  )
 
   createEffect(() => {
     monacoEditor?.updateOptions({
