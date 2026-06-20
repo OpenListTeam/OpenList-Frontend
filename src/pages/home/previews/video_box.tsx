@@ -107,6 +107,12 @@ export const players: {
     scheme: "mpv://$edurl",
     platforms: ["Windows", "MacOS", "Linux", "Android"],
   },
+  {
+    icon: "senplayer",
+    name: "SenPlayer",
+    scheme: "SenPlayer://x-callback-url/play?url=$durl",
+    platforms: ["MacOS"],
+  },
 ]
 
 export const AutoHeightPlugin = (player: Artplayer) => {
