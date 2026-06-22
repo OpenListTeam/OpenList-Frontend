@@ -1,0 +1,42 @@
+{
+  "expires": "만료 시간",
+  "id": "ID",
+  "id_placeholder": "사용자 지정 ID (선택사항, 비워두면 무작위 생성)",
+  "accessed": "접근 횟수",
+  "max_accessed": "최대 접근 횟수",
+  "pwd": "공유 코드",
+  "files": "공유 경로",
+  "files_etc": " 외 {{more}}개",
+  "files_placeholder": "파일 또는 폴더 경로를 입력하세요. 줄당 하나씩",
+  "add_path": "경로 추가",
+  "creator": "생성자",
+  "status": "상태",
+  "status_list": {
+    "disabled": "비활성화됨",
+    "invalid": "유효하지 않음",
+    "work": "작동 중",
+    "denied": "권한 없음"
+  },
+  "remark": "비고",
+  "readme": "설명",
+  "header": "상단 설명",
+  "order_by": "정렬 기준",
+  "order_bys": {
+    "name": "이름",
+    "size": "크기",
+    "modified": "수정일"
+  },
+  "order_direction": "정렬 방향",
+  "order_directions": {
+    "asc": "오름차순",
+    "desc": "내림차순"
+  },
+  "extract_folder": "폴더 순서",
+  "extract_folders": {
+    "front": "폴더를 위로",
+    "back": "폴더를 아래로"
+  },
+  "input_password": "공유 코드를 입력하세요",
+  "copy_msg": "링크 복사",
+  "no_permission_tip": "공유를 생성하려면 \"공유\" 권한이 필요합니다."
+}

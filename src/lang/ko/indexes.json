@@ -1,0 +1,23 @@
+{
+  "index_header": "검색 인덱스 설정",
+  "search_index": "검색 인덱스",
+  "current": "현재 인덱스",
+  "build": "인덱스 빌드",
+  "rebuild": "인덱스 재빌드",
+  "paths_to_update": "업데이트할 경로",
+  "max_depth": "최대 깊이",
+  "update": "인덱스 업데이트",
+  "obj_count": "객체 수",
+  "last_done_time": "마지막 완료 시간",
+  "unknown": "알 수 없음",
+  "stop": "중지",
+  "clear": "초기화",
+  "error": "오류",
+  "scan_header": "수동 스캔",
+  "task_status": "작업 상태",
+  "running": "실행 중",
+  "idle": "대기 중",
+  "path_to_scan": "스캔할 경로",
+  "rate_limit": "속도 제한",
+  "start": "시작"
+}

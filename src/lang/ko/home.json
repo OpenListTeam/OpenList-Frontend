@@ -1,0 +1,263 @@
+{
+  "obj": {
+    "name": "이름",
+    "size": "크기",
+    "modified": "수정일",
+    "count": {
+      "count": "총 {{folders}}개 폴더, {{files}}개 파일",
+      "count_folders": "총 {{folders}}개 폴더",
+      "count_files": "총 {{files}}개 파일",
+      "selected": "{{folders}}개 폴더, {{files}}개 파일 선택됨",
+      "selected_folders": "{{folders}}개 폴더 선택됨",
+      "selected_files": "{{files}}개 파일 선택됨"
+    }
+  },
+  "preview": {
+    "download": "다운로드",
+    "failed_load_img": "이미지 로딩에 실패했습니다",
+    "open_with": "다른 앱으로 열기 ...",
+    "play_with": "다른 앱으로 재생 ...",
+    "install": "설치",
+    "installing": "설치 중",
+    "tr-install": "TrollStore",
+    "tr-installing": "TrollStore 설치 중",
+    "open_in_new_window": "새 창에서 열기",
+    "auto_next": "자동 다음",
+    "names": {
+      "download": "직접 다운로드",
+      "html": "HTML 렌더링",
+      "aliyun_video": "알리윤 동영상 플레이어",
+      "markdown": "마크다운 렌더링",
+      "flash": "플래시 플레이어",
+      "markdown_with_word_wrap": "마크다운 렌더링 (자동 줄바꿈)",
+      "url_open": "URL 열기",
+      "text_editor": "텍스트 편집기",
+      "image": "이미지 뷰어",
+      "video": "동영상 플레이어",
+      "audio": "오디오 플레이어",
+      "ipa": "IPA 설치 프로그램",
+      "plist": "Plist 설치 프로그램",
+      "heic": "HEIC 뷰어",
+      "pdf": "PDF 미리보기",
+      "ppt": "PPT 미리보기",
+      "xls": "XLS 미리보기",
+      "doc": "DOC 미리보기",
+      "asciinema": "Asciinema 플레이어",
+      "video360": "Video360 플레이어",
+      "archive": "압축 파일 미리보기",
+      "torrent": "토렌트 미리보기"
+    }
+  },
+  "layouts": {
+    "list": "목록 보기",
+    "grid": "격자 보기",
+    "image": "이미지 보기"
+  },
+  "no_images": "현재 폴더에 이미지가 없습니다",
+  "load_more": "더 불러오기",
+  "no_more": "더 이상 없습니다",
+  "input_password": "비밀번호를 입력하세요",
+  "toolbar": {
+    "more": "더 보기",
+    "refresh": "새로고침",
+    "toggle_theme": "테마 전환",
+    "switch_lang": "언어 변경",
+    "toggle_markdown_toc": "목차 토글",
+    "toggle_checkbox": "체크박스 토글",
+    "rename": "이름 변경",
+    "input_new_name": "새 이름 입력",
+    "move": "이동",
+    "copy": "복사",
+    "choose_dst_folder": "대상 폴더 선택",
+    "delete": "삭제",
+    "delete-tips": "선택한 항목을 삭제하시겠습니까?",
+    "decompress": "압축 해제",
+    "decompress-pass": "압축 해제 비밀번호: ",
+    "decompress-cache-full": "임시 파일로 전체 캐시",
+    "decompress-put-into-new": "새 하위 폴더에 압축 해제",
+    "extract": "다음 위치에 추출",
+    "archive": {
+      "input_password": "압축 해제 비밀번호를 입력하세요",
+      "incorrect_password": "비밀번호가 올바르지 않습니다",
+      "extract_header": "{{path}}를 다음 위치에 추출..."
+    },
+    "share": "공유",
+    "copy_link": "링크 복사",
+    "preview_page": "미리보기 페이지",
+    "down_link": "다운로드 링크",
+    "encode_down_link": "인코딩된 다운로드 링크",
+    "mkdir": "새 폴더",
+    "input_dir_name": "폴더 이름 입력",
+    "new_file": "새 파일",
+    "input_filename": "파일 이름 입력",
+    "cancel_select": "선택 취소",
+    "offline_download": "오프라인 다운로드",
+    "offline_download-tips": "URL을 줄당 하나씩 입력하세요",
+    "offline_download_torrent": "BT 가져오기",
+    "offline_download_enhanced": {
+      "tab_link": "링크 다운로드",
+      "tab_bt": "BT 다운로드",
+      "link_placeholder": "다운로드 링크를 입력하세요. 줄당 하나씩\n지원 형식: HTTP/HTTPS, magnet:?, ed2k://",
+      "link_tips": "HTTP/HTTPS URL, 마그넷 링크, ed2k 링크를 지원합니다. 링크당 한 줄.",
+      "drop_torrent": ".torrent 파일을 여기에 드래그하세요",
+      "click_to_select": "또는 클릭하여 .torrent 파일 선택",
+      "parsing": "토렌트 파일 파싱 중...",
+      "torrent_too_large": "토렌트 파일이 너무 큽니다 (최대 10MB)",
+      "parse_failed": "토렌트 파일 파싱에 실패했습니다",
+      "files_count": "개 파일",
+      "select_all": "전체 선택",
+      "save_path": "저장 경로",
+      "download_tool": "다운로드 도구",
+      "delete_policy": "삭제 정책",
+      "start_download": "다운로드 시작",
+      "rapid_upload_and_download": "빠른 업로드 시도",
+      "rapid_upload_success": "빠른 업로드에 성공했습니다!",
+      "cas_supported": "CAS 빠른 업로드",
+      "cas_hint": "이 토렌트에 CAS 정보가 포함되어 있어 먼저 Cloud189 빠른 업로드를 시도합니다.",
+      "cas_rapid_upload_mode": "CAS 정보가 감지되었습니다. Cloud189 빠른 업로드를 직접 사용합니다 (다운로드 도구 불필요).",
+      "cas_rapid_upload_failed": "CAS 빠른 업로드에 실패했습니다. 저장 경로가 Cloud189 스토리지인지 확인하거나 수동으로 다운로드하세요.",
+      "cas_failed_fallback_hint": "CAS 빠른 업로드에 실패했습니다. 다운로드 도구를 선택하고 일반 오프라인 다운로드를 시작할 수 있습니다.",
+      "no_cas_hint": "CAS 정보가 없습니다. 파일을 먼저 다운로드한 후 업로드합니다.",
+      "reselect": "다시 선택",
+      "simplehttp_not_supported": "SimpleHttp는 BT/마그넷 다운로드를 지원하지 않습니다. aria2 또는 다른 도구를 선택하세요.",
+      "ed2k_tool_hint": "ed2k 링크가 감지되었습니다. aria2/qBittorrent는 ed2k 프로토콜을 지원하지 않습니다. 시스템이 자동으로 Thunder 도구를 시도하거나, Thunder/ThunderX/ThunderBrowser를 수동으로 선택할 수 있습니다.",
+      "generate_cas_file": "CAS 파일 생성",
+      "cas_file_generated": "CAS 파일이 성공적으로 생성되었습니다",
+      "cas_file_generate_failed": "CAS 파일 생성에 실패했습니다",
+      "file_selection_hint": "참고: 토렌트 파일 목록은 참고용입니다. 파일 부분 선택은 아직 지원되지 않으며 토렌트의 모든 파일이 다운로드됩니다."
+    },
+    "delete_policy": {
+      "delete_on_upload_succeed": "업로드 성공 시 삭제",
+      "delete_on_upload_failed": "업로드 실패 시 삭제",
+      "delete_never": "삭제 안 함",
+      "delete_always": "항상 삭제",
+      "upload_download_stream": "다운로드 스트림 직접 업로드"
+    },
+    "download": "다운로드",
+    "batch_download": "일괄 다운로드",
+    "package_download": "패키지 다운로드",
+    "package_download_disabled": "패키지 다운로드가 비활성화되어 있습니다",
+    "send_aria2": "Aria2로 전송",
+    "aria2_not_set": "aria2 RPC URL을 설정해 주세요",
+    "send_aria2_success": "aria2로 성공적으로 전송되었습니다",
+    "pre_package_download-tips": "서버 대신 브라우저의 streamsaver를 사용한 패키지 다운로드는 해당 스토리지가 CORS를 지원해야 하며, 지원하지 않는 스토리지는 실패합니다.",
+    "package_download-tips": "다운로드 중입니다. 페이지를 닫지 마세요",
+    "playlist_download": "재생목록 다운로드",
+    "upload": "업로드",
+    "local_settings": "로컬 설정",
+    "recursive_move": "재귀 이동",
+    "recursive_move_directory-tips": "현재 폴더 및 하위 폴더의 모든 파일을 지정된 폴더로 이동하시겠습니까?",
+    "remove_empty_directory": "빈 폴더 삭제",
+    "remove_empty_directory-tips": "모든 빈 하위 폴더를 삭제하시겠습니까?",
+    "batch_rename": "일괄 이름 변경",
+    "regex_rename": "정규식 이름 변경",
+    "sequential_renaming": "순차 이름 변경",
+    "regex_rename_preview": "변경된 파일",
+    "regex_rename_preview_old_name": "이전 이름",
+    "regex_rename_preview_new_name": "새 이름",
+    "regular_rename": "정규 표현식으로 파일 이름을 변경합니다. 첫 번째 줄에 원본 파일 이름 정규 표현식을, 두 번째 줄에 새 파일 이름 정규 표현식을 입력하세요.",
+    "sequential_renaming_desc": "새 파일 이름에 시작 값부터 1씩 증가하는 번호가 순서대로 추가됩니다. 첫 번째 줄에 새 파일 이름을, 두 번째 줄에 시작 값을 입력하세요. {number} 자리 표시자를 지원합니다.",
+    "sequential_renaming_input3_placeholder": "0으로 채우기 (선택사항)",
+    "find_replace": "찾기 및 바꾸기",
+    "find_replace_desc": "찾기 및 바꾸기"
+  },
+  "upload": {
+    "add_as_task": "작업으로 추가",
+    "try_rapid": "빠른 업로드 시도",
+    "upload-tips": "파일을 여기에 드래그하거나 클릭하여 업로드:",
+    "release": "놓아서 업로드",
+    "no_files_drag": "드래그된 파일이 없습니다.",
+    "upload_files": "파일 선택",
+    "upload_folder": "폴더 선택",
+    "hashing": "해시 계산 중",
+    "pending": "대기 중",
+    "uploading": "업로드 중",
+    "backending": "백엔드에서 업로드 중",
+    "success": "성공",
+    "error": "오류",
+    "back": "업로드로 돌아가기",
+    "clear_done": "완료 항목 지우기"
+  },
+  "local_settings": {
+    "aria2_rpc_url": "Aria2 RPC URL",
+    "aria2_rpc_secret": "Aria2 RPC 시크릿",
+    "aria2_dir": "Aria2 다운로드 디렉터리",
+    "show_folder_in_image_view": "이미지 보기에서 폴더 표시",
+    "show_folder_in_image_view_options": {
+      "top": "위",
+      "bottom": "아래",
+      "none": "없음"
+    },
+    "global_default_layout": "전역 기본 레이아웃",
+    "global_default_layout_options": {
+      "list": "목록 보기",
+      "grid": "격자 보기",
+      "image": "이미지 보기"
+    },
+    "position_of_header_navbar": "헤더 및 내비게이션 바 위치",
+    "position_of_header_navbar_options": {
+      "static": "일반",
+      "sticky": "페이지 상단에 고정",
+      "only_navbar_sticky": "내비게이션 바만 고정"
+    },
+    "grid_item_size": "격자 항목 크기",
+    "show_sidebar": "사이드바 표시",
+    "show_sidebar_options": {
+      "none": "없음",
+      "visible": "표시"
+    },
+    "show_count_msg": "파일 개수 메시지 표시",
+    "show_count_msg_options": {
+      "none": "없음",
+      "visible": "표시"
+    },
+    "list_item_filename_overflow": "목록 항목 파일명 넘침 처리",
+    "list_item_filename_overflow_options": {
+      "ellipsis": "줄임표",
+      "scrollable": "스크롤 가능",
+      "multi_line": "여러 줄"
+    },
+    "open_item_on_checkbox": "체크박스에서 항목 열기",
+    "open_item_on_checkbox_options": {
+      "direct": "직접",
+      "dblclick": "더블 클릭",
+      "disable_while_checked": "선택 중 비활성화"
+    },
+    "show_gallery_thumbnails": "갤러리 썸네일 표시",
+    "show_gallery_thumbnails_options": {
+      "none": "없음",
+      "visible": "표시"
+    }
+  },
+  "package_download": {
+    "current_status": "현재 상태",
+    "initializing": "초기화 중",
+    "fetching_struct": "폴더 구조 가져오는 중",
+    "fetching_struct_failed": "폴더 구조를 가져오지 못했습니다",
+    "downloading": "파일 다운로드 중, 페이지를 닫거나 새로고침하지 마세요",
+    "failed": "패키지 다운로드에 실패했습니다",
+    "success": "다운로드가 완료되었습니다"
+  },
+  "footer": {
+    "powered_by": "Powered by OpenList",
+    "manage": "관리"
+  },
+  "search": {
+    "search": "검색",
+    "no_result": "결과가 없습니다",
+    "scopes": {
+      "all": "전체",
+      "folder": "폴더",
+      "file": "파일"
+    }
+  },
+  "fetching_settings_failed": "설정을 가져오지 못했습니다: ",
+  "get_current_user_failed": "현재 사용자를 가져오지 못했습니다: ",
+  "Loading storage, please wait": "스토리지를 불러오는 중입니다. 잠시 기다려 주세요",
+  "conflict_policy": {
+    "cancel_if_exists": "파일이 존재하면 취소",
+    "overwrite_existing": "기존 파일 덮어쓰기",
+    "skip_existing": "기존 파일 건너뛰기",
+    "merge": "새 파일 및 하위 디렉터리만 복사"
+  }
+}

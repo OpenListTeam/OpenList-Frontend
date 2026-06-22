@@ -1,0 +1,13 @@
+{
+  "login_to": "로그인:",
+  "username-tips": "사용자 이름을 입력하세요",
+  "password-tips": "비밀번호를 입력하세요",
+  "otp-tips": "OTP 코드를 입력하세요",
+  "remember": "로그인 상태 유지",
+  "forget": "비밀번호를 잊으셨나요?",
+  "forget_url": "https://doc.oplist.org/faq/howto#how-to-get-password-if-i-forget-it",
+  "clear": "지우기",
+  "login": "로그인",
+  "use_guest": "게스트로 둘러보기",
+  "success": "로그인되었습니다"
+}

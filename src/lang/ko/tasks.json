@@ -1,0 +1,66 @@
+{
+  "offline_download": "로컬 장치에 파일 다운로드",
+  "offline_download_transfer": "다운로드된 파일을 해당 스토리지로 전송",
+  "upload": "해당 스토리지에 파일 업로드",
+  "copy": "한 스토리지에서 다른 스토리지로 파일 복사",
+  "move": "한 스토리지에서 다른 스토리지로 파일 이동",
+  "decompress": "압축 파일 다운로드 및 압축 해제",
+  "decompress_upload": "압축 해제된 파일을 대상 스토리지에 업로드",
+  "done": "완료됨",
+  "undone": "실행 중",
+  "clear_succeeded": "완료된 항목 지우기",
+  "retry": "재시도",
+  "retry_failed": "실패한 항목 재시도",
+  "state": {
+    "0": "대기 중",
+    "1": "실행 중",
+    "2": "성공",
+    "3": "취소 중",
+    "4": "취소됨",
+    "5": "오류",
+    "6": "실패 중",
+    "7": "실패",
+    "8": "재시도 대기 중",
+    "9": "재시도 준비 중"
+  },
+  "retry_selected": "선택 항목 재시도",
+  "cancel_selected": "선택 항목 취소",
+  "delete_selected": "선택 항목 삭제",
+  "filter": "필터",
+  "expand": "펼치기",
+  "fold": "접기",
+  "expand_all": "모두 펼치기",
+  "fold_all": "모두 접기",
+  "attr": {
+    "name": "이름",
+    "creator": "생성자",
+    "state": "상태",
+    "progress": "진행률",
+    "speed": "속도",
+    "operation": "작업",
+    "copy": {
+      "src": "원본 경로",
+      "dst": "대상 경로"
+    },
+    "upload": {
+      "path": "경로"
+    },
+    "offline_download": {
+      "url": "URL",
+      "path": "대상 경로",
+      "transfer_src": "원본 경로",
+      "transfer_src_local": "원본 경로 (로컬)",
+      "transfer_dst": "대상 경로"
+    },
+    "decompress": {
+      "src": "원본 경로",
+      "dst": "대상 경로",
+      "inner": "내부 경로",
+      "password": "압축 해제 비밀번호"
+    },
+    "time_elapsed": "경과 시간",
+    "status": "상태",
+    "err": "오류"
+  },
+  "show_only_mine": "내 작업만 보기"
+}

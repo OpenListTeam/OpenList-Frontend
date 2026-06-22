@@ -1,0 +1,65 @@
+{
+  "common": {
+    "export": "내보내기",
+    "export_title": "스토리지를 JSON으로 내보내기",
+    "export_tips": "위의 스토리지 JSON을 복사해 주세요.",
+    "import": "가져오기",
+    "import_title": "JSON에서 스토리지 가져오기",
+    "import_success": "가져오기에 성공했습니다!",
+    "import_tips": "내보낸 스토리지 JSON을 붙여넣어 가져오세요.",
+    "mount_path": "마운트 경로",
+    "mount_path-tips": "마운트할 경로로, 고유하며 중복될 수 없습니다",
+    "driver": "드라이버",
+    "order": "순서",
+    "order-tips": "정렬에 사용됩니다",
+    "usage": "사용량",
+    "status": "상태",
+    "remark": "비고",
+    "cache_expiration": "캐시 만료",
+    "cache_expiration-tips": "이 스토리지의 캐시 만료 시간 (분)",
+    "custom_cache_policies": "사용자 지정 캐시 정책",
+    "custom_cache_policies-tips": "이 스토리지의 캐시 만료 규칙 (분)",
+    "down_proxy_url": "다운로드 프록시 URL",
+    "disable_proxy_sign": "프록시 서명 비활성화",
+    "disable_proxy_sign-tips": "다운로드 프록시 URL의 서명을 비활성화합니다",
+    "web_proxy": "웹 프록시",
+    "webdav_policy": "WebDAV 정책",
+    "proxy_range": "프록시 범위",
+    "proxy_range-tips": "프록시를 활성화해야 합니다",
+    "webdav_policys": {
+      "302_redirect": "302 리다이렉트",
+      "use_proxy_url": "프록시 URL 사용",
+      "native_proxy": "네이티브 프록시"
+    },
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "name": "이름",
+      "size": "크기",
+      "modified": "수정일"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "extract_folder": "폴더 순서",
+    "extract_folders": {
+      "front": "폴더를 위로",
+      "back": "폴더를 아래로"
+    },
+    "enable_sign": "서명 활성화",
+    "disable_index": "인덱스 비활성화"
+  },
+  "table_fields": {
+    "status": {
+      "work": "작동 중",
+      "disabled": "비활성화됨"
+    }
+  },
+  "other": {
+    "start_load_success": "로딩 시작됨",
+    "load_all": "전체 새로고침",
+    "filter_by_driver": "드라이버로 필터",
+    "table_layout": "테이블 레이아웃"
+  }
+}

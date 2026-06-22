@@ -1,0 +1,1671 @@
+{
+  "115 Cloud": {
+    "cookie": "쿠키",
+    "cookie-tips": "QR 코드 토큰 또는 쿠키 중 하나가 필요합니다",
+    "limit_rate": "속도 제한",
+    "limit_rate-tips": "모든 API 요청 속도 제한 ([limit]r/1s)",
+    "page_size": "페이지 크기",
+    "page_size-tips": "115 드라이버의 페이지당 목록 수",
+    "qrcode_source": "QR 코드 소스",
+    "qrcode_source-tips": "QR 코드 장치 선택 (기본값: linux)",
+    "qrcode_sources": {
+      "alipaymini": "알리페이 미니",
+      "android": "Android",
+      "ios": "iOS",
+      "qandroid": "Qandroid",
+      "tv": "TV",
+      "web": "Web",
+      "wechatmini": "위챗 미니"
+    },
+    "qrcode_token": "QR 코드 토큰",
+    "qrcode_token-tips": "QR 코드 토큰 또는 쿠키 중 하나가 필요합니다",
+    "root_folder_id": "루트 폴더 ID"
+  },
+  "115 Open": {
+    "access_token": "액세스 토큰",
+    "limit_rate": "속도 제한",
+    "limit_rate-tips": "모든 API 요청 속도 제한 ([limit]r/1s)",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "file_name": "파일 이름",
+      "file_size": "파일 크기",
+      "file_type": "파일 유형",
+      "user_utime": "사용자 수정 시간"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "page_size": "페이지 크기",
+    "page_size-tips": "115open 드라이버의 페이지당 목록 수",
+    "refresh_token": "리프레시 토큰",
+    "root_folder_id": "루트 폴더 ID"
+  },
+  "115 Share": {
+    "cookie": "쿠키",
+    "cookie-tips": "QR 코드 토큰 또는 쿠키 중 하나가 필요합니다",
+    "limit_rate": "속도 제한",
+    "limit_rate-tips": "모든 API 요청 속도 제한 (1r/[limit_rate]s)",
+    "page_size": "페이지 크기",
+    "page_size-tips": "115 드라이버의 페이지당 목록 수",
+    "qrcode_source": "QR 코드 소스",
+    "qrcode_source-tips": "QR 코드 장치 선택 (기본값: linux)",
+    "qrcode_sources": {
+      "alipaymini": "알리페이 미니",
+      "android": "Android",
+      "ios": "iOS",
+      "qandroid": "Qandroid",
+      "tv": "TV",
+      "web": "Web",
+      "wechatmini": "위챗 미니"
+    },
+    "qrcode_token": "QR 코드 토큰",
+    "qrcode_token-tips": "QR 코드 토큰 또는 쿠키 중 하나가 필요합니다",
+    "receive_code": "수신 코드",
+    "receive_code-tips": "115 공유 링크의 수신 코드",
+    "root_folder_id": "루트 폴더 ID",
+    "share_code": "공유 코드",
+    "share_code-tips": "115 공유 링크의 공유 코드"
+  },
+  "123 Open": {
+    "AccessToken": "액세스 토큰",
+    "ClientID": "클라이언트 ID",
+    "ClientSecret": "클라이언트 시크릿",
+    "DirectLink": "직접 링크",
+    "DirectLink-tips": "파일 다운로드 시 직접 링크 사용",
+    "DirectLinkPrivateKey": "직접 링크 개인 키",
+    "DirectLinkPrivateKey-tips": "URL 인증이 활성화된 경우 직접 링크용 개인 키",
+    "DirectLinkValidDuration": "직접 링크 유효 시간",
+    "DirectLinkValidDuration-tips": "분 (URL 인증이 활성화된 경우)",
+    "RefreshToken": "리프레시 토큰",
+    "UploadThread": "업로드 스레드",
+    "UploadThread-tips": "업로드 스레드 수",
+    "api_url_address": "API URL 주소",
+    "root_folder_id": "루트 폴더 ID",
+    "use_online_api": "온라인 API 사용"
+  },
+  "123Pan": {
+    "UploadThread": "업로드 스레드",
+    "UploadThread-tips": "업로드 스레드 수",
+    "password": "비밀번호",
+    "platform": "플랫폼",
+    "platform-tips": "API 요청 시 전송되는 플랫폼 헤더 값",
+    "root_folder_id": "루트 폴더 ID",
+    "username": "사용자 이름"
+  },
+  "123PanLink": {
+    "origin_urls": "원본 URL",
+    "origin_urls-tips": "구조: 폴더이름:\n  [파일크기:][수정일:]URL",
+    "private_key": "개인 키",
+    "uid": "UID",
+    "valid_duration": "유효 기간",
+    "valid_duration-tips": "분"
+  },
+  "123PanShare": {
+    "accesstoken": "액세스 토큰",
+    "root_folder_id": "루트 폴더 ID",
+    "sharekey": "공유 키",
+    "sharepassword": "공유 비밀번호"
+  },
+  "139Yun": {
+    "authorization": "인증",
+    "cloud_id": "클라우드 ID",
+    "custom_upload_part_size": "사용자 지정 업로드 파트 크기",
+    "custom_upload_part_size-tips": "0이면 자동",
+    "mail_cookies": "메일 쿠키",
+    "mail_cookies-tips": "로그인 인증에 사용되는 mail.139.com의 쿠키",
+    "password": "비밀번호",
+    "report_real_size": "실제 크기 보고",
+    "report_real_size-tips": "업로드 중 실제 파일 크기를 보고합니다",
+    "root_folder_id": "루트 폴더 ID",
+    "type": "유형",
+    "types": {
+      "family": "가족",
+      "group": "그룹",
+      "personal": "개인",
+      "personal_new": "개인 (신규)"
+    },
+    "use_large_thumbnail": "큰 썸네일 사용",
+    "use_large_thumbnail-tips": "이미지에 큰 썸네일 사용 활성화",
+    "user_domain_id": "사용자 도메인 ID",
+    "user_domain_id-tips": "쿠키의 ud_id, 디스크 사용량 표시를 위해 입력",
+    "username": "사용자 이름"
+  },
+  "189Cloud": {
+    "cookie": "쿠키",
+    "cookie-tips": "캡차가 필요한 경우 쿠키를 입력하세요",
+    "password": "비밀번호",
+    "root_folder_id": "루트 폴더 ID",
+    "username": "사용자 이름"
+  },
+  "189CloudPC": {
+    "access_token": "액세스 토큰",
+    "family_id": "가족 ID",
+    "family_transfer": "가족 전송",
+    "generate_torrent": "토렌트 생성",
+    "generate_torrent-tips": "업로드 후 CAS 확장자로 토렌트 파일 생성",
+    "login_type": "로그인 유형",
+    "login_types": {
+      "password": "비밀번호",
+      "qrcode": "QR 코드"
+    },
+    "no_use_ocr": "OCR 미사용",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "filename": "파일 이름",
+      "filesize": "파일 크기",
+      "lastOpTime": "마지막 작업 시간"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "password": "비밀번호",
+    "rapid_upload": "빠른 업로드",
+    "refresh_token": "리프레시 토큰",
+    "refresh_token-tips": "계정을 전환하려면 이 필드를 지우세요",
+    "root_folder_id": "루트 폴더 ID",
+    "type": "유형",
+    "types": {
+      "family": "가족",
+      "personal": "개인"
+    },
+    "upload_method": "업로드 방식",
+    "upload_methods": {
+      "old": "이전",
+      "rapid": "빠른",
+      "stream": "스트림"
+    },
+    "upload_thread": "업로드 스레드",
+    "upload_thread-tips": "1<=스레드<=32",
+    "username": "사용자 이름",
+    "validate_code": "인증 코드"
+  },
+  "189CloudTV": {
+    "access_token": "액세스 토큰",
+    "family_id": "가족 ID",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "filename": "파일 이름",
+      "filesize": "파일 크기",
+      "lastOpTime": "마지막 작업 시간"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "rapid_upload": "빠른 업로드",
+    "root_folder_id": "루트 폴더 ID",
+    "type": "유형",
+    "types": {
+      "family": "가족",
+      "personal": "개인"
+    },
+    "upload_thread": "업로드 스레드",
+    "upload_thread-tips": "1<=스레드<=32"
+  },
+  "AList V3": {
+    "forward_archive_requests": "아카이브 요청 전달",
+    "meta_password": "메타 비밀번호",
+    "pass_ip_to_upsteam": "IP를 업스트림으로 전달",
+    "pass_ua_to_upsteam": "UA를 업스트림으로 전달",
+    "password": "비밀번호",
+    "root_folder_path": "루트 폴더 경로",
+    "token": "토큰",
+    "url": "URL",
+    "username": "사용자 이름"
+  },
+  "Alias": {
+    "details_pass_through": "세부정보 통과",
+    "download_concurrency": "다운로드 동시 처리",
+    "download_concurrency-tips": "프록시를 활성화해야 합니다",
+    "download_part_size": "다운로드 파트 크기",
+    "download_part_size-tips": "프록시를 활성화해야 합니다. 단위: KB",
+    "file_consistency_check": "파일 일관성 검사",
+    "paths": "경로",
+    "provider_pass_through": "공급자 통과",
+    "put_conflict_policy": "쓰기 충돌 정책",
+    "put_conflict_policy-tips": "업로드, 복사, 이동 또는 압축 해제 시 동일한 백엔드 경로를 드라이버가 처리하는 방식입니다.",
+    "put_conflict_policys": {
+      "all": "모든 충돌 경로에 쓰기",
+      "all_strict": "전체 충돌 경로 허용",
+      "deterministic": "고유 경로 허용",
+      "deterministic_or_all": "고유 경로 및 전체 충돌 경로 허용",
+      "disabled": "쓰기 비활성화",
+      "first": "첫 번째 충돌 경로에 쓰기",
+      "quota": "남은 공간 기반 가중 무작위 부하 분산",
+      "quota_strict": "남은 공간 기반 엄격한 가중 무작위 부하 분산",
+      "random": "무작위 부하 분산"
+    },
+    "read_conflict_policy": "읽기 충돌 정책",
+    "read_conflict_policys": {
+      "all": "파트별 부하 분산",
+      "first": "첫 번째 충돌 경로의 파일 가져오기",
+      "random": "파일별 부하 분산"
+    },
+    "write_conflict_policy": "쓰기 충돌 정책",
+    "write_conflict_policy-tips": "이름 변경, 삭제 또는 디렉터리 생성 시 동일한 백엔드 경로를 드라이버가 처리하는 방식입니다.",
+    "write_conflict_policys": {
+      "all": "모든 충돌 경로에 쓰기",
+      "all_strict": "전체 충돌 경로 허용",
+      "deterministic": "고유 경로 허용",
+      "deterministic_or_all": "고유 경로 및 전체 충돌 경로 허용",
+      "disabled": "쓰기 비활성화",
+      "first": "첫 번째 충돌 경로에 쓰기"
+    }
+  },
+  "Aliyundrive": {
+    "internal_upload": "내부 업로드",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "created_at": "생성일",
+      "name": "이름",
+      "size": "크기",
+      "updated_at": "수정일"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "ASC": "오름차순",
+      "DESC": "내림차순"
+    },
+    "rapid_upload": "빠른 업로드",
+    "refresh_token": "리프레시 토큰",
+    "root_folder_id": "루트 폴더 ID"
+  },
+  "AliyundriveOpen": {
+    "alipan_type": "Alipan 유형",
+    "alipan_types": {
+      "alipanTV": "AlipanTV",
+      "default": "기본값"
+    },
+    "api_url_address": "API URL 주소",
+    "client_id": "클라이언트 ID",
+    "client_id-tips": "없으면 비워두세요",
+    "client_secret": "클라이언트 시크릿",
+    "client_secret-tips": "없으면 비워두세요",
+    "drive_type": "드라이브 유형",
+    "drive_types": {
+      "backup": "백업",
+      "default": "기본값",
+      "resource": "리소스"
+    },
+    "internal_upload": "내부 업로드",
+    "internal_upload-tips": "베이징에 위치한 Aliyun ECS를 사용 중이라면 활성화하여 업로드 속도를 높일 수 있습니다",
+    "livp_download_format": "Livp 다운로드 형식",
+    "livp_download_formats": {
+      "jpeg": "JPEG",
+      "mov": "MOV"
+    },
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "created_at": "생성일",
+      "name": "이름",
+      "size": "크기",
+      "updated_at": "수정일"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "ASC": "오름차순",
+      "DESC": "내림차순"
+    },
+    "rapid_upload": "빠른 업로드",
+    "rapid_upload-tips": "이 옵션을 활성화하면 파일이 먼저 서버에 업로드되므로 진행률이 정확하지 않을 수 있습니다",
+    "refresh_token": "리프레시 토큰",
+    "remove_way": "삭제 방법",
+    "remove_ways": {
+      "delete": "삭제",
+      "trash": "휴지통"
+    },
+    "root_folder_id": "루트 폴더 ID",
+    "use_online_api": "온라인 API 사용"
+  },
+  "AliyundriveShare": {
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "created_at": "생성일",
+      "name": "이름",
+      "size": "크기",
+      "updated_at": "수정일"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "ASC": "오름차순",
+      "DESC": "내림차순"
+    },
+    "refresh_token": "리프레시 토큰",
+    "root_folder_id": "루트 폴더 ID",
+    "share_id": "공유 ID",
+    "share_pwd": "공유 비밀번호"
+  },
+  "AutoIndex": {
+    "ignore_file_names": "파일 이름 무시",
+    "item_xpath": "항목 XPath",
+    "modified_time_format": "수정 날짜 형식",
+    "modified_time_format-tips": "Mon Jan 2 15:04:05 -0700 MST 2006 시간 기준이어야 합니다",
+    "modified_xpath": "수정 시간 XPath",
+    "name_xpath": "파일 이름 XPath",
+    "size_xpath": "파일 크기 XPath",
+    "url": "URL"
+  },
+  "Azure Blob Storage": {
+    "access_key": "액세스 키",
+    "access_key-tips": "인증에 사용되는 Azure Storage 액세스 키입니다. https://learn.microsoft.com/azure/storage/common/storage-account-keys-manage",
+    "container_name": "컨테이너 이름",
+    "container_name-tips": "Azure Storage의 컨테이너 이름입니다 (Azure 포털에서 생성). https://learn.microsoft.com/azure/storage/blobs/blob-containers-portal",
+    "endpoint": "엔드포인트",
+    "endpoint-tips": "예: https://accountname.blob.core.windows.net/. 고유한 스토리지 계정 이름을 포함한 Azure Storage의 전체 엔드포인트 URL입니다 (3~24자, 숫자 및 소문자만 가능).",
+    "root_folder_path": "루트 폴더 경로",
+    "sign_url_expire": "서명 URL 만료",
+    "sign_url_expire-tips": "SAS URL의 만료 시간 (시간 단위)."
+  },
+  "BaiduNetdisk": {
+    "api_url_address": "API URL 주소",
+    "client_id": "클라이언트 ID",
+    "client_secret": "클라이언트 시크릿",
+    "custom_crack_ua": "사용자 지정 크랙 UA",
+    "custom_upload_part_size": "사용자 지정 업로드 파트 크기",
+    "custom_upload_part_size-tips": "0이면 자동",
+    "download_api": "다운로드 API",
+    "download_apis": {
+      "crack": "크랙",
+      "crack_video": "크랙 동영상",
+      "official": "공식"
+    },
+    "low_bandwith_upload_mode": "저대역폭 업로드 모드",
+    "only_list_video_file": "동영상 파일만 목록 표시",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "name": "이름",
+      "size": "크기",
+      "time": "시간"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "refresh_token": "리프레시 토큰",
+    "root_folder_path": "루트 폴더 경로",
+    "upload_api": "업로드 API",
+    "upload_thread": "업로드 스레드",
+    "upload_thread-tips": "1<=스레드<=32",
+    "upload_timeout": "업로드 타임아웃",
+    "upload_timeout-tips": "슬라이스당 업로드 타임아웃 (초)",
+    "use_dynamic_upload_api": "동적 업로드 API 사용",
+    "use_dynamic_upload_api-tips": "업로드 API 도메인을 동적으로 가져옵니다. 활성화 시 가져오기 실패하면 '업로드 API' 설정이 폴백으로 사용됩니다",
+    "use_online_api": "온라인 API 사용"
+  },
+  "BaiduPhoto": {
+    "album_id": "앨범 ID",
+    "cookie": "쿠키",
+    "delete_origin": "원본 삭제",
+    "show_type": "표시 유형",
+    "show_types": {
+      "root": "루트",
+      "root_only_album": "루트 앨범만",
+      "root_only_file": "루트 파일만"
+    },
+    "upload_thread": "업로드 스레드",
+    "upload_thread-tips": "1<=스레드<=32"
+  },
+  "CNB Releases": {
+    "default_branch": "기본 브랜치",
+    "default_branch-tips": "새 릴리즈의 기본 브랜치",
+    "repo": "저장소",
+    "root_folder_id": "루트 폴더 ID",
+    "token": "토큰",
+    "use_tag_name": "태그 이름 사용",
+    "use_tag_name-tips": "릴리즈 이름 대신 태그 이름 사용"
+  },
+  "ChaoXingGroupDrive": {
+    "bbsid": "BBSID",
+    "cookie": "쿠키",
+    "password": "비밀번호",
+    "root_folder_id": "루트 폴더 ID",
+    "user_name": "사용자 이름"
+  },
+  "Chunk": {
+    "chunk_large_file_only": "대용량 파일만 청크",
+    "chunk_large_file_only-tips": "파일 크기가 part_size보다 클 때만 청크",
+    "chunk_prefix": "청크 접두사",
+    "chunk_prefix-tips": "청크 폴더의 접두사",
+    "custom_ext": "사용자 지정 확장자",
+    "num_list_workers": "목록 작업자 수",
+    "part_size": "파트 크기",
+    "part_size-tips": "바이트",
+    "remote_path": "원격 경로",
+    "show_hidden": "숨김 항목 표시",
+    "show_hidden-tips": "숨긴 디렉터리 및 파일 표시",
+    "store_hash": "해시 저장",
+    "thumbnail": "썸네일",
+    "thumbnail-tips": ".thumbnails 폴더에 미리 생성된 썸네일 사용"
+  },
+  "Cloudreve": {
+    "address": "주소",
+    "cookie": "쿠키",
+    "custom_ua": "사용자 지정 UA",
+    "enable_thumb_and_folder_size": "썸네일 및 폴더 크기 활성화",
+    "password": "비밀번호",
+    "root_folder_path": "루트 폴더 경로",
+    "username": "사용자 이름"
+  },
+  "Cloudreve V4": {
+    "access_token": "액세스 토큰",
+    "address": "주소",
+    "custom_ua": "사용자 지정 UA",
+    "enable_folder_size": "폴더 크기 활성화",
+    "enable_thumb": "썸네일 활성화",
+    "enable_version_upload": "버전 업로드 활성화",
+    "hide_uploading": "업로드 중 숨기기",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "created_at": "생성일",
+      "name": "이름",
+      "size": "크기",
+      "updated_at": "수정일"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "password": "비밀번호",
+    "refresh_token": "리프레시 토큰",
+    "root_folder_path": "루트 폴더 경로",
+    "username": "사용자 이름"
+  },
+  "Crypt": {
+    "directory_name_encryption": "디렉터리 이름 암호화",
+    "directory_name_encryptions": {
+      "false": "False",
+      "true": "True"
+    },
+    "encrypted_suffix": "암호화 접미사",
+    "encrypted_suffix-tips": "고급 사용자 전용! 암호화된 파일에 이 접미사가 붙습니다",
+    "filename_encoding": "파일 이름 인코딩",
+    "filename_encoding-tips": "고급 사용자 전용!",
+    "filename_encodings": {
+      "base32": "Base32",
+      "base32768": "Base32768",
+      "base64": "Base64"
+    },
+    "filename_encryption": "파일 이름 암호화",
+    "filename_encryptions": {
+      "obfuscate": "난독화",
+      "off": "끄기",
+      "standard": "표준"
+    },
+    "password": "비밀번호",
+    "password-tips": "메인 비밀번호",
+    "remote_path": "원격 경로",
+    "remote_path-tips": "암호화된 데이터가 저장되는 위치입니다",
+    "salt": "솔트",
+    "salt-tips": "솔트가 무엇인지 모르면 두 번째 비밀번호로 취급하세요. 선택사항이지만 권장합니다",
+    "show_hidden": "숨김 항목 표시",
+    "show_hidden-tips": "숨긴 디렉터리 및 파일 표시",
+    "thumbnail": "썸네일",
+    "thumbnail-tips": ".thumbnails 폴더에 미리 생성된 썸네일 사용"
+  },
+  "Degoo": {
+    "access_token": "액세스 토큰",
+    "access_token-tips": "자동으로 획득되는 Degoo API 액세스 토큰",
+    "password": "비밀번호",
+    "password-tips": "Degoo 계정 비밀번호",
+    "refresh_token": "리프레시 토큰",
+    "refresh_token-tips": "자동 토큰 갱신을 위한 리프레시 토큰 (자동 획득)",
+    "root_folder_id": "루트 폴더 ID",
+    "username": "사용자 이름",
+    "username-tips": "Degoo 계정 이메일"
+  },
+  "Doge": {
+    "access_key_id": "액세스 키 ID",
+    "add_filename_to_disposition": "파일 이름을 disposition에 추가",
+    "add_filename_to_disposition-tips": "Content-Disposition 헤더에 파일 이름을 추가합니다.",
+    "bucket": "버킷",
+    "custom_host": "사용자 지정 호스트",
+    "direct_upload_host": "직접 업로드 호스트",
+    "enable_custom_host_presign": "사용자 지정 호스트 사전 서명 활성화",
+    "enable_direct_upload": "직접 업로드 활성화",
+    "endpoint": "엔드포인트",
+    "force_path_style": "경로 스타일 강제",
+    "list_object_version": "객체 버전 목록",
+    "list_object_versions": {
+      "v1": "V1",
+      "v2": "V2"
+    },
+    "placeholder": "자리 표시자",
+    "region": "지역",
+    "remove_bucket": "버킷 제거",
+    "remove_bucket-tips": "사용자 지정 호스트 사용 시 경로에서 버킷 이름을 제거합니다.",
+    "root_folder_path": "루트 폴더 경로",
+    "secret_access_key": "시크릿 액세스 키",
+    "session_token": "세션 토큰",
+    "sign_url_expire": "서명 URL 만료"
+  },
+  "Doubao": {
+    "cookie": "쿠키",
+    "download_api": "다운로드 API",
+    "download_apis": {
+      "get_download_info": "다운로드 정보 가져오기",
+      "get_file_url": "파일 URL 가져오기"
+    },
+    "limit_rate": "속도 제한",
+    "limit_rate-tips": "모든 API 요청 속도 제한 ([limit]r/1s)",
+    "root_folder_id": "루트 폴더 ID",
+    "upload_thread": "업로드 스레드"
+  },
+  "DoubaoNew": {
+    "app_id": "앱 ID",
+    "app_id-tips": "Doubao 앱 ID",
+    "auth_client_id": "인증 클라이언트 ID",
+    "auth_client_id-tips": "Doubao 비즈 인증 클라이언트 ID",
+    "auth_client_type": "인증 클라이언트 유형",
+    "auth_client_type-tips": "Doubao 비즈 인증 클라이언트 유형",
+    "auth_scope": "인증 범위",
+    "auth_scope-tips": "Doubao 비즈 인증 범위",
+    "auth_sdk_source": "인증 SDK 소스",
+    "auth_sdk_source-tips": "Doubao 비즈 인증 SDK 소스",
+    "auth_sdk_version": "인증 SDK 버전",
+    "auth_sdk_version-tips": "Doubao 비즈 인증 SDK 버전",
+    "cookie": "쿠키",
+    "cookie-tips": "웹 쿠키",
+    "dpop_key_secret": "DPoP 키 시크릿",
+    "dpop_key_secret-tips": "DPoP 토큰 생성을 위한 DPoP 키 시크릿",
+    "ignore_jwt_check": "JWT 검사 무시",
+    "ignore_jwt_check-tips": "시간 문제를 방지하기 위해 JWT 검사를 무시할지 여부",
+    "root_folder_id": "루트 폴더 ID",
+    "share_link": "공유 링크",
+    "share_link-tips": "다운로드에 공유 링크 사용 여부"
+  },
+  "DoubaoShare": {
+    "cookie": "쿠키",
+    "root_folder_path": "루트 폴더 경로",
+    "share_ids": "공유 ID 목록"
+  },
+  "Dropbox": {
+    "RootNamespaceId": "루트 네임스페이스 ID",
+    "api_url_address": "API URL 주소",
+    "client_id": "클라이언트 ID",
+    "client_id-tips": "없으면 비워두세요",
+    "client_secret": "클라이언트 시크릿",
+    "client_secret-tips": "없으면 비워두세요",
+    "refresh_token": "리프레시 토큰",
+    "root_folder_path": "루트 폴더 경로",
+    "use_online_api": "온라인 API 사용"
+  },
+  "Emby": {
+    "api_key": "API 키",
+    "link_method": "링크 방식",
+    "link_methods": {
+      "download": "다운로드",
+      "stream": "스트림"
+    },
+    "password": "비밀번호",
+    "root_folder_id": "루트 폴더 ID",
+    "url": "URL",
+    "user_id": "사용자 ID",
+    "username": "사용자 이름"
+  },
+  "FTP": {
+    "address": "주소",
+    "cwd_list": "현재 디렉터리로 목록 표시",
+    "cwd_list-tips": "목록 표시 전 디렉터리 진입",
+    "encoding": "인코딩",
+    "password": "비밀번호",
+    "root_folder_path": "루트 폴더 경로",
+    "username": "사용자 이름"
+  },
+  "FebBox": {
+    "client_id": "클라이언트 ID",
+    "client_secret": "클라이언트 시크릿",
+    "page_size": "페이지 크기",
+    "page_size-tips": "FebBox 드라이버의 페이지당 목록 수",
+    "root_folder_id": "루트 폴더 ID",
+    "sort_rule": "정렬 규칙",
+    "sort_rules": {
+      "ext_asc": "확장자 오름차순",
+      "ext_desc": "확장자 내림차순",
+      "name_asc": "이름 오름차순",
+      "name_desc": "이름 내림차순",
+      "size_asc": "크기 오름차순",
+      "size_desc": "크기 내림차순",
+      "update_asc": "업데이트 오름차순",
+      "update_desc": "업데이트 내림차순"
+    },
+    "user_ip": "사용자 IP",
+    "user_ip-tips": "다운로드 속도를 높일 수 있는 다운로드 링크용 사용자 IP 주소"
+  },
+  "FeijiPan": {
+    "ip": "IP",
+    "password": "비밀번호",
+    "root_folder_id": "루트 폴더 ID",
+    "username": "사용자 이름"
+  },
+  "GitHub API": {
+    "author_email": "작성자 이메일",
+    "author_name": "작성자 이름",
+    "committer_email": "커미터 이메일",
+    "committer_name": "커미터 이름",
+    "copy_commit_message": "복사 커밋 메시지",
+    "delete_commit_message": "삭제 커밋 메시지",
+    "gh_proxy": "GitHub 프록시",
+    "gh_proxy-tips": "GitHub 프록시, 예: https://ghproxy.net/raw.githubusercontent.com",
+    "gpg_key_passphrase": "GPG 키 암호 문구",
+    "gpg_private_key": "GPG 개인 키",
+    "mkdir_commit_message": "폴더 생성 커밋 메시지",
+    "move_commit_message": "이동 커밋 메시지",
+    "owner": "소유자",
+    "put_commit_message": "업로드 커밋 메시지",
+    "ref": "참조",
+    "ref-tips": "브랜치, 태그 또는 커밋 SHA (기본값: main 브랜치).",
+    "rename_commit_message": "이름 변경 커밋 메시지",
+    "repo": "저장소",
+    "root_folder_path": "루트 폴더 경로",
+    "token": "토큰"
+  },
+  "GitHub Releases": {
+    "gh_proxy": "GitHub 프록시",
+    "gh_proxy-tips": "GitHub 프록시, 예: https://ghproxy.net/github.com",
+    "repo_structure": "저장소 구조",
+    "repo_structure-tips": "구조: [경로:]org/repo",
+    "root_folder_path": "루트 폴더 경로",
+    "show_all_version": "모든 버전 표시",
+    "show_all_version-tips": "모든 버전 표시",
+    "show_readme": "README 표시",
+    "show_readme-tips": "README, LICENSE 파일 표시",
+    "show_source_code": "소스 코드 표시",
+    "show_source_code-tips": "소스 코드 표시 (zip/tar.gz)",
+    "token": "토큰",
+    "token-tips": "비공개 저장소 접근 또는 요청 제한 증가를 위한 GitHub 토큰"
+  },
+  "GoogleDrive": {
+    "api_url_address": "API URL 주소",
+    "chunk_size": "청크 크기",
+    "chunk_size-tips": "업로드 시 청크 크기 (단위: MB)",
+    "client_id": "클라이언트 ID",
+    "client_secret": "클라이언트 시크릿",
+    "disable_disk_usage": "디스크 사용량 비활성화",
+    "order_by": "정렬 기준",
+    "order_by-tips": "예: folder,name,modifiedTime",
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "refresh_token": "리프레시 토큰",
+    "root_folder_id": "루트 폴더 ID",
+    "use_online_api": "온라인 API 사용"
+  },
+  "GooglePhoto": {
+    "client_id": "클라이언트 ID",
+    "client_secret": "클라이언트 시크릿",
+    "refresh_token": "리프레시 토큰",
+    "root_folder_id": "루트 폴더 ID",
+    "show_archive": "아카이브 표시"
+  },
+  "HalalCloud": {
+    "app_id": "앱 ID",
+    "app_secret": "앱 시크릿",
+    "app_version": "앱 버전",
+    "refresh_token": "리프레시 토큰",
+    "refresh_token-tips": "로그인 유형이 refresh_token일 때 필수입니다",
+    "root_folder_path": "루트 폴더 경로",
+    "upload_thread": "업로드 스레드",
+    "upload_thread-tips": "1 <= 스레드 <= 32"
+  },
+  "HalalCloudOpen": {
+    "client_id": "클라이언트 ID",
+    "client_secret": "클라이언트 시크릿",
+    "host": "호스트",
+    "refresh_token": "리프레시 토큰",
+    "refresh_token-tips": "개인 API 방식 사용 시 RefreshToken이 필요하지 않습니다.",
+    "root_folder_path": "루트 폴더 경로",
+    "timeout": "타임아웃",
+    "timeout-tips": "타임아웃 (초)",
+    "upload_thread": "업로드 스레드",
+    "upload_thread-tips": "1 <= 스레드 <= 32"
+  },
+  "ILanZou": {
+    "ip": "IP",
+    "password": "비밀번호",
+    "root_folder_id": "루트 폴더 ID",
+    "username": "사용자 이름"
+  },
+  "IPFS API": {
+    "endpoint": "엔드포인트",
+    "gateway": "게이트웨이",
+    "mode": "모드",
+    "modes": {
+      "ipfs": "IPFS",
+      "ipns": "IPNS",
+      "mfs": "MFS"
+    },
+    "root_folder_path": "루트 폴더 경로"
+  },
+  "KodBox": {
+    "address": "주소",
+    "password": "비밀번호",
+    "root_folder_path": "루트 폴더 경로",
+    "username": "사용자 이름"
+  },
+  "Lanzou": {
+    "account": "계정",
+    "baseUrl": "기본 URL",
+    "baseUrl-tips": "파일 작업을 위한 기본 URL",
+    "cookie": "쿠키",
+    "cookie-tips": "약 15일 유효, shareUrl 사용 시 무시됩니다",
+    "password": "비밀번호",
+    "repair_file_info": "파일 정보 복구",
+    "repair_file_info-tips": "WebDAV를 사용하려면 활성화해야 합니다",
+    "root_folder_id": "루트 폴더 ID",
+    "shareUrl": "공유 URL",
+    "shareUrl-tips": "공유 페이지를 가져오는 데 사용됩니다",
+    "share_password": "공유 비밀번호",
+    "type": "유형",
+    "types": {
+      "account": "계정",
+      "cookie": "쿠키",
+      "url": "URL"
+    },
+    "user_agent": "사용자 에이전트"
+  },
+  "LenovoNasShare": {
+    "host": "호스트",
+    "host-tips": "로컬 네트워크로 변경할 수 있습니다",
+    "root_folder_path": "루트 폴더 경로",
+    "share_id": "공유 ID",
+    "share_id-tips": "공유 링크에서 마지막 / 이후의 부분",
+    "share_pwd": "공유 비밀번호",
+    "share_pwd-tips": "공유 링크의 비밀번호",
+    "show_root_folder": "루트 폴더 표시"
+  },
+  "Local": {
+    "directory_size": "디렉터리 크기",
+    "directory_size-tips": "호스트 성능에 영향을 줄 수 있습니다",
+    "mkdir_perm": "폴더 생성 권한",
+    "recycle_bin_path": "휴지통 경로",
+    "recycle_bin_path-tips": "휴지통 경로. 비워두거나 '영구 삭제'를 입력하면 영구 삭제됩니다",
+    "root_folder_path": "루트 폴더 경로",
+    "show_hidden": "숨김 항목 표시",
+    "show_hidden-tips": "숨긴 디렉터리 및 파일 표시",
+    "thumb_cache_folder": "썸네일 캐시 폴더",
+    "thumb_concurrency": "썸네일 동시 처리 수",
+    "thumb_concurrency-tips": "동시에 생성할 수 있는 썸네일 고루틴 수입니다.",
+    "thumbnail": "썸네일",
+    "thumbnail-tips": "썸네일 활성화",
+    "video_thumb_pos": "동영상 썸네일 위치",
+    "video_thumb_pos-tips": "동영상 썸네일 위치입니다. 숫자(정수 또는 소수)이면 초 단위 시간, '%'로 끝나면 동영상 길이의 백분율을 나타냅니다."
+  },
+  "MediaFire": {
+    "chunk_size": "청크 크기",
+    "cookie": "쿠키",
+    "cookie-tips": "MediaFire API 인증에 필요합니다",
+    "limit_rate": "속도 제한",
+    "limit_rate-tips": "모든 API 요청 속도 제한 ([limit]r/1s)",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "name": "이름",
+      "size": "크기",
+      "time": "시간"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "root_folder_path": "루트 폴더 경로",
+    "session_token": "세션 토큰",
+    "session_token-tips": "MediaFire API 선택사항, 쿠키에서 자동으로 가져올 수 있습니다",
+    "upload_threads": "업로드 스레드",
+    "upload_threads-tips": "동시 업로드 스레드"
+  },
+  "MediaTrack": {
+    "access_token": "액세스 토큰",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "size": "크기",
+      "title": "제목",
+      "updated_at": "수정일"
+    },
+    "order_desc": "내림차순 정렬",
+    "project_id": "프로젝트 ID",
+    "root_folder_id": "루트 폴더 ID"
+  },
+  "Mega_nz": {
+    "email": "이메일",
+    "move_to_trash": "휴지통으로 이동",
+    "move_to_trash-tips": "파일 삭제 시 휴지통으로 이동",
+    "password": "비밀번호",
+    "two_fa_code": "2단계 인증 코드",
+    "two_fa_code-tips": "2단계 인증 6자리 코드 (2단계 인증 코드만 입력하면 드라이버 재로드를 지원하지 않습니다)",
+    "two_fa_secret": "2단계 인증 시크릿",
+    "two_fa_secret-tips": "2단계 인증 시크릿"
+  },
+  "Misskey": {
+    "access_token": "액세스 토큰",
+    "endpoint": "엔드포인트",
+    "root_folder_path": "루트 폴더 경로"
+  },
+  "MoPan": {
+    "cloud_id": "클라우드 ID",
+    "device_info": "장치 정보",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "filename": "파일 이름",
+      "filesize": "파일 크기",
+      "lastOpTime": "마지막 작업 시간"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "password": "비밀번호",
+    "phone": "전화",
+    "root_folder_id": "루트 폴더 ID",
+    "sms_code": "SMS 코드",
+    "sms_code-tips": "'send' 입력 시 SMS 전송",
+    "upload_thread": "업로드 스레드",
+    "upload_thread-tips": "1<=스레드<=32"
+  },
+  "NeteaseMusic": {
+    "cookie": "쿠키",
+    "song_limit": "곡 제한",
+    "song_limit-tips": "기본적으로 200곡만 가져옵니다"
+  },
+  "Onedrive": {
+    "api_url_address": "API URL 주소",
+    "chunk_size": "청크 크기",
+    "client_id": "클라이언트 ID",
+    "client_secret": "클라이언트 시크릿",
+    "custom_host": "사용자 지정 호스트",
+    "custom_host-tips": "OneDrive 다운로드 링크용 사용자 지정 호스트",
+    "disable_disk_usage": "디스크 사용량 비활성화",
+    "enable_direct_upload": "직접 업로드 활성화",
+    "enable_direct_upload-tips": "클라이언트에서 OneDrive로 직접 업로드 활성화",
+    "is_sharepoint": "SharePoint 여부",
+    "redirect_uri": "리다이렉트 URI",
+    "refresh_token": "리프레시 토큰",
+    "region": "지역",
+    "regions": {
+      "cn": "중국",
+      "de": "독일",
+      "global": "글로벌",
+      "us": "미국"
+    },
+    "root_folder_path": "루트 폴더 경로",
+    "site_id": "사이트 ID",
+    "use_online_api": "온라인 API 사용"
+  },
+  "Onedrive Sharelink": {
+    "disable_disk_usage": "디스크 사용량 비활성화",
+    "enable_direct_upload": "직접 업로드 활성화",
+    "enable_direct_upload-tips": "OpenList를 거치지 않고 OneDrive에 직접 업로드 허용",
+    "password": "비밀번호",
+    "root_folder_path": "루트 폴더 경로",
+    "url": "URL"
+  },
+  "OnedriveAPP": {
+    "chunk_size": "청크 크기",
+    "client_id": "클라이언트 ID",
+    "client_secret": "클라이언트 시크릿",
+    "custom_host": "사용자 지정 호스트",
+    "custom_host-tips": "OneDrive 다운로드 링크용 사용자 지정 호스트",
+    "disable_disk_usage": "디스크 사용량 비활성화",
+    "email": "이메일",
+    "enable_direct_upload": "직접 업로드 활성화",
+    "enable_direct_upload-tips": "클라이언트에서 OneDrive로 직접 업로드 활성화",
+    "region": "지역",
+    "regions": {
+      "cn": "중국",
+      "de": "독일",
+      "global": "글로벌",
+      "us": "미국"
+    },
+    "root_folder_path": "루트 폴더 경로",
+    "tenant_id": "테넌트 ID"
+  },
+  "OpenList": {
+    "forward_archive_requests": "아카이브 요청 전달",
+    "meta_password": "메타 비밀번호",
+    "pass_ip_to_upsteam": "IP를 업스트림으로 전달",
+    "pass_refresh_flag_to_upsteam": "새로고침 플래그를 업스트림으로 전달",
+    "pass_ua_to_upsteam": "UA를 업스트림으로 전달",
+    "password": "비밀번호",
+    "root_folder_path": "루트 폴더 경로",
+    "token": "토큰",
+    "url": "URL",
+    "username": "사용자 이름"
+  },
+  "OpenListShare": {
+    "forward_archive_requests": "아카이브 요청 전달",
+    "pwd": "비밀번호",
+    "root_folder_path": "루트 폴더 경로",
+    "sid": "SID",
+    "url": "URL"
+  },
+  "PikPak": {
+    "captcha_token": "캡차 토큰",
+    "device_id": "장치 ID",
+    "disable_media_link": "미디어 링크 비활성화",
+    "password": "비밀번호",
+    "platform": "플랫폼",
+    "platforms": {
+      "android": "Android",
+      "pc": "PC",
+      "web": "Web"
+    },
+    "refresh_token": "리프레시 토큰",
+    "root_folder_id": "루트 폴더 ID",
+    "username": "사용자 이름"
+  },
+  "PikPakShare": {
+    "device_id": "장치 ID",
+    "platform": "플랫폼",
+    "platforms": {
+      "android": "Android",
+      "pc": "PC",
+      "web": "Web"
+    },
+    "root_folder_id": "루트 폴더 ID",
+    "share_id": "공유 ID",
+    "share_pwd": "공유 비밀번호",
+    "use_transcoding_address": "트랜스코딩 주소 사용"
+  },
+  "ProtonDrive": {
+    "chunk_size": "청크 크기",
+    "email": "이메일",
+    "password": "비밀번호",
+    "root_folder_id": "루트 폴더 ID",
+    "two_fa_code": "2단계 인증 코드",
+    "use_reusable_login": "재사용 가능한 로그인 사용",
+    "use_reusable_login-tips": "사용자 이름/비밀번호 대신 재사용 가능한 로그인 자격 증명 사용"
+  },
+  "Quark": {
+    "cookie": "쿠키",
+    "only_list_video_file": "동영상 파일만 목록 표시",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "file_name": "파일 이름",
+      "file_type": "파일 유형",
+      "none": "없음",
+      "updated_at": "수정일"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "root_folder_id": "루트 폴더 ID",
+    "use_transcoding_address": "트랜스코딩 주소 사용",
+    "use_transcoding_address-tips": "트랜스코딩된 동영상을 시청하고 302 리다이렉션을 지원합니다"
+  },
+  "QuarkOpen": {
+    "access_token": "액세스 토큰",
+    "api_url_address": "API URL 주소",
+    "app_id": "앱 ID",
+    "app_id-tips": "없으면 비워두세요",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "created_at": "생성일",
+      "file_name": "파일 이름",
+      "file_type": "파일 유형",
+      "none": "없음",
+      "updated_at": "수정일"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "refresh_token": "리프레시 토큰",
+    "root_folder_id": "루트 폴더 ID",
+    "sign_key": "서명 키",
+    "sign_key-tips": "없으면 비워두세요",
+    "use_online_api": "온라인 API 사용"
+  },
+  "QuarkTV": {
+    "device_id": "장치 ID",
+    "link_method": "링크 방식",
+    "link_methods": {
+      "download": "다운로드",
+      "streaming": "스트리밍"
+    },
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "file_name": "파일 이름",
+      "updated_at": "수정일"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "query_token": "쿼리 토큰",
+    "query_token-tips": "수정하지 마세요",
+    "refresh_token": "리프레시 토큰",
+    "root_folder_id": "루트 폴더 ID"
+  },
+  "S3": {
+    "access_key_id": "액세스 키 ID",
+    "add_filename_to_disposition": "파일 이름을 disposition에 추가",
+    "add_filename_to_disposition-tips": "Content-Disposition 헤더에 파일 이름을 추가합니다.",
+    "bucket": "버킷",
+    "custom_host": "사용자 지정 호스트",
+    "direct_upload_host": "직접 업로드 호스트",
+    "enable_custom_host_presign": "사용자 지정 호스트 사전 서명 활성화",
+    "enable_direct_upload": "직접 업로드 활성화",
+    "endpoint": "엔드포인트",
+    "force_path_style": "경로 스타일 강제",
+    "list_object_version": "객체 버전 목록",
+    "list_object_versions": {
+      "v1": "V1",
+      "v2": "V2"
+    },
+    "placeholder": "자리 표시자",
+    "region": "지역",
+    "remove_bucket": "버킷 제거",
+    "remove_bucket-tips": "사용자 지정 호스트 사용 시 경로에서 버킷 이름을 제거합니다.",
+    "root_folder_path": "루트 폴더 경로",
+    "secret_access_key": "시크릿 액세스 키",
+    "session_token": "세션 토큰",
+    "sign_url_expire": "서명 URL 만료"
+  },
+  "SFTP": {
+    "address": "주소",
+    "ignore_symlink_error": "심볼릭 링크 오류 무시",
+    "passphrase": "암호 문구",
+    "password": "비밀번호",
+    "private_key": "개인 키",
+    "root_folder_path": "루트 폴더 경로",
+    "username": "사용자 이름"
+  },
+  "SMB": {
+    "address": "주소",
+    "password": "비밀번호",
+    "root_folder_path": "루트 폴더 경로",
+    "share_name": "공유 이름",
+    "username": "사용자 이름"
+  },
+  "Seafile": {
+    "address": "주소",
+    "password": "비밀번호",
+    "repoId": "저장소 ID",
+    "repoPwd": "저장소 비밀번호",
+    "root_folder_path": "루트 폴더 경로",
+    "token": "토큰",
+    "username": "사용자 이름"
+  },
+  "Strm": {
+    "KeepLocalDownloadFile": "로컬 다운로드 파일 유지",
+    "KeepLocalDownloadFile-tips": "로컬 다운로드 파일을 유지합니다",
+    "PathPrefix": "경로 접두사",
+    "PathPrefix-tips": "경로 접두사",
+    "SaveLocalMode": "로컬 저장 모드",
+    "SaveLocalMode-tips": "strm 파일을 로컬에 저장하는 모드",
+    "SaveLocalModes": {
+      "insert": "삽입",
+      "sync": "동기화",
+      "update": "업데이트"
+    },
+    "SaveStrmLocalPath": "strm 로컬 저장 경로",
+    "SaveStrmLocalPath-tips": "strm 파일 로컬 저장 경로",
+    "SaveStrmToLocal": "strm 파일 로컬 저장",
+    "SaveStrmToLocal-tips": "strm 파일을 로컬에 저장합니다",
+    "downloadFileTypes": "다운로드 파일 형식",
+    "downloadFileTypes-tips": "strm으로 다운로드해야 하는 파일 (주로 자막)",
+    "encodePath": "경로 인코딩",
+    "encodePath-tips": "strm 파일의 경로를 인코딩합니다",
+    "filterFileTypes": "필터 파일 형식",
+    "filterFileTypes-tips": "strm 파일의 확장자 지원",
+    "paths": "경로",
+    "siteUrl": "사이트 URL",
+    "siteUrl-tips": "strm 파일의 접두사 URL",
+    "withSign": "서명 포함",
+    "withoutUrl": "URL 없음",
+    "withoutUrl-tips": "URL 접두사 없는 strm 파일 내용"
+  },
+  "Teambition": {
+    "cookie": "쿠키",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "created": "생성됨",
+      "fileName": "파일 이름",
+      "fileSize": "파일 크기",
+      "updated": "업데이트됨"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "Asc": "오름차순",
+      "Desc": "내림차순"
+    },
+    "project_id": "프로젝트 ID",
+    "region": "지역",
+    "regions": {
+      "china": "중국",
+      "international": "국제"
+    },
+    "root_folder_id": "루트 폴더 ID",
+    "use_s3_upload_method": "S3 업로드 방식 사용"
+  },
+  "Teldrive": {
+    "chunk_size": "청크 크기",
+    "chunk_size-tips": "청크 크기 (MiB)",
+    "cookie": "쿠키",
+    "cookie-tips": "access_token=xxx",
+    "random_chunk_name": "랜덤 청크 이름",
+    "random_chunk_name-tips": "랜덤 청크 이름",
+    "root_folder_path": "루트 폴더 경로",
+    "upload_concurrency": "업로드 동시 처리",
+    "upload_concurrency-tips": "동시 업로드 요청",
+    "url": "URL",
+    "use_share_link": "공유 링크 사용",
+    "use_share_link-tips": "302 지원을 위해 링크 가져올 때 공유 링크를 생성합니다. 비활성화 시 웹 프록시를 활성화해야 합니다."
+  },
+  "Terabox": {
+    "cookie": "쿠키",
+    "download_api": "다운로드 API",
+    "download_apis": {
+      "crack": "크랙",
+      "official": "공식"
+    },
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "name": "이름",
+      "size": "크기",
+      "time": "시간"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "root_folder_path": "루트 폴더 경로"
+  },
+  "Thunder": {
+    "captcha_token": "캡차 토큰",
+    "credit_key": "크레딧 키",
+    "credit_key-tips": "크레딧 키 (로그인에 사용)",
+    "device_id": "장치 ID",
+    "password": "비밀번호",
+    "root_folder_id": "루트 폴더 ID",
+    "space": "스페이스",
+    "space-tips": "원격 장치의 장치 ID",
+    "username": "사용자 이름"
+  },
+  "ThunderBrowser": {
+    "captcha_token": "캡차 토큰",
+    "credit_key": "크레딧 키",
+    "credit_key-tips": "크레딧 키 (로그인에 사용)",
+    "device_id": "장치 ID",
+    "password": "비밀번호",
+    "remove_way": "삭제 방법",
+    "remove_ways": {
+      "delete": "삭제",
+      "trash": "휴지통"
+    },
+    "root_folder_id": "루트 폴더 ID",
+    "safe_password": "안전 비밀번호",
+    "use_fluent_play": "Fluent 재생 사용",
+    "use_fluent_play-tips": "오프라인 다운로드에 Fluent 재생 사용 (마그넷 링크만 지원)",
+    "use_video_url": "동영상 URL 사용",
+    "username": "사용자 이름"
+  },
+  "ThunderBrowserExpert": {
+    "algorithms": "알고리즘",
+    "algorithms-tips": "서명 유형이 algorithms일 때 필수입니다",
+    "captcha_sign": "캡차 서명",
+    "captcha_sign-tips": "서명 유형이 captcha_sign일 때 필수입니다",
+    "captcha_token": "캡차 토큰",
+    "client_id": "클라이언트 ID",
+    "client_secret": "클라이언트 시크릿",
+    "client_version": "클라이언트 버전",
+    "credit_key": "크레딧 키",
+    "credit_key-tips": "크레딧 키 (로그인에 사용)",
+    "device_id": "장치 ID",
+    "download_user_agent": "다운로드 사용자 에이전트",
+    "login_type": "로그인 유형",
+    "login_types": {
+      "refresh_token": "리프레시 토큰",
+      "user": "사용자"
+    },
+    "package_name": "패키지 이름",
+    "password": "비밀번호",
+    "password-tips": "로그인 유형이 user일 때 필수입니다",
+    "refresh_token": "리프레시 토큰",
+    "refresh_token-tips": "로그인 유형이 refresh_token일 때 필수입니다",
+    "remove_way": "삭제 방법",
+    "remove_ways": {
+      "delete": "삭제",
+      "trash": "휴지통"
+    },
+    "root_folder_id": "루트 폴더 ID",
+    "safe_password": "안전 비밀번호",
+    "safe_password-tips": "슈퍼 안전 비밀번호",
+    "sign_type": "서명 유형",
+    "sign_types": {
+      "algorithms": "알고리즘",
+      "captcha_sign": "캡차 서명"
+    },
+    "timestamp": "타임스탬프",
+    "timestamp-tips": "서명 유형이 captcha_sign일 때 필수입니다",
+    "use_fluent_play": "Fluent 재생 사용",
+    "use_fluent_play-tips": "오프라인 다운로드에 Fluent 재생 사용 (마그넷 링크만 지원)",
+    "use_video_url": "동영상 URL 사용",
+    "user_agent": "사용자 에이전트",
+    "username": "사용자 이름",
+    "username-tips": "로그인 유형이 user일 때 필수입니다"
+  },
+  "ThunderExpert": {
+    "algorithms": "알고리즘",
+    "algorithms-tips": "서명 유형이 algorithms일 때 필수입니다",
+    "captcha_sign": "캡차 서명",
+    "captcha_sign-tips": "서명 유형이 captcha_sign일 때 필수입니다",
+    "captcha_token": "캡차 토큰",
+    "client_id": "클라이언트 ID",
+    "client_secret": "클라이언트 시크릿",
+    "client_version": "클라이언트 버전",
+    "credit_key": "크레딧 키",
+    "credit_key-tips": "크레딧 키 (로그인에 사용)",
+    "device_id": "장치 ID",
+    "download_user_agent": "다운로드 사용자 에이전트",
+    "login_type": "로그인 유형",
+    "login_types": {
+      "refresh_token": "리프레시 토큰",
+      "user": "사용자"
+    },
+    "package_name": "패키지 이름",
+    "password": "비밀번호",
+    "password-tips": "로그인 유형이 user일 때 필수입니다",
+    "refresh_token": "리프레시 토큰",
+    "refresh_token-tips": "로그인 유형이 refresh_token일 때 필수입니다",
+    "root_folder_id": "루트 폴더 ID",
+    "sign_type": "서명 유형",
+    "sign_types": {
+      "algorithms": "알고리즘",
+      "captcha_sign": "캡차 서명"
+    },
+    "space": "스페이스",
+    "space-tips": "원격 장치의 장치 ID",
+    "timestamp": "타임스탬프",
+    "timestamp-tips": "서명 유형이 captcha_sign일 때 필수입니다",
+    "use_video_url": "동영상 URL 사용",
+    "user_agent": "사용자 에이전트",
+    "username": "사용자 이름",
+    "username-tips": "로그인 유형이 user일 때 필수입니다"
+  },
+  "ThunderX": {
+    "captcha_token": "캡차 토큰",
+    "password": "비밀번호",
+    "root_folder_id": "루트 폴더 ID",
+    "use_video_url": "동영상 URL 사용",
+    "username": "사용자 이름"
+  },
+  "ThunderXExpert": {
+    "algorithms": "알고리즘",
+    "algorithms-tips": "서명 유형이 algorithms일 때 필수입니다",
+    "captcha_sign": "캡차 서명",
+    "captcha_sign-tips": "서명 유형이 captcha_sign일 때 필수입니다",
+    "captcha_token": "캡차 토큰",
+    "client_id": "클라이언트 ID",
+    "client_secret": "클라이언트 시크릿",
+    "client_version": "클라이언트 버전",
+    "device_id": "장치 ID",
+    "download_user_agent": "다운로드 사용자 에이전트",
+    "login_type": "로그인 유형",
+    "login_types": {
+      "refresh_token": "리프레시 토큰",
+      "user": "사용자"
+    },
+    "package_name": "패키지 이름",
+    "password": "비밀번호",
+    "password-tips": "로그인 유형이 user일 때 필수입니다",
+    "refresh_token": "리프레시 토큰",
+    "refresh_token-tips": "로그인 유형이 refresh_token일 때 필수입니다",
+    "root_folder_id": "루트 폴더 ID",
+    "sign_type": "서명 유형",
+    "sign_types": {
+      "algorithms": "알고리즘",
+      "captcha_sign": "캡차 서명"
+    },
+    "timestamp": "타임스탬프",
+    "timestamp-tips": "서명 유형이 captcha_sign일 때 필수입니다",
+    "use_video_url": "동영상 URL 사용",
+    "user_agent": "사용자 에이전트",
+    "username": "사용자 이름",
+    "username-tips": "로그인 유형이 user일 때 필수입니다"
+  },
+  "UC": {
+    "cookie": "쿠키",
+    "only_list_video_file": "동영상 파일만 목록 표시",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "file_name": "파일 이름",
+      "file_type": "파일 유형",
+      "none": "없음",
+      "updated_at": "수정일"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "root_folder_id": "루트 폴더 ID",
+    "use_transcoding_address": "트랜스코딩 주소 사용",
+    "use_transcoding_address-tips": "트랜스코딩된 동영상을 시청하고 302 리다이렉션을 지원합니다"
+  },
+  "UCTV": {
+    "device_id": "장치 ID",
+    "link_method": "링크 방식",
+    "link_methods": {
+      "download": "다운로드",
+      "streaming": "스트리밍"
+    },
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "file_name": "파일 이름",
+      "updated_at": "수정일"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "query_token": "쿼리 토큰",
+    "query_token-tips": "수정하지 마세요",
+    "refresh_token": "리프레시 토큰",
+    "root_folder_id": "루트 폴더 ID"
+  },
+  "USS": {
+    "anti_theft_chain_token": "도용 방지 토큰",
+    "bucket": "버킷",
+    "endpoint": "엔드포인트",
+    "operator_name": "운영자 이름",
+    "operator_password": "운영자 비밀번호",
+    "root_folder_path": "루트 폴더 경로",
+    "sign_url_expire": "서명 URL 만료"
+  },
+  "UrlTree": {
+    "head_size": "헤드 크기",
+    "head_size-tips": "HEAD 메서드로 파일 크기를 가져오지만 실패할 수 있습니다.",
+    "url_structure": "URL 구조",
+    "url_structure-tips": "구조: 폴더이름:\n  [파일이름:][파일크기:][수정일:]URL",
+    "writable": "쓰기 가능"
+  },
+  "Virtual": {
+    "max_file_size": "최대 파일 크기",
+    "min_file_size": "최소 파일 크기",
+    "num_file": "파일 수",
+    "num_folder": "폴더 수",
+    "root_folder_path": "루트 폴더 경로"
+  },
+  "WPS": {
+    "cookie": "쿠키",
+    "custom_ua": "사용자 지정 UA",
+    "mode": "모드",
+    "modes": {
+      "Business": "비즈니스",
+      "Personal": "개인"
+    },
+    "root_folder_path": "루트 폴더 경로"
+  },
+  "WebDav": {
+    "address": "주소",
+    "password": "비밀번호",
+    "root_folder_path": "루트 폴더 경로",
+    "tls_insecure_skip_verify": "TLS 보안 검증 건너뛰기",
+    "username": "사용자 이름",
+    "vendor": "벤더",
+    "vendors": {
+      "other": "기타",
+      "sharepoint": "SharePoint"
+    }
+  },
+  "WeiYun": {
+    "cookies": "쿠키",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "name": "이름",
+      "size": "크기",
+      "updated_at": "수정일"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "root_folder_id": "루트 폴더 ID",
+    "upload_thread": "업로드 스레드",
+    "upload_thread-tips": "4<=스레드<=32"
+  },
+  "WoPan": {
+    "access_token": "액세스 토큰",
+    "family_id": "가족 ID",
+    "family_id-tips": "개인 드라이브를 사용하려면 비워두세요",
+    "refresh_token": "리프레시 토큰",
+    "root_folder_id": "루트 폴더 ID",
+    "sort_rule": "정렬 규칙",
+    "sort_rules": {
+      "name_asc": "이름 오름차순",
+      "name_desc": "이름 내림차순",
+      "size_asc": "크기 오름차순",
+      "size_desc": "크기 내림차순",
+      "time_asc": "시간 오름차순",
+      "time_desc": "시간 내림차순"
+    }
+  },
+  "YandexDisk": {
+    "api_url_address": "API URL 주소",
+    "client_id": "클라이언트 ID",
+    "client_secret": "클라이언트 시크릿",
+    "order_by": "정렬 기준",
+    "order_bys": {
+      "created": "생성됨",
+      "modified": "수정됨",
+      "name": "이름",
+      "path": "경로",
+      "size": "크기"
+    },
+    "order_direction": "정렬 방향",
+    "order_directions": {
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "refresh_token": "리프레시 토큰",
+    "root_folder_path": "루트 폴더 경로",
+    "use_online_api": "온라인 API 사용"
+  },
+  "config": {
+    "115 Cloud": {},
+    "115 Open": {},
+    "115 Share": {},
+    "123 Open": {},
+    "123Pan": {},
+    "123PanLink": {},
+    "123PanShare": {},
+    "139Yun": {},
+    "189Cloud": {
+      "alert": "이 드라이버가 작동하지 않으면 189PC 드라이버를 사용해 보세요."
+    },
+    "189CloudPC": {},
+    "189CloudTV": {},
+    "AList V3": {},
+    "Alias": {},
+    "Aliyundrive": {
+      "alert": "이 드라이버에 무한 루프 버그가 있을 수 있습니다.\n더 이상 유지 관리되지 않으며 향후 버전에서 제거될 예정입니다.\n공식 드라이버 AliyundriveOpen 사용을 권장합니다."
+    },
+    "AliyundriveOpen": {},
+    "AliyundriveShare": {},
+    "AutoIndex": {},
+    "Azure Blob Storage": {},
+    "BaiduNetdisk": {},
+    "BaiduPhoto": {},
+    "CNB Releases": {},
+    "ChaoXingGroupDrive": {},
+    "Chunk": {},
+    "Cloudreve": {},
+    "Cloudreve V4": {},
+    "Crypt": {},
+    "Degoo": {},
+    "Doge": {},
+    "Doubao": {},
+    "DoubaoNew": {
+      "alert": "스토리지가 공개 접근 가능한 경우 302를 사용하지 마세요.\n그렇지 않으면 다운로드 링크에서 액세스 토큰 또는 서명과 같은 민감한 정보가 유출될 수 있습니다.\n유출된 링크로 다른 사람이 모든 파일에 접근할 수 있습니다."
+    },
+    "DoubaoShare": {},
+    "Dropbox": {},
+    "Emby": {},
+    "FTP": {},
+    "FebBox": {},
+    "FeijiPan": {},
+    "GitHub API": {},
+    "GitHub Releases": {},
+    "GoogleDrive": {},
+    "GooglePhoto": {},
+    "HalalCloud": {},
+    "HalalCloudOpen": {},
+    "ILanZou": {},
+    "IPFS API": {},
+    "KodBox": {},
+    "Lanzou": {},
+    "LenovoNasShare": {},
+    "Local": {},
+    "MediaFire": {},
+    "MediaTrack": {},
+    "Mega_nz": {},
+    "Misskey": {},
+    "MoPan": {
+      "alert": "이 네트워크 디스크는 비밀번호를 평문으로 저장할 수 있습니다. 비밀번호를 신중하게 설정하세요"
+    },
+    "NeteaseMusic": {},
+    "Onedrive": {},
+    "Onedrive Sharelink": {},
+    "OnedriveAPP": {},
+    "OpenList": {},
+    "OpenListShare": {},
+    "PikPak": {},
+    "PikPakShare": {},
+    "ProtonDrive": {},
+    "Quark": {},
+    "QuarkOpen": {},
+    "QuarkTV": {},
+    "S3": {},
+    "SFTP": {},
+    "SMB": {},
+    "Seafile": {},
+    "Strm": {},
+    "Teambition": {},
+    "Teldrive": {},
+    "Terabox": {},
+    "Thunder": {},
+    "ThunderBrowser": {},
+    "ThunderBrowserExpert": {},
+    "ThunderExpert": {},
+    "ThunderX": {},
+    "ThunderXExpert": {},
+    "UC": {},
+    "UCTV": {},
+    "USS": {},
+    "UrlTree": {},
+    "Virtual": {},
+    "WPS": {},
+    "WebDav": {},
+    "WeiYun": {},
+    "WoPan": {},
+    "YandexDisk": {}
+  },
+  "drivers": {
+    "115 Cloud": "115 Cloud",
+    "115 Open": "115 Open",
+    "115 Share": "115 Share",
+    "123 Open": "123 Open",
+    "123Pan": "123Pan",
+    "123PanLink": "123PanLink",
+    "123PanShare": "123PanShare",
+    "139Yun": "139Yun",
+    "189Cloud": "189Cloud",
+    "189CloudPC": "189CloudPC",
+    "189CloudTV": "189CloudTV",
+    "AList V3": "AList V3",
+    "Alias": "Alias",
+    "Aliyundrive": "Aliyundrive",
+    "AliyundriveOpen": "AliyundriveOpen",
+    "AliyundriveShare": "AliyundriveShare",
+    "AutoIndex": "AutoIndex",
+    "Azure Blob Storage": "Azure Blob Storage",
+    "BaiduNetdisk": "BaiduNetdisk",
+    "BaiduPhoto": "BaiduPhoto",
+    "CNB Releases": "CNB Releases",
+    "ChaoXingGroupDrive": "ChaoXingGroupDrive",
+    "Chunk": "Chunk",
+    "Cloudreve": "Cloudreve",
+    "Cloudreve V4": "Cloudreve V4",
+    "Crypt": "Crypt",
+    "Degoo": "Degoo",
+    "Doge": "Doge",
+    "Doubao": "Doubao",
+    "DoubaoNew": "DoubaoNew",
+    "DoubaoShare": "DoubaoShare",
+    "Dropbox": "Dropbox",
+    "Emby": "Emby",
+    "FTP": "FTP",
+    "FebBox": "FebBox",
+    "FeijiPan": "FeijiPan",
+    "GitHub API": "GitHub API",
+    "GitHub Releases": "GitHub Releases",
+    "GoogleDrive": "GoogleDrive",
+    "GooglePhoto": "GooglePhoto",
+    "HalalCloud": "HalalCloud",
+    "HalalCloudOpen": "HalalCloudOpen",
+    "ILanZou": "ILanZou",
+    "IPFS API": "IPFS API",
+    "KodBox": "KodBox",
+    "Lanzou": "Lanzou",
+    "LenovoNasShare": "LenovoNasShare",
+    "Local": "Local",
+    "MediaFire": "MediaFire",
+    "MediaTrack": "MediaTrack",
+    "Mega_nz": "Mega nz",
+    "Misskey": "Misskey",
+    "MoPan": "MoPan",
+    "NeteaseMusic": "NeteaseMusic",
+    "Onedrive": "Onedrive",
+    "Onedrive Sharelink": "Onedrive Sharelink",
+    "OnedriveAPP": "OnedriveAPP",
+    "OpenList": "OpenList",
+    "OpenListShare": "OpenListShare",
+    "PikPak": "PikPak",
+    "PikPakShare": "PikPakShare",
+    "ProtonDrive": "ProtonDrive",
+    "Quark": "Quark",
+    "QuarkOpen": "QuarkOpen",
+    "QuarkTV": "QuarkTV",
+    "S3": "S3",
+    "SFTP": "SFTP",
+    "SMB": "SMB",
+    "Seafile": "Seafile",
+    "Strm": "Strm",
+    "Teambition": "Teambition",
+    "Teldrive": "Teldrive",
+    "Terabox": "Terabox",
+    "Thunder": "Thunder",
+    "ThunderBrowser": "ThunderBrowser",
+    "ThunderBrowserExpert": "ThunderBrowserExpert",
+    "ThunderExpert": "ThunderExpert",
+    "ThunderX": "ThunderX",
+    "ThunderXExpert": "ThunderXExpert",
+    "UC": "UC",
+    "UCTV": "UCTV",
+    "USS": "USS",
+    "UrlTree": "UrlTree",
+    "Virtual": "Virtual",
+    "WPS": "WPS",
+    "WebDav": "WebDav",
+    "WeiYun": "WeiYun",
+    "WoPan": "WoPan",
+    "YandexDisk": "YandexDisk"
+  }
+}
