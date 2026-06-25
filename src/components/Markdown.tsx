@@ -273,7 +273,18 @@ export function Markdown(props: {
 
       setTimeout(() => {
         setShow(true)
-        hljs.highlightAll()
+        // Only highlight code blocks with an explicit language (not plain/auto-detect)
+        markdownRef()
+          ?.querySelectorAll('pre code[class*="language-"]')
+          ?.forEach((el) => {
+            const classList = (el as HTMLElement).classList
+            const langClass = Array.from(classList).find((c) =>
+              c.startsWith("language-"),
+            )
+            if (langClass && langClass !== "language-plain") {
+              hljs.highlightElement(el as HTMLElement)
+            }
+          })
         if (hasMermaid && window.mermaid) {
           window.mermaid.initialize({
             startOnLoad: false,
