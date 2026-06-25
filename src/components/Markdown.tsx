@@ -273,7 +273,12 @@ export function Markdown(props: {
 
       setTimeout(() => {
         setShow(true)
-        // Only highlight code blocks with an explicit language (not plain/auto-detect)
+        // Only highlight code blocks with an explicit, supported language
+        const noHighlight = new Set([
+          "language-plain",
+          "language-plaintext",
+          "language-text",
+        ])
         markdownRef()
           ?.querySelectorAll('pre code[class*="language-"]')
           ?.forEach((el) => {
@@ -281,7 +286,11 @@ export function Markdown(props: {
             const langClass = Array.from(classList).find((c) =>
               c.startsWith("language-"),
             )
-            if (langClass && langClass !== "language-plain") {
+            if (
+              langClass &&
+              !noHighlight.has(langClass) &&
+              hljs.getLanguage(langClass.replace("language-", ""))
+            ) {
               hljs.highlightElement(el as HTMLElement)
             }
           })
