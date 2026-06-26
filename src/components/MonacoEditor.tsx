@@ -96,5 +96,5 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
     model && model.dispose()
     monacoEditor && monacoEditor.dispose()
   })
-  return <Box w="$full" flex={1} minH="300px" ref={monacoEditorDiv!} />
+  return <Box w="$full" flex={1} minH="60vh" ref={monacoEditorDiv!} />
 }
