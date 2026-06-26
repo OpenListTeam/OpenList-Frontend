@@ -92,6 +92,7 @@ const previews: Preview[] = [
   {
     key: "image",
     type: ObjType.IMAGE,
+    exts: ["heic", "heif", "avif", "vvc", "avc"], // libheif
     component: lazy(() => import("./image")),
     prior: true,
   },
@@ -119,12 +120,7 @@ const previews: Preview[] = [
     component: lazy(() => import("./plist")),
     prior: true,
   },
-  {
-    key: "heic",
-    exts: ["heic", "heif", "avif", "vvc", "avc", "jpeg", "jpg"],
-    component: lazy(() => import("./heic")),
-    prior: true,
-  },
+
   ...(import.meta.env.VITE_LITE === "true"
     ? []
     : [
