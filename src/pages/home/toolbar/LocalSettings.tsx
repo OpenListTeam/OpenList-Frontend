@@ -24,6 +24,7 @@ import {
   VStack,
   Switch as HopeSwitch,
   IconButton,
+  ButtonGroup,
 } from "@hope-ui/solid"
 import { For, Match, onCleanup, Switch } from "solid-js"
 import { FaSolidMinus, FaSolidPlus } from "solid-icons/fa"
@@ -83,7 +84,7 @@ function LocalSettingEdit(props: LocalSetting) {
           />
         </Match>
         <Match when={props.type === "number"}>
-          <HStack>
+          <ButtonGroup attached>
             <IconButton
               aria-label="decrease"
               icon={<FaSolidMinus />}
@@ -100,6 +101,7 @@ function LocalSettingEdit(props: LocalSetting) {
               onInput={(e) => {
                 setLocal(props.key, e.currentTarget.value)
               }}
+              borderRadius="$none"
               style={{
                 "-moz-appearance": "textfield",
                 // @ts-ignore
@@ -115,7 +117,7 @@ function LocalSettingEdit(props: LocalSetting) {
                 setLocal(props.key, (parseInt(local[props.key]) + 1).toString())
               }}
             />
-          </HStack>
+          </ButtonGroup>
         </Match>
       </Switch>
     </FormControl>
