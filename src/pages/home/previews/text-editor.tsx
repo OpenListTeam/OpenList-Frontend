@@ -23,11 +23,11 @@ import {
 import { useBeforeLeave } from "@solidjs/router"
 import { EncodingSelect, MaybeLoading } from "~/components"
 import { MonacoEditorLoader, monaco } from "~/components/MonacoEditor"
-import { useFetch, useFetchText, useParseText, useRouter, useT } from "~/hooks"
+import { useFetchText, useParseText, useRouter, useT } from "~/hooks"
 import { objStore, setLocal } from "~/store"
 import { local } from "~/store"
-import { PEmptyResp } from "~/types"
-import { handleResp, notify, r } from "~/utils"
+import { notify } from "~/utils"
+import { StreamUpload } from "~/pages/home/uploads/stream"
 import { createShortcut } from "@solid-primitives/keyboard"
 import { BiRegularRedo, BiRegularUndo } from "solid-icons/bi"
 import {
@@ -74,6 +74,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   const [wordWrap, setWordWrap] = createSignal(false)
   const [minimap, setMinimap] = createSignal(true)
   const [fullscreen, setFullscreen] = createSignal(false)
+  const [saving, setSaving] = createSignal(false)
   const [langSearch, setLangSearch] = createSignal("")
   const filteredLanguages = createMemo(() => {
     const s = langSearch().toLowerCase()
@@ -123,16 +124,6 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
     if (fullscreen()) setFullscreen(false)
   })
 
-  const [loading, save] = useFetch(
-    (): PEmptyResp =>
-      r.put("/fs/put", value(), {
-        headers: {
-          "File-Path": encodeURIComponent(pathname()),
-          "Content-Type": props.contentType || "text/plain",
-        },
-      }),
-  )
-
   createEffect(
     on(encoding, (v) => {
       setValue(text(v))
@@ -141,11 +132,19 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   )
 
   async function onSave() {
-    const resp = await save()
-    handleResp(resp, () => {
+    setSaving(true)
+    try {
+      const file = new File([value()], objStore.obj.name, {
+        type: props.contentType || "text/plain",
+      })
+      await StreamUpload(pathname(), file, () => {}, false, true, false)
       notify.success(t("global.save_success"))
       setModified(false)
-    })
+    } catch (e: any) {
+      notify.error(e.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   function onEditorReady(ed: monacoType.editor.IStandaloneCodeEditor) {
@@ -233,7 +232,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
         <Button
           size="sm"
           colorScheme={modified() ? "info" : "neutral"}
-          loading={loading()}
+          loading={saving()}
           onClick={onSave}
           leftIcon={<TbDeviceFloppy />}
         >
