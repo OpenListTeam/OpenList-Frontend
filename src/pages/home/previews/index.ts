@@ -143,13 +143,13 @@ const previews: Preview[] = [
   },
   {
     key: "xls",
-    exts: ["xlsx", "xls"],
+    exts: ["xlsx"],
     component: lazy(() => import("./xls")),
     prior: true,
   },
   {
     key: "doc",
-    exts: ["docx", "doc"],
+    exts: ["docx"],
     component: lazy(() => import("./doc")),
     prior: true,
   },
