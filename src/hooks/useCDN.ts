@@ -1,5 +1,9 @@
 import { joinBase } from "~/utils"
-import packageJson from "../../package.json"
+import {
+  name as pkgName,
+  version as pkgVersion,
+  dependencies as pkgDeps,
+} from "../../package.json"
 
 export const useCDN = () => {
   const static_path = joinBase("static")
@@ -17,43 +21,53 @@ export const useCDN = () => {
     // return `https://cdn.jsdelivr.net/npm/${name}@${version}/${path}`
   }
 
+  // Read version from package.json dependencies (strips ^ ~ prefixes)
+  const dep = (name: string) => {
+    const ver = (pkgDeps as Record<string, string>)[name]
+    if (!ver)
+      throw new Error(
+        `[useCDN] "${name}" not found in package.json dependencies`,
+      )
+    return ver.replace(/^[^\d]*/, "")
+  }
+
   const res = (path: string) => {
     return `${resource}/${path}`
   }
 
   const monacoPath = () => {
     return import.meta.env.VITE_LITE === "true"
-      ? npm("monaco-editor", "0.55.1", "min/vs")
+      ? npm("monaco-editor", dep("monaco-editor"), "min/vs")
       : `${static_path}/monaco-editor/vs`
   }
 
   const katexCSSPath = () => {
     return import.meta.env.VITE_LITE === "true"
-      ? npm("katex", "0.16.45", "dist/katex.min.css")
+      ? npm("katex", dep("katex"), "dist/katex.min.css")
       : `${static_path}/katex/katex.min.css`
   }
 
   const mermaidJSPath = () => {
     return import.meta.env.VITE_LITE === "true"
-      ? npm("mermaid", "11.15.0", "dist/mermaid.min.js")
+      ? npm("mermaid", dep("mermaid"), "dist/mermaid.min.js")
       : `${static_path}/mermaid/mermaid.min.js`
   }
 
   const libHeifPath = () => {
     return import.meta.env.VITE_LITE === "true"
-      ? npm(packageJson.name, packageJson.version, "dist/static/libheif")
+      ? npm(pkgName, pkgVersion, "dist/static/libheif")
       : `${static_path}/libheif`
   }
 
   const libAssPath = () => {
     return import.meta.env.VITE_LITE === "true"
-      ? npm(packageJson.name, packageJson.version, "dist/static/libass-wasm")
+      ? npm(pkgName, pkgVersion, "dist/static/libass-wasm")
       : `${static_path}/libass-wasm`
   }
 
   const fontsPath = () => {
     return import.meta.env.VITE_LITE === "true"
-      ? npm(packageJson.name, packageJson.version, "dist/static/fonts")
+      ? npm(pkgName, pkgVersion, "dist/static/fonts")
       : `${static_path}/fonts`
   }
 
