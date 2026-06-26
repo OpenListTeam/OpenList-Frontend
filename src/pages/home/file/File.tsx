@@ -1,7 +1,7 @@
 import { HStack, VStack } from "@hope-ui/solid"
-import { createMemo, Show, Suspense } from "solid-js"
+import { createMemo, ErrorBoundary, Show, Suspense } from "solid-js"
 import { Dynamic } from "solid-js/web"
-import { FullLoading, SelectWrapper } from "~/components"
+import { Error, FullLoading, SelectWrapper } from "~/components"
 import { objStore } from "~/store"
 import { useRouter } from "~/hooks"
 import { Download } from "../previews/download"
@@ -38,9 +38,11 @@ const File = () => {
           />
           <OpenWith />
         </HStack>
-        <Suspense fallback={<FullLoading />}>
-          <Dynamic component={cur()?.component} />
-        </Suspense>
+        <ErrorBoundary fallback={(err) => <Error msg={String(err)} />}>
+          <Suspense fallback={<FullLoading />}>
+            <Dynamic component={cur()?.component} />
+          </Suspense>
+        </ErrorBoundary>
       </VStack>
     </Show>
   )
