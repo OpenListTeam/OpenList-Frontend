@@ -1,6 +1,6 @@
 import { Error, FullLoading } from "~/components"
 import { useCDN, useT } from "~/hooks"
-import { loadScriptIIFE } from "./load_external"
+import { loadScriptIIFE } from "~/utils"
 import { objStore } from "~/store"
 import { onCleanup, onMount, createSignal, Show } from "solid-js"
 

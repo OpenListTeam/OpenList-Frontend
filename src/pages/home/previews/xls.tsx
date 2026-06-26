@@ -1,6 +1,6 @@
 import { BoxWithFullScreen, Error as Erro, FullLoading } from "~/components"
 import { Box, IconButton, Tooltip, Button, HStack } from "@hope-ui/solid"
-import { loadScriptIIFE } from "./load_external"
+import { loadScriptIIFE } from "~/utils"
 import { createSignal, onMount, For, Show } from "solid-js"
 import { useLink, useT } from "~/hooks"
 import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
