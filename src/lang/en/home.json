@@ -23,6 +23,8 @@
     "tr-installing": "TrollStore Installing",
     "open_in_new_window": "Open in new window",
     "auto_next": "Auto next",
+    "fullscreen": "Fullscreen",
+    "exit_fullscreen": "Exit fullscreen",
     "names": {
       "download": "Direct Download",
       "html": "HTML Render",
