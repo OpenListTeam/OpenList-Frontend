@@ -103,8 +103,31 @@ const DocViewerApp = () => {
     }
   }
 
+  // 响应式缩放docx内容以适配移动端
+  const setupResponsiveScale = () => {
+    if (!resultRef || !containerRef) return
+    const result = resultRef
+    const container = containerRef
+    const observer = new ResizeObserver(() => {
+      const wrapper = result.querySelector(
+        ".docx-preview-container",
+      ) as HTMLElement
+      if (!wrapper) return
+      const containerWidth = container.clientWidth
+      const contentWidth = wrapper.scrollWidth
+      if (contentWidth > containerWidth) {
+        wrapper.style.zoom = `${containerWidth / contentWidth}`
+      } else {
+        wrapper.style.zoom = ""
+      }
+    })
+    observer.observe(container)
+    onCleanup(() => observer.disconnect())
+  }
+
   onMount(() => {
     initDocViewer()
+    setupResponsiveScale()
     document.addEventListener("fullscreenchange", handleFullscreenChange)
   })
 
@@ -158,8 +181,7 @@ const DocViewerApp = () => {
           ref={resultRef}
           id="docx-container"
           style={{
-            width: "100%",
-            height: "100%",
+            "min-width": "0",
             padding: "20px",
             display: loading() || error() ? "none" : "block",
           }}

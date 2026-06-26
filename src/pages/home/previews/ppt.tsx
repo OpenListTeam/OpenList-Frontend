@@ -20,7 +20,17 @@ const PPTViewerApp = () => {
   const [error, setError] = createSignal(false)
   const [isFullscreen, setIsFullscreen] = createSignal(false)
   let containerRef: HTMLDivElement | undefined
+  let shadowHostRef: HTMLDivElement | undefined
   let resultRef: HTMLDivElement | undefined
+
+  // 将已加载的CSS注入Shadow DOM
+  const injectStylesToShadow = (shadow: ShadowRoot) => {
+    document.querySelectorAll('link[id$="-css"]').forEach((el) => {
+      if (!shadow.getElementById(el.id)) {
+        shadow.appendChild(el.cloneNode(true))
+      }
+    })
+  }
 
   // 初始化PPT预览
   const initPPTViewer = async () => {
@@ -38,7 +48,7 @@ const PPTViewerApp = () => {
 
       // 按顺序加载JS文件
       await loadScript(`${baseUrl}/js/jquery-1.11.3.min.js`, "jquery-script")
-      // 使用JSZip 3.x版本，与docx预览器保持一致
+      // 使用JSZip 2.x版本，不支持3.x
       await loadScript(
         "https://unpkg.com/jszip@2.6.1/dist/jszip.min.js",
         "jszip-script",
@@ -54,7 +64,12 @@ const PPTViewerApp = () => {
         throw new Error("jQuery not loaded")
       }
 
-      // 初始化pptxToHtml
+      // 将CSS注入Shadow DOM
+      if (shadowHostRef?.shadowRoot) {
+        injectStylesToShadow(shadowHostRef.shadowRoot)
+      }
+
+      // 初始化pptxToHtml（渲染到Shadow DOM内的resultRef）
       if (resultRef) {
         window.$(resultRef).pptxToHtml({
           pptxFileUrl: currentObjLink(),
@@ -98,7 +113,6 @@ const PPTViewerApp = () => {
     if (!document.fullscreenElement) {
       containerRef.requestFullscreen().then(() => {
         setIsFullscreen(true)
-        // 调整幻灯片大小
         if (resultRef) {
           const slides = resultRef.querySelectorAll(".slide")
           slides.forEach((slide: any) => {
@@ -110,7 +124,6 @@ const PPTViewerApp = () => {
     } else {
       document.exitFullscreen().then(() => {
         setIsFullscreen(false)
-        // 恢复幻灯片大小
         if (resultRef) {
           const slides = resultRef.querySelectorAll(".slide")
           slides.forEach((slide: any) => {
@@ -126,7 +139,6 @@ const PPTViewerApp = () => {
   const handleFullscreenChange = () => {
     if (!document.fullscreenElement) {
       setIsFullscreen(false)
-      // 恢复幻灯片大小
       if (resultRef) {
         const slides = resultRef.querySelectorAll(".slide")
         slides.forEach((slide: any) => {
@@ -137,24 +149,82 @@ const PPTViewerApp = () => {
     }
   }
 
+  // 响应式缩放ppt内容以适配移动端
+  const setupResponsiveScale = () => {
+    if (!resultRef || !containerRef) return
+    const result = resultRef
+    const container = containerRef
+    const observer = new ResizeObserver(() => {
+      const containerWidth = container.clientWidth
+      const contentWidth = result.scrollWidth
+      if (contentWidth > containerWidth) {
+        result.style.zoom = `${containerWidth / contentWidth}`
+      } else {
+        result.style.zoom = ""
+      }
+    })
+    observer.observe(container)
+    onCleanup(() => observer.disconnect())
+  }
+
   onMount(() => {
+    // 创建Shadow DOM，将PPT内容隔离在里面，防止pptxjs的高z-index影响外部
+    if (shadowHostRef) {
+      const shadow = shadowHostRef.attachShadow({ mode: "open" })
+      resultRef = document.createElement("div")
+      resultRef.id = "ppt-result"
+      resultRef.style.cssText = "width:100%;height:100%;"
+      shadow.appendChild(resultRef)
+    }
     initPPTViewer()
+    setupResponsiveScale()
     document.addEventListener("fullscreenchange", handleFullscreenChange)
   })
 
   onCleanup(() => {
     document.removeEventListener("fullscreenchange", handleFullscreenChange)
-    // 清理加载的脚本和样式（可选）
   })
 
   return (
     <BoxWithFullScreen w="$full" h="70vh" pos="relative">
+      {/* PPT容器 */}
+      <div
+        ref={containerRef}
+        style={{
+          width: "100%",
+          height: "100%",
+          overflow: "auto",
+          position: "relative",
+          background: "#f5f5f5",
+        }}
+      >
+        {/* Shadow DOM宿主 - 隔离pptxjs生成的高z-index元素 */}
+        <div
+          ref={shadowHostRef}
+          style={{
+            width: "100%",
+            height: "100%",
+            display: loading() || error() ? "none" : "block",
+          }}
+        />
+
+        {/* 加载状态 */}
+        <Show when={loading()}>
+          <FullLoading />
+        </Show>
+
+        {/* 错误状态 */}
+        <Show when={error()}>
+          <Erro msg={t("preview.failed_load_ppt")} h="70vh" />
+        </Show>
+      </div>
+
       {/* 全屏按钮 */}
       <Box
         pos="absolute"
         top="$2"
         right="$2"
-        zIndex="10"
+        zIndex="9999"
         opacity="0.7"
         transition="opacity 0.2s"
         _hover={{ opacity: "1" }}
@@ -176,38 +246,6 @@ const PPTViewerApp = () => {
           />
         </Tooltip>
       </Box>
-
-      {/* PPT容器 */}
-      <div
-        ref={containerRef}
-        style={{
-          width: "100%",
-          height: "100%",
-          overflow: "auto",
-          position: "relative",
-          background: "#f5f5f5",
-        }}
-      >
-        <div
-          ref={resultRef}
-          id="ppt-result"
-          style={{
-            width: "100%",
-            height: "100%",
-            display: loading() || error() ? "none" : "block",
-          }}
-        />
-
-        {/* 加载状态 */}
-        <Show when={loading()}>
-          <FullLoading />
-        </Show>
-
-        {/* 错误状态 */}
-        <Show when={error()}>
-          <Erro msg={t("preview.failed_load_ppt")} h="70vh" />
-        </Show>
-      </div>
     </BoxWithFullScreen>
   )
 }
