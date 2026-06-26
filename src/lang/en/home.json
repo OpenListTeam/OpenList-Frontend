@@ -25,6 +25,8 @@
     "auto_next": "Auto next",
     "fullscreen": "Fullscreen",
     "exit_fullscreen": "Exit fullscreen",
+    "auto_fit": "Auto fit",
+    "reset_zoom": "Reset zoom",
     "names": {
       "download": "Direct Download",
       "html": "HTML Render",

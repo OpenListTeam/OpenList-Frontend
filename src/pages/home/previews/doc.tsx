@@ -1,9 +1,13 @@
 import { BoxWithFullScreen, FullLoading, Error as Erro } from "~/components"
-import { Box, IconButton, Tooltip } from "@hope-ui/solid"
+import { Box, Button, IconButton, Tooltip } from "@hope-ui/solid"
 import { loadScript } from "~/utils"
 import { createSignal, onMount, onCleanup, Show } from "solid-js"
 import { useLink, useT } from "~/hooks"
 import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
+import {
+  HiOutlineMagnifyingGlassPlus,
+  HiOutlineMagnifyingGlassMinus,
+} from "solid-icons/hi"
 
 // 声明全局docx类型
 declare global {
@@ -18,6 +22,8 @@ const DocViewerApp = () => {
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
   const [isFullscreen, setIsFullscreen] = createSignal(false)
+  // null = auto-fit, number = manual zoom level
+  const [zoom, setZoom] = createSignal<number | null>(null)
   let containerRef: HTMLDivElement | undefined
   let resultRef: HTMLDivElement | undefined
 
@@ -101,25 +107,54 @@ const DocViewerApp = () => {
     if (!document.fullscreenElement) {
       setIsFullscreen(false)
     }
+    applyScale()
   }
 
-  // 响应式缩放docx内容以适配移动端
-  const setupResponsiveScale = () => {
+  // 应用缩放
+  const applyScale = () => {
     if (!resultRef || !containerRef) return
-    const result = resultRef
-    const container = containerRef
-    const observer = new ResizeObserver(() => {
-      const wrapper = result.querySelector(
-        ".docx-preview-container",
-      ) as HTMLElement
-      if (!wrapper) return
-      const containerWidth = container.clientWidth
+    const wrapper = resultRef.querySelector(
+      ".docx-preview-container",
+    ) as HTMLElement
+    if (!wrapper) return
+    const z = zoom()
+    if (z === null) {
+      // auto-fit: 缩放到容器宽度
+      const containerWidth = containerRef.clientWidth
       const contentWidth = wrapper.scrollWidth
       if (contentWidth > containerWidth) {
         wrapper.style.zoom = `${containerWidth / contentWidth}`
       } else {
         wrapper.style.zoom = ""
       }
+    } else {
+      wrapper.style.zoom = `${z}`
+    }
+  }
+
+  // 缩放控制
+  const zoomStep = 0.1
+  const zoomIn = () => {
+    const current = zoom() ?? 1
+    setZoom(Math.min(current + zoomStep, 3))
+    applyScale()
+  }
+  const zoomOut = () => {
+    const current = zoom() ?? 1
+    setZoom(Math.max(current - zoomStep, 0.3))
+    applyScale()
+  }
+  const zoomReset = () => {
+    setZoom(null)
+    applyScale()
+  }
+
+  const setupResponsiveScale = () => {
+    if (!resultRef || !containerRef) return
+    const result = resultRef
+    const container = containerRef
+    const observer = new ResizeObserver(() => {
+      if (zoom() === null) applyScale()
     })
     observer.observe(container)
     onCleanup(() => observer.disconnect())
@@ -138,6 +173,47 @@ const DocViewerApp = () => {
 
   return (
     <BoxWithFullScreen w="$full" h="70vh" pos="relative">
+      {/* 缩放控制 */}
+      <Box
+        pos="absolute"
+        top="$2"
+        left="$2"
+        zIndex="10"
+        display="flex"
+        alignItems="center"
+        gap="$1"
+        opacity="0.7"
+        transition="opacity 0.2s"
+        _hover={{ opacity: "1" }}
+      >
+        <IconButton
+          size="sm"
+          colorScheme="neutral"
+          aria-label="Zoom Out"
+          icon={<HiOutlineMagnifyingGlassMinus />}
+          onClick={zoomOut}
+        />
+        <Tooltip
+          withArrow
+          label={
+            zoom() === null
+              ? t("home.preview.auto_fit")
+              : t("home.preview.reset_zoom")
+          }
+        >
+          <Button size="sm" colorScheme="neutral" onClick={zoomReset}>
+            {zoom() === null ? "Auto" : `${Math.round((zoom() ?? 1) * 100)}%`}
+          </Button>
+        </Tooltip>
+        <IconButton
+          size="sm"
+          colorScheme="neutral"
+          aria-label="Zoom In"
+          icon={<HiOutlineMagnifyingGlassPlus />}
+          onClick={zoomIn}
+        />
+      </Box>
+
       {/* 全屏按钮 */}
       <Box
         pos="absolute"
