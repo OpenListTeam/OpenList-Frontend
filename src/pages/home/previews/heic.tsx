@@ -1,11 +1,11 @@
 import { Error, FullLoading } from "~/components"
-import { useCDN, useRouter, useT } from "~/hooks"
+import { useCDN, useT } from "~/hooks"
+import { loadScript } from "./load_external"
 import { objStore } from "~/store"
 import { onCleanup, onMount, createSignal, Show } from "solid-js"
 
 const Preview = () => {
   const t = useT()
-  const { replace } = useRouter()
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
   const { libHeifPath } = useCDN()
@@ -73,17 +73,6 @@ const Preview = () => {
       setLoading(false)
     }
   }
-
-  // 加载脚本
-  const loadScript = (src: string, id: string) =>
-    new Promise<void>((resolve, reject) => {
-      const script = document.createElement("script")
-      script.src = src
-      script.id = id
-      script.onload = () => resolve()
-      script.onerror = () => reject(`脚本加载失败: ${src}`)
-      document.head.appendChild(script)
-    })
 
   // 获取WASM文件
   const fetchWasm = async (url: string) => {
