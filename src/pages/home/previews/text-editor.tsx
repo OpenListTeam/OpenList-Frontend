@@ -24,7 +24,7 @@ import { useBeforeLeave } from "@solidjs/router"
 import { EncodingSelect, MaybeLoading } from "~/components"
 import { MonacoEditorLoader, monaco } from "~/components/MonacoEditor"
 import { useFetchText, useParseText, useRouter, useT } from "~/hooks"
-import { objStore, setLocal } from "~/store"
+import { objStore, setLocal, userCan } from "~/store"
 import { local } from "~/store"
 import { notify } from "~/utils"
 import { StreamUpload } from "~/pages/home/uploads/stream"
@@ -91,36 +91,47 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
     const lang = languageOptions().find((l) => l.id === language())
     return lang?.aliases?.[0] || language()
   })
-
-  // Warn on browser close/refresh when there are unsaved changes
-  const beforeUnloadHandler = (e: BeforeUnloadEvent) => {
-    if (modified()) {
-      e.preventDefault()
-    }
-  }
-  window.addEventListener("beforeunload", beforeUnloadHandler)
-  onCleanup(() =>
-    window.removeEventListener("beforeunload", beforeUnloadHandler),
+  const canWrite = createMemo(
+    () =>
+      // objStore.write is only set from folder listing (FsListResp),
+      // not from file detail (FsGetResp). When directly entering a file,
+      // write is undefined, so fall back to permission check only.
+      (userCan("write_content") || objStore.write_content_bypass) &&
+      objStore.write !== false,
   )
 
-  // Warn on in-app navigation when there are unsaved changes
-  useBeforeLeave((e) => {
-    if (modified()) {
-      if (!window.confirm(t("global.unsaved_changes_confirm"))) {
+  if (canWrite()) {
+    // Warn on browser close/refresh when there are unsaved changes
+    const beforeUnloadHandler = (e: BeforeUnloadEvent) => {
+      if (modified()) {
         e.preventDefault()
       }
     }
-  })
+    window.addEventListener("beforeunload", beforeUnloadHandler)
+    onCleanup(() =>
+      window.removeEventListener("beforeunload", beforeUnloadHandler),
+    )
 
-  // Save on Ctrl+S / Cmd+S
-  createShortcut(["Control", "S"], (e: KeyboardEvent | null) => {
-    e?.preventDefault()
-    onSave()
-  })
-  createShortcut(["Meta", "S"], (e: KeyboardEvent | null) => {
-    e?.preventDefault()
-    onSave()
-  })
+    // Warn on in-app navigation when there are unsaved changes
+    useBeforeLeave((e) => {
+      if (modified()) {
+        if (!window.confirm(t("global.unsaved_changes_confirm"))) {
+          e.preventDefault()
+        }
+      }
+    })
+
+    // Save on Ctrl+S / Cmd+S
+    createShortcut(["Control", "S"], (e: KeyboardEvent | null) => {
+      e?.preventDefault()
+      onSave()
+    })
+    createShortcut(["Meta", "S"], (e: KeyboardEvent | null) => {
+      e?.preventDefault()
+      onSave()
+    })
+  }
+
   // Escape to exit fullscreen
   createShortcut(["Escape"], () => {
     if (fullscreen()) setFullscreen(false)
@@ -233,34 +244,36 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
         overflowX="auto"
         flexShrink={0}
       >
-        <Button
-          size="sm"
-          colorScheme={modified() ? "info" : "neutral"}
-          loading={saving()}
-          onClick={onSave}
-          leftIcon={<TbDeviceFloppy />}
-        >
-          {t("global.save")}
-        </Button>
+        <Show when={canWrite()}>
+          <Button
+            size="sm"
+            colorScheme={modified() ? "info" : "neutral"}
+            loading={saving()}
+            onClick={onSave}
+            leftIcon={<TbDeviceFloppy />}
+          >
+            {t("global.save")}
+          </Button>
 
-        <IconButton
-          aria-label={t("global.undo")}
-          icon={<BiRegularUndo />}
-          size="sm"
-          variant="ghost"
-          onClick={undo}
-          title={`${t("global.undo")} (Ctrl+Z)`}
-        />
-        <IconButton
-          aria-label={t("global.redo")}
-          icon={<BiRegularRedo />}
-          size="sm"
-          variant="ghost"
-          onClick={redo}
-          title={`${t("global.redo")} (Ctrl+Y)`}
-        />
+          <IconButton
+            aria-label={t("global.undo")}
+            icon={<BiRegularUndo />}
+            size="sm"
+            variant="ghost"
+            onClick={undo}
+            title={`${t("global.undo")} (Ctrl+Z)`}
+          />
+          <IconButton
+            aria-label={t("global.redo")}
+            icon={<BiRegularRedo />}
+            size="sm"
+            variant="ghost"
+            onClick={redo}
+            title={`${t("global.redo")} (Ctrl+Y)`}
+          />
 
-        <Box w="1px" h="$5" bg="$neutral4" mx="$1" />
+          <Box w="1px" h="$5" bg="$neutral4" mx="$1" />
+        </Show>
 
         <IconButton
           aria-label={t("global.wrap")}
@@ -348,6 +361,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
           theme: theme(),
           wordWrap: wordWrap() ? "on" : "off",
           minimap: { enabled: minimap() },
+          readOnly: !canWrite(),
         }}
         onChange={(val) => setValue(val)}
         onEditorReady={onEditorReady}
