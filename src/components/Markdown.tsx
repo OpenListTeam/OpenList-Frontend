@@ -1,7 +1,6 @@
 import { Anchor, Box, List, ListItem, useColorModeValue } from "@hope-ui/solid"
 import { createStorageSignal } from "@solid-primitives/storage"
 import { clsx } from "clsx"
-import once from "just-once"
 import rehypeRaw from "rehype-raw"
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize"
 import rehypeStringify from "rehype-stringify"
@@ -14,7 +13,15 @@ import { unified } from "unified"
 import { useCDN, useParseText, useRouter } from "~/hooks"
 import { useScrollListener } from "~/pages/home/toolbar/BackTop.jsx"
 import { getMainColor, getSettingBool, me } from "~/store"
-import { api, notify, pathDir, pathJoin, pathResolve } from "~/utils"
+import {
+  api,
+  loadCSS,
+  loadScriptIIFE,
+  notify,
+  pathDir,
+  pathJoin,
+  pathResolve,
+} from "~/utils"
 import { isMobile } from "~/utils/compatibility.js"
 import hljs from "highlight.js"
 import { EncodingSelect } from "."
@@ -148,25 +155,6 @@ function MarkdownToc(props: {
 
 const { katexCSSPath, mermaidJSPath } = useCDN()
 
-const insertKatexCSS = once(() => {
-  const link = document.createElement("link")
-  link.rel = "stylesheet"
-  link.href = katexCSSPath()
-  document.head.appendChild(link)
-})
-
-const loadMermaidJS = once(
-  () =>
-    new Promise<void>((resolve, reject) => {
-      if (window.mermaid) return resolve()
-      const script = document.createElement("script")
-      script.src = mermaidJSPath()
-      script.onload = () => resolve()
-      script.onerror = () => reject(new Error("Failed to load mermaid"))
-      document.body.appendChild(script)
-    }),
-)
-
 async function renderMarkdown(
   content: string,
   sanitize: boolean,
@@ -180,13 +168,15 @@ async function renderMarkdown(
   if (hasMath) {
     const { default: remarkMath } = await import("remark-math")
     processor.use(remarkMath)
-    insertKatexCSS()
+    await loadCSS(katexCSSPath(), "katex").catch(() =>
+      notify.error(
+        "Failed to load KaTeX CSS, math formulas will not be rendered",
+      ),
+    )
   }
   if (hasMermaid) {
-    await loadMermaidJS().catch(() =>
-      notify.error(
-        "Failed to load mermaid.js, mermaid diagrams will not be rendered",
-      ),
+    await loadScriptIIFE(mermaidJSPath(), "mermaid").catch(() =>
+      notify.error("Failed to load Mermaid JS, diagrams will not be rendered"),
     )
   }
 
