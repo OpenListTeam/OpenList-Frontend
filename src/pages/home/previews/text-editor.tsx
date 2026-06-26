@@ -71,8 +71,10 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   const [languageOptions, setLanguageOptions] = createSignal<LanguageOption[]>(
     [],
   )
-  const [wordWrap, setWordWrap] = createSignal(false)
-  const [minimap, setMinimap] = createSignal(true)
+  const [wordWrap, setWordWrap] = createSignal(
+    local.editor_word_wrap === "true",
+  )
+  const [minimap, setMinimap] = createSignal(local.editor_minimap !== "false")
   const [fullscreen, setFullscreen] = createSignal(false)
   const [saving, setSaving] = createSignal(false)
   const [langSearch, setLangSearch] = createSignal("")
@@ -197,7 +199,9 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   }
 
   function toggleWordWrap() {
-    setWordWrap(!wordWrap())
+    const next = !wordWrap()
+    setWordWrap(next)
+    setLocal("editor_word_wrap", String(next))
   }
 
   function changeFontSize(delta: number) {
@@ -273,7 +277,11 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
           icon={minimap() ? <TbMap /> : <TbMapOff />}
           size="sm"
           variant="ghost"
-          onClick={() => setMinimap(!minimap())}
+          onClick={() => {
+            const next = !minimap()
+            setMinimap(next)
+            setLocal("editor_minimap", String(next))
+          }}
           title="Minimap"
           color={minimap() ? "$info11" : undefined}
         />
