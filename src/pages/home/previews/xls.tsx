@@ -1,8 +1,8 @@
 import { BoxWithFullScreen, Error as Erro, FullLoading } from "~/components"
-import { objStore } from "~/store"
 import { Box, IconButton, Tooltip, Button, HStack } from "@hope-ui/solid"
+import { loadScript } from "~/utils"
 import { createSignal, onMount, For, Show } from "solid-js"
-import { useT } from "~/hooks"
+import { useLink, useT } from "~/hooks"
 import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
 
 // 声明全局ExcelJS类型
@@ -30,42 +30,13 @@ interface SheetData {
 
 const ExcelViewerApp = () => {
   const t = useT()
+  const { currentObjLink } = useLink()
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
   const [isFullscreen, setIsFullscreen] = createSignal(false)
   const [sheets, setSheets] = createSignal<SheetData[]>([])
   const [currentSheetIndex, setCurrentSheetIndex] = createSignal(0)
   let containerRef: HTMLDivElement | undefined
-
-  // 动态加载ExcelJS库
-  const loadExcelJSScript = () => {
-    return new Promise<void>((resolve, reject) => {
-      // 检查是否已经加载
-      if (window.ExcelJS) {
-        resolve()
-        return
-      }
-
-      // 检查脚本标签是否已存在
-      const existingScript = document.getElementById("exceljs-script")
-      if (existingScript) {
-        // 脚本正在加载中，等待加载完成
-        existingScript.addEventListener("load", () => resolve())
-        existingScript.addEventListener("error", () =>
-          reject(new Error("Failed to load ExcelJS library")),
-        )
-        return
-      }
-
-      const script = document.createElement("script")
-      script.src = "https://res.oplist.org.cn/exceljs/exceljs.min.js"
-      script.id = "exceljs-script"
-      script.async = true
-      script.onload = () => resolve()
-      script.onerror = () => reject(new Error("Failed to load ExcelJS library"))
-      document.head.appendChild(script)
-    })
-  }
 
   // 加载并解析Excel文件
   const loadExcelFile = async () => {
@@ -74,10 +45,13 @@ const ExcelViewerApp = () => {
       setError(false)
 
       // 先加载ExcelJS库
-      await loadExcelJSScript()
+      await loadScript(
+        "https://res.oplist.org.cn/exceljs/exceljs.min.js",
+        "exceljs-script",
+      )
 
       // 获取文件URL
-      const fileUrl = objStore.raw_url
+      const fileUrl = currentObjLink()
 
       // 下载文件
       const response = await fetch(fileUrl)

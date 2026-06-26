@@ -1,8 +1,8 @@
 import { BoxWithFullScreen, Error as Erro, FullLoading } from "~/components"
-import { objStore } from "~/store"
 import { Box, IconButton, Tooltip } from "@hope-ui/solid"
+import { loadScript, loadCSS } from "~/utils"
 import { createSignal, onMount, onCleanup, Show } from "solid-js"
-import { useT } from "~/hooks"
+import { useLink, useT } from "~/hooks"
 import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
 
 // 声明全局jQuery和pptxToHtml方法
@@ -15,49 +15,12 @@ declare global {
 
 const PPTViewerApp = () => {
   const t = useT()
+  const { currentObjLink } = useLink()
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
   const [isFullscreen, setIsFullscreen] = createSignal(false)
   let containerRef: HTMLDivElement | undefined
   let resultRef: HTMLDivElement | undefined
-
-  // 加载外部脚本
-  const loadScript = (src: string, id: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // 检查脚本是否已加载
-      if (document.getElementById(id)) {
-        resolve()
-        return
-      }
-
-      const script = document.createElement("script")
-      script.src = src
-      script.id = id
-      script.type = "text/javascript"
-      script.onload = () => resolve()
-      script.onerror = () => reject(new Error(`Failed to load script: ${src}`))
-      document.head.appendChild(script)
-    })
-  }
-
-  // 加载CSS文件
-  const loadCSS = (href: string, id: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // 检查CSS是否已加载
-      if (document.getElementById(id)) {
-        resolve()
-        return
-      }
-
-      const link = document.createElement("link")
-      link.rel = "stylesheet"
-      link.href = href
-      link.id = id
-      link.onload = () => resolve()
-      link.onerror = () => reject(new Error(`Failed to load CSS: ${href}`))
-      document.head.appendChild(link)
-    })
-  }
 
   // 初始化PPT预览
   const initPPTViewer = async () => {
@@ -94,7 +57,7 @@ const PPTViewerApp = () => {
       // 初始化pptxToHtml
       if (resultRef) {
         window.$(resultRef).pptxToHtml({
-          pptxFileUrl: objStore.raw_url,
+          pptxFileUrl: currentObjLink(),
           slideMode: false,
           keyBoardShortCut: false,
           slideModeConfig: {

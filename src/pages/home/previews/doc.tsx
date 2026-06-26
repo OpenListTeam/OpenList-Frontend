@@ -1,8 +1,8 @@
 import { BoxWithFullScreen, FullLoading, Error as Erro } from "~/components"
-import { objStore } from "~/store"
 import { Box, IconButton, Tooltip } from "@hope-ui/solid"
+import { loadScript } from "~/utils"
 import { createSignal, onMount, onCleanup, Show } from "solid-js"
-import { useT } from "~/hooks"
+import { useLink, useT } from "~/hooks"
 import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
 
 // 声明全局docx类型
@@ -14,49 +14,12 @@ declare global {
 
 const DocViewerApp = () => {
   const t = useT()
+  const { currentObjLink } = useLink()
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
   const [isFullscreen, setIsFullscreen] = createSignal(false)
   let containerRef: HTMLDivElement | undefined
   let resultRef: HTMLDivElement | undefined
-
-  // 加载外部脚本
-  const loadScript = (src: string, id: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // 检查脚本是否已加载
-      if (document.getElementById(id)) {
-        resolve()
-        return
-      }
-
-      const script = document.createElement("script")
-      script.src = src
-      script.id = id
-      script.type = "text/javascript"
-      script.onload = () => resolve()
-      script.onerror = () => reject(new Error(`Failed to load script: ${src}`))
-      document.head.appendChild(script)
-    })
-  }
-
-  // 加载CSS文件
-  const loadCSS = (href: string, id: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // 检查CSS是否已加载
-      if (document.getElementById(id)) {
-        resolve()
-        return
-      }
-
-      const link = document.createElement("link")
-      link.rel = "stylesheet"
-      link.href = href
-      link.id = id
-      link.onload = () => resolve()
-      link.onerror = () => reject(new Error(`Failed to load CSS: ${href}`))
-      document.head.appendChild(link)
-    })
-  }
 
   // 初始化DOCX预览
   const initDocViewer = async () => {
@@ -80,7 +43,7 @@ const DocViewerApp = () => {
       }
 
       // 获取文件URL并下载
-      const fileUrl = objStore.raw_url
+      const fileUrl = currentObjLink()
       const response = await fetch(fileUrl)
       if (!response.ok) {
         throw new Error("Failed to fetch document file")
