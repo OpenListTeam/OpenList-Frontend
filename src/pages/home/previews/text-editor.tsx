@@ -23,7 +23,7 @@ import {
 import { useBeforeLeave } from "@solidjs/router"
 import { EncodingSelect, MaybeLoading } from "~/components"
 import { MonacoEditorLoader, monaco } from "~/components/MonacoEditor"
-import { useFetchText, useParseText, useRouter, useT } from "~/hooks"
+import { useFetchText, useParseText, useRouter, useT, useUtil } from "~/hooks"
 import { objStore, setLocal, userCan } from "~/store"
 import { local } from "~/store"
 import { notify } from "~/utils"
@@ -32,6 +32,8 @@ import { createShortcut } from "@solid-primitives/keyboard"
 import { BiRegularRedo, BiRegularUndo } from "solid-icons/bi"
 import {
   TbBraces,
+  TbClipboardText,
+  TbCopy,
   TbDeviceFloppy,
   TbTextWrap,
   TbTextWrapDisabled,
@@ -57,6 +59,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   const [encoding, setEncoding] = createSignal("utf-8")
   const [value, setValue] = createSignal(text(encoding()))
   const t = useT()
+  const { copy, paste } = useUtil()
 
   // Editor instance reference
   const [editor, setEditor] =
@@ -209,6 +212,32 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
     editor()?.trigger("toolbar", "redo", null)
   }
 
+  async function copyToClipboard() {
+    const ed = editor()
+    if (!ed) return
+    const sel = ed.getSelection()
+    const selection = sel ? (ed.getModel()?.getValueInRange(sel) ?? "") : ""
+    const text = selection || ed.getValue()
+    await copy(text)
+  }
+
+  async function pasteFromClipboard() {
+    const ed = editor()
+    if (!ed) return
+
+    const text = await paste()
+    if (!text) return
+    const selection = ed.getSelection()
+    if (selection) {
+      ed.executeEdits("paste", [
+        { range: selection, text, forceMoveMarkers: true },
+      ])
+    } else {
+      ed.trigger("keyboard", "paste", { text })
+    }
+    ed.focus()
+  }
+
   function toggleWordWrap() {
     const next = !wordWrap()
     setWordWrap(next)
@@ -274,6 +303,27 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
 
           <Box w="1px" h="$5" bg="$neutral4" mx="$1" />
         </Show>
+
+        <IconButton
+          aria-label={t("global.copy")}
+          icon={<TbCopy />}
+          size="sm"
+          variant="ghost"
+          onClick={copyToClipboard}
+          title={t("global.copy")}
+        />
+        <Show when={canWrite()}>
+          <IconButton
+            aria-label={t("global.paste")}
+            icon={<TbClipboardText />}
+            size="sm"
+            variant="ghost"
+            onClick={pasteFromClipboard}
+            title={t("global.paste")}
+          />
+        </Show>
+
+        <Box w="1px" h="$5" bg="$neutral4" mx="$1" />
 
         <IconButton
           aria-label={t("global.wrap")}

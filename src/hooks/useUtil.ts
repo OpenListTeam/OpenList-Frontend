@@ -1,17 +1,52 @@
-import copy from "copy-to-clipboard"
 import { createResource } from "solid-js"
 import { getHideFiles, objStore } from "~/store"
 import { Obj } from "~/types"
 import { decodeText, fetchText, notify, pathJoin } from "~/utils"
 import { useT, useLink, useRouter } from "."
 
+async function checkClipboardPermission(
+  mode: "clipboard-read" | "clipboard-write",
+): Promise<boolean> {
+  try {
+    const status = await navigator.permissions.query({
+      name: mode as PermissionName,
+    })
+    return status.state === "granted" || status.state === "prompt"
+  } catch {
+    // Safari does not support permissions.query for clipboard;
+    // assume permission is available if navigator.clipboard exists.
+    return !!navigator.clipboard
+  }
+}
+
 export const useUtil = () => {
   const t = useT()
   const { pathname } = useRouter()
   return {
-    copy: (text: string) => {
-      copy(text)
+    copy: async (text: string) => {
+      try {
+        if (await checkClipboardPermission("clipboard-write")) {
+          await navigator.clipboard.writeText(text)
+        } else {
+          throw new Error("permission denied")
+        }
+      } catch {
+        const ta = document.createElement("textarea")
+        ta.value = text
+        ta.style.position = "fixed"
+        ta.style.opacity = "0"
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand("copy")
+        document.body.removeChild(ta)
+      }
       notify.success(t("global.copied"))
+    },
+    paste: async (): Promise<string> => {
+      if (!(await checkClipboardPermission("clipboard-read"))) {
+        throw new Error(t("global.clipboard_denied"))
+      }
+      return navigator.clipboard.readText()
     },
     isHide: (obj: Obj) => {
       const hideFiles = getHideFiles()
