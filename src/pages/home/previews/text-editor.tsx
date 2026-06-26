@@ -360,7 +360,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
       >
         <Show when={modified()}>
           <Box color="$warning11" style={{ "white-space": "nowrap" }}>
-            ● {t("global.modified")}
+            ●
           </Box>
         </Show>
         <Box style={{ "white-space": "nowrap" }}>
