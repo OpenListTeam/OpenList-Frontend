@@ -1,6 +1,6 @@
 import { BoxWithFullScreen, Error as Erro, FullLoading } from "~/components"
 import { Box, Button, IconButton, Tooltip } from "@hope-ui/solid"
-import { loadScript, loadCSS } from "./load_external"
+import { loadScriptIIFE, loadCSS } from "./load_external"
 import { createSignal, onMount, onCleanup, Show } from "solid-js"
 import { useLink, useT } from "~/hooks"
 import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
@@ -53,17 +53,20 @@ const PPTViewerApp = () => {
       ])
 
       // 按顺序加载JS文件
-      await loadScript(`${baseUrl}/js/jquery-1.11.3.min.js`, "jquery-script")
+      await loadScriptIIFE(
+        `${baseUrl}/js/jquery-1.11.3.min.js`,
+        "jquery-script",
+      )
       // 使用JSZip 2.x版本，不支持3.x
-      await loadScript(
+      await loadScriptIIFE(
         "https://unpkg.com/jszip@2.6.1/dist/jszip.min.js",
         "jszip-script",
       )
-      await loadScript(`${baseUrl}/js/filereader.js`, "filereader-script")
-      await loadScript(`${baseUrl}/js/d3.min.js`, "d3-script")
-      await loadScript(`${baseUrl}/js/nv.d3.min.js`, "nv-d3-script")
-      await loadScript(`${baseUrl}/js/pptxjs.js`, "pptxjs-script")
-      await loadScript(`${baseUrl}/js/divs2slides.js`, "divs2slides-script")
+      await loadScriptIIFE(`${baseUrl}/js/filereader.js`, "filereader-script")
+      await loadScriptIIFE(`${baseUrl}/js/d3.min.js`, "d3-script")
+      await loadScriptIIFE(`${baseUrl}/js/nv.d3.min.js`, "nv-d3-script")
+      await loadScriptIIFE(`${baseUrl}/js/pptxjs.js`, "pptxjs-script")
+      await loadScriptIIFE(`${baseUrl}/js/divs2slides.js`, "divs2slides-script")
 
       // 等待jQuery加载完成
       if (!window.$ || !window.jQuery) {

@@ -1,6 +1,6 @@
 import { BoxWithFullScreen, Error as Erro, FullLoading } from "~/components"
 import { Box, IconButton, Tooltip, Button, HStack } from "@hope-ui/solid"
-import { loadScript } from "./load_external"
+import { loadScriptIIFE } from "./load_external"
 import { createSignal, onMount, For, Show } from "solid-js"
 import { useLink, useT } from "~/hooks"
 import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
@@ -45,7 +45,7 @@ const ExcelViewerApp = () => {
       setError(false)
 
       // 先加载ExcelJS库
-      await loadScript(
+      await loadScriptIIFE(
         "https://res.oplist.org.cn/exceljs/exceljs.min.js",
         "exceljs-script",
       )

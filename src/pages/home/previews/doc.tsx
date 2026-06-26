@@ -1,6 +1,6 @@
 import { BoxWithFullScreen, FullLoading, Error as Erro } from "~/components"
 import { Box, Button, IconButton, Tooltip } from "@hope-ui/solid"
-import { loadScript } from "./load_external"
+import { loadScriptIIFE } from "./load_external"
 import { createSignal, onMount, onCleanup, Show } from "solid-js"
 import { useLink, useT } from "~/hooks"
 import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
@@ -34,11 +34,11 @@ const DocViewerApp = () => {
       setError(false)
 
       // 加载jszip和docx-preview库
-      await loadScript(
+      await loadScriptIIFE(
         "https://unpkg.com/jszip/dist/jszip.min.js",
         "jszip-script",
       )
-      await loadScript(
+      await loadScriptIIFE(
         "https://res.oplist.org.cn/docxjs/dist/docx-preview.min.js",
         "docx-preview-script",
       )

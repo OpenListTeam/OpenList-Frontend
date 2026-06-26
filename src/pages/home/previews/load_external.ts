@@ -2,7 +2,7 @@
  * Load an external script dynamically
  * @returns Promise that resolves when the script is loaded
  */
-export const loadScript = (src: string, id: string): Promise<void> => {
+export const loadScriptIIFE = (src: string, id: string): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (document.getElementById(id)) {
       resolve()

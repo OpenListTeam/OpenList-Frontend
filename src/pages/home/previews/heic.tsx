@@ -1,6 +1,6 @@
 import { Error, FullLoading } from "~/components"
 import { useCDN, useT } from "~/hooks"
-import { loadScript } from "./load_external"
+import { loadScriptIIFE } from "./load_external"
 import { objStore } from "~/store"
 import { onCleanup, onMount, createSignal, Show } from "solid-js"
 
@@ -55,7 +55,7 @@ const Preview = () => {
     try {
       // 动态加载libheif脚本
       if (!window.libheif) {
-        await loadScript(`${libHeifPath()}/libheif.js`, "libheif-script")
+        await loadScriptIIFE(`${libHeifPath()}/libheif.js`, "libheif-script")
       }
 
       // 加载WASM文件
