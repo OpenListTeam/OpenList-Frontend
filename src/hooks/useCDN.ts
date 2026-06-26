@@ -4,13 +4,21 @@ import packageJson from "../../package.json"
 export const useCDN = () => {
   const static_path = joinBase("static")
 
+  // OpenList Resource CDN: https://github.com/OpenListTeam/OpenList-Resource
+  const resource = "https://res.oplist.org.cn"
+
+  // npmmirror CDN, whitelist
+  // Available: https://github.com/cnpm/unpkg-white-list
   const npm = (name: string, version: string, path: string) => {
-    // Available: https://github.com/cnpm/unpkg-white-list
     // https://registry.npmmirror.com/monaco-editor/0.55.1/files/min/vs/loader.js
     return `https://registry.npmmirror.com/${name}/${version}/files/${path}`
 
     // https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs/loader.js
     // return `https://cdn.jsdelivr.net/npm/${name}@${version}/${path}`
+  }
+
+  const res = (path: string) => {
+    return `${resource}/${path}`
   }
 
   const monacoPath = () => {
@@ -49,13 +57,22 @@ export const useCDN = () => {
       : `${static_path}/fonts`
   }
 
+  // Office preview libs — always served from resource CDN (not bundled locally)
+  const pptBasePath = () => res("ppt.js")
+  const docxPreviewPath = () => res("docxjs/dist/docx-preview.min.js")
+  const excelJSPath = () => res("exceljs/exceljs.min.js")
+
   return {
     npm,
+    res,
     monacoPath,
     katexCSSPath,
     mermaidJSPath,
     libHeifPath,
     libAssPath,
     fontsPath,
+    pptBasePath,
+    docxPreviewPath,
+    excelJSPath,
   }
 }

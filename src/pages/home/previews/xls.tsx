@@ -2,7 +2,7 @@ import { BoxWithFullScreen, Error as Erro, FullLoading } from "~/components"
 import { Box, IconButton, Tooltip, Button, HStack } from "@hope-ui/solid"
 import { loadScriptIIFE } from "~/utils"
 import { createSignal, onMount, For, Show } from "solid-js"
-import { useLink, useT } from "~/hooks"
+import { useLink, useT, useCDN } from "~/hooks"
 import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
 
 // 声明全局ExcelJS类型
@@ -31,6 +31,7 @@ interface SheetData {
 const ExcelViewerApp = () => {
   const t = useT()
   const { currentObjLink } = useLink()
+  const { excelJSPath } = useCDN()
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
   const [isFullscreen, setIsFullscreen] = createSignal(false)
@@ -45,10 +46,7 @@ const ExcelViewerApp = () => {
       setError(false)
 
       // 先加载ExcelJS库
-      await loadScriptIIFE(
-        "https://res.oplist.org.cn/exceljs/exceljs.min.js",
-        "exceljs-script",
-      )
+      await loadScriptIIFE(excelJSPath(), "exceljs-script")
 
       // 获取文件URL
       const fileUrl = currentObjLink()

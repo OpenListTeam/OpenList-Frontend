@@ -2,7 +2,7 @@ import { BoxWithFullScreen, FullLoading, Error as Erro } from "~/components"
 import { Box, Button, IconButton, Tooltip } from "@hope-ui/solid"
 import { loadScriptIIFE } from "~/utils"
 import { createSignal, onMount, onCleanup, Show } from "solid-js"
-import { useLink, useT } from "~/hooks"
+import { useLink, useT, useCDN } from "~/hooks"
 import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
 import {
   HiOutlineMagnifyingGlassPlus,
@@ -19,6 +19,7 @@ declare global {
 const DocViewerApp = () => {
   const t = useT()
   const { currentObjLink } = useLink()
+  const { npm, docxPreviewPath } = useCDN()
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
   const [isFullscreen, setIsFullscreen] = createSignal(false)
@@ -35,13 +36,10 @@ const DocViewerApp = () => {
 
       // 加载jszip和docx-preview库
       await loadScriptIIFE(
-        "https://unpkg.com/jszip/dist/jszip.min.js",
+        npm("jszip", "3.10.1", "dist/jszip.min.js"),
         "jszip-script",
       )
-      await loadScriptIIFE(
-        "https://res.oplist.org.cn/docxjs/dist/docx-preview.min.js",
-        "docx-preview-script",
-      )
+      await loadScriptIIFE(docxPreviewPath(), "docx-preview-script")
 
       // 等待docx库加载完成
       if (!window.docx) {

@@ -2,7 +2,7 @@ import { BoxWithFullScreen, Error as Erro, FullLoading } from "~/components"
 import { Box, Button, IconButton, Tooltip } from "@hope-ui/solid"
 import { loadScriptIIFE, loadCSS } from "~/utils"
 import { createSignal, onMount, onCleanup, Show } from "solid-js"
-import { useLink, useT } from "~/hooks"
+import { useLink, useT, useCDN } from "~/hooks"
 import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
 import {
   HiOutlineMagnifyingGlassPlus,
@@ -20,6 +20,7 @@ declare global {
 const PPTViewerApp = () => {
   const t = useT()
   const { currentObjLink } = useLink()
+  const { npm, pptBasePath } = useCDN()
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
   const [isFullscreen, setIsFullscreen] = createSignal(false)
@@ -44,7 +45,7 @@ const PPTViewerApp = () => {
       setLoading(true)
       setError(false)
 
-      const baseUrl = "https://res.oplist.org.cn/ppt.js"
+      const baseUrl = pptBasePath()
 
       // 加载CSS文件
       await Promise.all([
@@ -59,7 +60,7 @@ const PPTViewerApp = () => {
       )
       // 使用JSZip 2.x版本，不支持3.x
       await loadScriptIIFE(
-        "https://unpkg.com/jszip@2.6.1/dist/jszip.min.js",
+        npm("jszip", "2.6.1", "dist/jszip.min.js"),
         "jszip-script",
       )
       await loadScriptIIFE(`${baseUrl}/js/filereader.js`, "filereader-script")
