@@ -43,10 +43,15 @@ export const useUtil = () => {
       notify.success(t("global.copied"))
     },
     paste: async (): Promise<string> => {
-      if (!(await checkClipboardPermission("clipboard-read"))) {
-        throw new Error(t("global.clipboard_denied"))
+      try {
+        if (!(await checkClipboardPermission("clipboard-read"))) {
+          throw new Error(t("global.clipboard_denied"))
+        }
+        return navigator.clipboard.readText()
+      } catch (e: any) {
+        notify.error(e.message || t("global.clipboard_denied"))
+        return ""
       }
-      return navigator.clipboard.readText()
     },
     isHide: (obj: Obj) => {
       const hideFiles = getHideFiles()

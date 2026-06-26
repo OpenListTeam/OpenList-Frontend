@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  ButtonGroup,
   HStack,
   IconButton,
   Input,
@@ -275,11 +276,13 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
       >
         <Show when={canWrite()}>
           <Button
+            aria-label={t("global.save")}
+            disabled={!modified() || saving()}
+            leftIcon={<TbDeviceFloppy />}
             size="sm"
-            colorScheme={modified() ? "info" : "neutral"}
+            variant="solid"
             loading={saving()}
             onClick={onSave}
-            leftIcon={<TbDeviceFloppy />}
           >
             {t("global.save")}
           </Button>
@@ -351,33 +354,28 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
 
         <Box w="1px" h="$5" bg="$neutral4" mx="$1" />
 
-        <HStack spacing={0} display={{ "@initial": "none", "@sm": "flex" }}>
+        <ButtonGroup
+          size="sm"
+          variant="ghost"
+          attached
+          display={{ "@initial": "none", "@sm": "flex" }}
+        >
           <IconButton
             aria-label={t("global.font_size")}
             icon={<FaSolidMinus />}
-            size="sm"
-            variant="ghost"
             onClick={() => changeFontSize(-1)}
             title={t("global.font_size")}
           />
-          <Box
-            fontSize="$xs"
-            color="$neutral11"
-            minW="28px"
-            textAlign="center"
-            userSelect="none"
-          >
+          <Button fontSize="$xs" color="$neutral11">
             {local.editor_font_size}
-          </Box>
+          </Button>
           <IconButton
             aria-label={t("global.font_size")}
             icon={<FaSolidPlus />}
-            size="sm"
-            variant="ghost"
             onClick={() => changeFontSize(1)}
             title={t("global.font_size")}
           />
-        </HStack>
+        </ButtonGroup>
 
         <IconButton
           aria-label="Fullscreen"
