@@ -95,9 +95,6 @@ importers:
       ini:
         specifier: ^7.0.0
         version: 7.0.0
-      just-once:
-        specifier: ^2.2.0
-        version: 2.2.0
       katex:
         specifier: ^0.16.45
         version: 0.16.45
@@ -2589,9 +2586,6 @@ packages:
   jszip@3.10.1:
     resolution: {integrity: sha512-xXDvecyTpGLrqFrvkrUSoxxfJI5AH7U8zxxtVclpsUtMCq4JQ290LY8AW5c7Ggnr/Y/oK+bQMbqK2qmtk3pN4g==}
 
-  just-once@2.2.0:
-    resolution: {integrity: sha512-Wo547FgUOUZ98jbrZ1KX8nRezdEdtgIlC2NK1u1RvR1oZ/WoU++FjprP8J8hRbaox776MHyeMZZED4DvhhHVjg==}
-
   katex@0.16.45:
     resolution: {integrity: sha512-pQpZbdBu7wCTmQUh7ufPmLr0pFoObnGUoL/yhtwJDgmmQpbkg/0HSVti25Fu4rmd1oCR6NGWe9vqTWuWv3GcNA==}
     hasBin: true
@@ -3697,9 +3691,9 @@ snapshots:
 
   '@babel/helper-compilation-targets@7.28.6':
     dependencies:
-      '@babel/compat-data': 7.29.0
+      '@babel/compat-data': 7.29.3
       '@babel/helper-validator-option': 7.27.1
-      browserslist: 4.28.1
+      browserslist: 4.28.2
       lru-cache: 5.1.1
       semver: 6.3.1
 
@@ -6259,8 +6253,6 @@ snapshots:
       pako: 1.0.11
       readable-stream: 2.3.8
       setimmediate: 1.0.5
-
-  just-once@2.2.0: {}
 
   katex@0.16.45:
     dependencies:
