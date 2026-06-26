@@ -3,7 +3,7 @@ import { Box, Button, IconButton, Tooltip } from "@hope-ui/solid"
 import { loadScriptIIFE } from "~/utils"
 import { createSignal, onMount, onCleanup, Show } from "solid-js"
 import { useLink, useT, useCDN } from "~/hooks"
-import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
+
 import {
   HiOutlineMagnifyingGlassPlus,
   HiOutlineMagnifyingGlassMinus,
@@ -22,7 +22,6 @@ const DocViewerApp = () => {
   const { npm, docxPreviewPath } = useCDN()
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
-  const [isFullscreen, setIsFullscreen] = createSignal(false)
   // null = auto-fit, number = manual zoom level
   const [zoom, setZoom] = createSignal<number | null>(null)
   let containerRef: HTMLDivElement | undefined
@@ -85,29 +84,6 @@ const DocViewerApp = () => {
     }
   }
 
-  // 全屏切换
-  const toggleFullscreen = () => {
-    if (!containerRef) return
-
-    if (!document.fullscreenElement) {
-      containerRef.requestFullscreen().then(() => {
-        setIsFullscreen(true)
-      })
-    } else {
-      document.exitFullscreen().then(() => {
-        setIsFullscreen(false)
-      })
-    }
-  }
-
-  // 监听全屏变化
-  const handleFullscreenChange = () => {
-    if (!document.fullscreenElement) {
-      setIsFullscreen(false)
-    }
-    applyScale()
-  }
-
   // 应用缩放
   const applyScale = () => {
     if (!resultRef || !containerRef) return
@@ -161,12 +137,6 @@ const DocViewerApp = () => {
   onMount(() => {
     initDocViewer()
     setupResponsiveScale()
-    document.addEventListener("fullscreenchange", handleFullscreenChange)
-  })
-
-  onCleanup(() => {
-    document.removeEventListener("fullscreenchange", handleFullscreenChange)
-    // 清理加载的脚本和样式（可选）
   })
 
   return (
@@ -210,34 +180,6 @@ const DocViewerApp = () => {
           icon={<HiOutlineMagnifyingGlassPlus />}
           onClick={zoomIn}
         />
-      </Box>
-
-      {/* 全屏按钮 */}
-      <Box
-        pos="absolute"
-        top="$2"
-        right="$2"
-        zIndex="10"
-        opacity="0.7"
-        transition="opacity 0.2s"
-        _hover={{ opacity: "1" }}
-      >
-        <Tooltip
-          withArrow
-          label={
-            isFullscreen()
-              ? t("home.preview.exit_fullscreen")
-              : t("home.preview.fullscreen")
-          }
-        >
-          <IconButton
-            size="sm"
-            colorScheme="neutral"
-            aria-label="Toggle Fullscreen"
-            icon={isFullscreen() ? <VsScreenNormal /> : <VsScreenFull />}
-            onClick={toggleFullscreen}
-          />
-        </Tooltip>
       </Box>
 
       {/* DOCX容器 */}

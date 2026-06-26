@@ -75,6 +75,7 @@ export const useCDN = () => {
   const pptBasePath = () => res("ppt.js")
   const docxPreviewPath = () => res("docxjs/dist/docx-preview.min.js")
   const excelJSPath = () => res("exceljs/exceljs.min.js")
+  const rufflePath = () => res("ruffle/ruffle.js")
 
   return {
     npm,
@@ -88,5 +89,6 @@ export const useCDN = () => {
     pptBasePath,
     docxPreviewPath,
     excelJSPath,
+    rufflePath,
   }
 }

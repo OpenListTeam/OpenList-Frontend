@@ -24,7 +24,10 @@
     "open_in_new_window": "Open in new window",
     "auto_next": "Auto next",
     "fullscreen": "Fullscreen",
+    "fullscreen_failed": "Failed to toggle fullscreen mode",
     "exit_fullscreen": "Exit fullscreen",
+    "fullview": "Full view",
+    "exit_fullview": "Exit Full view",
     "auto_fit": "Auto fit",
     "reset_zoom": "Reset zoom",
     "names": {

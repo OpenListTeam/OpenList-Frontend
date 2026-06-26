@@ -3,7 +3,6 @@ import { Box, Button, IconButton, Tooltip } from "@hope-ui/solid"
 import { loadScriptIIFE, loadCSS } from "~/utils"
 import { createSignal, onMount, onCleanup, Show } from "solid-js"
 import { useLink, useT, useCDN } from "~/hooks"
-import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
 import {
   HiOutlineMagnifyingGlassPlus,
   HiOutlineMagnifyingGlassMinus,
@@ -23,7 +22,6 @@ const PPTViewerApp = () => {
   const { npm, pptBasePath } = useCDN()
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
-  const [isFullscreen, setIsFullscreen] = createSignal(false)
   // null = auto-fit, number = manual zoom level
   const [zoom, setZoom] = createSignal<number | null>(null)
   let containerRef: HTMLDivElement | undefined
@@ -116,50 +114,6 @@ const PPTViewerApp = () => {
     }
   }
 
-  // 全屏切换
-  const toggleFullscreen = () => {
-    if (!containerRef) return
-
-    if (!document.fullscreenElement) {
-      containerRef.requestFullscreen().then(() => {
-        setIsFullscreen(true)
-        if (resultRef) {
-          const slides = resultRef.querySelectorAll(".slide")
-          slides.forEach((slide: any) => {
-            slide.style.width = "99%"
-            slide.style.margin = "0 auto"
-          })
-        }
-      })
-    } else {
-      document.exitFullscreen().then(() => {
-        setIsFullscreen(false)
-        if (resultRef) {
-          const slides = resultRef.querySelectorAll(".slide")
-          slides.forEach((slide: any) => {
-            slide.style.width = ""
-            slide.style.margin = ""
-          })
-        }
-      })
-    }
-  }
-
-  // 监听全屏变化
-  const handleFullscreenChange = () => {
-    if (!document.fullscreenElement) {
-      setIsFullscreen(false)
-      if (resultRef) {
-        const slides = resultRef.querySelectorAll(".slide")
-        slides.forEach((slide: any) => {
-          slide.style.width = ""
-          slide.style.margin = ""
-        })
-      }
-    }
-    applyScale()
-  }
-
   // 应用缩放
   const applyScale = () => {
     if (!resultRef || !containerRef) return
@@ -217,11 +171,6 @@ const PPTViewerApp = () => {
     }
     initPPTViewer()
     setupResponsiveScale()
-    document.addEventListener("fullscreenchange", handleFullscreenChange)
-  })
-
-  onCleanup(() => {
-    document.removeEventListener("fullscreenchange", handleFullscreenChange)
   })
 
   return (
@@ -297,34 +246,6 @@ const PPTViewerApp = () => {
           icon={<HiOutlineMagnifyingGlassPlus />}
           onClick={zoomIn}
         />
-      </Box>
-
-      {/* 全屏按钮 */}
-      <Box
-        pos="absolute"
-        top="$2"
-        right="$2"
-        zIndex="9999"
-        opacity="0.7"
-        transition="opacity 0.2s"
-        _hover={{ opacity: "1" }}
-      >
-        <Tooltip
-          withArrow
-          label={
-            isFullscreen()
-              ? t("home.preview.exit_fullscreen")
-              : t("home.preview.fullscreen")
-          }
-        >
-          <IconButton
-            size="sm"
-            colorScheme="neutral"
-            aria-label="Toggle Fullscreen"
-            icon={isFullscreen() ? <VsScreenNormal /> : <VsScreenFull />}
-            onClick={toggleFullscreen}
-          />
-        </Tooltip>
       </Box>
     </BoxWithFullScreen>
   )

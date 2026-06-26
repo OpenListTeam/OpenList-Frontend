@@ -1,6 +1,7 @@
-import { Error, FullLoading } from "~/components"
-import { useRouter, useT } from "~/hooks"
+import { BoxWithFullScreen, Error, FullLoading } from "~/components"
+import { useCDN, useRouter, useT } from "~/hooks"
 import { objStore } from "~/store"
+import { loadScriptIIFE } from "~/utils"
 import { onCleanup, onMount, createSignal, Show } from "solid-js"
 
 const Preview = () => {
@@ -8,7 +9,7 @@ const Preview = () => {
   const { replace } = useRouter()
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
-
+  const { rufflePath } = useCDN()
   // 获取当前目录下所有SWF文件
   let swfFiles = objStore.objs.filter((obj) =>
     obj.name.toLowerCase().endsWith(".swf"),
@@ -41,7 +42,7 @@ const Preview = () => {
     ruffleScript?.remove()
   })
 
-  const initRufflePlayer = () => {
+  const initRufflePlayer = async () => {
     setLoading(true)
     setError(false)
 
@@ -49,30 +50,16 @@ const Preview = () => {
     const oldPlayer = document.getElementById("ruffle-player")
     oldPlayer?.remove()
 
-    // 检查是否已加载Ruffle
-    if (window.RufflePlayer) {
-      createPlayer()
-      return
-    }
-
     // 动态加载Ruffle脚本
-    const script = document.createElement("script")
-    // script.src = "https://unpkg.com/@ruffle-rs/ruffle"
-    script.src = "https://res.oplist.org.cn/ruffle/ruffle.js"
-    script.async = true
-    script.id = "ruffle-script"
-
-    script.onload = () => {
-      createPlayer()
-    }
-
-    script.onerror = () => {
-      setError(true)
-      setLoading(false)
-      console.error("无法加载Ruffle播放器")
-    }
-
-    document.head.appendChild(script)
+    await loadScriptIIFE(rufflePath(), "ruffle-script")
+      .then(() => {
+        createPlayer()
+      })
+      .catch((err) => {
+        console.error("Failed to load Ruffle script:", err)
+        setError(true)
+        setLoading(false)
+      })
   }
 
   const createPlayer = () => {
@@ -107,27 +94,29 @@ const Preview = () => {
   }
 
   return (
-    <div
-      id="swf-container"
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "75vh",
-        display: "flex",
-        "justify-content": "center",
-        "align-items": "center",
-      }}
-    >
-      {/* 加载状态 */}
-      <Show when={loading()}>
-        <FullLoading />
-      </Show>
+    <BoxWithFullScreen w="$full" h="75vh">
+      <div
+        id="swf-container"
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          "justify-content": "center",
+          "align-items": "center",
+        }}
+      >
+        {/* 加载状态 */}
+        <Show when={loading()}>
+          <FullLoading />
+        </Show>
 
-      {/* 错误状态 */}
-      <Show when={error()}>
-        <Error msg={t("preview.failed_load_swf")} h="75vh" />
-      </Show>
-    </div>
+        {/* 错误状态 */}
+        <Show when={error()}>
+          <Error msg={t("preview.failed_load_swf")} h="$full" />
+        </Show>
+      </div>
+    </BoxWithFullScreen>
   )
 }
 
