@@ -9,6 +9,7 @@ import {
   PopoverBody,
   PopoverContent,
   PopoverTrigger,
+  Tooltip,
   useColorMode,
   VStack,
 } from "@hope-ui/solid"
@@ -266,82 +267,90 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
         flexShrink={0}
       >
         <Show when={canWrite()}>
-          <Button
-            aria-label={t("global.save")}
-            disabled={!modified() || saving()}
-            leftIcon={<TbDeviceFloppy />}
-            size="sm"
-            variant="solid"
-            loading={saving()}
-            onClick={onSave}
-          >
-            {t("global.save")}
-          </Button>
+          <Tooltip label={`${t("global.save")} (Ctrl+S)`} withArrow>
+            <Button
+              aria-label={t("global.save")}
+              disabled={!modified() || saving()}
+              leftIcon={<TbDeviceFloppy />}
+              size="sm"
+              variant="solid"
+              loading={saving()}
+              onClick={onSave}
+            >
+              {t("global.save")}
+            </Button>
+          </Tooltip>
 
-          <IconButton
-            aria-label={t("global.undo")}
-            icon={<BiRegularUndo />}
-            size="sm"
-            variant="ghost"
-            onClick={undo}
-            title={`${t("global.undo")} (Ctrl+Z)`}
-          />
-          <IconButton
-            aria-label={t("global.redo")}
-            icon={<BiRegularRedo />}
-            size="sm"
-            variant="ghost"
-            onClick={redo}
-            title={`${t("global.redo")} (Ctrl+Y)`}
-          />
+          <Tooltip label={`${t("global.undo")} (Ctrl+Z)`} withArrow>
+            <IconButton
+              aria-label={t("global.undo")}
+              icon={<BiRegularUndo />}
+              size="sm"
+              variant="ghost"
+              onClick={undo}
+            />
+          </Tooltip>
+          <Tooltip label={`${t("global.redo")} (Ctrl+Y)`} withArrow>
+            <IconButton
+              aria-label={t("global.redo")}
+              icon={<BiRegularRedo />}
+              size="sm"
+              variant="ghost"
+              onClick={redo}
+            />
+          </Tooltip>
 
           <Box w="1px" h="$5" bg="$neutral4" mx="$1" />
         </Show>
 
-        <IconButton
-          aria-label={t("global.copy")}
-          icon={<TbCopy />}
-          size="sm"
-          variant="ghost"
-          onClick={copyToClipboard}
-          title={t("global.copy")}
-        />
-        <Show when={canWrite()}>
+        <Tooltip label={`${t("global.copy")} (Ctrl+C)`} withArrow>
           <IconButton
-            aria-label={t("global.paste")}
-            icon={<TbClipboardText />}
+            aria-label={t("global.copy")}
+            icon={<TbCopy />}
             size="sm"
             variant="ghost"
-            onClick={pasteFromClipboard}
-            title={t("global.paste")}
+            onClick={copyToClipboard}
           />
+        </Tooltip>
+        <Show when={canWrite()}>
+          <Tooltip label={`${t("global.paste")} (Ctrl+V)`} withArrow>
+            <IconButton
+              aria-label={t("global.paste")}
+              icon={<TbClipboardText />}
+              size="sm"
+              variant="ghost"
+              onClick={pasteFromClipboard}
+            />
+          </Tooltip>
         </Show>
 
         <Box w="1px" h="$5" bg="$neutral4" mx="$1" />
 
-        <IconButton
-          aria-label={t("global.wrap")}
-          icon={wordWrap() ? <TbTextWrap /> : <TbTextWrapDisabled />}
-          size="sm"
-          variant="ghost"
-          onClick={toggleWordWrap}
-          title={t("global.wrap")}
-          color={wordWrap() ? "$info11" : undefined}
-        />
+        <Tooltip label={t("home.local_settings.editor_word_wrap")} withArrow>
+          <IconButton
+            aria-label={t("home.local_settings.editor_word_wrap")}
+            icon={wordWrap() ? <TbTextWrap /> : <TbTextWrapDisabled />}
+            size="sm"
+            variant="ghost"
+            onClick={toggleWordWrap}
+            color={wordWrap() ? "$info11" : undefined}
+          />
+        </Tooltip>
 
-        <IconButton
-          aria-label="Minimap"
-          icon={minimap() ? <TbMap /> : <TbMapOff />}
-          size="sm"
-          variant="ghost"
-          onClick={() => {
-            const next = !minimap()
-            setMinimap(next)
-            setLocal("editor_minimap", String(next))
-          }}
-          title="Minimap"
-          color={minimap() ? "$info11" : undefined}
-        />
+        <Tooltip label={t("home.local_settings.editor_minimap")} withArrow>
+          <IconButton
+            aria-label={t("home.local_settings.editor_minimap")}
+            icon={minimap() ? <TbMap /> : <TbMapOff />}
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              const next = !minimap()
+              setMinimap(next)
+              setLocal("editor_minimap", String(next))
+            }}
+            color={minimap() ? "$info11" : undefined}
+          />
+        </Tooltip>
 
         <Box w="1px" h="$5" bg="$neutral4" mx="$1" />
 
@@ -351,21 +360,29 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
           attached
           display={{ "@initial": "none", "@sm": "flex" }}
         >
-          <IconButton
-            aria-label={t("global.font_size")}
-            icon={<FaSolidMinus />}
-            onClick={() => changeFontSize(-1)}
-            title={t("global.font_size")}
-          />
+          <Tooltip
+            label={`${t("global.decrease")} ${t("home.local_settings.editor_font_size")}`}
+            withArrow
+          >
+            <IconButton
+              aria-label={`${t("global.decrease")} ${t("home.local_settings.editor_font_size")}`}
+              icon={<FaSolidMinus />}
+              onClick={() => changeFontSize(-1)}
+            />
+          </Tooltip>
           <Button fontSize="$xs" color="$neutral11">
             {local.editor_font_size}
           </Button>
-          <IconButton
-            aria-label={t("global.font_size")}
-            icon={<FaSolidPlus />}
-            onClick={() => changeFontSize(1)}
-            title={t("global.font_size")}
-          />
+          <Tooltip
+            label={`${t("global.increase")} ${t("home.local_settings.editor_font_size")}`}
+            withArrow
+          >
+            <IconButton
+              aria-label={`${t("global.increase")} ${t("home.local_settings.editor_font_size")}`}
+              icon={<FaSolidPlus />}
+              onClick={() => changeFontSize(1)}
+            />
+          </Tooltip>
         </ButtonGroup>
 
         <Show when={!isString}>
