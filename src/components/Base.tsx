@@ -91,9 +91,11 @@ export const BoxWithFullScreen = (props: Parameters<typeof Box>[0]) => {
   }
 
   onMount(() => {
-    const handler = () => setIsNativeFullscreen(!!document.fullscreenElement)
-    document.addEventListener("fullscreenchange", handler)
-    onCleanup(() => document.removeEventListener("fullscreenchange", handler))
+    const fsHandler = () => setIsNativeFullscreen(!!document.fullscreenElement)
+    document.addEventListener("fullscreenchange", fsHandler)
+    onCleanup(() => {
+      document.removeEventListener("fullscreenchange", fsHandler)
+    })
   })
 
   return (
@@ -116,30 +118,35 @@ export const BoxWithFullScreen = (props: Parameters<typeof Box>[0]) => {
         right="$2"
         bottom="$2"
         spacing="$2"
-        opacity="0.7"
+        opacity="0.2"
         _hover={{ opacity: "1" }}
+        transition="opacity 0.3s ease"
+        pointerEvents="auto"
+        zIndex="$sticky"
       >
-        {/* Full view toggle */}
-        <Tooltip
-          label={
-            isOpen()
-              ? t("home.preview.exit_fullview")
-              : t("home.preview.fullview")
-          }
-          withArrow
-        >
-          <IconButton
-            aria-label={
+        <Show when={!isNativeFullscreen()}>
+          {/* Full view toggle */}
+          <Tooltip
+            label={
               isOpen()
                 ? t("home.preview.exit_fullview")
                 : t("home.preview.fullview")
             }
-            icon={isOpen() ? <BsFullscreenExit /> : <BsFullscreen />}
-            onClick={onToggle}
-            colorScheme="neutral"
-            size="sm"
-          />
-        </Tooltip>
+            withArrow
+          >
+            <IconButton
+              aria-label={
+                isOpen()
+                  ? t("home.preview.exit_fullview")
+                  : t("home.preview.fullview")
+              }
+              icon={isOpen() ? <BsFullscreenExit /> : <BsFullscreen />}
+              onClick={onToggle}
+              colorScheme="neutral"
+              size="sm"
+            />
+          </Tooltip>
+        </Show>
 
         {/* Native fullscreen toggle */}
         <Tooltip
