@@ -57,9 +57,11 @@ const PPTViewerApp = () => {
         "jquery-script",
       )
       // 使用JSZip 2.x版本，不支持3.x
+      // 加载前清理其他版本的 jszip，避免全局变量冲突
+      document.getElementById("jszip-3.10.1-script")?.remove()
       await loadScriptIIFE(
         npm("jszip", "2.6.1", "dist/jszip.min.js"),
-        "jszip-script",
+        "jszip-2.6.1-script",
       )
       await loadScriptIIFE(`${baseUrl}/js/filereader.js`, "filereader-script")
       await loadScriptIIFE(`${baseUrl}/js/d3.min.js`, "d3-script")
@@ -102,10 +104,31 @@ const PPTViewerApp = () => {
           },
         })
 
-        // 监听加载完成事件
-        setTimeout(() => {
+        // 用 MutationObserver 检测 PPT 内容是否渲染完成
+        const RENDER_TIMEOUT = 30000 // 30s fallback
+        let resolved = false
+
+        const done = () => {
+          if (resolved) return
+          resolved = true
           setLoading(false)
-        }, 2000)
+        }
+
+        const observer = new MutationObserver(() => {
+          // pptxjs 渲染完成后会生成子元素（slides）
+          if (resultRef!.children.length > 0) {
+            observer.disconnect()
+            done()
+          }
+        })
+        observer.observe(resultRef, { childList: true, subtree: true })
+        onCleanup(() => observer.disconnect())
+
+        // fallback: 若 30s 内 MutationObserver 未触发
+        setTimeout(() => {
+          observer.disconnect()
+          done()
+        }, RENDER_TIMEOUT)
       }
     } catch (e) {
       console.error("PPT初始化失败:", e)
@@ -151,7 +174,6 @@ const PPTViewerApp = () => {
 
   const setupResponsiveScale = () => {
     if (!resultRef || !containerRef) return
-    const result = resultRef
     const container = containerRef
     const observer = new ResizeObserver(() => {
       if (zoom() === null) applyScale()

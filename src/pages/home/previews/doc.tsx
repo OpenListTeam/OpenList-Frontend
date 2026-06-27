@@ -34,9 +34,11 @@ const DocViewerApp = () => {
       setError(false)
 
       // 加载jszip和docx-preview库
+      // 加载前清理其他版本的 jszip，避免全局变量冲突
+      document.getElementById("jszip-2.6.1-script")?.remove()
       await loadScriptIIFE(
         npm("jszip", "3.10.1", "dist/jszip.min.js"),
-        "jszip-script",
+        "jszip-3.10.1-script",
       )
       await loadScriptIIFE(docxPreviewPath(), "docx-preview-script")
 
