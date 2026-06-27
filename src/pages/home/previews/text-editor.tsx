@@ -22,7 +22,7 @@ import {
   Show,
 } from "solid-js"
 import { useBeforeLeave } from "@solidjs/router"
-import { EncodingSelect, MaybeLoading } from "~/components"
+import { BoxWithFullScreen, EncodingSelect, MaybeLoading } from "~/components"
 import { MonacoEditorLoader, monaco } from "~/components/MonacoEditor"
 import { useFetchText, useParseText, useRouter, useT, useUtil } from "~/hooks"
 import { objStore, setLocal, userCan } from "~/store"
@@ -42,7 +42,6 @@ import {
   TbMapOff,
 } from "solid-icons/tb"
 import { FaSolidMinus, FaSolidPlus } from "solid-icons/fa"
-import { AiOutlineFullscreen, AiOutlineFullscreenExit } from "solid-icons/ai"
 import type * as monacoType from "monaco-editor/esm/vs/editor/editor.api.js"
 
 interface LanguageOption {
@@ -79,7 +78,6 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
     local.editor_word_wrap === "true",
   )
   const [minimap, setMinimap] = createSignal(local.editor_minimap !== "false")
-  const [fullscreen, setFullscreen] = createSignal(false)
   const [saving, setSaving] = createSignal(false)
   const [langSearch, setLangSearch] = createSignal("")
   const filteredLanguages = createMemo(() => {
@@ -135,11 +133,6 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
       onSave()
     })
   }
-
-  // Escape to exit fullscreen
-  createShortcut(["Escape"], () => {
-    if (fullscreen()) setFullscreen(false)
-  })
 
   createEffect(
     on(encoding, (v) => {
@@ -254,14 +247,12 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   return (
     <VStack
       w="$full"
+      h="$full"
       alignItems="stretch"
       spacing={0}
-      pos={fullscreen() ? "fixed" : "relative"}
       top={0}
       left={0}
-      zIndex={fullscreen() ? "$overlay" : undefined}
       bg={colorMode() === "light" ? "$neutral1" : "$neutral2"}
-      h={fullscreen() ? "100vh" : undefined}
     >
       {/* Toolbar */}
       <HStack
@@ -377,18 +368,6 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
           />
         </ButtonGroup>
 
-        <IconButton
-          aria-label="Fullscreen"
-          icon={
-            fullscreen() ? <AiOutlineFullscreenExit /> : <AiOutlineFullscreen />
-          }
-          size="sm"
-          variant="ghost"
-          onClick={() => setFullscreen(!fullscreen())}
-          title="Fullscreen (Esc)"
-          color={fullscreen() ? "$info11" : undefined}
-        />
-
         <Show when={!isString}>
           <Box w="$28">
             <EncodingSelect
@@ -427,16 +406,6 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
         color="$neutral11"
         flexShrink={0}
       >
-        <Show when={modified()}>
-          <Box color="$warning11" style={{ "white-space": "nowrap" }}>
-            ●
-          </Box>
-        </Show>
-        <Box style={{ "white-space": "nowrap" }}>
-          Ln {cursorLine()}, Col {cursorColumn()}
-        </Box>
-        <Box style={{ "white-space": "nowrap" }}>{wordCount()} words</Box>
-        <Box flex="1" />
         <Show when={language()}>
           <Popover placement="top-end" onClose={() => setLangSearch("")}>
             <PopoverTrigger
@@ -505,6 +474,16 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
             </PopoverContent>
           </Popover>
         </Show>
+        <Box flex="1" />
+        <Box style={{ "white-space": "nowrap" }}>
+          Ln {cursorLine()}, Col {cursorColumn()}
+        </Box>
+        <Box style={{ "white-space": "nowrap" }}>{wordCount()} words</Box>
+        <Show when={modified()}>
+          <Box color="$warning11" style={{ "white-space": "nowrap" }}>
+            ●
+          </Box>
+        </Show>
       </HStack>
     </VStack>
   )
@@ -513,9 +492,14 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
 const TextEditor = () => {
   const [content] = useFetchText()
   return (
-    <MaybeLoading loading={content.loading}>
-      <Editor data={content()?.content} contentType={content()?.contentType} />
-    </MaybeLoading>
+    <BoxWithFullScreen w="$full" h="70vh">
+      <MaybeLoading loading={content.loading}>
+        <Editor
+          data={content()?.content}
+          contentType={content()?.contentType}
+        />
+      </MaybeLoading>
+    </BoxWithFullScreen>
   )
 }
 
