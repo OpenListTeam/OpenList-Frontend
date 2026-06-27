@@ -305,7 +305,7 @@ const Preview = (props: PreviewProps) => {
           position={isFullscreen() ? "absolute" : "relative"}
           top={isFullscreen() ? "0" : undefined}
           left={isFullscreen() ? "0" : undefined}
-          zIndex="10"
+          zIndex="$docked"
           css={{
             "backdrop-filter": "blur(8px)",
           }}
@@ -451,7 +451,7 @@ const Preview = (props: PreviewProps) => {
               p="$2"
               bg={alphaBgColor()}
               borderRadius="$md"
-              zIndex="10"
+              zIndex="$docked"
               fontSize="$sm"
               css={{
                 "backdrop-filter": "blur(2px)",

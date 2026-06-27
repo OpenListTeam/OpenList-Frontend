@@ -225,7 +225,7 @@ const Login = () => {
   }
 
   return (
-    <Center zIndex="1" w="$full" h="100vh">
+    <Center zIndex="$docked" w="$full" h="100vh">
       <VStack
         bgColor={bgColor()}
         rounded="$xl"

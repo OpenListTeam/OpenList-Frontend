@@ -80,7 +80,7 @@ export function EncodingSelect(props: {
       _hover={{
         opacity: 1,
       }}
-      zIndex={1}
+      zIndex="$docked"
     >
       <SelectWrapper
         options={encodingLabels.map((label) => ({

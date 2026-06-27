@@ -30,6 +30,7 @@ export const Right = () => {
       pos="fixed"
       right={margin()}
       bottom={margin()}
+      zIndex="calc($modal - 1)"
     >
       <Show
         when={isOpen()}

@@ -32,7 +32,6 @@ import {
 import { AiOutlineFullscreen, AiOutlineFullscreenExit } from "solid-icons/ai"
 import { BsFullscreen, BsFullscreenExit } from "solid-icons/bs"
 import { useT } from "~/hooks"
-import { notify } from "~/utils"
 
 export const Error = (props: {
   msg: string
@@ -77,8 +76,8 @@ export const Error = (props: {
 }
 
 export const BoxWithFullScreen = (props: Parameters<typeof Box>[0]) => {
-  const { isOpen, onToggle } = createDisclosure()
-  const [isNativeFullscreen, setIsNativeFullscreen] = createSignal(false)
+  const { isOpen: isFullView, onToggle } = createDisclosure()
+  const [isFullScreen, setIsFullScreen] = createSignal(false)
   let containerRef: HTMLDivElement
   const t = useT()
 
@@ -91,7 +90,7 @@ export const BoxWithFullScreen = (props: Parameters<typeof Box>[0]) => {
   }
 
   onMount(() => {
-    const fsHandler = () => setIsNativeFullscreen(!!document.fullscreenElement)
+    const fsHandler = () => setIsFullScreen(!!document.fullscreenElement)
     document.addEventListener("fullscreenchange", fsHandler)
     onCleanup(() => {
       document.removeEventListener("fullscreenchange", fsHandler)
@@ -101,15 +100,15 @@ export const BoxWithFullScreen = (props: Parameters<typeof Box>[0]) => {
   return (
     <Box
       ref={containerRef!}
-      pos={isOpen() ? "fixed" : "relative"}
-      w={isOpen() ? "100vw" : props.w}
-      h={isOpen() ? "100vh" : props.h}
+      pos={isFullView() ? "fixed" : "relative"}
+      w={isFullView() ? "100vw" : props.w}
+      h={isFullView() ? "100vh" : props.h}
       top={0}
       left={0}
-      zIndex={1}
+      zIndex={isFullView() ? "$modal" : undefined}
       transition="all 0.2s ease-in-out"
       css={{
-        backdropFilter: isOpen() ? "blur(5px)" : undefined,
+        backdropFilter: isFullView() ? "blur(5px)" : undefined,
       }}
     >
       {props.children}
@@ -122,13 +121,13 @@ export const BoxWithFullScreen = (props: Parameters<typeof Box>[0]) => {
         _hover={{ opacity: "1" }}
         transition="opacity 0.3s ease"
         pointerEvents="auto"
-        zIndex="$sticky"
+        zIndex="$docked"
       >
-        <Show when={!isNativeFullscreen()}>
+        <Show when={!isFullScreen()}>
           {/* Full view toggle */}
           <Tooltip
             label={
-              isOpen()
+              isFullView()
                 ? t("home.preview.exit_fullview")
                 : t("home.preview.fullview")
             }
@@ -136,11 +135,11 @@ export const BoxWithFullScreen = (props: Parameters<typeof Box>[0]) => {
           >
             <IconButton
               aria-label={
-                isOpen()
+                isFullView()
                   ? t("home.preview.exit_fullview")
                   : t("home.preview.fullview")
               }
-              icon={isOpen() ? <BsFullscreenExit /> : <BsFullscreen />}
+              icon={isFullView() ? <BsFullscreenExit /> : <BsFullscreen />}
               onClick={onToggle}
               colorScheme="neutral"
               size="sm"
@@ -151,7 +150,7 @@ export const BoxWithFullScreen = (props: Parameters<typeof Box>[0]) => {
         {/* Native fullscreen toggle */}
         <Tooltip
           label={
-            isNativeFullscreen()
+            isFullScreen()
               ? t("home.preview.exit_fullscreen")
               : t("home.preview.fullscreen")
           }
@@ -159,12 +158,12 @@ export const BoxWithFullScreen = (props: Parameters<typeof Box>[0]) => {
         >
           <IconButton
             aria-label={
-              isNativeFullscreen()
+              isFullScreen()
                 ? t("home.preview.exit_fullscreen")
                 : t("home.preview.fullscreen")
             }
             icon={
-              isNativeFullscreen() ? (
+              isFullScreen() ? (
                 <AiOutlineFullscreenExit />
               ) : (
                 <AiOutlineFullscreen />
