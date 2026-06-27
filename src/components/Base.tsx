@@ -75,7 +75,9 @@ export const Error = (props: {
   )
 }
 
-export const BoxWithFullScreen = (props: Parameters<typeof Box>[0]) => {
+export const BoxWithFullScreen = (
+  props: Parameters<typeof Box>[0] & { extraButtons?: JSXElement },
+) => {
   const { isOpen: isFullView, onToggle } = createDisclosure()
   const [isFullScreen, setIsFullScreen] = createSignal(false)
   let containerRef: HTMLDivElement
@@ -123,6 +125,7 @@ export const BoxWithFullScreen = (props: Parameters<typeof Box>[0]) => {
         pointerEvents="auto"
         zIndex="$docked"
       >
+        {props.extraButtons}
         <Show when={!isFullScreen()}>
           {/* Full view toggle */}
           <Tooltip
