@@ -13,6 +13,21 @@ import {
   useColorMode,
   VStack,
 } from "@hope-ui/solid"
+import { createShortcut } from "@solid-primitives/keyboard"
+import { useBeforeLeave } from "@solidjs/router"
+import type * as monacoType from "monaco-editor/esm/vs/editor/editor.api.js"
+import { BiRegularRedo, BiRegularUndo } from "solid-icons/bi"
+import { FaSolidMinus, FaSolidPlus } from "solid-icons/fa"
+import {
+  TbBraces,
+  TbClipboardText,
+  TbCopy,
+  TbDeviceFloppy,
+  TbMap,
+  TbMapOff,
+  TbTextWrap,
+  TbTextWrapDisabled,
+} from "solid-icons/tb"
 import {
   createEffect,
   createMemo,
@@ -20,30 +35,15 @@ import {
   For,
   on,
   onCleanup,
+  onMount,
   Show,
 } from "solid-js"
-import { useBeforeLeave } from "@solidjs/router"
 import { BoxWithFullScreen, EncodingSelect, MaybeLoading } from "~/components"
-import { MonacoEditorLoader, monaco } from "~/components/MonacoEditor"
+import { monaco, MonacoEditorLoader } from "~/components/MonacoEditor"
 import { useFetchText, useParseText, useRouter, useT, useUtil } from "~/hooks"
-import { objStore, setLocal, userCan } from "~/store"
-import { local } from "~/store"
-import { notify } from "~/utils"
 import { StreamUpload } from "~/pages/home/uploads/stream"
-import { createShortcut } from "@solid-primitives/keyboard"
-import { BiRegularRedo, BiRegularUndo } from "solid-icons/bi"
-import {
-  TbBraces,
-  TbClipboardText,
-  TbCopy,
-  TbDeviceFloppy,
-  TbTextWrap,
-  TbTextWrapDisabled,
-  TbMap,
-  TbMapOff,
-} from "solid-icons/tb"
-import { FaSolidMinus, FaSolidPlus } from "solid-icons/fa"
-import type * as monacoType from "monaco-editor/esm/vs/editor/editor.api.js"
+import { local, objStore, setLocal, userCan } from "~/store"
+import { notify } from "~/utils"
 
 interface LanguageOption {
   id: string
@@ -52,9 +52,7 @@ interface LanguageOption {
 
 function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   const { colorMode } = useColorMode()
-  const theme = createMemo(() => {
-    return colorMode() === "light" ? "vs" : "vs-dark"
-  })
+  const theme = createMemo(() => (colorMode() === "light" ? "vs" : "vs-dark"))
   const { pathname } = useRouter()
   const { isString, text } = useParseText(props.data)
   const [encoding, setEncoding] = createSignal("utf-8")
@@ -75,12 +73,14 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   const [languageOptions, setLanguageOptions] = createSignal<LanguageOption[]>(
     [],
   )
+
   const [wordWrap, setWordWrap] = createSignal(
     local.editor_word_wrap === "true",
   )
   const [minimap, setMinimap] = createSignal(local.editor_minimap !== "false")
   const [saving, setSaving] = createSignal(false)
   const [langSearch, setLangSearch] = createSignal("")
+
   const filteredLanguages = createMemo(() => {
     const s = langSearch().toLowerCase()
     if (!s) return languageOptions()
@@ -90,10 +90,12 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
         l.aliases?.some((a) => a.toLowerCase().includes(s)),
     )
   })
+
   const languageDisplayName = createMemo(() => {
     const lang = languageOptions().find((l) => l.id === language())
     return lang?.aliases?.[0] || language()
   })
+
   const canWrite = createMemo(
     () =>
       // objStore.write is only set from folder listing (FsListResp),
@@ -103,37 +105,40 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
       objStore.write !== false,
   )
 
-  if (canWrite()) {
-    // Warn on browser close/refresh when there are unsaved changes
-    const beforeUnloadHandler = (e: BeforeUnloadEvent) => {
-      if (modified()) {
+  // Warn on in-app navigation when there are unsaved changes
+  useBeforeLeave((e) => {
+    if (canWrite() && modified()) {
+      if (!window.confirm(t("global.unsaved_changes_confirm"))) {
         e.preventDefault()
       }
     }
-    window.addEventListener("beforeunload", beforeUnloadHandler)
-    onCleanup(() =>
-      window.removeEventListener("beforeunload", beforeUnloadHandler),
-    )
+  })
 
-    // Warn on in-app navigation when there are unsaved changes
-    useBeforeLeave((e) => {
-      if (modified()) {
-        if (!window.confirm(t("global.unsaved_changes_confirm"))) {
+  onMount(() => {
+    if (canWrite()) {
+      // Save on Ctrl+S / Cmd+S
+      createShortcut(["Control", "S"], (e: KeyboardEvent | null) => {
+        e?.preventDefault()
+        onSave()
+      })
+      createShortcut(["Meta", "S"], (e: KeyboardEvent | null) => {
+        e?.preventDefault()
+        onSave()
+      })
+
+      // Warn on browser close/refresh when there are unsaved changes
+      const beforeUnloadHandler = (e: BeforeUnloadEvent) => {
+        if (modified()) {
           e.preventDefault()
         }
       }
-    })
+      window.addEventListener("beforeunload", beforeUnloadHandler)
 
-    // Save on Ctrl+S / Cmd+S
-    createShortcut(["Control", "S"], (e: KeyboardEvent | null) => {
-      e?.preventDefault()
-      onSave()
-    })
-    createShortcut(["Meta", "S"], (e: KeyboardEvent | null) => {
-      e?.preventDefault()
-      onSave()
-    })
-  }
+      onCleanup(() => {
+        window.removeEventListener("beforeunload", beforeUnloadHandler)
+      })
+    }
+  })
 
   createEffect(
     on(encoding, (v) => {
