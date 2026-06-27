@@ -18,6 +18,11 @@ import {
 } from "solid-icons/bs"
 import { FaSolidAngleLeft, FaSolidAngleRight } from "solid-icons/fa"
 import {
+  TbArrowAutofitHeight,
+  TbArrowAutofitWidth,
+  TbArrowAutofitContent,
+} from "solid-icons/tb"
+import {
   createEffect,
   createSignal,
   Match,
@@ -53,6 +58,7 @@ interface PreviewProps {
 const HeifView = (props: {
   src: string
   onLoad?: (w: number, h: number) => void
+  style?: any
 }) => {
   const t = useT()
   const { libHeifPath } = useCDN()
@@ -119,9 +125,7 @@ const HeifView = (props: {
       <canvas
         ref={canvas}
         style={{
-          "max-width": "100%",
-          "max-height": "100%",
-          "object-fit": "contain",
+          ...props.style,
           display: loading() || error() ? "none" : "block",
         }}
       />
@@ -142,6 +146,9 @@ const Preview = (props: PreviewProps) => {
 
   const [scale, setScale] = createSignal(1)
   const [rotation, setRotation] = createSignal(0)
+  const [fitMode, setFitMode] = createSignal<"contain" | "height" | "width">(
+    "contain",
+  )
   const [tx, setTx] = createSignal(0)
   const [ty, setTy] = createSignal(0)
   const [dragging, setDragging] = createSignal(false)
@@ -198,6 +205,24 @@ const Preview = (props: PreviewProps) => {
   const zoomOut = () => setScale((s) => Math.max(s - ZOOM_BTN_STEP, ZOOM_MIN))
   const rotL = () => setRotation((r) => r - 90)
   const rotR = () => setRotation((r) => r + 90)
+  const fitPage = () => {
+    setFitMode("contain")
+    setScale(1)
+    setTx(0)
+    setTy(0)
+  }
+  const fitHeight = () => {
+    setFitMode("height")
+    setScale(1)
+    setTx(0)
+    setTy(0)
+  }
+  const fitWidth = () => {
+    setFitMode("width")
+    setScale(1)
+    setTx(0)
+    setTy(0)
+  }
 
   // ── wheel zoom (towards cursor) ──
   const onWheel = (e: WheelEvent) => {
@@ -259,6 +284,12 @@ const Preview = (props: PreviewProps) => {
         return resetTransform()
       case "i":
         return setShowInfo((v) => !v)
+      case "c":
+        return fitPage()
+      case "h":
+        return fitHeight()
+      case "w":
+        return fitWidth()
       case "f":
       // TODO toggleFs()
     }
@@ -357,6 +388,7 @@ const Preview = (props: PreviewProps) => {
                 onClick={() => setShowInfo((v) => !v)}
               />
             </Tooltip>
+
             <Tooltip label="Zoom out (−)">
               <IconButton
                 icon={<BsZoomOut />}
@@ -373,6 +405,33 @@ const Preview = (props: PreviewProps) => {
                 variant="ghost"
                 size="sm"
                 onClick={zoomIn}
+              />
+            </Tooltip>
+            <Tooltip label="Fit page (C)">
+              <IconButton
+                icon={<TbArrowAutofitContent />}
+                aria-label="Fit page"
+                variant="ghost"
+                size="sm"
+                onClick={fitPage}
+              />
+            </Tooltip>
+            <Tooltip label="Fit height (H)">
+              <IconButton
+                icon={<TbArrowAutofitHeight />}
+                aria-label="Fit height"
+                variant="ghost"
+                size="sm"
+                onClick={fitHeight}
+              />
+            </Tooltip>
+            <Tooltip label="Fit width (W)">
+              <IconButton
+                icon={<TbArrowAutofitWidth />}
+                aria-label="Fit width"
+                variant="ghost"
+                size="sm"
+                onClick={fitWidth}
               />
             </Tooltip>
             <Tooltip label="Rotate left (R)">
@@ -412,8 +471,14 @@ const Preview = (props: PreviewProps) => {
           onDblClick={onDblClick}
         >
           <Center
-            maxW="$full"
-            maxH="$full"
+            {...(fitMode() === "contain"
+              ? { w: "$full", h: "$full" }
+              : {
+                  css:
+                    fitMode() === "height"
+                      ? { height: "100%", width: "fit-content" }
+                      : { width: "100%", height: "fit-content" },
+                })}
             transform={imgTransform()}
             transition={dragging() ? "none" : "transform 0.15s ease"}
             transform-origin="center center"
@@ -427,12 +492,41 @@ const Preview = (props: PreviewProps) => {
                     <Error msg={t("home.preview.failed_load_img")} />
                   }
                   onLoad={onImgLoad}
-                  objectFit="contain"
+                  {...(fitMode() === "contain"
+                    ? { w: "$full", h: "$full", objectFit: "contain" }
+                    : {
+                        css:
+                          fitMode() === "height"
+                            ? {
+                                height: "100%",
+                                width: "auto",
+                                "max-width": "none",
+                              }
+                            : {
+                                width: "100%",
+                                height: "auto",
+                                "max-height": "none",
+                              },
+                      })}
                 />
               }
             >
               <Match when={isHeif(objStore.obj.name)}>
-                <HeifView src={objStore.raw_url} onLoad={onHeifLoad} />
+                <HeifView
+                  src={objStore.raw_url}
+                  onLoad={onHeifLoad}
+                  style={
+                    fitMode() === "contain"
+                      ? {
+                          width: "100%",
+                          height: "100%",
+                          "object-fit": "contain",
+                        }
+                      : fitMode() === "height"
+                        ? { height: "100%", width: "auto" }
+                        : { width: "100%", height: "auto" }
+                  }
+                />
               </Match>
             </Switch>
           </Center>
