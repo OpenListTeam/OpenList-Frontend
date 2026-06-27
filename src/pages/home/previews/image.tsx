@@ -35,13 +35,7 @@ import {
 import { useCDN, useRouter, useT } from "~/hooks"
 import { objStore } from "~/store"
 import { Obj, ObjType } from "~/types"
-import {
-  alphaBgColor,
-  ext,
-  formatDate,
-  getFileSize,
-  loadScriptIIFE,
-} from "~/utils"
+import { ext, formatDate, getFileSize, loadScriptIIFE } from "~/utils"
 
 const HEIF_EXTS = new Set(["heic", "heif", "avif", "vvc", "avc"])
 const isHeif = (name: string) => HEIF_EXTS.has(ext(name))
@@ -300,15 +294,15 @@ const Preview = (props: PreviewProps) => {
         {/* ── Toolbar ── */}
         <Flex
           w="$full"
-          bg={alphaBgColor()}
+          bg="$neutral1"
           p="$2"
           position={isFullscreen() ? "absolute" : "relative"}
           top={isFullscreen() ? "0" : undefined}
           left={isFullscreen() ? "0" : undefined}
           zIndex="$docked"
-          css={{
-            "backdrop-filter": "blur(8px)",
-          }}
+          transition="opacity 0.3s ease"
+          opacity={isFullscreen() ? "0.7" : undefined}
+          _hover={{ opacity: isFullscreen() ? "1" : undefined }}
         >
           <HStack spacing="$1">
             <Show when={curIdx() > 0}>
@@ -342,6 +336,7 @@ const Preview = (props: PreviewProps) => {
                 "text-overflow": "ellipsis",
                 "white-space": "nowrap",
               }}
+              display={{ "@initial": "none", "@sm": "block" }}
             >
               {objStore.obj.name}
             </Text>
@@ -449,24 +444,26 @@ const Preview = (props: PreviewProps) => {
               bottom="$2"
               left="$2"
               p="$2"
-              bg={alphaBgColor()}
+              bg="$blackAlpha9"
               borderRadius="$md"
               zIndex="$docked"
               fontSize="$sm"
               css={{
-                "backdrop-filter": "blur(2px)",
+                "backdrop-filter": "blur(8px)",
               }}
             >
-              <Text color="$neutral12" fontWeight="$semibold">
+              <Text color="$whiteAlpha12" fontWeight="$semibold">
                 {objStore.obj.name}
               </Text>
-              <Text color="$neutral11">{getFileSize(objStore.obj.size)}</Text>
+              <Text color="$whiteAlpha11">
+                {getFileSize(objStore.obj.size)}
+              </Text>
               <Show when={imgSize().w > 0}>
-                <Text color="$neutral11">
+                <Text color="$whiteAlpha11">
                   {imgSize().w} × {imgSize().h}px
                 </Text>
               </Show>
-              <Text color="$neutral11">
+              <Text color="$whiteAlpha11">
                 {formatDate(objStore.obj.modified)}
               </Text>
             </Box>

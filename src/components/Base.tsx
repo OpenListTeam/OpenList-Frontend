@@ -117,7 +117,7 @@ export const BoxWithFullScreen = (props: Parameters<typeof Box>[0]) => {
         right="$2"
         bottom="$2"
         spacing="$2"
-        opacity="0.2"
+        opacity="0.7"
         _hover={{ opacity: "1" }}
         transition="opacity 0.3s ease"
         pointerEvents="auto"
