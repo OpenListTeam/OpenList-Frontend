@@ -1,8 +1,15 @@
 import { Component, lazy } from "solid-js"
-import { getIframePreviews, me, getSettingBool, isArchive } from "~/store"
+import {
+  getIframePreviews,
+  me,
+  getSetting,
+  getSettingBool,
+  isArchive,
+} from "~/store"
 import { Obj, ObjType, UserMethods, UserPermissions, ArchiveObj } from "~/types"
 import { ext } from "~/utils"
 import { generateIframePreview } from "./iframe"
+import { generateWopiPreview } from "./wopi"
 import { useRouter, useT } from "~/hooks"
 
 type Ext = string[] | "*" | ((name: string) => boolean)
@@ -207,6 +214,31 @@ export const getPreviews = (
     (!isShare() && getSettingBool("preview_download_by_default")) ||
     (isShare() && getSettingBool("share_preview_download_by_default"))
   const isInArchive = !!(file as ArchiveObj).archive
+  // WOPI previews (one per service) — highest priority, checked first
+  if (getSettingBool("wopi_enabled")) {
+    try {
+      const wopiServices = JSON.parse(getSetting("wopi_services") || "[]")
+      const fileExt = ext(file.name).toLowerCase()
+      for (const svc of wopiServices) {
+        if (!svc.viewers) continue
+        const exts = Object.keys(svc.viewers).map((e) => e.toLowerCase())
+        if (!exts.includes(fileExt)) continue
+        const svcName = svc.name || "WOPI"
+        const wopiPreview: PreviewComponent = {
+          key: `wopi-${svcName}`,
+          name: svcName,
+          component: generateWopiPreview(svcName),
+        }
+        if (!downloadPrior) {
+          res.push(wopiPreview)
+        } else {
+          subsequent.push(wopiPreview)
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }
   // internal previews
   if (!isShare() || getSettingBool("share_preview")) {
     previews.forEach((preview) => {

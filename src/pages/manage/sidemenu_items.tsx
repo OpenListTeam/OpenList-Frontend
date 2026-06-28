@@ -23,7 +23,7 @@ import { IoCopy, IoMove, IoHome, IoMagnetOutline } from "solid-icons/io"
 import { Component, lazy } from "solid-js"
 import { Group, UserRole } from "~/types"
 import { FaSolidBook, FaSolidDatabase } from "solid-icons/fa"
-import { TbArchive } from "solid-icons/tb"
+import { TbArchive, TbFileText } from "solid-icons/tb"
 
 export type SideMenuItem = SideMenuItemProps & {
   component?: Component
@@ -61,8 +61,22 @@ export const side_menu_items: SideMenuItem[] = [
         title: "manage.sidemenu.preview",
         icon: BsCameraFill,
         to: "/@manage/settings/preview",
-        component: () => <CommonSettings group={Group.PREVIEW} />,
+        children: [
+          {
+            title: "manage.sidemenu.preview",
+            icon: BsCameraFill,
+            to: "/@manage/settings/preview/common",
+            component: () => <CommonSettings group={Group.PREVIEW} />,
+          },
+          {
+            title: "manage.sidemenu.wopi",
+            icon: TbFileText,
+            to: "/@manage/settings/preview/wopi",
+            component: lazy(() => import("./settings/Wopi")),
+          },
+        ],
       },
+
       {
         title: "manage.sidemenu.global",
         icon: BsJoystick,

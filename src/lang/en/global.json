@@ -26,6 +26,8 @@
   "have_account": "Have an account?",
   "go_login": "Go to login",
   "close": "Close",
+  "retry": "Retry",
+  "failed": "Failed",
   "no_support_now": "Not currently supported",
   "empty_input": "Please enter",
   "invalid_filename_chars": "Filename cannot contain: / \\ ? < > * : | \"",
