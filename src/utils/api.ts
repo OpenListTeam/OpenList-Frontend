@@ -220,8 +220,15 @@ export const offlineDownload = (
   urls: string[],
   tool: string,
   delete_policy: string,
+  torrent_data: string[] = [],
 ): PEmptyResp => {
-  return r.post(`/fs/add_offline_download`, { path, urls, tool, delete_policy })
+  return r.post(`/fs/add_offline_download`, {
+    path,
+    urls,
+    tool,
+    delete_policy,
+    ...(torrent_data.length ? { torrent_data } : {}),
+  })
 }
 
 export const fetchText = async (
