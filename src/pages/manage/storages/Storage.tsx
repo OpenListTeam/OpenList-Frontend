@@ -111,7 +111,7 @@ export function StorageGridItem(props: StorageProps) {
     <VStack
       w="$full"
       spacing="$2"
-      rounded="$lg"
+      rounded="$2xl"
       border="1px solid $neutral7"
       background={useColorModeValue("$neutral2", "$neutral3")()}
       // alignItems="start"
