@@ -218,6 +218,11 @@
     "url": "Url",
     "username": "Username"
   },
+  "AliDoc": {
+    "cookie": "Cookie",
+    "cookie-tips": "钉钉文档网页 Cookie",
+    "root_folder_id": "Root folder id"
+  },
   "Alias": {
     "details_pass_through": "Details pass through",
     "download_concurrency": "Download concurrency",
@@ -1478,6 +1483,29 @@
     "root_folder_path": "Root folder path",
     "use_online_api": "Use online api"
   },
+  "cloudflare_imgbed": {
+    "address": "Address",
+    "address-tips": "Backend API address of the image hosting service, e.g., https://img.example.com",
+    "largeChannelName": "LargeChannelName",
+    "largeChannelName-tips": "Channel name for large files",
+    "largeChannelType": "LargeChannelType",
+    "largeChannelType-tips": "Large File Channel Type: Hugging Face (Direct Upload)、telegram/cfr2/s3/discord(Multipart Upload)",
+    "largeChannelTypes": {
+      "": "",
+      "cfr2": "Cfr2",
+      "discord": "Discord",
+      "huggingface": "Huggingface",
+      "s3": "S3",
+      "telegram": "Telegram"
+    },
+    "root_folder_path": "Root folder path",
+    "smallChannelName": "SmallChannelName",
+    "smallChannelName-tips": "Channel name for regular files (typically \u003c20MB)",
+    "token": "Token",
+    "token-tips": "Authentication Token",
+    "uploadThread": "UploadThread",
+    "uploadThread-tips": "Concurrent thread count for HuggingFace chunked direct upload"
+  },
   "config": {
     "115 Cloud": {},
     "115 Open": {},
@@ -1493,6 +1521,7 @@
     "189CloudPC": {},
     "189CloudTV": {},
     "AList V3": {},
+    "AliDoc": {},
     "Alias": {},
     "Aliyundrive": {
       "alert": "There may be an infinite loop bug in this driver.\nDeprecated, no longer maintained and will be removed in a future version.\nWe recommend using the official driver AliyundriveOpen."
@@ -1575,7 +1604,8 @@
     "WebDav": {},
     "WeiYun": {},
     "WoPan": {},
-    "YandexDisk": {}
+    "YandexDisk": {},
+    "cloudflare_imgbed": {}
   },
   "drivers": {
     "115 Cloud": "115 Cloud",
@@ -1590,6 +1620,7 @@
     "189CloudPC": "189CloudPC",
     "189CloudTV": "189CloudTV",
     "AList V3": "AList V3",
+    "AliDoc": "AliDoc",
     "Alias": "Alias",
     "Aliyundrive": "Aliyundrive",
     "AliyundriveOpen": "AliyundriveOpen",
@@ -1666,6 +1697,7 @@
     "WebDav": "WebDav",
     "WeiYun": "WeiYun",
     "WoPan": "WoPan",
-    "YandexDisk": "YandexDisk"
+    "YandexDisk": "YandexDisk",
+    "cloudflare_imgbed": "Cloudflare imgbed"
   }
 }
