@@ -220,7 +220,7 @@
   },
   "AliDoc": {
     "cookie": "Cookie",
-    "cookie-tips": "钉钉文档网页 Cookie",
+    "cookie-tips": "DingTalk document web cookie",
     "root_folder_id": "Root folder id"
   },
   "Alias": {
@@ -1521,7 +1521,9 @@
     "189CloudPC": {},
     "189CloudTV": {},
     "AList V3": {},
-    "AliDoc": {},
+    "AliDoc": {
+      "alert": "This driver supports accessing DingDrive through DingTalk Docs and is currently read-only."
+    },
     "Alias": {},
     "Aliyundrive": {
       "alert": "There may be an infinite loop bug in this driver.\nDeprecated, no longer maintained and will be removed in a future version.\nWe recommend using the official driver AliyundriveOpen."
