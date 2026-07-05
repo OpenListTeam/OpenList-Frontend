@@ -1,7 +1,8 @@
-import { objStore } from "~/store"
+import { getSettingBool, objStore } from "~/store"
 import { FormUpload } from "./form"
 import { StreamUpload } from "./stream"
 import { HttpDirectUpload } from "./direct"
+import { MultipartUpload } from "./multipart"
 import { Upload } from "./types"
 
 type Uploader = {
@@ -28,6 +29,11 @@ const AllUploads: Uploader[] = [
     name: "Form",
     upload: FormUpload,
     available: () => true,
+  },
+  {
+    name: "Multipart",
+    upload: MultipartUpload,
+    available: () => getSettingBool("multipart_enabled"),
   },
 ]
 
