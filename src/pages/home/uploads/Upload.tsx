@@ -28,7 +28,7 @@ import { File2Upload, traverseFileTree } from "./util"
 import { SelectWrapper } from "~/components"
 import { getUploads } from "./uploads"
 
-const UploadFile = (props: UploadFileProps) => {
+const UploadFile = (props: UploadFileProps & { onRetry?: () => void }) => {
   const t = useT()
   return (
     <VStack
@@ -56,7 +56,19 @@ const UploadFile = (props: UploadFileProps) => {
           </Badge>
           <Text>{getFileSize(props.speed)}/s</Text>
         </HStack>
-        <Text color="$neutral11">{getFileSize(props.size)}</Text>
+        <HStack spacing="$2">
+          <Show when={props.status === "error" && props.onRetry}>
+            <Button
+              compact
+              size="xs"
+              colorScheme="accent"
+              onClick={() => props.onRetry?.()}
+            >
+              {t("home.upload.retry")}
+            </Button>
+          </Show>
+          <Text color="$neutral11">{getFileSize(props.size)}</Text>
+        </HStack>
       </HStack>
       <Progress
         w="$full"
@@ -91,11 +103,14 @@ const Upload = () => {
   }
   let fileInput!: HTMLInputElement
   let folderInput!: HTMLInputElement
+  // keep the File handles around so a failed row can be retried in place
+  const fileMap = new Map<string, File>()
   const handleAddFiles = async (files: File[]) => {
     if (files.length === 0) return
     setUploading(true)
     for (const file of files) {
       const upload = File2Upload(file)
+      fileMap.set(upload.path, file)
       setUploadFiles("uploads", (uploads) => [...uploads, upload])
     }
     for await (const ms of asyncPool(3, files, handleFile)) {
@@ -112,6 +127,17 @@ const Upload = () => {
   // All upload methods are available by default
   const uploaders = getUploads()
   const [curUploader, setCurUploader] = createSignal(uploaders[0])
+  // multipart sessions are synchronous pipelines with their own progress and
+  // retry semantics; "add as task" does not apply to them
+  const asTaskUnsupported = () => curUploader()?.name === "Multipart"
+  const retryFile = (path: string) => {
+    const file = fileMap.get(path)
+    if (!file) return
+    setUpload(path, "msg", "")
+    setUpload(path, "progress", 0)
+    setUpload(path, "speed", 0)
+    handleFile(file)
+  }
   const handleFile = async (file: File) => {
     const path = file.webkitRelativePath ? file.webkitRelativePath : file.name
     setUpload(path, "status", "uploading")
@@ -124,7 +150,7 @@ const Upload = () => {
           (key, value) => {
             setUpload(path, key, value)
           },
-          uploadConfig.asTask,
+          asTaskUnsupported() ? false : uploadConfig.asTask,
           uploadConfig.overwrite,
           uploadConfig.rapid,
         )
@@ -173,7 +199,12 @@ const Upload = () => {
               </Show>
             </HStack>
             <For each={uploadFiles.uploads}>
-              {(upload) => <UploadFile {...upload} />}
+              {(upload) => (
+                <UploadFile
+                  {...upload}
+                  onRetry={() => retryFile(upload.path)}
+                />
+              )}
             </For>
           </>
         }
@@ -303,7 +334,8 @@ const Upload = () => {
               direction={{ "@initial": "column", "@md": "row" }}
             >
               <Checkbox
-                checked={uploadConfig.asTask}
+                checked={!asTaskUnsupported() && uploadConfig.asTask}
+                disabled={asTaskUnsupported()}
                 onChange={() => {
                   setUploadConfig({ asTask: !uploadConfig.asTask })
                 }}
