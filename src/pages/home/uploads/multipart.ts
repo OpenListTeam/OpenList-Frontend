@@ -120,18 +120,22 @@ export const MultipartUpload: Upload = async (
 
   let ackedBytes = session.received_bytes ?? 0
   const inflightLoaded: Record<number, number> = {}
+  // a rejected chunk (flow control, network hiccup) drops its in-flight bytes
+  // from the sum until it is resent; report the high-water mark so progress
+  // plateaus instead of jumping backwards and speed can never go negative
+  let peakDone = ackedBytes
   let lastTime = Date.now()
   let lastBytes = ackedBytes
   const report = () => {
     let inflight = 0
     for (const v of Object.values(inflightLoaded)) inflight += v
-    const done = Math.min(ackedBytes + inflight, file.size)
-    setUpload("progress", ((done / file.size) * 100) | 0)
+    peakDone = Math.max(peakDone, Math.min(ackedBytes + inflight, file.size))
+    setUpload("progress", ((peakDone / file.size) * 100) | 0)
     const now = Date.now()
     if (now - lastTime >= 1000) {
-      setUpload("speed", ((done - lastBytes) / (now - lastTime)) * 1000)
+      setUpload("speed", ((peakDone - lastBytes) / (now - lastTime)) * 1000)
       lastTime = now
-      lastBytes = done
+      lastBytes = peakDone
     }
   }
 
