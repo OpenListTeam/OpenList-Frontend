@@ -40,12 +40,6 @@ export const players: {
     platforms: ["Windows"],
   },
   {
-    icon: "vivid",
-    name: "Vivid Player",
-    scheme: "vividplayer://play?src=direct&u=$edurl&title=$name",
-    platforms: ["Windows"],
-  },
-  {
     icon: "vlc",
     name: "VLC",
     scheme: "vlc://$durl",
@@ -74,6 +68,12 @@ export const players: {
     name: "Fig Player",
     scheme: "figplayer://weblink?url=$durl",
     platforms: ["Windows", "MacOS"],
+  },
+  {
+    icon: "vivid",
+    name: "Vivid Player",
+    scheme: "vividplayer://play?src=direct&u=$edurl&title=$name",
+    platforms: ["Windows"],
   },
   {
     icon: "infuse",
