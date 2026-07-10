@@ -28,6 +28,13 @@ const ListLayout = lazy(() => import("./List"))
 const GridLayout = lazy(() => import("./Grid"))
 const ImageLayout = lazy(() => import("./Images"))
 
+const isHeif = (name: string) => /\.(heif|heic|avif)$/i.test(name)
+
+const addSizeParam = (url: string, size: number) => {
+  if (!url) return url
+  return url + (url.includes("?") ? "&" : "?") + `size=${size}`
+}
+
 const Folder = () => {
   const { rawLink } = useLink()
   const images = createMemo(() =>
@@ -43,8 +50,10 @@ const Folder = () => {
       plugins: [lgZoom, lgThumbnail, lgRotate, lgAutoplay, lgFullscreen],
       dynamicEl: images().map((obj) => {
         const raw = rawLink(obj, true)
+        const useHeifThumb = isHeif(obj.name) && obj.thumb
         return {
-          src: raw,
+          src: useHeifThumb ? addSizeParam(obj.thumb, 1024) : raw,
+          downloadUrl: raw,
           thumb: obj.thumb === "" ? raw : obj.thumb,
           subHtml: `<h4>${obj.name}</h4>`,
         }

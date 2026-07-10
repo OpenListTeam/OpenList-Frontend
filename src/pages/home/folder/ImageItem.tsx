@@ -10,6 +10,8 @@ import { bus } from "~/utils"
 import { getIconByObj } from "~/utils/icon"
 import { ItemCheckbox, useSelectWithMouse } from "./helper"
 
+const isHeif = (name: string) => /\.(heif|heic|avif)$/i.test(name)
+
 export const ImageItem = (props: { obj: StoreObj; index: number }) => {
   const { isHide } = useUtil()
   if (isHide(props.obj) || props.obj.type !== ObjType.IMAGE) {
@@ -84,7 +86,11 @@ export const ImageItem = (props: { obj: StoreObj; index: number }) => {
             shadow="$md"
             fallback={<CenterLoading size="lg" />}
             fallbackErr={objIcon}
-            src={rawLink(props.obj)}
+            src={
+              isHeif(props.obj.name) && props.obj.thumb
+                ? props.obj.thumb
+                : rawLink(props.obj)
+            }
             loading="lazy"
             on:dblclick={() => {
               if (!openWithDoubleClick()) return

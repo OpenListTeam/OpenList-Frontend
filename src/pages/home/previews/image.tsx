@@ -22,121 +22,33 @@ import {
   TbArrowAutofitWidth,
   TbArrowAutofitContent,
 } from "solid-icons/tb"
-import {
-  createEffect,
-  createSignal,
-  Match,
-  onCleanup,
-  onMount,
-  Show,
-  Switch,
-} from "solid-js"
+import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js"
 import {
   BoxWithFullScreen,
-  Error,
-  FullLoading,
   ImageWithError,
+  FullLoading,
+  Error,
 } from "~/components"
-import { useCDN, useRouter, useT } from "~/hooks"
+import { useRouter, useT } from "~/hooks"
 import { objStore } from "~/store"
 import { Obj, ObjType } from "~/types"
-import { ext, formatDate, getFileSize, loadScriptIIFE } from "~/utils"
+import { ext, formatDate, getFileSize } from "~/utils"
 
 const HEIF_EXTS = new Set(["heic", "heif", "avif", "vvc", "avc"])
-const isHeif = (name: string) => HEIF_EXTS.has(ext(name))
+const isHeif = (name: string) => HEIF_EXTS.has(ext(name).toLowerCase())
 const ZOOM_MIN = 0.1
 const ZOOM_MAX = 10
 const ZOOM_WHEEL_FACTOR = 1.08
 const ZOOM_BTN_STEP = 0.25
 
+const addSizeParam = (url: string, size: number) => {
+  if (!url) return url
+  return url + (url.includes("?") ? "&" : "?") + `size=${size}`
+}
+
 interface PreviewProps {
   images?: Obj[]
   navigate?: (name: string) => void
-}
-
-// ── HEIF decoder ────────────────────────────────────────────────────
-const HeifView = (props: {
-  src: string
-  onLoad?: (w: number, h: number) => void
-  style?: any
-}) => {
-  const t = useT()
-  const { libHeifPath } = useCDN()
-  const [loading, setLoading] = createSignal(true)
-  const [error, setError] = createSignal(false)
-  let canvas: HTMLCanvasElement | undefined
-  let libheif: any
-  let decoder: any
-
-  const decode = async (url: string) => {
-    try {
-      setLoading(true)
-      setError(false)
-      if (!window.libheif) {
-        await loadScriptIIFE(`${libHeifPath()}/libheif.js`, "libheif-script")
-      }
-      if (!libheif) {
-        const wasm = await fetch(`${libHeifPath()}/libheif.wasm`).then((r) => {
-          if (!r.ok) throw "WASM load failed"
-          return r.arrayBuffer()
-        })
-        libheif = window.libheif({ wasmBinary: wasm })
-        decoder = new libheif.HeifDecoder()
-      }
-      const buffer = await fetch(url).then((r) => {
-        if (!r.ok) throw "File fetch failed"
-        return r.arrayBuffer()
-      })
-      const images = decoder.decode(buffer)
-      if (!images?.length) throw "No decodable image"
-      const img = images[0]
-      const w = img.get_width()
-      const h = img.get_height()
-      if (!canvas) return
-      canvas.width = w
-      canvas.height = h
-      const imageData = new ImageData(w, h)
-      await new Promise<void>((resolve) => {
-        img.display(imageData, (data: ImageData | null) => {
-          if (!data || !canvas) return resolve()
-          canvas.getContext("2d")?.putImageData(data, 0, 0)
-          resolve()
-        })
-      })
-      props.onLoad?.(w, h)
-      setLoading(false)
-    } catch (e) {
-      console.error("HEIF decode failed:", e)
-      setError(true)
-      setLoading(false)
-    }
-  }
-
-  createEffect(() => {
-    if (props.src) decode(props.src)
-  })
-  onCleanup(() => {
-    decoder = null
-    libheif = null
-  })
-
-  return (
-    <>
-      <canvas
-        ref={canvas}
-        style={{
-          ...props.style,
-          display: loading() || error() ? "none" : "block",
-        }}
-      />
-      <Show when={loading()}>
-        <FullLoading />
-      </Show>
-      <Show when={error()}>
-        <Error msg={t("home.preview.failed_load_img")} />
-      </Show>
-    </>
-  )
 }
 
 // ── Preview ─────────────────────────────────────────────────────────
@@ -262,7 +174,10 @@ const Preview = (props: PreviewProps) => {
     const img = e.target as HTMLImageElement
     setImgSize({ w: img.naturalWidth, h: img.naturalHeight })
   }
-  const onHeifLoad = (w: number, h: number) => setImgSize({ w, h })
+  const imgSrc = () =>
+    isHeif(objStore.obj.name) && objStore.obj.thumb
+      ? addSizeParam(objStore.obj.thumb, 1024)
+      : objStore.raw_url
 
   // ── keyboard ──
   const onKey = (e: KeyboardEvent) => {
@@ -483,52 +398,28 @@ const Preview = (props: PreviewProps) => {
             transition={dragging() ? "none" : "transform 0.15s ease"}
             transform-origin="center center"
           >
-            <Switch
-              fallback={
-                <ImageWithError
-                  src={objStore.raw_url}
-                  fallback={<FullLoading />}
-                  fallbackErr={
-                    <Error msg={t("home.preview.failed_load_img")} />
-                  }
-                  onLoad={onImgLoad}
-                  {...(fitMode() === "contain"
-                    ? { w: "$full", h: "$full", objectFit: "contain" }
-                    : {
-                        css:
-                          fitMode() === "height"
-                            ? {
-                                height: "100%",
-                                width: "auto",
-                                "max-width": "none",
-                              }
-                            : {
-                                width: "100%",
-                                height: "auto",
-                                "max-height": "none",
-                              },
-                      })}
-                />
-              }
-            >
-              <Match when={isHeif(objStore.obj.name)}>
-                <HeifView
-                  src={objStore.raw_url}
-                  onLoad={onHeifLoad}
-                  style={
-                    fitMode() === "contain"
-                      ? {
-                          width: "100%",
-                          height: "100%",
-                          "object-fit": "contain",
-                        }
-                      : fitMode() === "height"
-                        ? { height: "100%", width: "auto" }
-                        : { width: "100%", height: "auto" }
-                  }
-                />
-              </Match>
-            </Switch>
+            <ImageWithError
+              src={imgSrc()}
+              fallback={<FullLoading />}
+              fallbackErr={<Error msg={t("home.preview.failed_load_img")} />}
+              onLoad={onImgLoad}
+              {...(fitMode() === "contain"
+                ? { w: "$full", h: "$full", objectFit: "contain" }
+                : {
+                    css:
+                      fitMode() === "height"
+                        ? {
+                            height: "100%",
+                            width: "auto",
+                            "max-width": "none",
+                          }
+                        : {
+                            width: "100%",
+                            height: "auto",
+                            "max-height": "none",
+                          },
+                  })}
+            />
           </Center>
 
           {/* ── Info overlay ── */}
