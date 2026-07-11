@@ -65,7 +65,7 @@
   "max_server_download_speed": "Max server download speed",
   "max_server_upload_speed": "Max server upload speed",
   "multipart_chunk_size": "Multipart upload chunk size (MB)",
-  "multipart_chunk_size-tips": "chunk size of multipart upload in MB (1-90), keep it under your CDN's request body limit",
+  "multipart_chunk_size-tips": "chunk size of multipart upload in MB (positive integer), keep it under your CDN's request body limit; each active session buffers up to 8 chunks on the server's disk",
   "multipart_enabled": "Enable multipart upload",
   "non_efs_zip_encoding": "Alternative encoding for ZIP Files",
   "ocr_api": "Ocr api",
