@@ -41,6 +41,30 @@ const MAX_FLOW_RETRIES = 400
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+// request.ts's error interceptor RESOLVES transport failures into a bare
+// {code, message}: no numeric code for a network error, the HTTP status for a
+// CDN-level failure, -1 for a cancellation. A genuine server envelope is
+// always HTTP 200 and always carries a `data` key, so anything else is a
+// transport-layer failure — returned as undefined for the caller to retry or
+// probe, never to be mistaken for a server verdict.
+const mpRequest = async <T extends Resp<unknown>>(
+  req: Promise<unknown>,
+): Promise<T | undefined> => {
+  let resp: any
+  try {
+    resp = await req
+  } catch (_) {
+    return undefined
+  }
+  if (resp && typeof resp.code === "number" && "data" in resp) {
+    return resp as T
+  }
+  if (resp?.code === -1) {
+    throw new Error(resp.message || "canceled")
+  }
+  return undefined
+}
+
 export const MultipartUpload: Upload = async (
   uploadPath: string,
   file: File,
@@ -84,15 +108,12 @@ export const MultipartUpload: Upload = async (
   // failure is safe to retry instead of failing the whole upload.
   let initResp: InitResp | undefined
   for (let i = 0; ; i++) {
-    try {
-      initResp = await r.post("/fs/multipart/init", undefined, {
-        headers: initHeaders,
-      })
-      break
-    } catch (e) {
-      if (i >= 2) throw e
-      await sleep(1000 * (i + 1))
-    }
+    initResp = await mpRequest<InitResp>(
+      r.post("/fs/multipart/init", undefined, { headers: initHeaders }),
+    )
+    if (initResp) break
+    if (i >= 2) throw new Error("multipart init failed: network error")
+    await sleep(1000 * (i + 1))
   }
   if (initResp!.code !== 200) {
     throw new Error(initResp!.message)
@@ -147,9 +168,10 @@ export const MultipartUpload: Upload = async (
     let flowRetries = 0
     for (;;) {
       if (completedEarly || fatal) return
-      let resp: SnapResp | undefined
-      try {
-        resp = await r.put("/fs/multipart/chunk", blob, {
+      // a transport failure (network hiccup, CDN-level rejection) yields
+      // undefined — the probe below decides between resending and giving up
+      const resp = await mpRequest<SnapResp>(
+        r.put("/fs/multipart/chunk", blob, {
           headers: {
             "X-Upload-Id": uploadId,
             "X-Chunk-Index": idx,
@@ -159,12 +181,8 @@ export const MultipartUpload: Upload = async (
             inflightLoaded[idx] = e.loaded ?? 0
             report()
           },
-        })
-      } catch (_) {
-        // network hiccup, or the server fast-rejected without draining the
-        // body (flow control) and the browser reported it as an error
-        resp = undefined
-      }
+        }),
+      )
       delete inflightLoaded[idx]
       if (resp && resp.code === 200) {
         ackedBytes += chunkLen(idx)
@@ -181,12 +199,9 @@ export const MultipartUpload: Upload = async (
         // a rapid upload may have completed the session while this chunk was
         // mid-flight; the early server response surfaces as a network error —
         // ask the session before assuming the network actually failed
-        let st: SnapResp | undefined
-        try {
-          st = await r.get(`/fs/multipart/status?upload_id=${uploadId}`)
-        } catch (_) {
-          st = undefined
-        }
+        const st = await mpRequest<SnapResp>(
+          r.get(`/fs/multipart/status?upload_id=${uploadId}`),
+        )
         if (
           (st?.code === 200 && st.data.state === "completed") ||
           st?.code === 404 // completed sessions are reaped after success
@@ -241,27 +256,26 @@ export const MultipartUpload: Upload = async (
   setUpload("status", "backending")
   setUpload("speed", 0)
   let settled = false
-  const completePromise: Promise<SnapResp | undefined> = r
-    .post("/fs/multipart/complete", undefined, {
+  // a CDN-cut connection resolves to undefined and the polling below takes
+  // over; the catch is defensive — mpRequest throws only on cancellation
+  const completePromise: Promise<SnapResp | undefined> = mpRequest<SnapResp>(
+    r.post("/fs/multipart/complete", undefined, {
       headers: { "X-Upload-Id": uploadId },
-    })
-    .catch(() => undefined) // connection may be cut by a CDN; fall back to polling
+    }),
+  )
+    .catch(() => undefined)
     .finally(() => {
       settled = true
-    }) as Promise<SnapResp | undefined>
+    })
 
   while (!settled) {
     await sleep(2000)
     if (settled) break
-    try {
-      const st: SnapResp = await r.get(
-        `/fs/multipart/status?upload_id=${uploadId}`,
-      )
-      if (st.code === 200 && st.data.state === "receiving") {
-        setUpload("progress", st.data.storage_progress | 0)
-      }
-    } catch (_) {
-      // transient; keep waiting for complete
+    const st = await mpRequest<SnapResp>(
+      r.get(`/fs/multipart/status?upload_id=${uploadId}`),
+    )
+    if (st?.code === 200 && st.data.state === "receiving") {
+      setUpload("progress", st.data.storage_progress | 0)
     }
   }
   const fin = await completePromise
@@ -275,11 +289,11 @@ export const MultipartUpload: Upload = async (
   // the complete request never came back — poll the session to its end
   for (;;) {
     await sleep(2000)
-    let st: SnapResp
-    try {
-      st = await r.get(`/fs/multipart/status?upload_id=${uploadId}`)
-    } catch (_) {
-      continue
+    const st = await mpRequest<SnapResp>(
+      r.get(`/fs/multipart/status?upload_id=${uploadId}`),
+    )
+    if (!st) {
+      continue // transient blip while the driver finishes — keep polling
     }
     if (st.code === 404) {
       // completed sessions are removed right after they are reaped; with all
