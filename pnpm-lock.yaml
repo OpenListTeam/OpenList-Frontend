@@ -213,9 +213,6 @@ importers:
       remark-rehype:
         specifier: ^11.1.2
         version: 11.1.2
-      terser:
-        specifier: ^5.48.0
-        version: 5.48.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
