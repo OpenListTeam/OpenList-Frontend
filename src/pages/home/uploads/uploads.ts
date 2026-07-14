@@ -14,6 +14,11 @@ type Uploader = {
 // All upload methods
 const AllUploads: Uploader[] = [
   {
+    name: "Multipart",
+    upload: MultipartUpload,
+    available: () => getSettingBool("multipart_enabled"),
+  },
+  {
     name: "HTTP Direct",
     upload: HttpDirectUpload,
     available: () => {
@@ -29,11 +34,6 @@ const AllUploads: Uploader[] = [
     name: "Form",
     upload: FormUpload,
     available: () => true,
-  },
-  {
-    name: "Multipart",
-    upload: MultipartUpload,
-    available: () => getSettingBool("multipart_enabled"),
   },
 ]
 
