@@ -84,6 +84,9 @@ export const MultipartUpload: Upload = async (
   const initHeaders: Record<string, string | number> = {
     "File-Path": encodeURIComponent(uploadPath),
     "X-File-Size": file.size,
+    // suggest slicing by the same size the fallback decision was made with;
+    // the server clamps to [1MB, admin ceiling] and echoes chunk_size back
+    "X-Chunk-Size": fallbackThreshold,
     "Content-Type": file.type || "application/octet-stream",
     "Last-Modified": file.lastModified,
     Password: password(),
