@@ -3,7 +3,7 @@ import { Motion } from "solid-motionone"
 import { useContextMenu } from "solid-contextmenu"
 import { batch, Show } from "solid-js"
 import { CenterLoading, LinkWithPush, ImageWithError } from "~/components"
-import { usePath, useRouter, useUtil } from "~/hooks"
+import { usePath, useRouter, useT, useUtil } from "~/hooks"
 import { checkboxOpen, getMainColor, local, selectIndex } from "~/store"
 import { ObjType, StoreObj } from "~/types"
 import { bus, hoverColor } from "~/utils"
@@ -16,6 +16,7 @@ export const GridItem = (props: { obj: StoreObj; index: number }) => {
     return null
   }
   const { setPathAs } = usePath()
+  const t = useT()
   const objIcon = (
     <Icon
       color={getMainColor()}
@@ -40,6 +41,9 @@ export const GridItem = (props: { obj: StoreObj; index: number }) => {
         classList={{ selected: !!props.obj.selected }}
         class="grid-item viselect-item"
         data-index={props.index}
+        role="listitem"
+        aria-label={`${props.obj.name}，${props.obj.is_dir ? t("global.folder") : t("global.file")}`}
+        tabIndex={0}
         w="$full"
         p="$1"
         spacing="$1"
@@ -102,6 +106,7 @@ export const GridItem = (props: { obj: StoreObj; index: number }) => {
               pos="absolute"
               left="$1"
               top="$1"
+              aria-label={t("global.select") + " " + props.obj.name}
               // colorScheme="neutral"
               on:mousedown={(e: MouseEvent) => {
                 e.stopPropagation()
@@ -121,6 +126,7 @@ export const GridItem = (props: { obj: StoreObj; index: number }) => {
               maxW="$full"
               rounded="$lg"
               shadow="$md"
+              alt={props.obj.name}
               fallback={<CenterLoading size="lg" />}
               fallbackErr={objIcon}
               src={props.obj.thumb}
