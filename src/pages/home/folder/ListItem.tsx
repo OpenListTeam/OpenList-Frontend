@@ -10,7 +10,7 @@ import { Motion } from "solid-motionone"
 import { useContextMenu } from "solid-contextmenu"
 import { batch, Show } from "solid-js"
 import { LinkWithPush } from "~/components"
-import { usePath, useRouter, useUtil } from "~/hooks"
+import { usePath, useRouter, useT, useUtil } from "~/hooks"
 import {
   checkboxOpen,
   getMainColor,
@@ -53,6 +53,7 @@ export const ListItem = (props: { obj: StoreObj; index: number }) => {
   const { setPathAs } = usePath()
   const { show } = useContextMenu({ id: 1 })
   const { pushHref, to } = useRouter()
+  const t = useT()
   const { openWithDoubleClick, toggleWithClick, restoreSelectionCache } =
     useSelectWithMouse()
   const filenameStyle = () => local["list_item_filename_overflow"]
@@ -69,6 +70,9 @@ export const ListItem = (props: { obj: StoreObj; index: number }) => {
         classList={{ selected: !!props.obj.selected }}
         class="list-item viselect-item"
         data-index={props.index}
+        role="listitem"
+        aria-label={`${props.obj.name}，${getFileSize(props.obj.size)}，${props.obj.is_dir ? t("global.folder") : t("global.file")}，${formatDate(props.obj.modified)}`}
+        tabIndex={0}
         w="$full"
         p="$2"
         rounded="$lg"
@@ -114,6 +118,7 @@ export const ListItem = (props: { obj: StoreObj; index: number }) => {
           <Show when={checkboxOpen()}>
             <ItemCheckbox
               // colorScheme="neutral"
+              aria-label={t("global.select") + " " + props.obj.name}
               on:mousedown={(e: MouseEvent) => {
                 e.stopPropagation()
               }}
