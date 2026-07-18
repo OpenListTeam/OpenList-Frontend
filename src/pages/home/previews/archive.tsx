@@ -578,6 +578,7 @@ const Preview = () => {
                     navigate={(name) => {
                       changeFile(name)
                     }}
+                    gallery_props={{ thumbnail: false, preload: 1 }}
                   />
                 </Suspense>
               </Show>

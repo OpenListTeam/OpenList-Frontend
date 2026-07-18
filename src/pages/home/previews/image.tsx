@@ -12,6 +12,7 @@ import {
 import {
   BsArrowClockwise,
   BsArrowCounterclockwise,
+  BsCollection,
   BsInfoCircle,
   BsZoomIn,
   BsZoomOut,
@@ -37,10 +38,18 @@ import {
   FullLoading,
   ImageWithError,
 } from "~/components"
-import { useCDN, useRouter, useT } from "~/hooks"
+import { useCDN, useLink, useRouter, useT } from "~/hooks"
 import { objStore } from "~/store"
 import { Obj, ObjType } from "~/types"
 import { ext, formatDate, getFileSize, loadScriptIIFE } from "~/utils"
+import lightGallery from "lightgallery"
+import lgThumbnail from "lightgallery/plugins/thumbnail"
+import lgZoom from "lightgallery/plugins/zoom"
+import lgRotate from "lightgallery/plugins/rotate"
+import lgAutoplay from "lightgallery/plugins/autoplay"
+import lgFullscreen from "lightgallery/plugins/fullscreen"
+import "lightgallery/css/lightgallery-bundle.css"
+import { LightGallery } from "lightgallery/lightgallery"
 
 const HEIF_EXTS = new Set(["heic", "heif", "avif", "vvc", "avc"])
 const isHeif = (name: string) => HEIF_EXTS.has(ext(name))
@@ -52,6 +61,10 @@ const ZOOM_BTN_STEP = 0.25
 interface PreviewProps {
   images?: Obj[]
   navigate?: (name: string) => void
+  gallery_props?: {
+    thumbnail?: boolean
+    preload?: number
+  }
 }
 
 // ── HEIF decoder ────────────────────────────────────────────────────
@@ -143,7 +156,7 @@ const HeifView = (props: {
 const Preview = (props: PreviewProps) => {
   const t = useT()
   const { replace } = useRouter()
-
+  const { rawLink } = useLink()
   const [scale, setScale] = createSignal(1)
   const [rotation, setRotation] = createSignal(0)
   const [fitMode, setFitMode] = createSignal<"contain" | "height" | "width">(
@@ -162,7 +175,9 @@ const Preview = (props: PreviewProps) => {
   let dragOY = 0
   let startTx = 0
   let startTy = 0
-
+  let dynamicGallery: LightGallery | undefined
+  let isGalleryOpen = false
+  let dragClickMoved = false
   let images =
     props.images ||
     objStore.objs.filter((o) => o.type === ObjType.IMAGE || isHeif(o.name))
@@ -192,6 +207,39 @@ const Preview = (props: PreviewProps) => {
   const next = () => {
     const i = curIdx()
     if (i < images.length - 1) goTo(images[i + 1])
+  }
+
+  // ── gallery ──
+  const openGallery = () => {
+    if (isGalleryOpen) return
+    const el = document.createElement("div")
+    dynamicGallery = lightGallery(el, {
+      dynamic: true,
+      controls: true,
+      thumbnail: props.gallery_props?.thumbnail ?? true,
+      preload: props.gallery_props?.preload ?? 2,
+      dynamicEl: images.map((obj) => ({
+        src: rawLink(obj),
+        thumb: rawLink(obj),
+        subHtml: `<h4>${obj.name}</h4>`,
+      })),
+      plugins: [lgZoom, lgThumbnail, lgRotate, lgFullscreen, lgAutoplay],
+    })
+    let galleryIndex = curIdx()
+    el.addEventListener("lgAfterSlide", (e: any) => {
+      galleryIndex = e.detail.index
+    })
+    el.addEventListener("lgAfterClose", () => {
+      isGalleryOpen = false
+      if (galleryIndex >= 0 && galleryIndex < images.length) {
+        const name = images[galleryIndex].name
+        if (name !== objStore.obj.name) {
+          goTo(images[galleryIndex])
+        }
+      }
+    })
+    isGalleryOpen = true
+    dynamicGallery.openGallery(galleryIndex)
   }
 
   // ── transforms ──
@@ -241,6 +289,7 @@ const Preview = (props: PreviewProps) => {
 
   // ── drag ──
   const onMouseDown = (e: MouseEvent) => {
+    dragClickMoved = false
     if (scale() <= 1 || e.button !== 0) return
     e.preventDefault()
     setDragging(true)
@@ -251,11 +300,16 @@ const Preview = (props: PreviewProps) => {
   }
   const onMouseMove = (e: MouseEvent) => {
     if (!dragging()) return
+    dragClickMoved = true
     setTx(startTx + (e.clientX - dragOX))
     setTy(startTy + (e.clientY - dragOY))
   }
   const onMouseUp = () => setDragging(false)
   const onDblClick = () => (scale() === 1 ? setScale(2) : resetTransform())
+  const onImgClick = () => {
+    if (dragClickMoved) return
+    openGallery()
+  }
 
   // ── image load ──
   const onImgLoad = (e: Event) => {
@@ -266,6 +320,7 @@ const Preview = (props: PreviewProps) => {
 
   // ── keyboard ──
   const onKey = (e: KeyboardEvent) => {
+    if (isGalleryOpen) return
     switch (e.key) {
       case "ArrowLeft":
         return prev()
@@ -311,6 +366,9 @@ const Preview = (props: PreviewProps) => {
     window.removeEventListener("keydown", onKey)
     areaRef?.removeEventListener("wheel", onWheel)
     document.removeEventListener("fullscreenchange", updateFullscreen)
+    if (dynamicGallery) {
+      dynamicGallery.destroy()
+    }
   })
 
   const imgTransform = () =>
@@ -379,6 +437,18 @@ const Preview = (props: PreviewProps) => {
           </HStack>
           <Spacer />
           <HStack spacing="$1">
+            <Show when={images.length > 1}>
+              <Tooltip label="Gallery">
+                <IconButton
+                  icon={<BsCollection />}
+                  aria-label="Gallery"
+                  variant="ghost"
+                  size="sm"
+                  onClick={openGallery}
+                />
+              </Tooltip>
+            </Show>
+
             <Tooltip label="Info (I)">
               <IconButton
                 icon={<BsInfoCircle />}
@@ -468,6 +538,7 @@ const Preview = (props: PreviewProps) => {
           onMouseMove={onMouseMove}
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseUp}
+          onClick={onImgClick}
           onDblClick={onDblClick}
         >
           <Center
