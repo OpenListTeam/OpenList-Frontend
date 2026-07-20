@@ -548,7 +548,9 @@
     "root_folder_path": "Root folder path",
     "secret_access_key": "Secret access key",
     "session_token": "Session token",
-    "sign_url_expire": "Sign url expire"
+    "sign_url_expire": "Sign url expire",
+    "user_agent": "User agent",
+    "user_agent-tips": "Custom User-Agent for S3 requests."
   },
   "Doubao": {
     "cookie": "Cookie",
@@ -674,6 +676,10 @@
   "GitHub Releases": {
     "gh_proxy": "Gh proxy",
     "gh_proxy-tips": "GitHub proxy, e.g. https://ghproxy.net/github.com or https://gh-proxy.com/github.com ",
+    "max_page": "Max page",
+    "max_page-tips": "max pages to fetch (0 = unlimited), only works when show all versions",
+    "per_page": "Per page",
+    "per_page-tips": "releases per page (max 100), only works when show all versions",
     "repo_structure": "Repo structure",
     "repo_structure-tips": "structure:[path:]org/repo",
     "root_folder_path": "Root folder path",
@@ -1077,7 +1083,9 @@
     "root_folder_path": "Root folder path",
     "secret_access_key": "Secret access key",
     "session_token": "Session token",
-    "sign_url_expire": "Sign url expire"
+    "sign_url_expire": "Sign url expire",
+    "user_agent": "User agent",
+    "user_agent-tips": "Custom User-Agent for S3 requests."
   },
   "SFTP": {
     "address": "Address",
