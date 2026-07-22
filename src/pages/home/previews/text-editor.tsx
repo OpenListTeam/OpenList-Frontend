@@ -63,6 +63,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   // Editor instance reference
   const [editor, setEditor] =
     createSignal<monacoType.editor.IStandaloneCodeEditor>()
+  let savedVersionId = 0
 
   // Track modified state
   const [modified, setModified] = createSignal(false)
@@ -74,10 +75,8 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
     [],
   )
 
-  const [wordWrap, setWordWrap] = createSignal(
-    local.editor_word_wrap === "true",
-  )
-  const [minimap, setMinimap] = createSignal(local.editor_minimap !== "false")
+  const wordWrap = () => local.editor_word_wrap === "true"
+  const minimap = () => local.editor_minimap !== "false"
   const [saving, setSaving] = createSignal(false)
   const [langSearch, setLangSearch] = createSignal("")
 
@@ -148,14 +147,21 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   )
 
   async function onSave() {
+    const ed = editor()
+    if (saving() || !ed) return
+
+    const savedVersion = ed.getModel()?.getAlternativeVersionId() ?? 0
     setSaving(true)
     try {
       const file = new File([value()], objStore.obj.name, {
         type: props.contentType || "text/plain",
       })
       await StreamUpload(pathname(), file, () => {}, false, true, false)
+      savedVersionId = savedVersion
+      setModified(
+        (ed.getModel()?.getAlternativeVersionId() ?? 0) !== savedVersionId,
+      )
       notify.success(t("global.save_success"))
-      setModified(false)
     } catch (e: any) {
       notify.error(e.message)
     } finally {
@@ -173,7 +179,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
     })
 
     // Track content changes for modified state
-    let savedVersionId = ed.getModel()?.getAlternativeVersionId() ?? 0
+    savedVersionId = ed.getModel()?.getAlternativeVersionId() ?? 0
     ed.onDidChangeModelContent(() => {
       const currentVersionId = ed.getModel()?.getAlternativeVersionId() ?? 0
       setModified(currentVersionId !== savedVersionId)
@@ -239,9 +245,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
   }
 
   function toggleWordWrap() {
-    const next = !wordWrap()
-    setWordWrap(next)
-    setLocal("editor_word_wrap", String(next))
+    setLocal("editor_word_wrap", String(!wordWrap()))
   }
 
   function changeFontSize(delta: number) {
@@ -349,9 +353,7 @@ function Editor(props: { data?: string | ArrayBuffer; contentType?: string }) {
             size="sm"
             variant="ghost"
             onClick={() => {
-              const next = !minimap()
-              setMinimap(next)
-              setLocal("editor_minimap", String(next))
+              setLocal("editor_minimap", String(!minimap()))
             }}
             color={minimap() ? "$info11" : undefined}
           />

@@ -24,23 +24,34 @@ export const useUtil = () => {
   const { pathname } = useRouter()
   return {
     copy: async (text: string) => {
+      let copied = false
       try {
-        if (await checkClipboardPermission("clipboard-write")) {
-          await navigator.clipboard.writeText(text)
-        } else {
+        if (!(await checkClipboardPermission("clipboard-write"))) {
           throw new Error("permission denied")
         }
+        await navigator.clipboard.writeText(text)
+        copied = true
       } catch {
         const ta = document.createElement("textarea")
         ta.value = text
         ta.style.position = "fixed"
         ta.style.opacity = "0"
-        document.body.appendChild(ta)
-        ta.select()
-        document.execCommand("copy")
-        document.body.removeChild(ta)
+        const root = document.fullscreenElement ?? document.body
+        try {
+          root.appendChild(ta)
+          ta.select()
+          copied = document.execCommand("copy")
+        } catch {
+          copied = false
+        } finally {
+          ta.remove()
+        }
       }
-      notify.success(t("global.copied"))
+      if (copied) {
+        notify.success(t("global.copied"))
+      } else {
+        notify.error(t("global.clipboard_denied"))
+      }
     },
     paste: async (): Promise<string> => {
       try {
