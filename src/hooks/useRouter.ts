@@ -58,7 +58,7 @@ const useRouter = () => {
       const searchString = untrack(() =>
         _mergeSearchString(location.search, params),
       )
-      navigate(joinBase(pathname() + searchString), {
+      navigate(location.pathname + searchString + location.hash, {
         scroll: false,
         ...options,
         resolve: true,

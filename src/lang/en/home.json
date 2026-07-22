@@ -23,6 +23,13 @@
     "tr-installing": "TrollStore Installing",
     "open_in_new_window": "Open in new window",
     "auto_next": "Auto next",
+    "fullscreen": "Fullscreen",
+    "fullscreen_failed": "Failed to toggle fullscreen mode",
+    "exit_fullscreen": "Exit fullscreen",
+    "fullview": "Full view",
+    "exit_fullview": "Exit Full view",
+    "auto_fit": "Auto fit",
+    "reset_zoom": "Reset zoom",
     "names": {
       "download": "Direct Download",
       "html": "HTML Render",
@@ -37,14 +44,14 @@
       "audio": "Audio Player",
       "ipa": "IPA Installer",
       "plist": "Plist Installer",
-      "heic": "HEIC Viewer",
       "pdf": "PDF Previewer",
       "ppt": "PPT Previewer",
       "xls": "XLS Previewer",
       "doc": "DOC Previewer",
       "asciinema": "Asciinema Player",
       "video360": "Video360 Player",
-      "archive": "Archive Previewer"
+      "archive": "Archive Previewer",
+      "torrent": "Torrent Previewer"
     }
   },
   "layouts": {
@@ -63,6 +70,7 @@
     "switch_lang": "Switch Language",
     "toggle_markdown_toc": "Toggle Outline",
     "toggle_checkbox": "Toggle Checkbox",
+    "open_with": "Open with ...",
     "rename": "Rename",
     "input_new_name": "Input new name",
     "move": "Move",
@@ -92,6 +100,39 @@
     "cancel_select": "Cancel Select",
     "offline_download": "Offline download",
     "offline_download-tips": "One URL per line",
+    "offline_download_torrent": "BT Fetch",
+    "offline_download_enhanced": {
+      "tab_link": "Link Download",
+      "tab_bt": "BT Download",
+      "link_placeholder": "Enter download links, one per line\nSupports: HTTP/HTTPS, magnet:?, ed2k://",
+      "link_tips": "Supports HTTP/HTTPS URLs, magnet links, and ed2k links. One link per line.",
+      "drop_torrent": "Drop .torrent file here",
+      "click_to_select": "Or click to select a .torrent file",
+      "parsing": "Parsing torrent file...",
+      "torrent_too_large": "Torrent file is too large (max 10MB)",
+      "parse_failed": "Failed to parse torrent file",
+      "files_count": "files",
+      "select_all": "Select All",
+      "save_path": "Save Path",
+      "download_tool": "Download Tool",
+      "delete_policy": "Delete Policy",
+      "start_download": "Start Download",
+      "rapid_upload_and_download": "Try Rapid Upload",
+      "rapid_upload_success": "Rapid upload succeeded!",
+      "cas_supported": "CAS Rapid Upload",
+      "cas_hint": "This torrent contains CAS info, will try rapid upload to Cloud189 first.",
+      "cas_rapid_upload_mode": "CAS info detected. Will directly use Cloud189 rapid upload (no download tool needed).",
+      "cas_rapid_upload_failed": "CAS rapid upload failed. Please check if the save path is a Cloud189 storage, or try downloading manually.",
+      "cas_failed_fallback_hint": "CAS rapid upload failed. You can now select a download tool and start a normal offline download.",
+      "no_cas_hint": "No CAS info found. Files will be downloaded first, then uploaded.",
+      "reselect": "Reselect",
+      "simplehttp_not_supported": "SimpleHttp does not support BT/magnet downloads. Please select aria2 or another tool.",
+      "ed2k_tool_hint": "ed2k links detected. aria2/qBittorrent do not support ed2k protocol. The system will automatically try Thunder tools, or you can manually select Thunder/ThunderX/ThunderBrowser.",
+      "generate_cas_file": "Generate CAS File",
+      "cas_file_generated": "CAS file generated successfully",
+      "cas_file_generate_failed": "Failed to generate CAS file",
+      "file_selection_hint": "Note: The torrent file list is for reference only. Partial file selection is not yet supported — all files in the torrent will be downloaded."
+    },
     "delete_policy": {
       "delete_on_upload_succeed": "Delete on upload succeed",
       "delete_on_upload_failed": "Delete on upload failed",
@@ -188,6 +229,17 @@
       "direct": "Direct",
       "dblclick": "Double click",
       "disable_while_checked": "Disable while checked"
+    },
+    "editor_font_size": "Editor font size",
+    "editor_word_wrap": "Editor word wrap",
+    "editor_word_wrap_options": {
+      "false": "Off",
+      "true": "On"
+    },
+    "editor_minimap": "Editor minimap",
+    "editor_minimap_options": {
+      "false": "Off",
+      "true": "On"
     },
     "show_gallery_thumbnails": "Show gallery thumbnails",
     "show_gallery_thumbnails_options": {

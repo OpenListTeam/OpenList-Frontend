@@ -9,18 +9,18 @@ import { createMemo } from "solid-js"
 export default function () {
   const [content] = useFetchText()
   const { copy } = useUtil()
-  const url = createMemo(() => {
-    try {
-      const ini = content()?.content || ""
-      const { text } = useParseText(ini)
-      const config = recordKeysToLowerCase(parse(text() || ""))
-      return config.internetshortcut?.url || "#"
-    } catch (error) {
-      console.error("Error parsing INI content:", error)
-      return "#"
-    }
-  })
   const t = useT()
+  const url = createMemo(() => {
+    if (content.loading) return ""
+    const ini = content()?.content
+    if (!ini) throw new Error("No content")
+    if (typeof ini === "string") throw new Error(ini)
+    const { text } = useParseText(ini)
+    const config = recordKeysToLowerCase(parse(text() || ""))
+    const shortcutUrl = config.internetshortcut?.url
+    if (!shortcutUrl) throw new Error("Invalid .url file: no URL found")
+    return shortcutUrl
+  })
   return (
     <MaybeLoading loading={content.loading}>
       <FileInfo>

@@ -45,9 +45,20 @@ const AddOrEdit = () => {
     <MaybeLoading loading={id ? shareLoading() : false}>
       <Heading mb="$2">{t(`global.${id ? "edit" : "add"}`)}</Heading>
       <ResponsiveGrid>
-        <Show when={id}>
-          <Item name="id" type={Type.String} value={id} valid readonly={true} />
-        </Show>
+        <Item
+          name="id"
+          type={Type.String}
+          value={id ? ((share as ShareUpdate).new_id ?? id) : (share.id ?? "")}
+          valid
+          placeholder={id ? id : t("shares.id_placeholder")}
+          onChange={(v) => {
+            if (id) {
+              setShare({ ...share, new_id: v } as any)
+            } else {
+              setShare({ ...share, id: v } as any)
+            }
+          }}
+        />
         <Item
           name="files"
           type={Type.MultiPath}

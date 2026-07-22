@@ -14,7 +14,8 @@
     "ftp_manage": "FTP manage",
     "read_archives": "Read archives",
     "decompress": "Decompress",
-    "share": "Share"
+    "share": "Share",
+    "customize_share_id": "Customize share ID"
   },
   "username": "Username",
   "password": "Password",

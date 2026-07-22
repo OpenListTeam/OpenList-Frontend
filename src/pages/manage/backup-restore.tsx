@@ -62,7 +62,7 @@ const BackupRestore = () => {
   const [password, setPassword] = createSignal("")
   const t = useT()
   useManageTitle("manage.sidemenu.backup-restore")
-  let logRef: HTMLDivElement
+  let logRef!: HTMLDivElement
   const [log, setLog] = createSignal<
     {
       type: LogType

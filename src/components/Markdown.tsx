@@ -1,7 +1,6 @@
 import { Anchor, Box, List, ListItem, useColorModeValue } from "@hope-ui/solid"
 import { createStorageSignal } from "@solid-primitives/storage"
 import { clsx } from "clsx"
-import once from "just-once"
 import rehypeRaw from "rehype-raw"
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize"
 import rehypeStringify from "rehype-stringify"
@@ -13,8 +12,16 @@ import { Motion } from "solid-motionone"
 import { unified } from "unified"
 import { useCDN, useParseText, useRouter } from "~/hooks"
 import { useScrollListener } from "~/pages/home/toolbar/BackTop.jsx"
-import { getMainColor, me } from "~/store"
-import { api, notify, pathDir, pathJoin, pathResolve } from "~/utils"
+import { getMainColor, getSettingBool, me } from "~/store"
+import {
+  api,
+  loadCSS,
+  loadScriptIIFE,
+  notify,
+  pathDir,
+  pathJoin,
+  pathResolve,
+} from "~/utils"
 import { isMobile } from "~/utils/compatibility.js"
 import hljs from "highlight.js"
 import { EncodingSelect } from "."
@@ -148,27 +155,9 @@ function MarkdownToc(props: {
 
 const { katexCSSPath, mermaidJSPath } = useCDN()
 
-const insertKatexCSS = once(() => {
-  const link = document.createElement("link")
-  link.rel = "stylesheet"
-  link.href = katexCSSPath()
-  document.head.appendChild(link)
-})
-
-const loadMermaidJS = once(
-  () =>
-    new Promise<void>((resolve, reject) => {
-      if (window.mermaid) return resolve()
-      const script = document.createElement("script")
-      script.src = mermaidJSPath()
-      script.onload = () => resolve()
-      script.onerror = () => reject(new Error("Failed to load mermaid"))
-      document.body.appendChild(script)
-    }),
-)
-
 async function renderMarkdown(
   content: string,
+  sanitize: boolean,
 ): Promise<{ html: string; hasMermaid: boolean }> {
   let processor = unified()
 
@@ -179,20 +168,22 @@ async function renderMarkdown(
   if (hasMath) {
     const { default: remarkMath } = await import("remark-math")
     processor.use(remarkMath)
-    insertKatexCSS()
-  }
-  if (hasMermaid) {
-    await loadMermaidJS().catch(() =>
+    await loadCSS(katexCSSPath(), "katex").catch(() =>
       notify.error(
-        "Failed to load mermaid.js, mermaid diagrams will not be rendered",
+        "Failed to load KaTeX CSS, math formulas will not be rendered",
       ),
     )
   }
+  if (hasMermaid) {
+    await loadScriptIIFE(mermaidJSPath(), "mermaid").catch(() =>
+      notify.error("Failed to load Mermaid JS, diagrams will not be rendered"),
+    )
+  }
 
-  processor
-    .use(remarkRehype, { allowDangerousHtml: true })
-    .use(rehypeRaw)
-    .use(rehypeSanitize, {
+  processor.use(remarkRehype, { allowDangerousHtml: true }).use(rehypeRaw)
+
+  if (sanitize)
+    processor.use(rehypeSanitize, {
       ...defaultSchema,
       attributes: {
         ...defaultSchema.attributes,
@@ -220,6 +211,7 @@ export function Markdown(props: {
   ext?: string
   readme?: boolean
   toc?: boolean
+  sanitize?: boolean
 }) {
   const [encoding, setEncoding] = createSignal<string>("utf-8")
   const [show, setShow] = createSignal(true)
@@ -263,12 +255,35 @@ export function Markdown(props: {
     on([md, mermaidTheme], async () => {
       setShow(false)
 
-      const { html, hasMermaid } = await renderMarkdown(md())
+      const { html, hasMermaid } = await renderMarkdown(
+        md(),
+        props.sanitize || getSettingBool("filter_readme_scripts"),
+      )
       setMarkdownHTML(html)
 
       setTimeout(() => {
         setShow(true)
-        hljs.highlightAll()
+        // Only highlight code blocks with an explicit, supported language
+        const noHighlight = new Set([
+          "language-plain",
+          "language-plaintext",
+          "language-text",
+        ])
+        markdownRef()
+          ?.querySelectorAll('pre code[class*="language-"]')
+          ?.forEach((el) => {
+            const classList = (el as HTMLElement).classList
+            const langClass = Array.from(classList).find((c) =>
+              c.startsWith("language-"),
+            )
+            if (
+              langClass &&
+              !noHighlight.has(langClass) &&
+              hljs.getLanguage(langClass.replace("language-", ""))
+            ) {
+              hljs.highlightElement(el as HTMLElement)
+            }
+          })
         if (hasMermaid && window.mermaid) {
           window.mermaid.initialize({
             startOnLoad: false,

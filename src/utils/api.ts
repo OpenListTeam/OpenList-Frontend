@@ -8,7 +8,10 @@ import {
   FsSearchResp,
   RenameObj,
   ArchiveMeta,
-  ArchiveList,
+  PPageResp,
+  TorrentInfo,
+  TorrentUploadParseResult,
+  TorrentRapidUploadResult,
 } from "~/types"
 import { r } from "."
 
@@ -172,7 +175,7 @@ export const fsArchiveList = (
   per_page = 0,
   refresh = false,
   cancelToken?: CancelToken,
-): PResp<ArchiveList> => {
+): PPageResp<Obj> => {
   return r.post(
     "/fs/archive/list",
     {
@@ -238,7 +241,9 @@ export const fetchText = async (
         : undefined,
     })
     const content = await resp.data.arrayBuffer()
-    const contentType = resp.headers["content-type"]
+    const rawContentType = resp.headers["content-type"]
+    const contentType =
+      typeof rawContentType === "string" ? rawContentType : undefined
     return { content, contentType }
   } catch (e) {
     return ts
@@ -280,4 +285,25 @@ export const updateIndex = async (paths = [], max_depth = -1): PEmptyResp => {
     paths,
     max_depth,
   })
+}
+
+// ========== Torrent 相关 API ==========
+
+export const torrentParse = (torrent_data: string): PResp<TorrentInfo> => {
+  return r.post("/fs/torrent/parse", { torrent_data })
+}
+
+export const torrentUploadParse = (
+  file: File,
+): PResp<TorrentUploadParseResult> => {
+  const formData = new FormData()
+  formData.append("torrent", file)
+  return r.post("/fs/torrent/upload_parse", formData)
+}
+
+export const torrentRapidUpload = (
+  torrent_data: string,
+  path: string,
+): PResp<TorrentRapidUploadResult> => {
+  return r.post("/fs/torrent/rapid_upload", { torrent_data, path })
 }

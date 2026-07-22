@@ -1,5 +1,6 @@
-import { ObjStore, objStore, State } from "~/store/obj"
+import { shouldKeepState, ObjStore, objStore, State } from "~/store/obj"
 import { getGlobalPage, setGlobalPage } from "~/hooks"
+import { encodePath } from "~/utils"
 
 interface History {
   obj: object
@@ -14,7 +15,7 @@ const waitForNextFrame = () => {
 }
 
 export const getHistoryKey = (path: string, page?: number) => {
-  const pathname = path.split("?")[0]
+  const pathname = encodePath(path)
   return page && page > 1 ? `${pathname}?page=${page}` : pathname
 }
 
@@ -40,10 +41,10 @@ export const recordHistory = (path: string, page?: number) => {
 
 export const recoverHistory = async (path: string, page?: number) => {
   const key = getHistoryKey(path, page)
-  if (!HistoryMap.has(key)) return
-  const history = HistoryMap.get(key)!
+  const history = HistoryMap.get(key)
+  if (!history) return
   setGlobalPage(history.page)
-  ObjStore.setState(State.Initial)
+  shouldKeepState() || ObjStore.setState(State.Initial)
   await waitForNextFrame()
   ObjStore.set(JSON.parse(JSON.stringify(history.obj)))
   await waitForNextFrame()
@@ -69,7 +70,7 @@ document.addEventListener(
     let target = e.target as HTMLElement
     let link = target.closest("a")
     let path = link?.getAttribute("href")
-    if (path) {
+    if (path && path.startsWith("/")) {
       clearHistory(decodeURIComponent(path))
     }
   },

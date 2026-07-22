@@ -140,8 +140,11 @@
     "username": "Username"
   },
   "189CloudPC": {
+    "access_token": "Access token",
     "family_id": "Family id",
     "family_transfer": "Family transfer",
+    "generate_torrent": "Generate torrent",
+    "generate_torrent-tips": "Generate torrent file with CAS extension after upload",
     "login_type": "Login type",
     "login_types": {
       "password": "Password",
@@ -214,6 +217,11 @@
     "token": "Token",
     "url": "Url",
     "username": "Username"
+  },
+  "AliDoc": {
+    "cookie": "Cookie",
+    "cookie-tips": "DingTalk document web cookie",
+    "root_folder_id": "Root folder id"
   },
   "Alias": {
     "details_pass_through": "Details pass through",
@@ -540,7 +548,9 @@
     "root_folder_path": "Root folder path",
     "secret_access_key": "Secret access key",
     "session_token": "Session token",
-    "sign_url_expire": "Sign url expire"
+    "sign_url_expire": "Sign url expire",
+    "user_agent": "User agent",
+    "user_agent-tips": "Custom User-Agent for S3 requests."
   },
   "Doubao": {
     "cookie": "Cookie",
@@ -593,8 +603,23 @@
     "root_folder_path": "Root folder path",
     "use_online_api": "Use online api"
   },
+  "Emby": {
+    "api_key": "Api key",
+    "link_method": "Link method",
+    "link_methods": {
+      "download": "Download",
+      "stream": "Stream"
+    },
+    "password": "Password",
+    "root_folder_id": "Root folder id",
+    "url": "Url",
+    "user_id": "User id",
+    "username": "Username"
+  },
   "FTP": {
     "address": "Address",
+    "cwd_list": "Use Cwd to list",
+    "cwd_list-tips": "Enter directory before listing",
     "encoding": "Encoding",
     "password": "Password",
     "root_folder_path": "Root folder path",
@@ -651,6 +676,10 @@
   "GitHub Releases": {
     "gh_proxy": "Gh proxy",
     "gh_proxy-tips": "GitHub proxy, e.g. https://ghproxy.net/github.com or https://gh-proxy.com/github.com ",
+    "max_page": "Max page",
+    "max_page-tips": "max pages to fetch (0 = unlimited), only works when show all versions",
+    "per_page": "Per page",
+    "per_page-tips": "releases per page (max 100), only works when show all versions",
     "repo_structure": "Repo structure",
     "repo_structure-tips": "structure:[path:]org/repo",
     "root_folder_path": "Root folder path",
@@ -883,6 +912,9 @@
     "use_online_api": "Use online api"
   },
   "Onedrive Sharelink": {
+    "disable_disk_usage": "Disable disk usage",
+    "enable_direct_upload": "Enable direct upload",
+    "enable_direct_upload-tips": "Allow uploading directly to OneDrive without going through OpenList",
     "password": "Password",
     "root_folder_path": "Root folder path",
     "url": "Url"
@@ -1051,7 +1083,9 @@
     "root_folder_path": "Root folder path",
     "secret_access_key": "Secret access key",
     "session_token": "Session token",
-    "sign_url_expire": "Sign url expire"
+    "sign_url_expire": "Sign url expire",
+    "user_agent": "User agent",
+    "user_agent-tips": "Custom User-Agent for S3 requests."
   },
   "SFTP": {
     "address": "Address",
@@ -1383,6 +1417,7 @@
   },
   "WPS": {
     "cookie": "Cookie",
+    "custom_ua": "Custom ua",
     "mode": "Mode",
     "modes": {
       "Business": "Business",
@@ -1456,6 +1491,29 @@
     "root_folder_path": "Root folder path",
     "use_online_api": "Use online api"
   },
+  "cloudflare_imgbed": {
+    "address": "Address",
+    "address-tips": "Backend API address of the image hosting service, e.g., https://img.example.com",
+    "largeChannelName": "LargeChannelName",
+    "largeChannelName-tips": "Channel name for large files",
+    "largeChannelType": "LargeChannelType",
+    "largeChannelType-tips": "Large File Channel Type: Hugging Face (Direct Upload)、telegram/cfr2/s3/discord(Multipart Upload)",
+    "largeChannelTypes": {
+      "": "",
+      "cfr2": "Cfr2",
+      "discord": "Discord",
+      "huggingface": "Huggingface",
+      "s3": "S3",
+      "telegram": "Telegram"
+    },
+    "root_folder_path": "Root folder path",
+    "smallChannelName": "SmallChannelName",
+    "smallChannelName-tips": "Channel name for regular files (typically \u003c20MB)",
+    "token": "Token",
+    "token-tips": "Authentication Token",
+    "uploadThread": "UploadThread",
+    "uploadThread-tips": "Concurrent thread count for HuggingFace chunked direct upload"
+  },
   "config": {
     "115 Cloud": {},
     "115 Open": {},
@@ -1471,6 +1529,9 @@
     "189CloudPC": {},
     "189CloudTV": {},
     "AList V3": {},
+    "AliDoc": {
+      "alert": "This driver supports accessing DingDrive through DingTalk Docs and is currently read-only."
+    },
     "Alias": {},
     "Aliyundrive": {
       "alert": "There may be an infinite loop bug in this driver.\nDeprecated, no longer maintained and will be removed in a future version.\nWe recommend using the official driver AliyundriveOpen."
@@ -1495,6 +1556,7 @@
     },
     "DoubaoShare": {},
     "Dropbox": {},
+    "Emby": {},
     "FTP": {},
     "FebBox": {},
     "FeijiPan": {},
@@ -1552,7 +1614,8 @@
     "WebDav": {},
     "WeiYun": {},
     "WoPan": {},
-    "YandexDisk": {}
+    "YandexDisk": {},
+    "cloudflare_imgbed": {}
   },
   "drivers": {
     "115 Cloud": "115 Cloud",
@@ -1567,6 +1630,7 @@
     "189CloudPC": "189CloudPC",
     "189CloudTV": "189CloudTV",
     "AList V3": "AList V3",
+    "AliDoc": "AliDoc",
     "Alias": "Alias",
     "Aliyundrive": "Aliyundrive",
     "AliyundriveOpen": "AliyundriveOpen",
@@ -1587,6 +1651,7 @@
     "DoubaoNew": "DoubaoNew",
     "DoubaoShare": "DoubaoShare",
     "Dropbox": "Dropbox",
+    "Emby": "Emby",
     "FTP": "FTP",
     "FebBox": "FebBox",
     "FeijiPan": "FeijiPan",
@@ -1642,6 +1707,7 @@
     "WebDav": "WebDav",
     "WeiYun": "WeiYun",
     "WoPan": "WoPan",
-    "YandexDisk": "YandexDisk"
+    "YandexDisk": "YandexDisk",
+    "cloudflare_imgbed": "Cloudflare imgbed"
   }
 }

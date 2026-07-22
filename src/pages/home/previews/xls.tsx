@@ -1,9 +1,8 @@
-import { BoxWithFullScreen, Error, FullLoading } from "~/components"
-import { objStore } from "~/store"
-import { Box, IconButton, Tooltip, Button, HStack } from "@hope-ui/solid"
+import { BoxWithFullScreen, Error as Erro, FullLoading } from "~/components"
+import { Box, Button, HStack } from "@hope-ui/solid"
+import { loadScriptIIFE } from "~/utils"
 import { createSignal, onMount, For, Show } from "solid-js"
-import { useT } from "~/hooks"
-import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
+import { useLink, useT, useCDN } from "~/hooks"
 
 // 声明全局ExcelJS类型
 declare global {
@@ -30,42 +29,13 @@ interface SheetData {
 
 const ExcelViewerApp = () => {
   const t = useT()
+  const { currentObjLink } = useLink()
+  const { excelJSPath } = useCDN()
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
-  const [isFullscreen, setIsFullscreen] = createSignal(false)
   const [sheets, setSheets] = createSignal<SheetData[]>([])
   const [currentSheetIndex, setCurrentSheetIndex] = createSignal(0)
   let containerRef: HTMLDivElement | undefined
-
-  // 动态加载ExcelJS库
-  const loadExcelJSScript = () => {
-    return new Promise<void>((resolve, reject) => {
-      // 检查是否已经加载
-      if (window.ExcelJS) {
-        resolve()
-        return
-      }
-
-      // 检查脚本标签是否已存在
-      const existingScript = document.getElementById("exceljs-script")
-      if (existingScript) {
-        // 脚本正在加载中，等待加载完成
-        existingScript.addEventListener("load", () => resolve())
-        existingScript.addEventListener("error", () =>
-          reject(new Error("Failed to load ExcelJS library")),
-        )
-        return
-      }
-
-      const script = document.createElement("script")
-      script.src = "https://res.oplist.org.cn/exceljs/exceljs.min.js"
-      script.id = "exceljs-script"
-      script.async = true
-      script.onload = () => resolve()
-      script.onerror = () => reject(new Error("Failed to load ExcelJS library"))
-      document.head.appendChild(script)
-    })
-  }
 
   // 加载并解析Excel文件
   const loadExcelFile = async () => {
@@ -74,10 +44,10 @@ const ExcelViewerApp = () => {
       setError(false)
 
       // 先加载ExcelJS库
-      await loadExcelJSScript()
+      await loadScriptIIFE(excelJSPath(), "exceljs-script")
 
       // 获取文件URL
-      const fileUrl = objStore.raw_url
+      const fileUrl = currentObjLink()
 
       // 下载文件
       const response = await fetch(fileUrl)
@@ -153,21 +123,6 @@ const ExcelViewerApp = () => {
     }
   }
 
-  // 全屏切换
-  const toggleFullscreen = () => {
-    if (!containerRef) return
-
-    if (!document.fullscreenElement) {
-      containerRef.requestFullscreen().then(() => {
-        setIsFullscreen(true)
-      })
-    } else {
-      document.exitFullscreen().then(() => {
-        setIsFullscreen(false)
-      })
-    }
-  }
-
   onMount(() => {
     loadExcelFile()
   })
@@ -206,98 +161,78 @@ const ExcelViewerApp = () => {
           </HStack>
         </Show>
 
-        {/* 全屏按钮 */}
-        <Box opacity="0.7" transition="opacity 0.2s" _hover={{ opacity: "1" }}>
-          <Tooltip
-            withArrow
-            label={
-              isFullscreen()
-                ? t("home.preview.exit_fullscreen")
-                : t("home.preview.fullscreen")
-            }
-          >
-            <IconButton
-              size="sm"
-              colorScheme="neutral"
-              aria-label="Toggle Fullscreen"
-              icon={isFullscreen() ? <VsScreenNormal /> : <VsScreenFull />}
-              onClick={toggleFullscreen}
-            />
-          </Tooltip>
-        </Box>
+        {/* Excel表格容器 */}
+        <div
+          ref={containerRef}
+          style={{
+            width: "100%",
+            height: "100%",
+            overflow: "auto",
+            position: "relative",
+            background: "#ffffff",
+            "padding-top": "50px",
+          }}
+        >
+          {/* 表格内容 */}
+          <Show when={!loading() && !error() && sheets().length > 0}>
+            <div style={{ padding: "20px", overflow: "auto" }}>
+              <table
+                style={{
+                  "border-collapse": "collapse",
+                  width: "100%",
+                  "background-color": "white",
+                  "box-shadow": "0 2px 8px rgba(0,0,0,0.1)",
+                }}
+              >
+                <tbody>
+                  <For each={sheets()[currentSheetIndex()]?.rows || []}>
+                    {(row) => (
+                      <tr>
+                        <For each={row}>
+                          {(cell) => (
+                            <td
+                              style={{
+                                border: "1px solid #ddd",
+                                padding: "8px 12px",
+                                "font-weight": cell.style?.bold
+                                  ? "bold"
+                                  : "normal",
+                                "font-style": cell.style?.italic
+                                  ? "italic"
+                                  : "normal",
+                                "background-color": cell.style?.bgColor
+                                  ? `#${cell.style.bgColor.slice(2)}`
+                                  : "transparent",
+                                "text-align":
+                                  (cell.style?.alignment as any) || "left",
+                                "white-space": "pre-wrap",
+                                "word-break": "break-word",
+                                "min-width": "100px",
+                              }}
+                            >
+                              {cell.value}
+                            </td>
+                          )}
+                        </For>
+                      </tr>
+                    )}
+                  </For>
+                </tbody>
+              </table>
+            </div>
+          </Show>
+
+          {/* 加载状态 */}
+          <Show when={loading()}>
+            <FullLoading />
+          </Show>
+
+          {/* 错误状态 */}
+          <Show when={error()}>
+            <Erro msg={t("preview.failed_load_excel")} h="70vh" />
+          </Show>
+        </div>
       </Box>
-
-      {/* Excel表格容器 */}
-      <div
-        ref={containerRef}
-        style={{
-          width: "100%",
-          height: "100%",
-          overflow: "auto",
-          position: "relative",
-          background: "#ffffff",
-          "padding-top": "50px",
-        }}
-      >
-        {/* 表格内容 */}
-        <Show when={!loading() && !error() && sheets().length > 0}>
-          <div style={{ padding: "20px", overflow: "auto" }}>
-            <table
-              style={{
-                "border-collapse": "collapse",
-                width: "100%",
-                "background-color": "white",
-                "box-shadow": "0 2px 8px rgba(0,0,0,0.1)",
-              }}
-            >
-              <tbody>
-                <For each={sheets()[currentSheetIndex()]?.rows || []}>
-                  {(row) => (
-                    <tr>
-                      <For each={row}>
-                        {(cell) => (
-                          <td
-                            style={{
-                              border: "1px solid #ddd",
-                              padding: "8px 12px",
-                              "font-weight": cell.style?.bold
-                                ? "bold"
-                                : "normal",
-                              "font-style": cell.style?.italic
-                                ? "italic"
-                                : "normal",
-                              "background-color": cell.style?.bgColor
-                                ? `#${cell.style.bgColor.slice(2)}`
-                                : "transparent",
-                              "text-align":
-                                (cell.style?.alignment as any) || "left",
-                              "white-space": "pre-wrap",
-                              "word-break": "break-word",
-                              "min-width": "100px",
-                            }}
-                          >
-                            {cell.value}
-                          </td>
-                        )}
-                      </For>
-                    </tr>
-                  )}
-                </For>
-              </tbody>
-            </table>
-          </div>
-        </Show>
-
-        {/* 加载状态 */}
-        <Show when={loading()}>
-          <FullLoading />
-        </Show>
-
-        {/* 错误状态 */}
-        <Show when={error()}>
-          <Error msg={t("preview.failed_load_excel")} h="70vh" />
-        </Show>
-      </div>
     </BoxWithFullScreen>
   )
 }

@@ -14,12 +14,24 @@ import {
   SelectOptionText,
   SelectTrigger,
   SelectValue,
-  Icon,
+  IconButton,
+  Tooltip,
+  VStack,
 } from "@hope-ui/solid"
 import { SwitchColorMode } from "./SwitchColorMode"
-import { ComponentProps, For, mergeProps, Show, JSXElement } from "solid-js"
+import {
+  ComponentProps,
+  For,
+  mergeProps,
+  Show,
+  JSXElement,
+  createSignal,
+  onMount,
+  onCleanup,
+} from "solid-js"
 import { AiOutlineFullscreen, AiOutlineFullscreenExit } from "solid-icons/ai"
-import { hoverColor } from "~/utils"
+import { BsFullscreen, BsFullscreenExit } from "solid-icons/bs"
+import { useT } from "~/hooks"
 
 export const Error = (props: {
   msg: string
@@ -63,35 +75,109 @@ export const Error = (props: {
   )
 }
 
-export const BoxWithFullScreen = (props: Parameters<typeof Box>[0]) => {
-  const { isOpen, onToggle } = createDisclosure()
+export const BoxWithFullScreen = (
+  props: Parameters<typeof Box>[0] & { extraButtons?: JSXElement },
+) => {
+  const { isOpen: isFullView, onToggle } = createDisclosure()
+  const [isFullScreen, setIsFullScreen] = createSignal(false)
+  let containerRef: HTMLDivElement
+  const t = useT()
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef!.requestFullscreen()
+    } else {
+      document.exitFullscreen()
+    }
+  }
+
+  onMount(() => {
+    const fsHandler = () => setIsFullScreen(!!document.fullscreenElement)
+    document.addEventListener("fullscreenchange", fsHandler)
+    onCleanup(() => {
+      document.removeEventListener("fullscreenchange", fsHandler)
+    })
+  })
+
   return (
     <Box
-      pos={isOpen() ? "fixed" : "relative"}
-      w={isOpen() ? "100vw" : props.w}
-      h={isOpen() ? "100vh" : props.h}
+      ref={containerRef!}
+      pos={isFullView() ? "fixed" : "relative"}
+      w={isFullView() ? "100vw" : props.w}
+      h={isFullView() ? "100vh" : props.h}
       top={0}
       left={0}
-      zIndex={1}
+      zIndex={isFullView() ? "$modal" : undefined}
       transition="all 0.2s ease-in-out"
       css={{
-        backdropFilter: isOpen() ? "blur(5px)" : undefined,
+        backdropFilter: isFullView() ? "blur(5px)" : undefined,
       }}
     >
       {props.children}
-      <Icon
+      <VStack
         pos="absolute"
         right="$2"
         bottom="$2"
-        aria-label="toggle fullscreen"
-        as={isOpen() ? AiOutlineFullscreenExit : AiOutlineFullscreen}
-        onClick={onToggle}
-        cursor="pointer"
-        rounded="$md"
-        bgColor={hoverColor()}
-        p="$1"
-        boxSize="$7"
-      />
+        spacing="$2"
+        opacity="0.7"
+        _hover={{ opacity: "1" }}
+        transition="opacity 0.3s ease"
+        pointerEvents="auto"
+        zIndex="$docked"
+      >
+        {props.extraButtons}
+        <Show when={!isFullScreen()}>
+          {/* Full view toggle */}
+          <Tooltip
+            label={
+              isFullView()
+                ? t("home.preview.exit_fullview")
+                : t("home.preview.fullview")
+            }
+            withArrow
+          >
+            <IconButton
+              aria-label={
+                isFullView()
+                  ? t("home.preview.exit_fullview")
+                  : t("home.preview.fullview")
+              }
+              icon={isFullView() ? <BsFullscreenExit /> : <BsFullscreen />}
+              onClick={onToggle}
+              colorScheme="neutral"
+              size="sm"
+            />
+          </Tooltip>
+        </Show>
+
+        {/* Native fullscreen toggle */}
+        <Tooltip
+          label={
+            isFullScreen()
+              ? t("home.preview.exit_fullscreen")
+              : t("home.preview.fullscreen")
+          }
+          withArrow
+        >
+          <IconButton
+            aria-label={
+              isFullScreen()
+                ? t("home.preview.exit_fullscreen")
+                : t("home.preview.fullscreen")
+            }
+            icon={
+              isFullScreen() ? (
+                <AiOutlineFullscreenExit />
+              ) : (
+                <AiOutlineFullscreen />
+              )
+            }
+            onClick={toggleFullscreen}
+            colorScheme="neutral"
+            size="sm"
+          />
+        </Tooltip>
+      </VStack>
     </Box>
   )
 }

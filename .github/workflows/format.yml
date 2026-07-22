@@ -12,13 +12,15 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v5
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+      - uses: pnpm/action-setup@v6
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v6
         with:
-          node-version: 24.14.1
+          node-version: 24.18.0
 
       - name: Install dependencies
         run: pnpm install
@@ -26,7 +28,7 @@ jobs:
       - name: Format
         run: pnpm run format
 
-      - name: "Import GPG key"
+      - name: Import GPG key
         id: import-gpg
         uses: crazy-max/ghaction-import-gpg@v7
         with:
@@ -35,10 +37,9 @@ jobs:
           git_user_signingkey: true
           git_commit_gpgsign: true
 
-      - name: Commit and Push
+      - name: Commit and push formatting changes
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
-          # TODO: GPG sign: https://github.com/stefanzweifel/git-auto-commit-action?tab=readme-ov-file#signing-commits
           commit_message: "[skip ci] style: format code with prettier"
           commit_author: "${{ steps.import-gpg.outputs.name }} <${{ steps.import-gpg.outputs.email }}>"
           commit_user_name: ${{ steps.import-gpg.outputs.name }}

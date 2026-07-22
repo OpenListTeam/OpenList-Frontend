@@ -11,7 +11,7 @@ import {
 } from "@hope-ui/solid"
 import { For, JSXElement, createSignal, createMemo, Show } from "solid-js"
 import { useRouter, useLink, useT, usePath, getGlobalPage } from "~/hooks"
-import { getPagination, objStore } from "~/store"
+import { getPagination, objStore, setShouldKeepState } from "~/store"
 import { ObjType } from "~/types"
 import { convertURL, getPlatform, pathDir } from "~/utils"
 import Artplayer from "artplayer"
@@ -19,6 +19,7 @@ import { SelectWrapper } from "~/components"
 import { BsArrowRight } from "solid-icons/bs"
 
 Artplayer.PLAYBACK_RATE = [0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4]
+Artplayer.REMOVE_SRC_WHEN_DESTROY = true
 
 export const players: {
   icon: string
@@ -66,7 +67,13 @@ export const players: {
     icon: "figplayer",
     name: "Fig Player",
     scheme: "figplayer://weblink?url=$durl",
-    platforms: ["MacOS"],
+    platforms: ["Windows", "MacOS"],
+  },
+  {
+    icon: "vivid",
+    name: "Vivid Player",
+    scheme: "vividplayer://play?src=direct&u=$edurl&title=$name",
+    platforms: ["Windows"],
   },
   {
     icon: "infuse",

@@ -59,7 +59,7 @@ export const SwitchLanguage = <C extends ElementType = "button">(
             pos="fixed"
             top={0}
             bg={useColorModeValue("$blackAlpha4", "$whiteAlpha4")()}
-            zIndex="9000"
+            zIndex="$notification"
           >
             <Spinner
               thickness="4px"

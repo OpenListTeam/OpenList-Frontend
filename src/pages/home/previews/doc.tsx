@@ -1,9 +1,13 @@
-import { BoxWithFullScreen, Error, FullLoading } from "~/components"
-import { objStore } from "~/store"
-import { Box, IconButton, Tooltip } from "@hope-ui/solid"
+import { BoxWithFullScreen, FullLoading, Error as Erro } from "~/components"
+import { Box, Button, IconButton, Tooltip } from "@hope-ui/solid"
+import { loadScriptIIFE } from "~/utils"
 import { createSignal, onMount, onCleanup, Show } from "solid-js"
-import { useT } from "~/hooks"
-import { VsScreenFull, VsScreenNormal } from "solid-icons/vs"
+import { useLink, useT, useCDN } from "~/hooks"
+
+import {
+  HiOutlineMagnifyingGlassPlus,
+  HiOutlineMagnifyingGlassMinus,
+} from "solid-icons/hi"
 
 // 声明全局docx类型
 declare global {
@@ -14,49 +18,14 @@ declare global {
 
 const DocViewerApp = () => {
   const t = useT()
+  const { currentObjLink } = useLink()
+  const { npm, docxPreviewPath } = useCDN()
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal(false)
-  const [isFullscreen, setIsFullscreen] = createSignal(false)
+  // null = auto-fit, number = manual zoom level
+  const [zoom, setZoom] = createSignal<number | null>(null)
   let containerRef: HTMLDivElement | undefined
   let resultRef: HTMLDivElement | undefined
-
-  // 加载外部脚本
-  const loadScript = (src: string, id: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // 检查脚本是否已加载
-      if (document.getElementById(id)) {
-        resolve()
-        return
-      }
-
-      const script = document.createElement("script")
-      script.src = src
-      script.id = id
-      script.type = "text/javascript"
-      script.onload = () => resolve()
-      script.onerror = () => reject(new Error(`Failed to load script: ${src}`))
-      document.head.appendChild(script)
-    })
-  }
-
-  // 加载CSS文件
-  const loadCSS = (href: string, id: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // 检查CSS是否已加载
-      if (document.getElementById(id)) {
-        resolve()
-        return
-      }
-
-      const link = document.createElement("link")
-      link.rel = "stylesheet"
-      link.href = href
-      link.id = id
-      link.onload = () => resolve()
-      link.onerror = () => reject(new Error(`Failed to load CSS: ${href}`))
-      document.head.appendChild(link)
-    })
-  }
 
   // 初始化DOCX预览
   const initDocViewer = async () => {
@@ -65,14 +34,13 @@ const DocViewerApp = () => {
       setError(false)
 
       // 加载jszip和docx-preview库
-      await loadScript(
-        "https://unpkg.com/jszip/dist/jszip.min.js",
-        "jszip-script",
+      // 加载前清理其他版本的 jszip，避免全局变量冲突
+      document.getElementById("jszip-2.6.1-script")?.remove()
+      await loadScriptIIFE(
+        npm("jszip", "3.10.1", "dist/jszip.min.js"),
+        "jszip-3.10.1-script",
       )
-      await loadScript(
-        "https://res.oplist.org.cn/docxjs/dist/docx-preview.min.js",
-        "docx-preview-script",
-      )
+      await loadScriptIIFE(docxPreviewPath(), "docx-preview-script")
 
       // 等待docx库加载完成
       if (!window.docx) {
@@ -80,7 +48,7 @@ const DocViewerApp = () => {
       }
 
       // 获取文件URL并下载
-      const fileUrl = objStore.raw_url
+      const fileUrl = currentObjLink()
       const response = await fetch(fileUrl)
       if (!response.ok) {
         throw new Error("Failed to fetch document file")
@@ -118,66 +86,102 @@ const DocViewerApp = () => {
     }
   }
 
-  // 全屏切换
-  const toggleFullscreen = () => {
-    if (!containerRef) return
-
-    if (!document.fullscreenElement) {
-      containerRef.requestFullscreen().then(() => {
-        setIsFullscreen(true)
-      })
+  // 应用缩放
+  const applyScale = () => {
+    if (!resultRef || !containerRef) return
+    const wrapper = resultRef.querySelector(
+      ".docx-preview-container",
+    ) as HTMLElement
+    if (!wrapper) return
+    const z = zoom()
+    if (z === null) {
+      // auto-fit: 缩放到容器宽度
+      const containerWidth = containerRef.clientWidth
+      const contentWidth = wrapper.scrollWidth
+      if (contentWidth > containerWidth) {
+        wrapper.style.zoom = `${containerWidth / contentWidth}`
+      } else {
+        wrapper.style.zoom = ""
+      }
     } else {
-      document.exitFullscreen().then(() => {
-        setIsFullscreen(false)
-      })
+      wrapper.style.zoom = `${z}`
     }
   }
 
-  // 监听全屏变化
-  const handleFullscreenChange = () => {
-    if (!document.fullscreenElement) {
-      setIsFullscreen(false)
-    }
+  // 缩放控制
+  const zoomStep = 0.1
+  const zoomIn = () => {
+    const current = zoom() ?? 1
+    setZoom(Math.min(current + zoomStep, 3))
+    applyScale()
+  }
+  const zoomOut = () => {
+    const current = zoom() ?? 1
+    setZoom(Math.max(current - zoomStep, 0.3))
+    applyScale()
+  }
+  const zoomReset = () => {
+    setZoom(null)
+    applyScale()
+  }
+
+  const setupResponsiveScale = () => {
+    if (!resultRef || !containerRef) return
+    const result = resultRef
+    const container = containerRef
+    const observer = new ResizeObserver(() => {
+      if (zoom() === null) applyScale()
+    })
+    observer.observe(container)
+    onCleanup(() => observer.disconnect())
   }
 
   onMount(() => {
     initDocViewer()
-    document.addEventListener("fullscreenchange", handleFullscreenChange)
-  })
-
-  onCleanup(() => {
-    document.removeEventListener("fullscreenchange", handleFullscreenChange)
-    // 清理加载的脚本和样式（可选）
+    setupResponsiveScale()
   })
 
   return (
     <BoxWithFullScreen w="$full" h="70vh" pos="relative">
-      {/* 全屏按钮 */}
+      {/* 缩放控制 */}
       <Box
         pos="absolute"
         top="$2"
-        right="$2"
+        left="$2"
         zIndex="10"
+        display="flex"
+        alignItems="center"
+        gap="$1"
         opacity="0.7"
         transition="opacity 0.2s"
         _hover={{ opacity: "1" }}
       >
+        <IconButton
+          size="sm"
+          colorScheme="neutral"
+          aria-label="Zoom Out"
+          icon={<HiOutlineMagnifyingGlassMinus />}
+          onClick={zoomOut}
+        />
         <Tooltip
           withArrow
           label={
-            isFullscreen()
-              ? t("home.preview.exit_fullscreen")
-              : t("home.preview.fullscreen")
+            zoom() === null
+              ? t("home.preview.auto_fit")
+              : t("home.preview.reset_zoom")
           }
         >
-          <IconButton
-            size="sm"
-            colorScheme="neutral"
-            aria-label="Toggle Fullscreen"
-            icon={isFullscreen() ? <VsScreenNormal /> : <VsScreenFull />}
-            onClick={toggleFullscreen}
-          />
+          <Button size="sm" colorScheme="neutral" onClick={zoomReset}>
+            {zoom() === null ? "Auto" : `${Math.round((zoom() ?? 1) * 100)}%`}
+          </Button>
         </Tooltip>
+        <IconButton
+          size="sm"
+          colorScheme="neutral"
+          aria-label="Zoom In"
+          icon={<HiOutlineMagnifyingGlassPlus />}
+          onClick={zoomIn}
+        />
       </Box>
 
       {/* DOCX容器 */}
@@ -195,8 +199,7 @@ const DocViewerApp = () => {
           ref={resultRef}
           id="docx-container"
           style={{
-            width: "100%",
-            height: "100%",
+            "min-width": "0",
             padding: "20px",
             display: loading() || error() ? "none" : "block",
           }}
@@ -209,7 +212,7 @@ const DocViewerApp = () => {
 
         {/* 错误状态 */}
         <Show when={error()}>
-          <Error msg={t("preview.failed_load_doc")} h="70vh" />
+          <Erro msg={t("preview.failed_load_doc")} h="70vh" />
         </Show>
       </div>
     </BoxWithFullScreen>

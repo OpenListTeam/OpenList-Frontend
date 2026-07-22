@@ -1,6 +1,6 @@
 import type Artplayer from "artplayer"
-import type SubtitlesOctopus from "libass-wasm"
-import { type Options } from "libass-wasm"
+import type SubtitlesOctopus from "@jellyfin/libass-wasm"
+import { type Options } from "@jellyfin/libass-wasm"
 
 export = artplayerPluginAss
 export as namespace artplayerPluginAss

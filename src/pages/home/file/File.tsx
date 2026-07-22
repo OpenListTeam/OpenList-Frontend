@@ -1,7 +1,7 @@
 import { HStack, VStack } from "@hope-ui/solid"
-import { createMemo, Show, Suspense } from "solid-js"
+import { createMemo, ErrorBoundary, Show, Suspense } from "solid-js"
 import { Dynamic } from "solid-js/web"
-import { FullLoading, SelectWrapper } from "~/components"
+import { Error, FullLoading, SelectWrapper } from "~/components"
 import { objStore } from "~/store"
 import { useRouter } from "~/hooks"
 import { Download } from "../previews/download"
@@ -10,19 +10,19 @@ import { getPreviews } from "../previews"
 
 const File = () => {
   const { searchParams, setSearchParams } = useRouter()
-  const previews = createMemo(() => {
-    return getPreviews({ ...objStore.obj, provider: objStore.provider })
-  })
-  const selectedPreviewKey = createMemo(() => searchParams["preview"] || "")
+  const previews = getPreviews({ ...objStore.obj, provider: objStore.provider })
   const cur = createMemo(() => {
-    const list = previews()
-    if (list.length === 0) return undefined
-    const selected = selectedPreviewKey()
-    return list.find((p) => p.key === selected) || list[0]
+    if (!previews.length) return undefined
+    const selected = searchParams["preview"]
+    if (selected) {
+      const found = previews.find((item) => item.key === selected)
+      if (found) return found
+    }
+    return previews[0]
   })
 
   return (
-    <Show when={previews().length > 1} fallback={<Download openWith />}>
+    <Show when={previews.length > 1} fallback={<Download openWith />}>
       <VStack w="$full" spacing="$2">
         <HStack w="$full" spacing="$2">
           <SelectWrapper
@@ -31,16 +31,18 @@ const File = () => {
             onChange={(key) => {
               setSearchParams({ preview: key }, { replace: true })
             }}
-            options={previews().map((item) => ({
+            options={previews.map((item) => ({
               value: item.key,
               label: item.name,
             }))}
           />
           <OpenWith />
         </HStack>
-        <Suspense fallback={<FullLoading />}>
-          <Dynamic component={cur()?.component} />
-        </Suspense>
+        <ErrorBoundary fallback={(err) => <Error msg={String(err)} />}>
+          <Suspense fallback={<FullLoading />}>
+            <Dynamic component={cur()?.component} />
+          </Suspense>
+        </ErrorBoundary>
       </VStack>
     </Show>
   )

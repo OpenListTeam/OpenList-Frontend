@@ -15,7 +15,7 @@ const About = () => {
   const [readme] = createResource(fetchReadme)
   return (
     <MaybeLoading loading={readme.loading}>
-      <Markdown children={readme()} />
+      <Markdown children={readme()} sanitize={true} />
     </MaybeLoading>
   )
 }

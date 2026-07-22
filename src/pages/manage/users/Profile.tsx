@@ -22,14 +22,10 @@ import { setMe, me, getSettingBool } from "~/store"
 import { PEmptyResp, UserMethods, UserPermissions, PResp } from "~/types"
 import { handleResp, handleRespWithoutNotify, notify, r } from "~/utils"
 import { WebauthnItem } from "./Webauthnitems"
-import {
-  RegistrationPublicKeyCredential,
-  create,
-  parseCreationOptionsFromJSON,
-  supported,
-  CredentialCreationOptionsJSON,
-} from "@github/webauthn-json/browser-ponyfill"
 import { PublicKeys } from "./PublicKeys"
+
+const supported = () =>
+  !!globalThis.PublicKeyCredential?.parseCreationOptionsFromJSON
 
 const PermissionBadge = (props: { can: boolean; children: JSXElement }) => {
   return (
@@ -63,7 +59,7 @@ const Profile = () => {
 
   interface Webauthntemp {
     session: string
-    options: CredentialCreationOptionsJSON
+    options: { publicKey: PublicKeyCredentialCreationOptionsJSON }
   }
 
   const [getauthncredentialsloading, getauthncredentials] = useFetch(
@@ -73,13 +69,10 @@ const Profile = () => {
     (): PResp<Webauthntemp> => r.get("/authn/webauthn_begin_registration"),
   )
   const [postregistrationloading, postregistration] = useFetch(
-    (
-      session: string,
-      credentials: RegistrationPublicKeyCredential,
-    ): PEmptyResp =>
+    (session: string, credentials: PublicKeyCredential): PEmptyResp =>
       r.post(
         "/authn/webauthn_finish_registration",
-        JSON.stringify(credentials),
+        JSON.stringify(credentials.toJSON()),
         {
           headers: {
             session: session,
@@ -284,10 +277,13 @@ const Profile = () => {
             }
             const resp = await getauthntemp()
             handleResp(resp, async (data) => {
-              const options = parseCreationOptionsFromJSON(data.options)
               const session = data.session
               try {
-                const browserresponse = await create(options)
+                const browserresponse = (await navigator.credentials.create({
+                  publicKey: PublicKeyCredential.parseCreationOptionsFromJSON(
+                    data.options.publicKey,
+                  ),
+                })) as PublicKeyCredential
                 handleResp(
                   await postregistration(session, browserresponse),
                   () => {
