@@ -421,6 +421,22 @@
     "upload_thread": "Upload thread",
     "upload_thread-tips": "1\u003c=thread\u003c=32"
   },
+  "Bunny Storage": {
+    "access_key": "Access key",
+    "cdn_base_url": "Cdn base url",
+    "cdn_token_include_ip": "Cdn token include ip",
+    "cdn_token_key": "Cdn token key",
+    "cdn_token_method": "Cdn token method",
+    "cdn_token_methods": {
+      "hmac_sha256": "Hmac sha256",
+      "sha256": "Sha256"
+    },
+    "endpoint": "Endpoint",
+    "placeholder": "Placeholder",
+    "root_folder_path": "Root folder path",
+    "sign_url_expire": "Sign url expire",
+    "storage_zone_name": "Storage zone name"
+  },
   "CNB Releases": {
     "default_branch": "Default branch",
     "default_branch-tips": "Default branch for new releases",
@@ -1547,6 +1563,7 @@
     "Azure Blob Storage": {},
     "BaiduNetdisk": {},
     "BaiduPhoto": {},
+    "Bunny Storage": {},
     "CNB Releases": {},
     "ChaoXingGroupDrive": {},
     "Chunk": {},
@@ -1644,6 +1661,7 @@
     "Azure Blob Storage": "Azure Blob Storage",
     "BaiduNetdisk": "BaiduNetdisk",
     "BaiduPhoto": "BaiduPhoto",
+    "Bunny Storage": "Bunny Storage",
     "CNB Releases": "CNB Releases",
     "ChaoXingGroupDrive": "ChaoXingGroupDrive",
     "Chunk": "Chunk",
