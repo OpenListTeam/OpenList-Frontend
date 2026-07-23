@@ -152,7 +152,20 @@ build_project() {
     log_step "==== Installing dependencies ===="
     pnpm install
 
-    log_step "==== Building project (English only, no crowdin) ===="
+    log_step "==== Building i18n ===="
+    if [[ "$SKIP_I18N" == "true" ]]; then
+        log_warning "Skipping i18n fetch (--skip-i18n)."
+    elif [[ -n "${CROWDIN_PERSONAL_TOKEN:-}" && -n "${CROWDIN_PROJECT_ID:-}" ]]; then
+        log_info "Crowdin credentials found, downloading translations..."
+        pnpm i18n:release || fetch_i18n_from_release
+    else
+        # No Crowdin token: reuse official OpenList i18n pack (default path)
+        fetch_i18n_from_release
+    fi
+    # Ensure every locale has entry.ts (copied from en)
+    pnpm i18n:prepare
+
+    log_step "==== Building project ===="
     if [[ "$LITE_FLAG" == "true" ]]; then
         pnpm build:lite
     else
@@ -160,33 +173,57 @@ build_project() {
     fi
 }
 
-# Fetch i18n files from release if skip-i18n flag is set
+# Fetch i18n files from OpenListTeam GitHub release
 fetch_i18n_from_release() {
-    log_warning "Skipping i18n build step, try to fetch from GitHub release"
-    release_response=$(curl -s "https://api.github.com/repos/OpenListTeam/OpenList-Frontend/releases/tags/$git_version")
-    if echo -n "$release_response" | grep -q "Not Found"; then
-        log_warning "Failed to fetch release info. Skipping i18n fetch."
+    log_info "Fetching i18n.tar.gz from OpenListTeam/OpenList-Frontend release..."
+    # Prefer matching tag, then package version, then latest release that has i18n.tar.gz
+    for tag in "$git_version" "v${git_version_clean}" "v$(grep '"version":' package.json | sed 's/.*"version": *"\([^"]*\)".*/\1/')"; do
+        release_response=$(curl -s "https://api.github.com/repos/OpenListTeam/OpenList-Frontend/releases/tags/$tag")
+        if ! echo -n "$release_response" | grep -q "Not Found"; then
+            if extract_i18n_tarball "$release_response"; then
+                return 0
+            fi
+        fi
+    done
+
+    log_warning "Tag-specific release missing i18n, trying latest releases..."
+    releases_response=$(curl -s "https://api.github.com/repos/OpenListTeam/OpenList-Frontend/releases?per_page=10")
+    i18n_file_url=$(echo "$releases_response" | grep -oP '"browser_download_url":\s*"\K[^"]*' | grep "i18n.tar.gz" | head -n 1) || true
+    if [[ -n "$i18n_file_url" ]]; then
+        download_and_extract_i18n "$i18n_file_url"
     else
-        extract_i18n_tarball "$release_response"
+        log_warning "i18n.tar.gz not found. Build will keep existing src/lang files."
     fi
 }
 
-# Extract i18n tarball
+# Extract i18n tarball from a release API JSON body
 extract_i18n_tarball() {
     i18n_file_url=$(echo "$1" | grep -oP '"browser_download_url":\s*"\K[^"]*' | grep "i18n.tar.gz") || true
     if [[ -z "$i18n_file_url" ]]; then
-        log_warning "i18n.tar.gz not found in release assets. Skipping i18n fetch."
-    else
-        log_info "Downloading i18n.tar.gz from GitHub..."
-        if curl -L -o "i18n.tar.gz" "$i18n_file_url"; then
-            if tar -xzvf i18n.tar.gz -C src/lang; then
-                log_info "i18n files extracted to src/lang/"
-            else
-                log_warning "Failed to extract i18n.tar.gz"
-            fi
+        return 1
+    fi
+    download_and_extract_i18n "$i18n_file_url"
+}
+
+download_and_extract_i18n() {
+    log_info "Downloading i18n.tar.gz from $1 ..."
+    if curl -L -o "i18n.tar.gz" "$1"; then
+        if tar -xzf i18n.tar.gz -C src/lang; then
+            rm -f i18n.tar.gz
+            # Drop incomplete legacy dirs without index.json
+            for d in src/lang/*/; do
+                [ -f "${d}index.json" ] || rm -rf "$d"
+            done
+            log_info "i18n files extracted to src/lang/"
+            return 0
         else
-            log_warning "Failed to download i18n.tar.gz"
+            log_warning "Failed to extract i18n.tar.gz"
+            rm -f i18n.tar.gz
+            return 1
         fi
+    else
+        log_warning "Failed to download i18n.tar.gz"
+        return 1
     fi
 }
 

@@ -20,6 +20,12 @@
   ],
   "homepage": "https://openlist.team/",
   "scripts": {
+    "crowdin:upload": "crowdin upload sources --auto-update",
+    "crowdin:download": "crowdin download --verbose",
+    "crowdin": "pnpm crowdin:upload && pnpm crowdin:download",
+    "i18n:prepare": "node ./scripts/i18n.mjs",
+    "i18n:build": "pnpm crowdin && node ./scripts/i18n.mjs",
+    "i18n:release": "pnpm run crowdin:download && node ./scripts/i18n.mjs",
     "start": "vite",
     "dev": "vite --force",
     "build": "vite build",
@@ -27,7 +33,8 @@
     "serve": "vite preview",
     "prepare": "husky",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "format": "prettier --ignore-path .gitignore -w \"src/**/*.{js,ts,json,css,tsx,jsx}\""
+    "format": "prettier --ignore-path .gitignore -w \"src/**/*.{js,ts,json,css,tsx,jsx}\"",
+    "i18n:fetch": "node ./scripts/i18n-fetch.mjs"
   },
   "license": "MIT",
   "devDependencies": {

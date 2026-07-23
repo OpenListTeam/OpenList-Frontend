@@ -26,11 +26,14 @@ export const SwitchLanguage = <C extends ElementType = "button">(
   }
 
   if (!localStorage.getItem("lang")) {
-    switchLang(
-      languages.find((l) => l.code === navigator.language)
-        ? navigator.language
-        : "en",
-    )
+    const nav = navigator.language.toLowerCase()
+    const matched =
+      languages.find((l) => l.code.toLowerCase() === nav)?.code ||
+      languages.find(
+        (l) => l.code.toLowerCase().split("-")[0] === nav.split("-")[0],
+      )?.code ||
+      "en"
+    switchLang(matched)
   }
 
   return (
