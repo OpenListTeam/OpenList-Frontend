@@ -113,6 +113,8 @@
     "cloud_id": "Cloud id",
     "custom_upload_part_size": "Custom upload part size",
     "custom_upload_part_size-tips": "0 for auto",
+    "link_id": "Link id",
+    "link_id-tips": "Multiple shares are separated by commas or new lines. Use link_id#password for password-protected shares.",
     "mail_cookies": "Mail cookies",
     "mail_cookies-tips": "Cookies from mail.139.com used for login authentication.",
     "password": "Password",
@@ -124,10 +126,13 @@
       "family": "Family",
       "group": "Group",
       "personal": "Personal",
-      "personal_new": "Personal new"
+      "personal_new": "Personal new",
+      "share": "Share"
     },
     "use_large_thumbnail": "Use large thumbnail",
     "use_large_thumbnail-tips": "Enable to use large thumbnail for images",
+    "use_old_stream_upload": "Use old stream upload",
+    "use_old_stream_upload-tips": "Enable to use old stream upload method (not support rapid upload)",
     "user_domain_id": "User domain id",
     "user_domain_id-tips": "ud_id in Cookie, fill in to show disk usage",
     "username": "Username"
