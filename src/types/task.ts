@@ -11,3 +11,7 @@ export interface TaskInfo {
   total_bytes: number
   error: string
 }
+
+export interface TaskPathResult {
+  count: number
+}

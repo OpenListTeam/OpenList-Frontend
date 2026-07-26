@@ -19,12 +19,14 @@ import {
   onCleanup,
   Show,
 } from "solid-js"
-import { Paginator } from "~/components"
+import { ModalInput, Paginator } from "~/components"
 import { useFetch, useT } from "~/hooks"
-import { PEmptyResp, PResp, TaskInfo } from "~/types"
+import { PEmptyResp, PResp, Resp, TaskInfo, TaskPathResult } from "~/types"
 import { handleResp, notify, r } from "~/utils"
 import { TaskCol, cols, Task, TaskOrderBy, TaskLocal } from "./Task"
 import { me } from "~/store"
+
+type PathBatchAction = "delete" | "cancel" | "retry"
 
 export interface TaskNameAnalyzer {
   regex: RegExp
@@ -212,6 +214,44 @@ export const Tasks = (props: TasksProps) => {
     (): PEmptyResp =>
       r.post(`/task/${props.type}/${operateName}_some`, getSelectedId()),
   )
+  const [pathModalOpen, setPathModalOpen] = createSignal(false)
+  const [pathAction, setPathAction] = createSignal<PathBatchAction>("delete")
+  const [pathBatchLoading, setPathBatchLoading] = createSignal(false)
+  const openPathModal = (action: PathBatchAction) => {
+    setPathAction(action)
+    setPathModalOpen(true)
+  }
+  const submitPathBatch = async (path: string) => {
+    const trimmed = path.trim()
+    if (!trimmed) {
+      notify.warning(t("global.empty_input"))
+      return
+    }
+    if (pathAction() === "delete") {
+      const ok = window.confirm(
+        t("tasks.delete_by_path_confirm", { path: trimmed }),
+      )
+      if (!ok) return
+    }
+    setPathBatchLoading(true)
+    try {
+      const resp = (await r.post(
+        `/task/${props.type}/${pathAction()}_by_path`,
+        { path: trimmed },
+      )) as Resp<TaskPathResult>
+      handleResp(resp, (data) => {
+        notify.success(
+          t("tasks.path_batch_result", {
+            count: data?.count ?? 0,
+          }),
+        )
+        setPathModalOpen(false)
+        refresh()
+      })
+    } finally {
+      setPathBatchLoading(false)
+    }
+  }
   const notifyIndividualError = (msg: Record<string, string>) => {
     Object.entries(msg).forEach(([key, value]) => {
       notify.error(`${key}: ${value}`)
@@ -326,6 +366,31 @@ export const Tasks = (props: TasksProps) => {
         >
           {t(`tasks.${operateName}_selected`)}
         </Button>
+        <Show when={props.done === "undone"}>
+          <Button
+            colorScheme="warning"
+            variant="outline"
+            onClick={() => openPathModal("cancel")}
+          >
+            {t("tasks.cancel_by_path")}
+          </Button>
+        </Show>
+        <Button
+          colorScheme="danger"
+          variant="outline"
+          onClick={() => openPathModal("delete")}
+        >
+          {t("tasks.delete_by_path")}
+        </Button>
+        <Show when={props.done === "done" && props.canRetry}>
+          <Button
+            colorScheme="primary"
+            variant="outline"
+            onClick={() => openPathModal("retry")}
+          >
+            {t("tasks.retry_by_path")}
+          </Button>
+        </Show>
         <Input
           width="auto"
           placeholder={t(`tasks.filter`)}
@@ -342,6 +407,14 @@ export const Tasks = (props: TasksProps) => {
           </Checkbox>
         </Show>
       </HStack>
+      <ModalInput
+        title={`tasks.${pathAction()}_by_path`}
+        tips={t("tasks.path_tips")}
+        opened={pathModalOpen()}
+        onClose={() => setPathModalOpen(false)}
+        loading={pathBatchLoading()}
+        onSubmit={submitPathBatch}
+      />
       <VStack
         w={{ "@initial": "1024px", "@lg": "$full" }}
         overflowX="auto"
