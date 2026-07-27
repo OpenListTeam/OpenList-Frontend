@@ -28,6 +28,22 @@ import { me } from "~/store"
 
 type PathBatchAction = "delete" | "cancel" | "retry"
 
+const normalizesToRoot = (path: string) => {
+  const normalized = path
+    .replaceAll("\\", "/")
+    .split("/")
+    .reduce<string[]>((parts, part) => {
+      if (!part || part === ".") return parts
+      if (part === "..") {
+        parts.pop()
+        return parts
+      }
+      parts.push(part)
+      return parts
+    }, [])
+  return normalized.length === 0
+}
+
 export interface TaskNameAnalyzer {
   regex: RegExp
   title: (matches: RegExpMatchArray) => string
@@ -227,6 +243,10 @@ export const Tasks = (props: TasksProps) => {
       notify.warning(t("global.empty_input"))
       return
     }
+    if (me().role === 2 && trimmed !== "/" && normalizesToRoot(trimmed)) {
+      notify.warning(t("tasks.path_explicit_root_required"))
+      return
+    }
     if (pathAction() === "delete") {
       const ok = window.confirm(
         t("tasks.delete_by_path_confirm", { path: trimmed }),
@@ -242,7 +262,8 @@ export const Tasks = (props: TasksProps) => {
       handleResp(resp, (data) => {
         notify.success(
           t("tasks.path_batch_result", {
-            count: data?.count ?? 0,
+            matched: data?.matched ?? 0,
+            processed: data?.processed ?? 0,
           }),
         )
         setPathModalOpen(false)

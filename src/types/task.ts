@@ -13,5 +13,6 @@ export interface TaskInfo {
 }
 
 export interface TaskPathResult {
-  count: number
+  matched: number
+  processed: number
 }
