@@ -44,7 +44,7 @@ export const WebauthnItem = (props: WebauthnItemProps) => {
         <HStack spacing="$2">
           <PasskeyIcon />
           <Heading color="$info9" size="sm">
-            {props.name}
+            {props.name?.trim() || t("users.passkey_unnamed")}
           </Heading>
         </HStack>
         <Text fontSize="$sm">
@@ -54,20 +54,6 @@ export const WebauthnItem = (props: WebauthnItemProps) => {
         <Text fontSize="$sm">
           {t("users.passkey_last_used")}:{" "}
           {formatTime(props.last_used_at, t("users.passkey_never_used"))}
-        </Text>
-        <Text
-          fontSize="$xs"
-          color="$neutral10"
-          css={{ wordBreak: "break-all" }}
-        >
-          {t("users.passkey_fingerprint")}: {props.fingerprint || "—"}
-        </Text>
-        <Text
-          fontSize="$xs"
-          color="$neutral10"
-          css={{ wordBreak: "break-all" }}
-        >
-          ID: {props.id}
         </Text>
       </VStack>
       <HStack alignSelf={{ "@xl": "center" }} spacing="$2">
@@ -93,7 +79,7 @@ export const WebauthnItem = (props: WebauthnItemProps) => {
           opened
           onClose={() => setRenameOpened(false)}
           title="users.passkey_rename"
-          defaultValue={props.name}
+          defaultValue={props.name?.trim()}
           loading={renameLoading()}
           onSubmit={async (name) => {
             handleResp(await rename(name), () => {

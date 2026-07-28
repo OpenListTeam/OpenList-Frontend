@@ -327,6 +327,7 @@ const Profile = () => {
           <PasskeyIcon />
           <Heading>{t("users.webauthn")}</Heading>
         </HStack>
+        <Text color="$neutral11">{t("users.passkey_description")}</Text>
         <VStack
           role={credentials().length > 0 ? "list" : undefined}
           w="$full"
