@@ -10,10 +10,9 @@ import {
   HStack,
   VStack,
   Checkbox,
-  Icon,
 } from "@hope-ui/solid"
-import { createMemo, createSignal, Show, onMount, onCleanup } from "solid-js"
-import { SwitchColorMode, SwitchLanguageWhite } from "~/components"
+import { createMemo, createSignal, Show, onCleanup } from "solid-js"
+import { PasskeyIcon, SwitchColorMode, SwitchLanguageWhite } from "~/components"
 import { useFetch, useLoading, useT, useTitle, useRouter } from "~/hooks"
 import {
   changeToken,
@@ -23,15 +22,17 @@ import {
   base_path,
   handleResp,
   hashPwd,
+  getPasskey,
+  isWebAuthnSupported,
+  passkeyLoginQuery,
+  runPasskeyAction,
+  webAuthnErrorMessage,
 } from "~/utils"
-import { PResp, Resp } from "~/types"
+import { PasskeyChallenge, PResp, Resp } from "~/types"
 import LoginBg from "./LoginBg"
 import { createStorageSignal } from "@solid-primitives/storage"
 import { getSetting, getSettingBool } from "~/store"
 import { SSOLogin } from "./SSOLogin"
-import { IoFingerPrint } from "solid-icons/io"
-const supported = () =>
-  !!globalThis.PublicKeyCredential?.parseRequestOptionsFromJSON
 
 const Login = () => {
   const logos = getSetting("logo").split("\n")
@@ -77,7 +78,7 @@ const Login = () => {
       signal: AbortSignal | undefined,
     ): Promise<Resp<{ token: string }>> =>
       r.post(
-        "/authn/webauthn_finish_login?username=" + username,
+        "/authn/webauthn_finish_login?" + passkeyLoginQuery(username),
         JSON.stringify(credentials.toJSON()),
         {
           headers: {
@@ -87,99 +88,83 @@ const Login = () => {
         },
       ),
   )
-  interface WebAuthnTemp {
-    session: string
-    options: { publicKey: PublicKeyCredentialRequestOptionsJSON }
-  }
   const [, getauthntemp] = useFetch(
-    (username, signal: AbortSignal | undefined): PResp<WebAuthnTemp> =>
-      r.get("/authn/webauthn_begin_login?username=" + username, {
+    (
+      username: string,
+      signal: AbortSignal | undefined,
+    ): PResp<PasskeyChallenge<PublicKeyCredentialRequestOptionsJSON>> =>
+      r.get("/authn/webauthn_begin_login?" + passkeyLoginQuery(username), {
         signal,
       }),
   )
   const { searchParams, to } = useRouter()
-  const isAuthnConditionalAvailable = async (): Promise<boolean> => {
-    if (
-      PublicKeyCredential &&
-      "isConditionalMediationAvailable" in PublicKeyCredential
-    ) {
-      return await PublicKeyCredential.isConditionalMediationAvailable()
-    } else {
-      return false
-    }
-  }
   const AuthnSignEnabled = getSettingBool("webauthn_login_enabled")
-  const AuthnSwitch = async () => {
+  const [passkeyLoginLoading, setPasskeyLoginLoading] = createSignal(false)
+  const AuthnSwitch = () => {
     setuseauthn(!useauthn())
   }
   let AuthnSignal: AbortController | null = null
-  const AuthnLogin = async (conditional?: boolean) => {
-    if (!supported()) {
-      if (!conditional) {
-        notify.error(t("users.webauthn_not_supported"))
-      }
-      return
-    }
-    if (conditional && !(await isAuthnConditionalAvailable())) {
+  const AuthnLogin = async () => {
+    if (!isWebAuthnSupported()) {
+      notify.error(t("users.webauthn_not_supported"))
       return
     }
     AuthnSignal?.abort()
     const controller = new AbortController()
     AuthnSignal = controller
-    const username_login: string = conditional ? "" : username()
-    if (!conditional && remember() === "true") {
+    const username_login = username()
+    if (remember() === "true") {
       localStorage.setItem("username", username())
     } else {
       localStorage.removeItem("username")
     }
     const resp = await getauthntemp(username_login, controller.signal)
-    handleResp(resp, async (data) => {
-      try {
-        const requestOptions: CredentialRequestOptions = {
-          publicKey: PublicKeyCredential.parseRequestOptionsFromJSON(
-            data.options.publicKey,
-          ),
-          signal: controller.signal,
-        }
-        if (conditional) {
-          requestOptions.mediation = "conditional"
-        }
-        const credentials = (await navigator.credentials.get(
-          requestOptions,
-        )) as PublicKeyCredential
-        const resp = await postauthnlogin(
-          data.session,
-          credentials,
-          username_login,
-          controller.signal,
+    if (resp.code !== 200) {
+      handleResp(resp)
+      return
+    }
+    try {
+      const data = resp.data
+      const credentials = await getPasskey(
+        data.options.publicKey,
+        controller.signal,
+      )
+      if (!credentials) {
+        throw new DOMException(
+          "No passkey credential was returned.",
+          "NotAllowedError",
         )
-        handleRespWithoutAuthAndNotify(
-          resp,
-          (data) => {
-            notify.success(t("login.success"))
-            changeToken(data.token)
-            to(
-              decodeURIComponent(searchParams.redirect || base_path || "/"),
-              true,
-            )
-          },
-          (msg) => {
-            notify.error(msg)
-          },
-        )
-      } catch (error: unknown) {
-        if (error instanceof Error && error.name != "AbortError")
-          notify.error(error.message)
       }
-    })
+      const finishResp = await postauthnlogin(
+        data.session,
+        credentials,
+        username_login,
+        controller.signal,
+      )
+      handleRespWithoutAuthAndNotify(
+        finishResp,
+        (data) => {
+          notify.success(t("login.success"))
+          changeToken(data.token)
+          to(
+            decodeURIComponent(searchParams.redirect || base_path || "/"),
+            true,
+          )
+        },
+        (msg) => {
+          notify.error(msg)
+        },
+      )
+    } catch (error: unknown) {
+      if (!(error instanceof Error) || error.name !== "AbortError") {
+        notify.error(webAuthnErrorMessage(error))
+      }
+    }
   }
   const AuthnCleanUpHandler = () => AuthnSignal?.abort()
-  onMount(() => {
-    if (AuthnSignEnabled) {
-      window.addEventListener("beforeunload", AuthnCleanUpHandler)
-      AuthnLogin(true)
-    }
-  })
+  if (AuthnSignEnabled) {
+    window.addEventListener("beforeunload", AuthnCleanUpHandler)
+  }
   onCleanup(() => {
     AuthnSignal?.abort()
     window.removeEventListener("beforeunload", AuthnCleanUpHandler)
@@ -214,7 +199,9 @@ const Login = () => {
         },
       )
     } else {
-      await AuthnLogin()
+      await runPasskeyAction(passkeyLoginLoading, setPasskeyLoginLoading, () =>
+        AuthnLogin(),
+      )
     }
   }
   const [needOpt, setNeedOpt] = createSignal(false)
@@ -317,8 +304,13 @@ const Login = () => {
               {t("login.clear")}
             </Button>
           </Show>
-          <Button w="$full" loading={loading()} onClick={Login}>
-            {t("login.login")}
+          <Button
+            w="$full"
+            leftIcon={useauthn() ? <PasskeyIcon /> : undefined}
+            loading={useauthn() ? passkeyLoginLoading() : loading()}
+            onClick={Login}
+          >
+            {useauthn() ? t("login.passkey_login") : t("login.login")}
           </Button>
         </HStack>
         <Show when={ldapLoginEnabled}>
@@ -354,13 +346,17 @@ const Login = () => {
           <SwitchColorMode />
           <SSOLogin />
           <Show when={AuthnSignEnabled}>
-            <Icon
-              cursor="pointer"
-              boxSize="$8"
-              as={IoFingerPrint}
-              p="$0_5"
-              onclick={AuthnSwitch}
-            />
+            <Button
+              size="sm"
+              variant="ghost"
+              aria-pressed={useauthn()}
+              leftIcon={!useauthn() ? <PasskeyIcon /> : undefined}
+              onClick={AuthnSwitch}
+            >
+              {useauthn()
+                ? t("login.toggle_password")
+                : t("login.toggle_passkey")}
+            </Button>
           </Show>
         </Flex>
       </VStack>

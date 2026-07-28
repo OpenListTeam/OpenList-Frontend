@@ -9,5 +9,8 @@
   "clear": "Clear",
   "login": "Login",
   "use_guest": "Browse as a guest",
-  "success": "Login successfully"
+  "success": "Login successfully",
+  "passkey_login": "Sign in with a passkey",
+  "toggle_passkey": "Use passkey sign-in",
+  "toggle_password": "Use password sign-in"
 }
