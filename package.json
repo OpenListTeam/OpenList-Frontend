@@ -29,6 +29,7 @@
     "dev": "vite --force",
     "build": "vite build",
     "build:lite": "cross-env VITE_LITE=true vite build",
+    "test:passkey-registration": "node --test --experimental-strip-types src/utils/webauthn.test.ts",
     "serve": "vite preview",
     "prepare": "husky",
     "lint": "tsc -p tsconfig.json --noEmit",

@@ -15,17 +15,37 @@ import {
   VStack,
   Text,
 } from "@hope-ui/solid"
-import { createSignal, For, JSXElement, onCleanup, Show } from "solid-js"
-import { LinkWithBase, MaybeLoading } from "~/components"
+import {
+  createSignal,
+  For,
+  JSXElement,
+  onCleanup,
+  onMount,
+  Show,
+} from "solid-js"
+import { LinkWithBase, MaybeLoading, ModalInput } from "~/components"
 import { useFetch, useManageTitle, useRouter, useT } from "~/hooks"
 import { setMe, me, getSettingBool } from "~/store"
-import { PEmptyResp, UserMethods, UserPermissions, PResp } from "~/types"
-import { handleResp, handleRespWithoutNotify, notify, r } from "~/utils"
+import {
+  PasskeyChallenge,
+  PasskeyCredential,
+  PEmptyResp,
+  UserMethods,
+  UserPermissions,
+  PResp,
+} from "~/types"
+import {
+  createPasskey,
+  handleResp,
+  handleRespWithoutNotify,
+  isWebAuthnSupported,
+  notify,
+  r,
+  runPasskeyAction,
+  webAuthnErrorMessage,
+} from "~/utils"
 import { WebauthnItem } from "./Webauthnitems"
 import { PublicKeys } from "./PublicKeys"
-
-const supported = () =>
-  !!globalThis.PublicKeyCredential?.parseCreationOptionsFromJSON
 
 const PermissionBadge = (props: { can: boolean; children: JSXElement }) => {
   return (
@@ -52,23 +72,18 @@ const Profile = () => {
       }),
   )
 
-  interface WebauthnItem {
-    fingerprint: string
-    id: string
-  }
-
-  interface Webauthntemp {
-    session: string
-    options: { publicKey: PublicKeyCredentialCreationOptionsJSON }
-  }
-
   const [getauthncredentialsloading, getauthncredentials] = useFetch(
-    (): PResp<WebauthnItem[]> => r.get("/authn/getcredentials"),
+    (): PResp<PasskeyCredential[]> => r.get("/authn/getcredentials"),
   )
   const [, getauthntemp] = useFetch(
-    (): PResp<Webauthntemp> => r.get("/authn/webauthn_begin_registration"),
+    (
+      name: string,
+    ): PResp<PasskeyChallenge<PublicKeyCredentialCreationOptionsJSON>> =>
+      r.get(
+        `/authn/webauthn_begin_registration?name=${encodeURIComponent(name)}`,
+      ),
   )
-  const [postregistrationloading, postregistration] = useFetch(
+  const [, postregistration] = useFetch(
     (session: string, credentials: PublicKeyCredential): PEmptyResp =>
       r.post(
         "/authn/webauthn_finish_registration",
@@ -112,18 +127,63 @@ const Profile = () => {
   onCleanup(() => {
     window.removeEventListener("message", messageEvent)
   })
-  const [credentials, setcredentials] = createSignal<WebauthnItem[]>([])
-  const initauthnEdit = async () => {
+  const [credentials, setcredentials] = createSignal<PasskeyCredential[]>([])
+  const [credentialsError, setCredentialsError] = createSignal("")
+  const [addPasskeyOpened, setAddPasskeyOpened] = createSignal(false)
+  const [registrationLoading, setRegistrationLoading] = createSignal(false)
+  const refreshCredentials = async () => {
+    setCredentialsError("")
     const resp = await getauthncredentials()
-    handleRespWithoutNotify(resp, setcredentials)
+    handleRespWithoutNotify(resp, setcredentials, (message) =>
+      setCredentialsError(message),
+    )
   }
-  if (
-    supported() &&
-    !UserMethods.is_guest(me()) &&
-    getSettingBool("webauthn_login_enabled")
-  ) {
-    initauthnEdit()
+  const registerPasskey = async (name: string) => {
+    if (!isWebAuthnSupported()) {
+      notify.error(t("users.webauthn_not_supported"))
+      return
+    }
+    await runPasskeyAction(
+      registrationLoading,
+      setRegistrationLoading,
+      async () => {
+        const resp = await getauthntemp(name)
+        if (resp.code !== 200) {
+          handleResp(resp)
+          return
+        }
+
+        const data = resp.data
+        try {
+          const credential = await createPasskey(data.options.publicKey)
+          if (!credential) {
+            throw new DOMException(
+              "No passkey credential was returned.",
+              "NotAllowedError",
+            )
+          }
+          const finishResp = await postregistration(data.session, credential)
+          if (finishResp.code !== 200) {
+            handleResp(finishResp)
+            return
+          }
+          notify.success(t("users.add_webauthn_success"))
+          setAddPasskeyOpened(false)
+          await refreshCredentials()
+        } catch (error: unknown) {
+          notify.error(webAuthnErrorMessage(error))
+        }
+      },
+    )
   }
+  onMount(() => {
+    if (
+      !UserMethods.is_guest(me()) &&
+      getSettingBool("webauthn_login_enabled")
+    ) {
+      refreshCredentials()
+    }
+  })
   return (
     <VStack w="$full" spacing="$4" alignItems="start">
       <Show
@@ -259,45 +319,72 @@ const Profile = () => {
         }
       >
         <Heading>{t("users.webauthn")}</Heading>
-        <HStack wrap="wrap" gap="$2" mt="$2">
+        <Text color="$neutral11">{t("users.passkey_description")}</Text>
+        <VStack
+          role={credentials().length > 0 ? "list" : undefined}
+          w="$full"
+          alignItems="start"
+          spacing="$2"
+          mt="$2"
+        >
           <MaybeLoading loading={getauthncredentialsloading()}>
-            <For each={credentials()}>
-              {(item) => (
-                <WebauthnItem id={item.id} fingerprint={item.fingerprint} />
-              )}
-            </For>
-          </MaybeLoading>
-        </HStack>
-        <Button
-          loading={postregistrationloading()}
-          onClick={async () => {
-            if (!supported()) {
-              notify.error(t("users.webauthn_not_supported"))
-              return
-            }
-            const resp = await getauthntemp()
-            handleResp(resp, async (data) => {
-              const session = data.session
-              try {
-                const browserresponse = (await navigator.credentials.create({
-                  publicKey: PublicKeyCredential.parseCreationOptionsFromJSON(
-                    data.options.publicKey,
-                  ),
-                })) as PublicKeyCredential
-                handleResp(
-                  await postregistration(session, browserresponse),
-                  () => {
-                    notify.success(t("users.add_webauthn_success"))
-                  },
-                )
-              } catch (error: unknown) {
-                if (error instanceof Error) notify.error(error.message)
+            <Show when={credentialsError()}>
+              <Alert status="danger">
+                <AlertIcon mr="$2_5" />
+                <AlertDescription>{credentialsError()}</AlertDescription>
+                <Button ml="auto" size="sm" onClick={refreshCredentials}>
+                  {t("users.passkey_retry")}
+                </Button>
+              </Alert>
+            </Show>
+            <Show
+              when={!credentialsError() && credentials().length > 0}
+              fallback={
+                <Show when={!credentialsError()}>
+                  <Text role="status">{t("users.passkey_empty")}</Text>
+                </Show>
               }
-            })
-          }}
+            >
+              <For each={credentials()}>
+                {(item) => (
+                  <WebauthnItem
+                    {...item}
+                    onRenamed={(name) =>
+                      setcredentials((current) =>
+                        current.map((credential) =>
+                          credential.id === item.id
+                            ? { ...credential, name }
+                            : credential,
+                        ),
+                      )
+                    }
+                    onRevoked={() =>
+                      setcredentials((current) =>
+                        current.filter(
+                          (credential) => credential.id !== item.id,
+                        ),
+                      )
+                    }
+                  />
+                )}
+              </For>
+            </Show>
+          </MaybeLoading>
+        </VStack>
+        <Button
+          loading={registrationLoading()}
+          onClick={() => setAddPasskeyOpened(true)}
         >
           {t("users.add_webauthn")}
         </Button>
+        <ModalInput
+          opened={addPasskeyOpened()}
+          onClose={() => setAddPasskeyOpened(false)}
+          title="users.passkey_name"
+          loading={registrationLoading()}
+          tips={t("users.passkey_name_tips")}
+          onSubmit={registerPasskey}
+        />
       </Show>
       <HStack wrap="wrap" gap="$2" mt="$2">
         <For each={UserPermissions}>
