@@ -24,9 +24,6 @@ export const webAuthnErrorMessage = (error: unknown) => {
   return webAuthnErrorMessages[error.name] || error.message
 }
 
-export const passkeyLoginQuery = (username: string) =>
-  new URLSearchParams({ username }).toString()
-
 export const runPasskeyAction = async (
   isLoading: () => boolean,
   setLoading: (loading: boolean) => void,

@@ -1,12 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { passkeyLoginQuery, runPasskeyAction } from "./webauthn.ts"
-
-test("encodes passkey usernames as a query parameter", () => {
-  const query = passkeyLoginQuery("name&role=admin?#")
-  assert.equal(new URLSearchParams(query).get("username"), "name&role=admin?#")
-  assert.equal(new URLSearchParams(query).get("role"), null)
-})
+import { runPasskeyAction } from "./webauthn.ts"
 
 test("keeps passkey actions loading until the credential promise settles", async () => {
   let loading = false

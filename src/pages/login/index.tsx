@@ -24,7 +24,6 @@ import {
   hashPwd,
   getPasskey,
   isWebAuthnSupported,
-  passkeyLoginQuery,
   runPasskeyAction,
   webAuthnErrorMessage,
 } from "~/utils"
@@ -77,7 +76,8 @@ const Login = () => {
       signal: AbortSignal | undefined,
     ): Promise<Resp<{ token: string }>> =>
       r.post(
-        "/authn/webauthn_finish_login?" + passkeyLoginQuery(username),
+        "/authn/webauthn_finish_login?" +
+          new URLSearchParams({ username }).toString(),
         JSON.stringify(credentials.toJSON()),
         {
           headers: {
@@ -92,9 +92,11 @@ const Login = () => {
       username: string,
       signal: AbortSignal | undefined,
     ): PResp<PasskeyChallenge<PublicKeyCredentialRequestOptionsJSON>> =>
-      r.get("/authn/webauthn_begin_login?" + passkeyLoginQuery(username), {
-        signal,
-      }),
+      r.get(
+        "/authn/webauthn_begin_login?" +
+          new URLSearchParams({ username }).toString(),
+        { signal },
+      ),
   )
   const { searchParams, to } = useRouter()
   const AuthnSignEnabled = getSettingBool("webauthn_login_enabled")
