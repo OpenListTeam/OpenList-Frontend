@@ -1,6 +1,6 @@
 import { Button, Heading, HStack, Stack, Text, VStack } from "@hope-ui/solid"
 import { createSignal, Show } from "solid-js"
-import { ModalInput, PasskeyIcon } from "~/components"
+import { ModalInput } from "~/components"
 import { useFetch, useT } from "~/hooks"
 import { PasskeyCredential, PEmptyResp } from "~/types"
 import { handleResp, notify, r } from "~/utils"
@@ -41,12 +41,9 @@ export const WebauthnItem = (props: WebauthnItemProps) => {
       spacing="$3"
     >
       <VStack w="$full" alignItems="start" spacing="$1">
-        <HStack spacing="$2">
-          <PasskeyIcon />
-          <Heading color="$info9" size="sm">
-            {props.name?.trim() || t("users.passkey_unnamed")}
-          </Heading>
-        </HStack>
+        <Heading color="$info9" size="sm">
+          {props.name?.trim() || t("users.passkey_unnamed")}
+        </Heading>
         <Text fontSize="$sm">
           {t("users.passkey_created")}:{" "}
           {formatTime(props.created_at, t("users.passkey_unknown"))}

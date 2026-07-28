@@ -12,7 +12,7 @@ import {
   Checkbox,
 } from "@hope-ui/solid"
 import { createMemo, createSignal, Show, onCleanup } from "solid-js"
-import { PasskeyIcon, SwitchColorMode, SwitchLanguageWhite } from "~/components"
+import { SwitchColorMode, SwitchLanguageWhite } from "~/components"
 import { useFetch, useLoading, useT, useTitle, useRouter } from "~/hooks"
 import {
   changeToken,
@@ -306,7 +306,6 @@ const Login = () => {
           </Show>
           <Button
             w="$full"
-            leftIcon={useauthn() ? <PasskeyIcon /> : undefined}
             loading={useauthn() ? passkeyLoginLoading() : loading()}
             onClick={Login}
           >
@@ -350,7 +349,6 @@ const Login = () => {
               size="sm"
               variant="ghost"
               aria-pressed={useauthn()}
-              leftIcon={!useauthn() ? <PasskeyIcon /> : undefined}
               onClick={AuthnSwitch}
             >
               {useauthn()

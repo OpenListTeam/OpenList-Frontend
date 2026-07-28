@@ -23,12 +23,7 @@ import {
   onMount,
   Show,
 } from "solid-js"
-import {
-  LinkWithBase,
-  MaybeLoading,
-  ModalInput,
-  PasskeyIcon,
-} from "~/components"
+import { LinkWithBase, MaybeLoading, ModalInput } from "~/components"
 import { useFetch, useManageTitle, useRouter, useT } from "~/hooks"
 import { setMe, me, getSettingBool } from "~/store"
 import {
@@ -323,10 +318,7 @@ const Profile = () => {
           getSettingBool("webauthn_login_enabled")
         }
       >
-        <HStack spacing="$2">
-          <PasskeyIcon />
-          <Heading>{t("users.webauthn")}</Heading>
-        </HStack>
+        <Heading>{t("users.webauthn")}</Heading>
         <Text color="$neutral11">{t("users.passkey_description")}</Text>
         <VStack
           role={credentials().length > 0 ? "list" : undefined}
@@ -380,7 +372,6 @@ const Profile = () => {
           </MaybeLoading>
         </VStack>
         <Button
-          leftIcon={<PasskeyIcon />}
           loading={registrationLoading()}
           onClick={() => setAddPasskeyOpened(true)}
         >
