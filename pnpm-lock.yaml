@@ -61,7 +61,7 @@ importers:
         version: 3.15.1
       axios:
         specifier: ^1.18.1
-        version: 1.18.1
+        version: 1.18.1(debug@4.4.3)
       bencode:
         specifier: ^4.0.0
         version: 4.0.0
@@ -160,8 +160,8 @@ importers:
         version: 0.7.2
     devDependencies:
       '@crowdin/cli':
-        specifier: ^4.14.3
-        version: 4.14.3
+        specifier: ^4.15.0
+        version: 4.15.0
       '@types/bencode':
         specifier: ^2.0.4
         version: 2.0.4
@@ -754,8 +754,8 @@ packages:
   '@chevrotain/types@11.1.2':
     resolution: {integrity: sha512-U+HFai5+zmJCkK86QsaJtoITlboZHBqrVketcO2ROv865xfCMSFpELQoz1GkX5GzME8pTa+3kbKrZHQtI0gdbw==}
 
-  '@crowdin/cli@4.14.3':
-    resolution: {integrity: sha512-a2eXICWwEQX2WVM8+aCiHU2xapLXKmjmKw7V4fIRf4PNssyM82TB/y8KTt5ak1JFjU4tnl4f/HPD8Gob+YI2zg==}
+  '@crowdin/cli@4.15.0':
+    resolution: {integrity: sha512-4hOWF2lUENe+TDYZIpBwCQO5aOe7O1Q7CmQ4Py1uwWtBlN855P3tWwnKpLxoAQ+wUx2jv9bJcZ3xgmeoD2qzkQ==}
     hasBin: true
 
   '@egjs/component@3.0.5':
@@ -4312,7 +4312,7 @@ snapshots:
 
   '@chevrotain/types@11.1.2': {}
 
-  '@crowdin/cli@4.14.3':
+  '@crowdin/cli@4.15.0':
     dependencies:
       command-exists-promise: 2.0.2
       node-fetch: 2.7.0
@@ -5391,9 +5391,9 @@ snapshots:
 
   asynckit@0.4.0: {}
 
-  axios@1.18.1:
+  axios@1.18.1(debug@4.4.3):
     dependencies:
-      follow-redirects: 1.16.0
+      follow-redirects: 1.16.0(debug@4.4.3)
       form-data: 4.0.5
       https-proxy-agent: 5.0.1
       proxy-from-env: 2.1.0
@@ -5957,7 +5957,9 @@ snapshots:
     dependencies:
       tabbable: 6.4.0
 
-  follow-redirects@1.16.0: {}
+  follow-redirects@1.16.0(debug@4.4.3):
+    optionalDependencies:
+      debug: 4.4.3
 
   form-data@4.0.5:
     dependencies:
