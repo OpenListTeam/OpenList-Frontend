@@ -32,6 +32,7 @@ const OtherSettings = () => {
   const [thunderTempDir, setThunderTempDir] = createSignal("")
   const [thunderBrowserTempDir, setThunderBrowserTempDir] = createSignal("")
   const [thunderXTempDir, setThunderXTempDir] = createSignal("")
+  const [guangYaPanTempDir, setGuangYaPanTempDir] = createSignal("")
   const [token, setToken] = createSignal("")
   const [settings, setSettings] = createSignal<SettingItem[]>([])
   const [settingsLoading, settingsData] = useFetch(
@@ -105,6 +106,12 @@ const OtherSettings = () => {
         temp_dir: thunderBrowserTempDir(),
       }),
   )
+  const [setGuangYaPanLoading, setGuangYaPan] = useFetch(
+    (): PResp<string> =>
+      r.post("/admin/setting/set_guangyapan", {
+        temp_dir: guangYaPanTempDir(),
+      }),
+  )
   const refresh = async () => {
     const resp = await settingsData()
     handleResp(resp, (data) => {
@@ -143,6 +150,9 @@ const OtherSettings = () => {
       )
       setThunderBrowserTempDir(
         data.find((i) => i.key === "thunder_browser_temp_dir")?.value || "",
+      )
+      setGuangYaPanTempDir(
+        data.find((i) => i.key === "guangyapan_temp_dir")?.value || "",
       )
       setSettings(data)
     })
@@ -423,6 +433,29 @@ const OtherSettings = () => {
         loading={setThunderXLoading()}
         onClick={async () => {
           const resp = await setThunderX()
+          handleResp(resp, (data) => {
+            notify.success(data)
+          })
+        }}
+      >
+        {t("global.save")}
+      </Button>
+      <Heading my="$2">{t("settings_other.guangyapan")}</Heading>
+      <FormControl w="$full" display="flex" flexDirection="column">
+        <FormLabel for="guangyapan_temp_dir" display="flex" alignItems="center">
+          {t("settings_other.guangyapan_temp_dir")}
+        </FormLabel>
+        <FolderChooseInput
+          id="guangyapan_temp_dir"
+          value={guangYaPanTempDir()}
+          onChange={(path) => setGuangYaPanTempDir(path)}
+        />
+      </FormControl>
+      <Button
+        my="$2"
+        loading={setGuangYaPanLoading()}
+        onClick={async () => {
+          const resp = await setGuangYaPan()
           handleResp(resp, (data) => {
             notify.success(data)
           })
