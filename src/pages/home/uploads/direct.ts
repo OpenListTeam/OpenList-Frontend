@@ -1,5 +1,20 @@
 import { Upload, SetUpload } from "./types"
-import { r, pathDir } from "~/utils"
+import { Resp } from "~/types"
+import { r, pathBase, pathDir } from "~/utils"
+
+type DirectUploadCompletionInfo = {
+  url?: string
+  method?: string
+  headers?: Record<string, string>
+  body?: unknown
+}
+
+type PdsDirectUploadInfo = {
+  upload_url: string
+  headers?: Record<string, string>
+  method?: string
+  complete?: DirectUploadCompletionInfo
+}
 
 // Create a speed calculator using closure
 function createSpeedCalculator(throttleMs = 500) {
@@ -80,6 +95,71 @@ export const HttpDirectUpload: Upload = async (
   }
 }
 
+export const PdsDirectUpload: Upload = async (
+  uploadPath: string,
+  file: File,
+  setUpload: SetUpload,
+  _asTask: boolean,
+  overwrite: boolean,
+  _rapid: boolean,
+) => {
+  const path = pathDir(uploadPath)
+
+  const resp = (await r.post(
+    "/fs/get_direct_upload_info",
+    {
+      path,
+      file_name: file.name,
+      file_size: file.size,
+      tool: "PdsDirect",
+    },
+    {
+      headers: {
+        "File-Path": encodeURIComponent(uploadPath),
+        Overwrite: overwrite,
+      },
+    },
+  )) as Resp<PdsDirectUploadInfo | null>
+
+  if (resp.code !== 200) {
+    throw new Error(resp.message)
+  }
+
+  const uploadInfo = resp.data
+
+  if (!uploadInfo?.upload_url) {
+    throw new Error("PDS Direct Upload not supported")
+  }
+
+  await uploadSingle(
+    file,
+    uploadInfo.upload_url,
+    uploadInfo.method || "PUT",
+    uploadInfo.headers,
+    setUpload,
+  )
+
+  await completeDirectUpload(uploadInfo.complete, uploadPath, setUpload)
+  return undefined
+}
+
+function getHeaderEntries(headers?: Record<string, string>) {
+  return Object.entries(headers ?? {}).filter(([, value]) => value !== "")
+}
+
+function shouldSuppressContentType(headers?: Record<string, string>) {
+  return Object.entries(headers ?? {}).some(
+    ([key, value]) => key.toLowerCase() === "content-type" && value === "",
+  )
+}
+
+function getRequestBody(blob: Blob, suppressContentType: boolean): Blob {
+  if (!suppressContentType || blob.type === "") {
+    return blob
+  }
+  return blob.slice(0, blob.size, "")
+}
+
 async function uploadSingle(
   file: File,
   uploadURL: string,
@@ -89,6 +169,7 @@ async function uploadSingle(
 ): Promise<undefined> {
   const xhr = new XMLHttpRequest()
   const calcSpeed = createSpeedCalculator()
+  const suppressContentType = shouldSuppressContentType(headers)
 
   return new Promise((resolve, reject) => {
     xhr.upload.addEventListener("progress", (e) => {
@@ -113,14 +194,11 @@ async function uploadSingle(
 
     xhr.open(method, uploadURL)
 
-    // Set custom headers if provided
-    if (headers) {
-      Object.entries(headers).forEach(([key, value]) => {
-        xhr.setRequestHeader(key, value)
-      })
-    }
+    getHeaderEntries(headers).forEach(([key, value]) => {
+      xhr.setRequestHeader(key, value)
+    })
 
-    xhr.send(file)
+    xhr.send(getRequestBody(file, suppressContentType))
   })
 }
 
@@ -176,16 +254,88 @@ async function uploadChunked(
         `bytes ${start}-${end - 1}/${file.size}`,
       )
 
-      // Set custom headers if provided
-      if (headers) {
-        Object.entries(headers).forEach(([key, value]) => {
-          xhr.setRequestHeader(key, value)
-        })
-      }
+      getHeaderEntries(headers).forEach(([key, value]) => {
+        xhr.setRequestHeader(key, value)
+      })
 
       xhr.send(chunk)
     })
   }
 
   return undefined
+}
+
+async function completeDirectUpload(
+  complete?: DirectUploadCompletionInfo,
+  uploadPath?: string,
+  setUpload?: SetUpload,
+): Promise<void> {
+  if (!complete) {
+    return
+  }
+  if (!complete.url) {
+    throw new Error("Direct upload completion URL is missing")
+  }
+
+  setUpload?.("status", "backending")
+
+  const headers = new Headers()
+  getHeaderEntries(complete.headers).forEach(([key, value]) => {
+    headers.set(key, value)
+  })
+  if (uploadPath && !headers.has("File-Path")) {
+    headers.set("File-Path", encodeURIComponent(uploadPath))
+  }
+  if (!headers.has("Authorization")) {
+    const token = localStorage.getItem("token")
+    if (token) {
+      headers.set("Authorization", token)
+    }
+  }
+
+  let body: BodyInit | undefined
+  const completeBody = normalizeCompleteBody(complete.body, uploadPath)
+  if (completeBody !== undefined && completeBody !== null) {
+    if (typeof completeBody === "string") {
+      body = completeBody
+    } else {
+      if (!headers.has("Content-Type")) {
+        headers.set("Content-Type", "application/json")
+      }
+      body = JSON.stringify(completeBody)
+    }
+  }
+
+  const resp = await fetch(complete.url, {
+    method: complete.method || "POST",
+    headers,
+    body,
+  })
+  const text = await resp.text()
+  let data: Resp<unknown> | undefined
+  try {
+    data = text ? (JSON.parse(text) as Resp<unknown>) : undefined
+  } catch {
+    data = undefined
+  }
+  if (!resp.ok) {
+    throw new Error(data?.message || `Complete upload failed: ${resp.status}`)
+  }
+  if (data && data.code !== 200) {
+    throw new Error(data.message || "Complete upload failed")
+  }
+}
+
+function normalizeCompleteBody(body: unknown, uploadPath?: string): unknown {
+  if (!uploadPath || typeof body !== "object" || body === null) {
+    return body
+  }
+  if (Array.isArray(body)) {
+    return body
+  }
+  return {
+    ...(body as Record<string, unknown>),
+    path: pathDir(uploadPath),
+    file_name: pathBase(uploadPath),
+  }
 }

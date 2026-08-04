@@ -1,7 +1,7 @@
 import { objStore } from "~/store"
 import { FormUpload } from "./form"
 import { StreamUpload } from "./stream"
-import { HttpDirectUpload } from "./direct"
+import { HttpDirectUpload, PdsDirectUpload } from "./direct"
 import { Upload } from "./types"
 
 type Uploader = {
@@ -17,6 +17,13 @@ const AllUploads: Uploader[] = [
     upload: HttpDirectUpload,
     available: () => {
       return objStore.direct_upload_tools?.includes("HttpDirect") || false
+    },
+  },
+  {
+    name: "PDS Direct",
+    upload: PdsDirectUpload,
+    available: () => {
+      return objStore.direct_upload_tools?.includes("PdsDirect") || false
     },
   },
   {
