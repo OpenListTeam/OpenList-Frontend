@@ -82,7 +82,7 @@
     "chardet": "^2.2.0",
     "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",
-    "docx-preview": "^0.3.7",
+    "docx-preview": "^0.4.0",
     "handlebars": "^4.7.9",
     "hash-wasm": "^4.12.0",
     "highlight.js": "^11.11.1",
