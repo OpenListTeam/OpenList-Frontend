@@ -57,8 +57,8 @@ importers:
         specifier: ^5.3.0
         version: 5.3.0
       asciinema-player:
-        specifier: ^3.15.1
-        version: 3.15.1
+        specifier: ^3.17.0
+        version: 3.17.0
       axios:
         specifier: ^1.19.0
         version: 1.19.0(debug@4.4.3)
@@ -1753,8 +1753,8 @@ packages:
   artplayer@5.4.0:
     resolution: {integrity: sha512-2B+plbx8N2yNsjK4nJU3+EOG8TULm1LRZk/QPkWRAMEX2Ee/MSnZG/WJYz8kcoZxZuLKcQ3uXifqLuPxZOH29A==}
 
-  asciinema-player@3.15.1:
-    resolution: {integrity: sha512-agVYeNlPxthLyAb92l9AS7ypW0uhesqOuQzyR58Q4Sj+MvesQztZBgx86lHqNJkB8rQ6EP0LeA9czGytQUBpYw==}
+  asciinema-player@3.17.0:
+    resolution: {integrity: sha512-JbjNJmA2TLIeYNaOEja+kVSzXadKoqpIzVVmfBGNj2DmdtE/vExBCnkE8NYEcpaQcDvUYg8Ltt0urT80frACmw==}
 
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
@@ -1960,6 +1960,7 @@ packages:
 
   crypto-js@4.2.0:
     resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
+    deprecated: Active development of CryptoJS has been discontinued. This library is no longer maintained.
 
   css-select@4.3.0:
     resolution: {integrity: sha512-wPpOYtnsVontu2mODhA19JrqWxNsfdatRKd64kmpRbQgh1KtItko5sTnEpPdpSaJszTOhEMlF/RPz28qj4HqhQ==}
@@ -4947,7 +4948,7 @@ snapshots:
 
   '@solid-primitives/refs@1.1.2(solid-js@1.9.14)':
     dependencies:
-      '@solid-primitives/utils': 6.4.0(solid-js@1.9.14)
+      '@solid-primitives/utils': 6.4.1(solid-js@1.9.14)
       solid-js: 1.9.14
 
   '@solid-primitives/rootless@1.5.4(solid-js@1.9.14)':
@@ -5371,7 +5372,7 @@ snapshots:
     dependencies:
       option-validator: 2.0.6
 
-  asciinema-player@3.15.1:
+  asciinema-player@3.17.0:
     dependencies:
       '@babel/runtime': 7.28.4
       solid-js: 1.9.14
