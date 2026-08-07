@@ -37,7 +37,7 @@
   "license": "MIT",
   "devDependencies": {
     "@crowdin/cli": "^4.15.0",
-    "@types/bencode": "^2.0.4",
+    "@types/bencode": "^4.0.0",
     "@types/crypto-js": "^4.2.2",
     "@types/mark.js": "^8.11.12",
     "@types/node": "^24.13.2",
@@ -78,7 +78,7 @@
     "artplayer-plugin-danmuku": "^5.3.0",
     "asciinema-player": "^3.15.1",
     "axios": "^1.19.0",
-    "bencode": "^4.0.0",
+    "bencode": "^4.0.1",
     "chardet": "^2.2.0",
     "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",

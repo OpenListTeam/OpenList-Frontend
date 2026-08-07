@@ -63,8 +63,8 @@ importers:
         specifier: ^1.19.0
         version: 1.19.0(debug@4.4.3)
       bencode:
-        specifier: ^4.0.0
-        version: 4.0.0
+        specifier: ^4.0.1
+        version: 4.0.1
       chardet:
         specifier: ^2.2.0
         version: 2.2.0
@@ -163,8 +163,8 @@ importers:
         specifier: ^4.15.0
         version: 4.15.0
       '@types/bencode':
-        specifier: ^2.0.4
-        version: 2.0.4
+        specifier: ^4.0.0
+        version: 4.0.0
       '@types/crypto-js':
         specifier: ^4.2.2
         version: 4.2.2
@@ -1505,8 +1505,8 @@ packages:
   '@types/babel__traverse@7.28.0':
     resolution: {integrity: sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q==}
 
-  '@types/bencode@2.0.4':
-    resolution: {integrity: sha512-sirDu3HUSG7jZMlhTDvCzSFiPR4lkUYBQA75CoMi6DEf2alFZWJWtHgfjBbb9PachPZhPMB1IlH09deyMNBipQ==}
+  '@types/bencode@4.0.0':
+    resolution: {integrity: sha512-aR7+TiqkXI05IFEGAsn5Y6i0BYgBTX+H4/TPbREdkdRegepFW/EdNynP0VTuvt2pcku+2vfmVgfz5S4YJCaVSA==}
 
   '@types/crypto-js@4.2.2':
     resolution: {integrity: sha512-sDOLlVbHhXpAUAL0YHDUUwDZf3iN4Bwi4W6a0W0b+QcAezUbRtH4FVb+9J4h+XFPW7l/gQ9F8qC7P+Ec4k8QVQ==}
@@ -1810,8 +1810,8 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  bencode@4.0.0:
-    resolution: {integrity: sha512-AERXw18df0pF3ziGOCyUjqKZBVNH8HV3lBxnx5w0qtgMIk4a1wb9BkcCQbkp9Zstfrn/dzRwl7MmUHHocX3sRQ==}
+  bencode@4.0.1:
+    resolution: {integrity: sha512-/bCR3FvgfB8AZk4LlowShU+nfaTNRM2vruJ9aejDa5LpgkCoRjFyEauFiZFxbpxVxQbBFapYCN42Er2dkE/Qgw==}
     engines: {node: '>=12.20.0'}
 
   binary-extensions@2.3.0:
@@ -1960,6 +1960,7 @@ packages:
 
   crypto-js@4.2.0:
     resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
+    deprecated: Active development of CryptoJS has been discontinued. This library is no longer maintained.
 
   css-select@4.3.0:
     resolution: {integrity: sha512-wPpOYtnsVontu2mODhA19JrqWxNsfdatRKd64kmpRbQgh1KtItko5sTnEpPdpSaJszTOhEMlF/RPz28qj4HqhQ==}
@@ -5068,9 +5069,7 @@ snapshots:
     dependencies:
       '@babel/types': 7.29.7
 
-  '@types/bencode@2.0.4':
-    dependencies:
-      '@types/node': 24.12.4
+  '@types/bencode@4.0.0': {}
 
   '@types/crypto-js@4.2.2': {}
 
@@ -5439,7 +5438,7 @@ snapshots:
 
   baseline-browser-mapping@2.10.43: {}
 
-  bencode@4.0.0:
+  bencode@4.0.1:
     dependencies:
       uint8-util: 2.2.5
 
