@@ -64,6 +64,7 @@
   "max_index_depth-tips": "max depth of index",
   "max_server_download_speed": "Max server download speed",
   "max_server_upload_speed": "Max server upload speed",
+  "move_task_threads_num": "Move task threads num",
   "multipart_chunk_size": "Multipart upload chunk size (MB)",
   "multipart_chunk_size-tips": "chunk size of multipart upload in MB (positive integer), keep it under your CDN's request body limit; each active session buffers up to 8 chunks on the server's disk",
   "multipart_enabled": "Enable multipart upload",
