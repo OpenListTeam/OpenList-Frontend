@@ -1184,6 +1184,8 @@
     "encodePath-tips": "encode the path in the strm file",
     "filterFileTypes": "FilterFileTypes",
     "filterFileTypes-tips": "Supports suffix name of strm file",
+    "minFileSize": "MinFileSize",
+    "minFileSize-tips": "Filter out files smaller than this size (e.g. 100MB, 10KB, 10G)",
     "paths": "Paths",
     "siteUrl": "SiteUrl",
     "siteUrl-tips": "The prefix URL of the strm file",
