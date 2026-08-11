@@ -39,7 +39,7 @@ export type Lang = keyof typeof langs
 export type RawDictionary = typeof en.dict
 export type Dictionary = i18n.Flatten<RawDictionary>
 
-// English dictionary cache for fallback
+// English dictionary cache for fallback.
 let enDictCache: Dictionary | null = null
 
 const fetchEnDict = async (): Promise<Dictionary> => {
@@ -50,22 +50,18 @@ const fetchEnDict = async (): Promise<Dictionary> => {
   return enDictCache
 }
 
-// Fetch and flatten the dictionary, with English fallback
+// Fetch and flatten the dictionary, with English fallback for new keys.
 const fetchDictionary = async (locale: Lang): Promise<Dictionary> => {
   try {
     const dict: RawDictionary = (await import(`~/lang/${locale}/entry.ts`)).dict
     const flatDict = i18n.flatten(dict)
-
-    // If not English, merge with English as fallback (English keys underneath, locale on top)
     if (locale !== "en") {
       const enDict = await fetchEnDict()
       return { ...enDict, ...flatDict } as Dictionary
     }
-
     return flatDict
   } catch (err) {
     console.error(`Error loading dictionary for locale: ${locale}`, err)
-    // Fallback to English if the requested locale fails to load
     if (locale !== "en") {
       return await fetchEnDict()
     }
