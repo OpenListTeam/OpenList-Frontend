@@ -1300,6 +1300,14 @@
 .hljs-addition {
   background: #dfd;
 }
+.hope-ui-dark .hljs-deletion {
+  background: rgba(248, 81, 73, 0.15);
+  color: #ffa198;
+}
+.hope-ui-dark .hljs-addition {
+  background: rgba(63, 185, 80, 0.15);
+  color: #7ee787;
+}
 .hljs-emphasis {
   font-style: italic;
 }
