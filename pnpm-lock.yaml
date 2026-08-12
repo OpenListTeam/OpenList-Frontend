@@ -196,7 +196,7 @@ importers:
         specifier: ^17.3.0
         version: 17.3.0
       mermaid:
-        specifier: ^11.16.0
+        specifier: ^11.16.1
         version: 11.16.1
       prettier:
         specifier: 3.9.6
