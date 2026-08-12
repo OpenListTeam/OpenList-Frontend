@@ -101,8 +101,9 @@ export const OfflineDownloadEnhanced = () => {
 
   // 下载工具列表
   const [tools, setTools] = createSignal([] as string[])
-  const [toolsLoading, reqTool] = useFetch((): PResp<string[]> => {
-    return r.get("/public/offline_download_tools")
+  const [toolsLoading, reqTool] = useFetch((path: string): PResp<string[]> => {
+    const query = path ? `?path=${encodeURIComponent(path)}` : ""
+    return r.get(`/public/offline_download_tools${query}`)
   })
   const [tool, setTool] = createSignal("")
   const [deletePolicy, setDeletePolicy] = createSignal<DeletePolicy>(
@@ -241,19 +242,22 @@ export const OfflineDownloadEnhanced = () => {
     }
   })
 
-  onMount(async () => {
-    const resp = await reqTool()
+  const loadTools = async (path: string) => {
+    const resp = await reqTool(path)
     handleResp(resp, (data) => {
       setTools(data)
       setTool(data[0])
     })
-  })
+  }
+
+  onMount(() => loadTools(pathname()))
 
   // 监听 bus 事件
   const handler = (name: string) => {
     if (name === "offline_download") {
       const currentPath = pathname()
       setSavePath(currentPath)
+      void loadTools(currentPath)
       onOpen()
     }
   }
