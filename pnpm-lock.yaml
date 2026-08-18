@@ -18,8 +18,8 @@ importers:
         specifier: ^2.14.4
         version: 2.14.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(svelte@5.46.1)(vue@3.5.26(typescript@5.9.3))
       '@hope-ui/solid':
-        specifier: github:OpenListTeam/hope-ui#31b436e36ae5d266016814ba71a442ffa9d91181
-        version: https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/31b436e36ae5d266016814ba71a442ffa9d91181(@stitches/core@1.2.8)(solid-js@1.9.14)(solid-transition-group@0.3.0(solid-js@1.9.14))
+        specifier: github:OpenListTeam/hope-ui#264b7511e37dc6e5a5fb8f67f8801d94a058a700
+        version: https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/264b7511e37dc6e5a5fb8f67f8801d94a058a700(@stitches/core@1.2.8)(solid-js@1.9.14)(solid-transition-group@0.3.0(solid-js@1.9.14))
       '@jellyfin/libass-wasm':
         specifier: ^4.2.4
         version: 4.2.4
@@ -1150,9 +1150,9 @@ packages:
   '@floating-ui/dom@0.4.4':
     resolution: {integrity: sha512-0Ulu3B/dqQplUUSqnTx0foSrlYuMN+GTtlJWvNJwt6Fr7/PqmlR/Y08o6/+bxDWr6p3roBJRaQ51MDZsNmEhhw==}
 
-  '@hope-ui/solid@https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/31b436e36ae5d266016814ba71a442ffa9d91181':
-    resolution: {gitHosted: true, integrity: sha512-9/mjxC68etkyl9un/eNBaW7zSALOs6KJKMfbD+B+Ufv7QnwqVufTl6wzI7q32/GFIcWPdbwZ1TvfzLngOGoWzA==, tarball: https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/31b436e36ae5d266016814ba71a442ffa9d91181}
-    version: 0.6.7
+  '@hope-ui/solid@https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/264b7511e37dc6e5a5fb8f67f8801d94a058a700':
+    resolution: {gitHosted: true, integrity: sha512-ha5DKoXv8QNgEK9KU8RmLPqy/kn3TRHJimay6j6mOaUOfSL+Mj0WIb+QlpelHmeBh8V6K+9lkUGq4gvFTx1OmA==, tarball: https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/264b7511e37dc6e5a5fb8f67f8801d94a058a700}
+    version: 0.6.8
     peerDependencies:
       '@stitches/core': ^1.2.8
       solid-js: ^1.4.0
@@ -4659,7 +4659,7 @@ snapshots:
     dependencies:
       '@floating-ui/core': 0.6.2
 
-  '@hope-ui/solid@https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/31b436e36ae5d266016814ba71a442ffa9d91181(@stitches/core@1.2.8)(solid-js@1.9.14)(solid-transition-group@0.3.0(solid-js@1.9.14))':
+  '@hope-ui/solid@https://codeload.github.com/OpenListTeam/hope-ui/tar.gz/264b7511e37dc6e5a5fb8f67f8801d94a058a700(@stitches/core@1.2.8)(solid-js@1.9.14)(solid-transition-group@0.3.0(solid-js@1.9.14))':
     dependencies:
       '@floating-ui/dom': 0.4.4
       '@stitches/core': 1.2.8
