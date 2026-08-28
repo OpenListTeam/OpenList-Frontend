@@ -63,7 +63,7 @@
   "dependencies": {
     "@egjs/view360": "4.0.0-beta.7",
     "@embedpdf/snippet": "^2.15.0",
-    "@hope-ui/solid": "github:OpenListTeam/hope-ui#264b7511e37dc6e5a5fb8f67f8801d94a058a700",
+    "@hope-ui/solid": "github:OpenListTeam/hope-ui#2f9096bd2d3cb588ac8d3d3379830675b3114aa7",
     "@jellyfin/libass-wasm": "^4.2.4",
     "@monaco-editor/loader": "1.7.0",
     "@solid-primitives/i18n": "^2.2.1",
