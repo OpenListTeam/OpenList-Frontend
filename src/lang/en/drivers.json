@@ -110,6 +110,7 @@
   },
   "139Yun": {
     "authorization": "Authorization",
+    "authorization-tips": "Authorization can be used alone. If empty, use mail_cookies alone for fast login, or mail_cookies + username + password for full login fallback.",
     "cloud_id": "Cloud id",
     "custom_upload_part_size": "Custom upload part size",
     "custom_upload_part_size-tips": "0 for auto",
@@ -118,9 +119,12 @@
     "mail_cookies": "Mail cookies",
     "mail_cookies-tips": "Cookies from mail.139.com used for login authentication.",
     "password": "Password",
+    "password-tips": "Required only when using password login fallback with mail_cookies.",
     "report_real_size": "Report real size",
     "report_real_size-tips": "Enable to report the real file size during upload",
     "root_folder_id": "Root folder id",
+    "sms_code": "Sms code",
+    "sms_code-tips": "Fill this only after OpenList reports that a 139 Mail SMS verification code was sent, then save the storage again.",
     "type": "Type",
     "types": {
       "family": "Family",
@@ -135,7 +139,8 @@
     "use_old_stream_upload-tips": "Enable to use old stream upload method (not support rapid upload)",
     "user_domain_id": "User domain id",
     "user_domain_id-tips": "ud_id in Cookie, fill in to show disk usage",
-    "username": "Username"
+    "username": "Username",
+    "username-tips": "Required only when using password login fallback with mail_cookies."
   },
   "189Cloud": {
     "cookie": "Cookie",
@@ -673,6 +678,8 @@
     "username": "Username"
   },
   "GitHub API": {
+    "accurate_modified_time": "Accurate modified time",
+    "accurate_modified_time-tips": "Best-effort accurate modified time for small directory listings. Default disabled. Adds one GitHub GraphQL request and falls back to legacy zero-time values on failure.",
     "author_email": "Author email",
     "author_name": "Author name",
     "committer_email": "Committer email",
@@ -1184,6 +1191,8 @@
     "encodePath-tips": "encode the path in the strm file",
     "filterFileTypes": "FilterFileTypes",
     "filterFileTypes-tips": "Supports suffix name of strm file",
+    "minFileSize": "MinFileSize",
+    "minFileSize-tips": "Filter out files smaller than this size (unit: MB, 0 to disable)",
     "paths": "Paths",
     "siteUrl": "SiteUrl",
     "siteUrl-tips": "The prefix URL of the strm file",
