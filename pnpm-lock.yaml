@@ -87,8 +87,8 @@ importers:
         specifier: ^11.12.0
         version: 11.12.0
       hls.js:
-        specifier: ^1.6.16
-        version: 1.6.16
+        specifier: ^1.7.1
+        version: 1.7.1
       ini:
         specifier: ^7.0.0
         version: 7.0.0
@@ -2408,8 +2408,8 @@ packages:
     resolution: {integrity: sha512-nbfWpyRMcMrPMmDwJB+dhX/eiaPKtc2RB+0QZskqJ3WjRA/FDS0e9hZrx8EC/lbEv8gXy98FcDbNa/dspAaJMg==}
     engines: {node: '>=12.0.0'}
 
-  hls.js@1.6.16:
-    resolution: {integrity: sha512-VSIRpLfRwlAAdGL4wiTucx2ScRipo0ed1FBatWkyt832jC4CReKstga6yIhYVwGu9LOBjuX9wzmRMeQdBJtzEA==}
+  hls.js@1.7.1:
+    resolution: {integrity: sha512-DlzIkeBAS9IIQ432k3BUf3HlwbsR0+trB1i2lDdN2gUkNkrehFurh0/48M5c1/EjlDkdGng1gwZIpwyPxvdZ/g==}
 
   html-entities@2.3.3:
     resolution: {integrity: sha512-DV5Ln36z34NNTDgnz0EWGBLZENelNAtkiFA4kyNOG2tDI6Mz1uSWiq1wAKdyjnJwyDiDO7Fa2SO1CTxPXL8VxA==}
@@ -5998,7 +5998,7 @@ snapshots:
 
   highlight.js@11.12.0: {}
 
-  hls.js@1.6.16: {}
+  hls.js@1.7.1: {}
 
   html-entities@2.3.3: {}
 
