@@ -29,6 +29,7 @@ const initialObjStore = {
   header: "",
   provider: "",
   direct_upload_tools: <string[] | undefined>undefined,
+  save_from_share: false,
   state: State.Initial,
   err: "",
 }
@@ -82,6 +83,8 @@ export const ObjStore = {
   setState: (state: State) => setObjStore("state", state),
   setDirectUploadTools: (tools?: string[]) =>
     setObjStore("direct_upload_tools", tools),
+  setSaveFromShare: (enabled: boolean) =>
+    setObjStore("save_from_share", enabled),
   setErr: (err: string) => setObjStore("err", err),
 }
 

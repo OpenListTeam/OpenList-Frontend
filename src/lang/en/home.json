@@ -100,6 +100,9 @@
     "cancel_select": "Cancel Select",
     "offline_download": "Offline download",
     "offline_download-tips": "One URL per line",
+    "save_from_share": "Save from share",
+    "save_from_share-tips": "One share link per line. Passcode can be included, e.g. https://pan.quark.cn/s/xxxx 提取码: abcd",
+    "save_from_share_start": "Save",
     "offline_download_torrent": "BT Fetch",
     "offline_download_enhanced": {
       "tab_link": "Link Download",

@@ -7,7 +7,11 @@ import { objStore, selectAll, State, toggleCheckbox, userCan } from "~/store"
 import { bus } from "~/utils"
 import { operations } from "./operations"
 import { IoMagnetOutline } from "solid-icons/io"
-import { AiOutlineCloudUpload, AiOutlineSetting } from "solid-icons/ai"
+import {
+  AiOutlineCloudSync,
+  AiOutlineCloudUpload,
+  AiOutlineSetting,
+} from "solid-icons/ai"
 import { RiSystemRefreshLine } from "solid-icons/ri"
 import { usePath, useRouter } from "~/hooks"
 import { Motion } from "solid-motionone"
@@ -161,6 +165,23 @@ export const Right = () => {
                 tips="offline_download"
                 onClick={() => {
                   bus.emit("tool", "offline_download")
+                }}
+              />
+            </Show>
+            <Show
+              when={
+                isFolder() &&
+                !isShare() &&
+                (userCan("write_content") || objStore.write_content_bypass) &&
+                objStore.write &&
+                objStore.save_from_share
+              }
+            >
+              <RightIcon
+                as={AiOutlineCloudSync}
+                tips="save_from_share"
+                onClick={() => {
+                  bus.emit("tool", "save_from_share")
                 }}
               />
             </Show>

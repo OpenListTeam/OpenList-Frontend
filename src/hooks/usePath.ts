@@ -180,6 +180,7 @@ export const usePath = () => {
         ObjStore.setWriteContentBypass(data.write_content_bypass)
         ObjStore.setProvider(data.provider)
         ObjStore.setDirectUploadTools(data.direct_upload_tools)
+        ObjStore.setSaveFromShare(!!data.save_from_share)
         shouldKeepState() || ObjStore.setState(State.Folder)
       },
       onlyList

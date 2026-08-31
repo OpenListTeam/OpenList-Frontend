@@ -1,17 +1,17 @@
 import axios, { CancelToken } from "axios"
 import {
-  PEmptyResp,
+  ArchiveMeta,
   FsGetResp,
   FsListResp,
-  Obj,
-  PResp,
   FsSearchResp,
-  RenameObj,
-  ArchiveMeta,
+  Obj,
+  PEmptyResp,
   PPageResp,
+  PResp,
+  RenameObj,
   TorrentInfo,
-  TorrentUploadParseResult,
   TorrentRapidUploadResult,
+  TorrentUploadParseResult,
 } from "~/types"
 import { r } from "."
 
@@ -222,6 +222,14 @@ export const offlineDownload = (
   delete_policy: string,
 ): PEmptyResp => {
   return r.post(`/fs/add_offline_download`, { path, urls, tool, delete_policy })
+}
+
+export const saveFromShare = (
+  path: string,
+  urls: string[],
+  password?: string,
+): PEmptyResp => {
+  return r.post("/fs/save_from_share", { path, urls, password })
 }
 
 export const fetchText = async (

@@ -20,6 +20,7 @@ export type FsListResp = Resp<{
   write_content_bypass: boolean
   provider: string
   direct_upload_tools?: string[]
+  save_from_share?: boolean
 }>
 
 export type SearchNode = {
