@@ -138,6 +138,8 @@
   },
   "sso_oidc_username_key": "SSO oidc username key",
   "sso_organization_name": "SSO organization name",
+  "storage_details_cooldown_seconds": "Storage details refresh cooldown (seconds)",
+  "storage_details_timeout_seconds": "Storage details background timeout (seconds)",
   "text_types": "Text types",
   "token": "Token",
   "transmission_seedtime": "Transmission seedtime",
@@ -146,7 +148,5 @@
   "version": "Version",
   "video_autoplay": "Video autoplay",
   "video_types": "Video types",
-  "webauthn_login_enabled": "WebAuthn login enabled",
-  "storage_details_cooldown_seconds": "Storage details refresh cooldown (seconds)",
-  "storage_details_timeout_seconds": "Storage details background timeout (seconds)"
+  "webauthn_login_enabled": "WebAuthn login enabled"
 }
