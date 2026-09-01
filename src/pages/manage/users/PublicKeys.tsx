@@ -42,16 +42,15 @@ export const PublicKeys = (props: PublicKeysProps) => {
   const [keys, setKeys] = createSignal<SSHPublicKey[]>([])
   const [loading, get] = props.isMine
     ? useFetch((): PPageResp<SSHPublicKey> => r.get(`/me/sshkey/list`))
-    : useFetch(
-        (): PPageResp<SSHPublicKey> =>
-          r.get(`/admin/user/sshkey/list?uid=${props.userId}`),
+    : useFetch((): PPageResp<SSHPublicKey> =>
+        r.get(`/admin/user/sshkey/list?uid=${props.userId}`),
       )
   const [addReq, setAddReq] = createStore<SSHKeyAddReq>({
     title: "",
     key: "",
   })
-  const [addLoading, add] = useFetch(
-    (): PEmptyResp => r.post(`/me/sshkey/add`, addReq),
+  const [addLoading, add] = useFetch((): PEmptyResp =>
+    r.post(`/me/sshkey/add`, addReq),
   )
   const { isOpen, onOpen, onClose } = createDisclosure()
   const refresh = async () => {

@@ -21,9 +21,8 @@ const CommonSettings = (props: CommonSettingsProps) => {
   const t = useT()
   const { pathname } = useRouter()
   useManageTitle(`manage.sidemenu.${pathname().split("/").pop()}`)
-  const [settingsLoading, getSettings] = useFetch(
-    (): PResp<SettingItem[]> =>
-      r.get(`/admin/setting/list?group=${props.group}`),
+  const [settingsLoading, getSettings] = useFetch((): PResp<SettingItem[]> =>
+    r.get(`/admin/setting/list?group=${props.group}`),
   )
   const [settings, setSettings] = createStore<SettingItem[]>([])
   const refresh = async () => {
@@ -31,12 +30,11 @@ const CommonSettings = (props: CommonSettingsProps) => {
     handleResp<SettingItem[]>(resp, setSettings)
   }
   refresh()
-  const [saveLoading, saveSettings] = useFetch(
-    (): PEmptyResp => r.post("/admin/setting/save", getTarget(settings)),
+  const [saveLoading, saveSettings] = useFetch((): PEmptyResp =>
+    r.post("/admin/setting/save", getTarget(settings)),
   )
-  const [defaultLoading, defaultSettings] = useFetch(
-    (): PResp<SettingItem[]> =>
-      r.post(`/admin/setting/default?group=${props.group}`),
+  const [defaultLoading, defaultSettings] = useFetch((): PResp<SettingItem[]> =>
+    r.post(`/admin/setting/default?group=${props.group}`),
   )
   const [loading, setLoading] = createSignal(false)
   return (

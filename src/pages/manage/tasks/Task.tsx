@@ -121,12 +121,11 @@ export const Task = (props: TaskAttribute & TasksProps & TaskLocalSetter) => {
     props.done === "done" &&
     (props.state === TaskStateEnum.Failed ||
       props.state === TaskStateEnum.Canceled)
-  const [operateLoading, operate] = useFetch(
-    (): PEmptyResp =>
-      r.post(`/task/${props.type}/${operateName}?tid=${props.id}`),
+  const [operateLoading, operate] = useFetch((): PEmptyResp =>
+    r.post(`/task/${props.type}/${operateName}?tid=${props.id}`),
   )
-  const [retryLoading, retry] = useFetch(
-    (): PEmptyResp => r.post(`/task/${props.type}/retry?tid=${props.id}`),
+  const [retryLoading, retry] = useFetch((): PEmptyResp =>
+    r.post(`/task/${props.type}/retry?tid=${props.id}`),
   )
   const [deleted, setDeleted] = createSignal(false)
   const matches: RegExpMatchArray | null = props.name.match(

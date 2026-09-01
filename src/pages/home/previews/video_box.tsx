@@ -70,6 +70,12 @@ export const players: {
     platforms: ["Windows", "MacOS"],
   },
   {
+    icon: "vivid",
+    name: "Vivid Player",
+    scheme: "vividplayer://play?src=direct&u=$edurl&title=$name",
+    platforms: ["Windows"],
+  },
+  {
     icon: "infuse",
     name: "Infuse",
     scheme: "infuse://x-callback-url/play?url=$durl",

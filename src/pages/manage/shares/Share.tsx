@@ -22,14 +22,13 @@ interface ShareProps {
 function ShareOp(props: ShareProps) {
   const t = useT()
   const { to } = useRouter()
-  const [deleteLoading, deleteStorage] = useFetch(
-    (): PEmptyResp => r.post(`/share/delete?id=${props.share.id}`),
+  const [deleteLoading, deleteStorage] = useFetch((): PEmptyResp =>
+    r.post(`/share/delete?id=${props.share.id}`),
   )
-  const [enableOrDisableLoading, enableOrDisable] = useFetch(
-    (): PEmptyResp =>
-      r.post(
-        `/share/${props.share.disabled ? "enable" : "disable"}?id=${props.share.id}`,
-      ),
+  const [enableOrDisableLoading, enableOrDisable] = useFetch((): PEmptyResp =>
+    r.post(
+      `/share/${props.share.disabled ? "enable" : "disable"}?id=${props.share.id}`,
+    ),
   )
   return (
     <>

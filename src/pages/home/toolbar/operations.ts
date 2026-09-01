@@ -9,6 +9,7 @@ import { AiOutlineCloudDownload } from "solid-icons/ai"
 import { ImMoveUp } from "solid-icons/im"
 import { BiRegularRename } from "solid-icons/bi"
 import { FaSolidMagnet } from "solid-icons/fa"
+import { FiExternalLink } from "solid-icons/fi"
 
 export interface Operations {
   [key: string]: {
@@ -18,6 +19,7 @@ export interface Operations {
   }
 }
 export const operations: Operations = {
+  open_with: { icon: FiExternalLink, color: "$info9" },
   rename: { icon: CgRename, color: "$accent9" },
   copy: { icon: TbCopy, color: "$success9" },
   move: { icon: TbFileArrowRight, color: "$warning9" },

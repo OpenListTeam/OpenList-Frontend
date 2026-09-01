@@ -70,6 +70,7 @@
     "switch_lang": "Switch Language",
     "toggle_markdown_toc": "Toggle Outline",
     "toggle_checkbox": "Toggle Checkbox",
+    "open_with": "Open with ...",
     "rename": "Rename",
     "input_new_name": "Input new name",
     "move": "Move",
@@ -183,7 +184,8 @@
     "success": "Success",
     "error": "Error",
     "back": "Back to Upload",
-    "clear_done": "Clear Done"
+    "clear_done": "Clear Done",
+    "retry": "Retry"
   },
   "local_settings": {
     "aria2_rpc_url": "Aria2 RPC URL",
@@ -229,6 +231,17 @@
       "direct": "Direct",
       "dblclick": "Double click",
       "disable_while_checked": "Disable while checked"
+    },
+    "editor_font_size": "Editor font size",
+    "editor_word_wrap": "Editor word wrap",
+    "editor_word_wrap_options": {
+      "false": "Off",
+      "true": "On"
+    },
+    "editor_minimap": "Editor minimap",
+    "editor_minimap_options": {
+      "false": "Off",
+      "true": "On"
     },
     "show_gallery_thumbnails": "Show gallery thumbnails",
     "show_gallery_thumbnails_options": {

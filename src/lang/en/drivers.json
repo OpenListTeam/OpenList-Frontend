@@ -110,27 +110,37 @@
   },
   "139Yun": {
     "authorization": "Authorization",
+    "authorization-tips": "Authorization can be used alone. If empty, use mail_cookies alone for fast login, or mail_cookies + username + password for full login fallback.",
     "cloud_id": "Cloud id",
     "custom_upload_part_size": "Custom upload part size",
     "custom_upload_part_size-tips": "0 for auto",
+    "link_id": "Link id",
+    "link_id-tips": "Multiple shares are separated by commas or new lines. Use link_id#password for password-protected shares.",
     "mail_cookies": "Mail cookies",
     "mail_cookies-tips": "Cookies from mail.139.com used for login authentication.",
     "password": "Password",
+    "password-tips": "Required only when using password login fallback with mail_cookies.",
     "report_real_size": "Report real size",
     "report_real_size-tips": "Enable to report the real file size during upload",
     "root_folder_id": "Root folder id",
+    "sms_code": "Sms code",
+    "sms_code-tips": "Fill this only after OpenList reports that a 139 Mail SMS verification code was sent, then save the storage again.",
     "type": "Type",
     "types": {
       "family": "Family",
       "group": "Group",
       "personal": "Personal",
-      "personal_new": "Personal new"
+      "personal_new": "Personal new",
+      "share": "Share"
     },
     "use_large_thumbnail": "Use large thumbnail",
     "use_large_thumbnail-tips": "Enable to use large thumbnail for images",
+    "use_old_stream_upload": "Use old stream upload",
+    "use_old_stream_upload-tips": "Enable to use old stream upload method (not support rapid upload)",
     "user_domain_id": "User domain id",
     "user_domain_id-tips": "ud_id in Cookie, fill in to show disk usage",
-    "username": "Username"
+    "username": "Username",
+    "username-tips": "Required only when using password login fallback with mail_cookies."
   },
   "189Cloud": {
     "cookie": "Cookie",
@@ -217,6 +227,11 @@
     "token": "Token",
     "url": "Url",
     "username": "Username"
+  },
+  "AliDoc": {
+    "cookie": "Cookie",
+    "cookie-tips": "DingTalk document web cookie",
+    "root_folder_id": "Root folder id"
   },
   "Alias": {
     "details_pass_through": "Details pass through",
@@ -411,6 +426,22 @@
     "upload_thread": "Upload thread",
     "upload_thread-tips": "1\u003c=thread\u003c=32"
   },
+  "Bunny Storage": {
+    "access_key": "Access key",
+    "cdn_base_url": "Cdn base url",
+    "cdn_token_include_ip": "Cdn token include ip",
+    "cdn_token_key": "Cdn token key",
+    "cdn_token_method": "Cdn token method",
+    "cdn_token_methods": {
+      "hmac_sha256": "Hmac sha256",
+      "sha256": "Sha256"
+    },
+    "endpoint": "Endpoint",
+    "placeholder": "Placeholder",
+    "root_folder_path": "Root folder path",
+    "sign_url_expire": "Sign url expire",
+    "storage_zone_name": "Storage zone name"
+  },
   "CNB Releases": {
     "default_branch": "Default branch",
     "default_branch-tips": "Default branch for new releases",
@@ -543,7 +574,9 @@
     "root_folder_path": "Root folder path",
     "secret_access_key": "Secret access key",
     "session_token": "Session token",
-    "sign_url_expire": "Sign url expire"
+    "sign_url_expire": "Sign url expire",
+    "user_agent": "User agent",
+    "user_agent-tips": "Custom User-Agent for S3 requests."
   },
   "Doubao": {
     "cookie": "Cookie",
@@ -645,6 +678,8 @@
     "username": "Username"
   },
   "GitHub API": {
+    "accurate_modified_time": "Accurate modified time",
+    "accurate_modified_time-tips": "Best-effort accurate modified time for small directory listings. Default disabled. Adds one GitHub GraphQL request and falls back to legacy zero-time values on failure.",
     "author_email": "Author email",
     "author_name": "Author name",
     "committer_email": "Committer email",
@@ -669,6 +704,10 @@
   "GitHub Releases": {
     "gh_proxy": "Gh proxy",
     "gh_proxy-tips": "GitHub proxy, e.g. https://ghproxy.net/github.com or https://gh-proxy.com/github.com ",
+    "max_page": "Max page",
+    "max_page-tips": "max pages to fetch (0 = unlimited), only works when show all versions",
+    "per_page": "Per page",
+    "per_page-tips": "releases per page (max 100), only works when show all versions",
     "repo_structure": "Repo structure",
     "repo_structure-tips": "structure:[path:]org/repo",
     "root_folder_path": "Root folder path",
@@ -705,6 +744,35 @@
     "refresh_token": "Refresh token",
     "root_folder_id": "Root folder id",
     "show_archive": "Show archive"
+  },
+  "GuangYaPan": {
+    "access_token": "Access token",
+    "access_token-tips": "Bearer access token (optional if refresh_token is provided)",
+    "captcha_token": "Captcha token",
+    "captcha_token-tips": "Captcha token required by /v1/auth/verification",
+    "client_id": "Client id",
+    "client_id-tips": "Client ID for GuangYaPan API, must be provided",
+    "device_id": "Device id",
+    "device_id-tips": "Optional custom device id (32 hex chars), auto-generated when empty",
+    "device_sign": "Device sign",
+    "device_sign-tips": "Optional custom X-Device-Sign header (generated from device_id when empty)",
+    "order_by": "Order by",
+    "order_by-tips": "Sort field used by the file list",
+    "page_size": "Page size",
+    "phone_number": "Phone number",
+    "phone_number-tips": "Phone number for SMS login, e.g. +86 13800000000",
+    "refresh_token": "Refresh token",
+    "refresh_token-tips": "Refresh token for auto-login/auto-refresh",
+    "root_path": "Root path",
+    "root_path-tips": "Full path in GuangYaPan cloud drive",
+    "send_code": "Send code",
+    "send_code-tips": "Set true and save to send SMS code, it auto-resets to false after sending",
+    "sort_type": "Sort type",
+    "sort_type-tips": "Sort direction used by the file list",
+    "verification_id": "Verification id",
+    "verification_id-tips": "Auto-generated after sending SMS code; do not edit manually",
+    "verify_code": "Verify code",
+    "verify_code-tips": "SMS verification code used with phone_number; fill then save to finish login"
   },
   "HalalCloud": {
     "app_id": "App id",
@@ -1072,7 +1140,9 @@
     "root_folder_path": "Root folder path",
     "secret_access_key": "Secret access key",
     "session_token": "Session token",
-    "sign_url_expire": "Sign url expire"
+    "sign_url_expire": "Sign url expire",
+    "user_agent": "User agent",
+    "user_agent-tips": "Custom User-Agent for S3 requests."
   },
   "SFTP": {
     "address": "Address",
@@ -1121,6 +1191,8 @@
     "encodePath-tips": "encode the path in the strm file",
     "filterFileTypes": "FilterFileTypes",
     "filterFileTypes-tips": "Supports suffix name of strm file",
+    "minFileSize": "MinFileSize",
+    "minFileSize-tips": "Filter out files smaller than this size (unit: MB, 0 to disable)",
     "paths": "Paths",
     "siteUrl": "SiteUrl",
     "siteUrl-tips": "The prefix URL of the strm file",
@@ -1478,6 +1550,29 @@
     "root_folder_path": "Root folder path",
     "use_online_api": "Use online api"
   },
+  "cloudflare_imgbed": {
+    "address": "Address",
+    "address-tips": "Backend API address of the image hosting service, e.g., https://img.example.com",
+    "largeChannelName": "LargeChannelName",
+    "largeChannelName-tips": "Channel name for large files",
+    "largeChannelType": "LargeChannelType",
+    "largeChannelType-tips": "Large File Channel Type: Hugging Face (Direct Upload)、telegram/cfr2/s3/discord(Multipart Upload)",
+    "largeChannelTypes": {
+      "": "",
+      "cfr2": "Cfr2",
+      "discord": "Discord",
+      "huggingface": "Huggingface",
+      "s3": "S3",
+      "telegram": "Telegram"
+    },
+    "root_folder_path": "Root folder path",
+    "smallChannelName": "SmallChannelName",
+    "smallChannelName-tips": "Channel name for regular files (typically \u003c20MB)",
+    "token": "Token",
+    "token-tips": "Authentication Token",
+    "uploadThread": "UploadThread",
+    "uploadThread-tips": "Concurrent thread count for HuggingFace chunked direct upload"
+  },
   "config": {
     "115 Cloud": {},
     "115 Open": {},
@@ -1493,6 +1588,9 @@
     "189CloudPC": {},
     "189CloudTV": {},
     "AList V3": {},
+    "AliDoc": {
+      "alert": "This driver supports accessing DingDrive through DingTalk Docs and is currently read-only."
+    },
     "Alias": {},
     "Aliyundrive": {
       "alert": "There may be an infinite loop bug in this driver.\nDeprecated, no longer maintained and will be removed in a future version.\nWe recommend using the official driver AliyundriveOpen."
@@ -1503,6 +1601,7 @@
     "Azure Blob Storage": {},
     "BaiduNetdisk": {},
     "BaiduPhoto": {},
+    "Bunny Storage": {},
     "CNB Releases": {},
     "ChaoXingGroupDrive": {},
     "Chunk": {},
@@ -1525,6 +1624,9 @@
     "GitHub Releases": {},
     "GoogleDrive": {},
     "GooglePhoto": {},
+    "GuangYaPan": {
+      "alert": "Two-stage SMS login: (1) fill phone_number (+ captcha_token if needed), set send_code=true and save; (2) fill verify_code and save to finish login and auto-save access_token/refresh_token."
+    },
     "HalalCloud": {},
     "HalalCloudOpen": {},
     "ILanZou": {},
@@ -1575,7 +1677,8 @@
     "WebDav": {},
     "WeiYun": {},
     "WoPan": {},
-    "YandexDisk": {}
+    "YandexDisk": {},
+    "cloudflare_imgbed": {}
   },
   "drivers": {
     "115 Cloud": "115 Cloud",
@@ -1590,6 +1693,7 @@
     "189CloudPC": "189CloudPC",
     "189CloudTV": "189CloudTV",
     "AList V3": "AList V3",
+    "AliDoc": "AliDoc",
     "Alias": "Alias",
     "Aliyundrive": "Aliyundrive",
     "AliyundriveOpen": "AliyundriveOpen",
@@ -1598,6 +1702,7 @@
     "Azure Blob Storage": "Azure Blob Storage",
     "BaiduNetdisk": "BaiduNetdisk",
     "BaiduPhoto": "BaiduPhoto",
+    "Bunny Storage": "Bunny Storage",
     "CNB Releases": "CNB Releases",
     "ChaoXingGroupDrive": "ChaoXingGroupDrive",
     "Chunk": "Chunk",
@@ -1618,6 +1723,7 @@
     "GitHub Releases": "GitHub Releases",
     "GoogleDrive": "GoogleDrive",
     "GooglePhoto": "GooglePhoto",
+    "GuangYaPan": "GuangYaPan",
     "HalalCloud": "HalalCloud",
     "HalalCloudOpen": "HalalCloudOpen",
     "ILanZou": "ILanZou",
@@ -1666,6 +1772,7 @@
     "WebDav": "WebDav",
     "WeiYun": "WeiYun",
     "WoPan": "WoPan",
-    "YandexDisk": "YandexDisk"
+    "YandexDisk": "YandexDisk",
+    "cloudflare_imgbed": "Cloudflare imgbed"
   }
 }

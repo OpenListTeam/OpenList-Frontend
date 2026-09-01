@@ -26,14 +26,13 @@ export const Messenger = () => {
   const t = useT()
   notify.info(t("manage.messenger-tips"))
   const [toSend, setToSend] = createSignal("")
-  const [getLoading, getR] = useFetch(
-    (): PResp<Message> => r.post("/admin/message/get"),
+  const [getLoading, getR] = useFetch((): PResp<Message> =>
+    r.post("/admin/message/get"),
   )
-  const [sendLoading, sendR] = useFetch(
-    (): PEmptyResp =>
-      r.post("/admin/message/send", {
-        message: toSend(),
-      }),
+  const [sendLoading, sendR] = useFetch((): PEmptyResp =>
+    r.post("/admin/message/send", {
+      message: toSend(),
+    }),
   )
   const [received, setReceived] = createStore<Message[]>([])
   const get = async () => {

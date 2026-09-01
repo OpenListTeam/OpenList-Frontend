@@ -23,8 +23,8 @@ import { side_menu_items } from "./sidemenu_items"
 import { changeToken, handleResp, notify, r } from "~/utils"
 import { PResp } from "~/types"
 const { isOpen, onOpen, onClose } = createDisclosure()
-const [logOutReqLoading, logOutReq] = useFetch(
-  (): PResp<any> => r.get("/auth/logout"),
+const [logOutReqLoading, logOutReq] = useFetch((): PResp<any> =>
+  r.get("/auth/logout"),
 )
 
 const Header = () => {

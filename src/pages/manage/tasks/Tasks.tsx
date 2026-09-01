@@ -55,10 +55,20 @@ export interface TaskLocalSetter {
 
 export type TaskAttribute = TaskInfo & TaskViewAttribute & TaskLocalContainer
 
+const undoneStatePriority: Record<number, number> = {
+  1: 0,
+  0: 1,
+  8: 1,
+  9: 1,
+  3: 2,
+  5: 2,
+  6: 2,
+}
+
 export const Tasks = (props: TasksProps) => {
   const t = useT()
-  const [loading, get] = useFetch(
-    (): PResp<TaskInfo[]> => r.get(`/task/${props.type}/${props.done}`),
+  const [loading, get] = useFetch((): PResp<TaskInfo[]> =>
+    r.get(`/task/${props.type}/${props.done}`),
   )
   const [tasks, setTasks] = createSignal<TaskAttribute[]>([])
   const [orderBy, setOrderBy] = createSignal<TaskOrderBy>("name")
@@ -85,8 +95,17 @@ export const Tasks = (props: TasksProps) => {
           : -1,
   }
   const curSorter = createMemo(() => {
-    return (a: TaskInfo, b: TaskInfo) =>
-      (orderReverse() ? -1 : 1) * sorter[orderBy()](a, b)
+    return (a: TaskInfo, b: TaskInfo) => {
+      if (props.done === "undone" && orderBy() === "name" && !orderReverse()) {
+        const priorityDelta =
+          (undoneStatePriority[a.state] ?? 3) -
+          (undoneStatePriority[b.state] ?? 3)
+        if (priorityDelta !== 0) {
+          return priorityDelta
+        }
+      }
+      return (orderReverse() ? -1 : 1) * sorter[orderBy()](a, b)
+    }
   })
   const refresh = async () => {
     const resp = await get()
@@ -137,14 +156,14 @@ export const Tasks = (props: TasksProps) => {
     const interval = setInterval(refresh, 2000)
     onCleanup(() => clearInterval(interval))
   }
-  const [clearDoneLoading, clearDone] = useFetch(
-    (): PEmptyResp => r.post(`/task/${props.type}/clear_done`),
+  const [clearDoneLoading, clearDone] = useFetch((): PEmptyResp =>
+    r.post(`/task/${props.type}/clear_done`),
   )
-  const [clearSucceededLoading, clearSucceeded] = useFetch(
-    (): PEmptyResp => r.post(`/task/${props.type}/clear_succeeded`),
+  const [clearSucceededLoading, clearSucceeded] = useFetch((): PEmptyResp =>
+    r.post(`/task/${props.type}/clear_succeeded`),
   )
-  const [retryFailedLoading, retryFailed] = useFetch(
-    (): PEmptyResp => r.post(`/task/${props.type}/retry_failed`),
+  const [retryFailedLoading, retryFailed] = useFetch((): PEmptyResp =>
+    r.post(`/task/${props.type}/retry_failed`),
   )
   const [regexFilterValue, setRegexFilterValue] = createSignal("")
   const [regexFilter, setRegexFilter] = createSignal(new RegExp(""))
@@ -205,12 +224,11 @@ export const Tasks = (props: TasksProps) => {
     filteredTask()
       .filter((task) => task.local.selected)
       .map((task) => task.id)
-  const [retrySelectedLoading, retrySelected] = useFetch(
-    (): PEmptyResp => r.post(`/task/${props.type}/retry_some`, getSelectedId()),
+  const [retrySelectedLoading, retrySelected] = useFetch((): PEmptyResp =>
+    r.post(`/task/${props.type}/retry_some`, getSelectedId()),
   )
-  const [operateSelectedLoading, operateSelected] = useFetch(
-    (): PEmptyResp =>
-      r.post(`/task/${props.type}/${operateName}_some`, getSelectedId()),
+  const [operateSelectedLoading, operateSelected] = useFetch((): PEmptyResp =>
+    r.post(`/task/${props.type}/${operateName}_some`, getSelectedId()),
   )
   const notifyIndividualError = (msg: Record<string, string>) => {
     Object.entries(msg).forEach(([key, value]) => {

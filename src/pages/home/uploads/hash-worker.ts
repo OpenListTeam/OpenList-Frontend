@@ -16,9 +16,7 @@ interface WorkerErrorMessage {
 }
 
 export type WorkerMessage =
-  | WorkerProgressMessage
-  | WorkerResultMessage
-  | WorkerErrorMessage
+  WorkerProgressMessage | WorkerResultMessage | WorkerErrorMessage
 
 self.onmessage = async (e: MessageEvent<{ file: File }>) => {
   const { file } = e.data

@@ -23,8 +23,8 @@ type Progress = {
 const Scan = () => {
   const t = useT()
   const [progress, setProgress] = createSignal<Progress>()
-  const [progressLoading, getProgressReq] = useFetch(
-    (): PResp<Progress> => r.get("/admin/scan/progress"),
+  const [progressLoading, getProgressReq] = useFetch((): PResp<Progress> =>
+    r.get("/admin/scan/progress"),
   )
   const [refreshTimeout, setRefreshTimeout] = createSignal<number | undefined>()
   const resetRefreshTimeout = (run: boolean) => {
@@ -51,8 +51,8 @@ const Scan = () => {
     )
   }
   refreshProgress()
-  const [stopLoading, stopReq] = useFetch(
-    (): PEmptyResp => r.post("/admin/scan/stop"),
+  const [stopLoading, stopReq] = useFetch((): PEmptyResp =>
+    r.post("/admin/scan/stop"),
   )
   const stop = async () => {
     const resp = await stopReq()
@@ -61,9 +61,8 @@ const Scan = () => {
   }
   const [scanPath, setScanPath] = createSignal<string>("/")
   const [rateLimit, setRateLimit] = createSignal<number>(0.0)
-  const [startLoading, startReq] = useFetch(
-    (): PEmptyResp =>
-      r.post("/admin/scan/start", { path: scanPath(), limit: rateLimit() }),
+  const [startLoading, startReq] = useFetch((): PEmptyResp =>
+    r.post("/admin/scan/start", { path: scanPath(), limit: rateLimit() }),
   )
   const start = async () => {
     const resp = await startReq()

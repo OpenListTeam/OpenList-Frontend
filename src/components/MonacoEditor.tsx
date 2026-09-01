@@ -1,5 +1,5 @@
 import { Box } from "@hope-ui/solid"
-import { createEffect, createSignal, onCleanup, onMount } from "solid-js"
+import { createEffect, createSignal, on, onCleanup, onMount } from "solid-js"
 import { MaybeLoading } from "./FullLoading"
 import loader from "@monaco-editor/loader"
 import { useCDN } from "~/hooks"
@@ -9,11 +9,12 @@ import { local } from "~/store"
 export interface MonacoEditorProps {
   value: string
   onChange?: (value: string) => void
-  theme: "vs" | "vs-dark"
   path?: string
   language?: string
+  options?: monacoType.editor.IStandaloneEditorConstructionOptions
+  onEditorReady?: (editor: monacoType.editor.IStandaloneCodeEditor) => void
 }
-let monaco: typeof monacoType
+export let monaco: typeof monacoType
 
 export const MonacoEditorLoader = (props: MonacoEditorProps) => {
   const { monacoPath } = useCDN()
@@ -40,11 +41,13 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
   let model: monacoType.editor.ITextModel
 
   onMount(() => {
-    monacoEditor = monaco.editor.create(monacoEditorDiv!, {
+    const constructionOptions = {
+      ...props.options,
       value: props.value,
-      theme: props.theme,
       fontSize: parseInt(local.editor_font_size),
-    })
+      automaticLayout: true,
+    }
+    monacoEditor = monaco.editor.create(monacoEditorDiv!, constructionOptions)
     model = monaco.editor.createModel(
       props.value,
       props.language,
@@ -54,18 +57,38 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
     monacoEditor.onDidChangeModelContent(() => {
       props.onChange?.(monacoEditor.getValue())
     })
+    props.onEditorReady?.(monacoEditor)
   })
-  createEffect(() => {
-    monacoEditor.setValue(props.value)
-  })
+  createEffect(
+    on(
+      () => props.value,
+      (value) => {
+        monacoEditor.setValue(value)
+      },
+      { defer: true },
+    ),
+  )
 
   createEffect(() => {
-    monaco.editor.setTheme(props.theme)
+    monaco.editor.setTheme(props.options?.theme ?? "vs")
   })
+
+  createEffect(
+    on(
+      () => props.language,
+      (lang) => {
+        if (lang && model) {
+          monaco.editor.setModelLanguage(model, lang)
+        }
+      },
+      { defer: true },
+    ),
+  )
 
   createEffect(() => {
     monacoEditor?.updateOptions({
       fontSize: parseInt(local.editor_font_size),
+      ...props.options,
     })
   })
 
@@ -73,5 +96,5 @@ export const MonacoEditor = (props: MonacoEditorProps) => {
     model && model.dispose()
     monacoEditor && monacoEditor.dispose()
   })
-  return <Box w="$full" h="70vh" ref={monacoEditorDiv!} />
+  return <Box w="$full" flex={1} minH="60vh" ref={monacoEditorDiv!} />
 }
