@@ -181,6 +181,25 @@ const AddOrEdit = () => {
             setShare("header", h)
           }}
         />
+        <Item
+          name="domain"
+          type={Type.String}
+          value={share.domain ?? ""}
+          valid
+          placeholder="blog.example.com"
+          onChange={(d) => {
+            setShare("domain", d)
+          }}
+        />
+        <Item
+          name="web_hosting"
+          type={Type.Bool}
+          value={share.web_hosting ?? false}
+          valid
+          onChange={(w) => {
+            setShare("web_hosting", w)
+          }}
+        />
       </ResponsiveGrid>
       <Button
         mt="$2"

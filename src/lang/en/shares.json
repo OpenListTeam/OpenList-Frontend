@@ -38,5 +38,9 @@
   },
   "input_password": "Please enter Share Code",
   "copy_msg": "Copy link",
-  "no_permission_tip": "To create a share, you need \"Share\" permission."
+  "no_permission_tip": "To create a share, you need \"Share\" permission.",
+  "domain": "Domain",
+  "domain_help": "The domain name to bind (e.g. blog.example.com); leave empty for a normal share link.",
+  "web_hosting": "Web Hosting",
+  "web_hosting_help": "If enabled, HTML files will be served directly via the bound domain instead of the file browser."
 }
