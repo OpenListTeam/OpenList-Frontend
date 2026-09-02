@@ -25,6 +25,7 @@ export type ModalInputProps = {
   title: string
   isRenamingFile?: boolean
   onSubmit?: (text: string) => void
+  onSubmitWithValue?: (text: string, setValue: (value: string) => void) => void
   type?: string
   defaultValue?: string
   loading?: boolean
@@ -91,7 +92,11 @@ export const ModalInput = (props: ModalInputProps) => {
         return
       }
     }
-    props.onSubmit?.(value())
+    if (props.onSubmitWithValue) {
+      props.onSubmitWithValue(value(), setValue)
+    } else {
+      props.onSubmit?.(value())
+    }
   }
 
   const handleInput = (newValue: string) => {
