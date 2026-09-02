@@ -134,8 +134,7 @@ export const Task = (props: TaskAttribute & TasksProps & TaskLocalSetter) => {
   )
   const title =
     matches === null ? props.name : props.nameAnalyzer.title(matches)
-  const showFileInfo = () =>
-    props.type === "offline_download" && props.done === "undone"
+  const showFileInfo = () => props.type === "offline_download"
   const fileSize = () => props.file_size || props.total_bytes
   const startTime =
     props.start_time === null ? -1 : new Date(props.start_time).getTime()
