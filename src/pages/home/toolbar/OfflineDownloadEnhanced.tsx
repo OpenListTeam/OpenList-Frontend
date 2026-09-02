@@ -45,11 +45,28 @@ const deletePolicies = [
   "upload_download_stream",
   "delete_on_upload_succeed",
   "delete_on_upload_failed",
+  "delete_after_seeding",
   "delete_never",
   "delete_always",
 ] as const
 
 type DeletePolicy = (typeof deletePolicies)[number]
+
+const defaultDeletePolicy: DeletePolicy = "upload_download_stream"
+const fallbackDeletePolicy: DeletePolicy = "delete_on_upload_succeed"
+
+const supportsDeleteAfterSeeding = (tool: string) =>
+  tool === "qBittorrent" || tool === "Transmission"
+
+const supportsDeletePolicy = (policy: DeletePolicy, tool: string) => {
+  if (policy === "upload_download_stream") {
+    return tool === "SimpleHttp"
+  }
+  if (policy === "delete_after_seeding") {
+    return supportsDeleteAfterSeeding(tool)
+  }
+  return true
+}
 
 // Tab 类型
 type TabType = "link" | "bt"
@@ -106,9 +123,15 @@ export const OfflineDownloadEnhanced = () => {
     return r.get(`/public/offline_download_tools${query}`)
   })
   const [tool, setTool] = createSignal("")
-  const [deletePolicy, setDeletePolicy] = createSignal<DeletePolicy>(
-    "upload_download_stream",
-  )
+  const [deletePolicy, setDeletePolicy] =
+    createSignal<DeletePolicy>(defaultDeletePolicy)
+
+  const updateTool = (nextTool: string) => {
+    if (!supportsDeletePolicy(deletePolicy(), nextTool)) {
+      setDeletePolicy(fallbackDeletePolicy)
+    }
+    setTool(nextTool)
+  }
 
   // 对话框状态
   const { isOpen, onOpen, onClose } = createDisclosure()
@@ -237,7 +260,7 @@ export const OfflineDownloadEnhanced = () => {
     if (shouldDisableSimpleHttp() && tool() === "SimpleHttp") {
       const available = availableTools()
       if (available.length > 0) {
-        setTool(available[0])
+        updateTool(available[0])
       }
     }
   })
@@ -246,7 +269,7 @@ export const OfflineDownloadEnhanced = () => {
     const resp = await reqTool(path)
     handleResp(resp, (data) => {
       setTools(data)
-      setTool(data[0])
+      updateTool(data[0])
     })
   }
 
@@ -498,7 +521,22 @@ export const OfflineDownloadEnhanced = () => {
         return
       }
 
-      // 正常离线下载：将 torrent 转为磁力链提交
+      // qBittorrent 直接提交原始 torrent 文件，避免 PT 私种转磁力后卡在获取元信息
+      if (tool() === "qBittorrent") {
+        const resp = await offlineDownload(
+          savePath(),
+          [],
+          tool(),
+          deletePolicy(),
+          [torrentData()],
+        )
+        handleRespWithNotifySuccess(resp, () => {
+          handleClose()
+        })
+        return
+      }
+
+      // 其它工具保持原行为：将 torrent 转为磁力链提交
       const buffer = Uint8Array.from(atob(torrentData()), (c) =>
         c.charCodeAt(0),
       )
@@ -693,13 +731,7 @@ export const OfflineDownloadEnhanced = () => {
                       : tool()
                   }
                   onChange={(v) => {
-                    if (
-                      v !== "SimpleHttp" &&
-                      deletePolicy() === "upload_download_stream"
-                    ) {
-                      setDeletePolicy("delete_on_upload_succeed")
-                    }
-                    setTool(v)
+                    updateTool(v)
                   }}
                   options={availableTools().map((t) => ({
                     value: t,
@@ -728,11 +760,7 @@ export const OfflineDownloadEnhanced = () => {
                   value={deletePolicy()}
                   onChange={(v) => setDeletePolicy(v as DeletePolicy)}
                   options={deletePolicies
-                    .filter((policy) =>
-                      policy === "upload_download_stream"
-                        ? tool() === "SimpleHttp"
-                        : true,
-                    )
+                    .filter((policy) => supportsDeletePolicy(policy, tool()))
                     .map((policy) => ({
                       value: policy,
                       label: t(`home.toolbar.delete_policy.${policy}`),
