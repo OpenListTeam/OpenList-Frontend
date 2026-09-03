@@ -36,6 +36,7 @@ const Password = (props: PasswordProps) => {
       <Input
         autofocus={true}
         type="password"
+        aria-label={props.title}
         value={props.password()}
         background={useColorModeValue("$neutral3", "$neutral2")()}
         onKeyDown={(e) => {

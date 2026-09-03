@@ -78,6 +78,9 @@ export const ListTitle = (props: {
       color: "$neutral11",
       textAlign: col.textAlign as any,
       cursor: "pointer",
+      role: "button",
+      tabIndex: 0,
+      "aria-label": `${t(`home.obj.${col.name}`)}, ${reverse() ? t("global.descending") : t("global.ascending")}`,
       onClick: () => {
         if (col.name === orderBy()) {
           setReverse(!reverse())
@@ -97,6 +100,7 @@ export const ListTitle = (props: {
           <ItemCheckbox
             checked={allChecked()}
             indeterminate={isIndeterminate()}
+            aria-label={t("home.toolbar.select_all")}
             onChange={(e: any) => {
               selectAll(e.target.checked as boolean)
             }}
@@ -157,6 +161,7 @@ const ListLayout = () => {
       onDragOver={onDragOver}
       oncapture:contextmenu={captureContentMenu}
       class="list viselect-container"
+      role="list"
       w="$full"
       spacing="$1"
     >
