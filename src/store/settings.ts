@@ -1,4 +1,5 @@
 import { ext, recordToArray, strToRegExp } from "~/utils"
+import { setBackendKind } from "~/utils/backend"
 
 const settings: Record<string, string> = {}
 
@@ -6,6 +7,8 @@ export const setSettings = (items: Record<string, string>) => {
   Object.keys(items).forEach((key) => {
     settings[key] = items[key]
   })
+  // Detect backend kind (Go backend never returns the "backend" field)
+  setBackendKind(settings["backend"])
   const version = settings["version"] || "Unknown"
   console.log(
     `%c OpenList %c ${version} %c https://github.com/OpenListTeam/OpenList`,

@@ -1,8 +1,10 @@
 import { getSettingBool, objStore } from "~/store"
+import { isGo, isTsWorker } from "~/utils/backend"
 import { FormUpload } from "./form"
 import { StreamUpload } from "./stream"
 import { HttpDirectUpload } from "./direct"
 import { MultipartUpload } from "./multipart"
+import { ChunkedUpload } from "./chunked"
 import { Upload } from "./types"
 
 type Uploader = {
@@ -16,7 +18,12 @@ const AllUploads: Uploader[] = [
   {
     name: "Multipart",
     upload: MultipartUpload,
-    available: () => getSettingBool("multipart_enabled"),
+    available: () => isGo() && getSettingBool("multipart_enabled"),
+  },
+  {
+    name: "Chunked",
+    upload: ChunkedUpload,
+    available: () => isTsWorker(),
   },
   {
     name: "HTTP Direct",

@@ -8,6 +8,7 @@ import { me } from "~/store"
 import { AnchorWithBase } from "~/components"
 import { Link } from "@solidjs/router"
 import { hoverColor, joinBase } from "~/utils"
+import { BackendKind, getBackendKind } from "~/utils/backend"
 import { IconTypes } from "solid-icons"
 
 export interface SideMenuItemProps {
@@ -18,10 +19,13 @@ export interface SideMenuItemProps {
   role?: number
   external?: true
   refresh?: true
+  /** Restrict this item to specific backends (e.g. ["go"] or ["ts-worker"]). */
+  backend?: BackendKind[]
 }
 
 const SideMenuItem = (props: SideMenuItemProps) => {
   const ifShow = createMemo(() => {
+    if (props.backend && !props.backend.includes(getBackendKind())) return false
     if (!UserMethods.is_admin(me())) {
       if (props.role === undefined) return false
       else if (props.role === UserRole.GENERAL && !UserMethods.is_general(me()))

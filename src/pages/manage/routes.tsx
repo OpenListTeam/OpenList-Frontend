@@ -4,7 +4,7 @@ import { trimLeft } from "~/utils"
 import { SideMenuItem, side_menu_items } from "./sidemenu_items"
 import { useManageTitle } from "~/hooks"
 
-type Route = Pick<SideMenuItem, "to" | "component">
+type Route = Pick<SideMenuItem, "to" | "component" | "backend">
 
 const hide_routes: Route[] = [
   {
@@ -44,6 +44,16 @@ const hide_routes: Route[] = [
     component: lazy(() => import("./users/2fa")),
   },
   {
+    to: "/plugins/add",
+    backend: ["ts-worker"],
+    component: lazy(() => import("./plugins/AddPlugin")),
+  },
+  {
+    to: "/plugins/config/:id",
+    backend: ["ts-worker"],
+    component: lazy(() => import("./plugins/ConfigPlugin")),
+  },
+  {
     to: "/messenger",
     component: lazy(() => import("./messenger/Messenger")),
   },
@@ -65,6 +75,7 @@ const get_routes = (items: SideMenuItem[], acc: Route[] = []) => {
     } else {
       acc.push({
         to: trimLeft(item.to!, "/@manage"),
+        backend: item.backend,
         component:
           item.component ||
           (() => <Placeholder title={item.title} to={item.to || "empty"} />),

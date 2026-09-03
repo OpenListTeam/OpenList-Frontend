@@ -15,7 +15,13 @@ import { useLoading, useRouter, useT } from "~/hooks"
 import { setSettings } from "~/store"
 import { setArchiveExtensions } from "~/store/archive"
 import { Resp } from "~/types"
-import { base_path, bus, handleRespWithoutAuthAndNotify, r } from "~/utils"
+import {
+  base_path,
+  bus,
+  handleRespWithoutAuthAndNotify,
+  initPluginEngine,
+  r,
+} from "~/utils"
 import { MustUser, UserOrGuest } from "./MustUser"
 import "./index.css"
 import { globalStyles } from "./theme"
@@ -28,6 +34,7 @@ const Test = lazy(() => import("~/pages/test"))
 const App: Component = () => {
   const t = useT()
   globalStyles()
+  initPluginEngine()
   const isRouting = useIsRouting()
   const { to, pathname } = useRouter()
   const onTo = (path: string) => {
