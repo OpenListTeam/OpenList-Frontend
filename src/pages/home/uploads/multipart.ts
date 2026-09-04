@@ -122,6 +122,11 @@ export const MultipartUpload: Upload = async (
     throw new Error(initResp!.message)
   }
   const session = initResp!.data
+  // 后端不支持分片（存储驱动无会话上传能力）时返回 data:null，
+  // 回退到流式上传，保证任意存储都能上传
+  if (!session) {
+    return StreamUpload(uploadPath, file, setUpload, false, overwrite, rapid)
+  }
   const uploadId = session.upload_id
   const chunkSize = session.chunk_size
   const total = session.total_chunks
