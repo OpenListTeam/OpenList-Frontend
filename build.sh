@@ -151,6 +151,9 @@ build_project() {
         pnpm i18n:release
     else
         fetch_i18n_from_release
+        # Always run i18n build script to generate entry.ts for all languages
+        log_info "Running i18n build script to generate entry.ts..."
+        node ./scripts/i18n.mjs
     fi
 
     log_step "==== Building project ===="
