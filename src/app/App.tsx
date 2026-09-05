@@ -23,6 +23,7 @@ import { globalStyles } from "./theme"
 const Home = lazy(() => import("~/pages/home/Layout"))
 const Manage = lazy(() => import("~/pages/manage"))
 const Login = lazy(() => import("~/pages/login"))
+const Init = lazy(() => import("~/pages/init"))
 const Test = lazy(() => import("~/pages/test"))
 
 const App: Component = () => {
@@ -43,6 +44,7 @@ const App: Component = () => {
   })
 
   const [err, setErr] = createSignal<string[]>([])
+  const [initialized, setInitialized] = createSignal<boolean | null>(null)
   const [loading, data] = useLoading(() =>
     Promise.all([
       (async () => {
@@ -59,9 +61,25 @@ const App: Component = () => {
           (e) => setErr(err().concat(e)),
         )
       })(),
+      (async () => {
+        handleRespWithoutAuthAndNotify(
+          (await r.get("/public/init_status")) as Resp<{
+            initialized: boolean
+          }>,
+          (data) => setInitialized(data.initialized),
+          (e) => setErr(err().concat(e)),
+        )
+      })(),
     ]),
   )
   data()
+
+  // 系统未初始化时，自动跳转到安装向导
+  createEffect(() => {
+    if (initialized() === false && !pathname().startsWith("/@init")) {
+      to("/@init", true)
+    }
+  })
   return (
     <>
       <Portal>
@@ -83,6 +101,7 @@ const App: Component = () => {
           <Routes base={base_path}>
             <Route path="/@test" component={Test} />
             <Route path="/@login" component={Login} />
+            <Route path="/@init" component={Init} />
             <Route
               path="/@manage/*"
               element={
