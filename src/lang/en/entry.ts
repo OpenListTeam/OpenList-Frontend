@@ -4,6 +4,7 @@ import global from "./global.json"
 import home from "./home.json"
 import index from "./index.json"
 import indexes from "./indexes.json"
+import init from "./init.json"
 import login from "./login.json"
 import manage from "./manage.json"
 import metas from "./metas.json"
@@ -22,6 +23,7 @@ export const dict = {
   home,
   index,
   indexes,
+  init,
   login,
   manage,
   metas,

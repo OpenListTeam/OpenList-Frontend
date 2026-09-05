@@ -1,0 +1,12 @@
+{
+  "setup_to": "Setup",
+  "title": "Initialize OpenList",
+  "username-tips": "Admin username",
+  "password-tips": "Set admin password",
+  "confirm_password-tips": "Confirm password",
+  "site_title-tips": "Site title",
+  "setup": "Initialize",
+  "success": "Initialized successfully, please login",
+  "password_mismatch": "Passwords do not match",
+  "password_too_short": "Password must be at least 4 characters"
+}
