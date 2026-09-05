@@ -41,6 +41,7 @@
     "media_transcode": "Transcoding Settings",
     "transcode": "Transcode",
     "plugins": "Plugins",
+    "cronjobs": "Cron Jobs",
     "seed": "Seed"
   },
   "title": "OpenList Management",

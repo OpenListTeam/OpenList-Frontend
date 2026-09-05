@@ -1,0 +1,58 @@
+{
+  "title": "Cron Jobs",
+  "add": "Add Cron Job",
+  "edit": "Edit Cron Job",
+  "name": "Name",
+  "type": "Type",
+  "type_unavailable": "This cronjob type has no frontend configuration description.",
+  "cron_spec": "Cron Expression",
+  "cron_spec_help": "Use a standard 5-field expression, for example */10 * * * *.",
+  "enabled": "Enabled",
+  "running": "Running",
+  "last_run_at": "Last Run",
+  "next_run_at": "Next Run",
+  "last_error": "Last Error",
+  "run": "Run Now",
+  "run_success": "Started successfully",
+  "types": {
+    "sync": "Sync"
+  },
+  "descriptions": {
+    "sync": "Mirror the source path to the destination path. Extra destination objects are removed before copying new or changed files."
+  },
+  "args": {
+    "sync": {
+      "src": "Source Path",
+      "src_help": "Source directory or file in OpenList.",
+      "dst": "Destination Path",
+      "dst_help": "Destination directory. Sync may delete extra objects here.",
+      "max_depth": "Max Depth",
+      "max_depth_help": "0 means unlimited; 1 only processes files in the first level.",
+      "ignore_existing": "Ignore Existing Files",
+      "ignore_existing_help": "Skip destination files that already exist.",
+      "max_size": "Max Size (bytes)",
+      "max_size_help": "Skip files greater than or equal to this size. 0 disables it.",
+      "min_size": "Min Size (bytes)",
+      "min_size_help": "Skip files less than or equal to this size. 0 disables it.",
+      "max_age": "Max Age",
+      "max_age_help": "Only sync files younger than this age, for example 7d.",
+      "min_age": "Min Age",
+      "min_age_help": "Only sync files older than this age, for example 10m.",
+      "exclude": "Exclude Globs",
+      "exclude_help": "One glob pattern per line.",
+      "exclude_regexp": "Exclude Go Regexps",
+      "exclude_regexp_help": "One Go regexp pattern per line.",
+      "exclude_regexp2": "Exclude Regexp2",
+      "exclude_regexp2_help": "One .NET-style regexp pattern per line.",
+      "size": "Compare Size",
+      "size_help": "Compare file size when deciding whether to copy.",
+      "mtime": "Compare Modified Time",
+      "mtime_help": "Compare modified time. Some storages return inaccurate times.",
+      "checksum": "Compare Checksum",
+      "checksum_help": "Use a checksum supported by both storages when available."
+    }
+  },
+  "sync_tasks": "Sync Task History",
+  "cannot_edit_running": "A running job cannot be edited or deleted.",
+  "no_last_error": "-"
+}

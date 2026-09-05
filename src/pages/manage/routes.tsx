@@ -42,6 +42,14 @@ const hide_routes: Route[] = [
     component: lazy(() => import("./metas/AddOrEdit")),
   },
   {
+    to: "/cronjobs/add",
+    component: lazy(() => import("./cronjobs/AddOrEdit")),
+  },
+  {
+    to: "/cronjobs/edit/:id",
+    component: lazy(() => import("./cronjobs/AddOrEdit")),
+  },
+  {
     to: "/2fa",
     component: lazy(() => import("./users/2fa")),
   },
