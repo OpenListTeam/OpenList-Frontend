@@ -5,12 +5,16 @@ import { Header } from "./Header"
 import { SideMenu } from "./SideMenu"
 import { side_menu_items } from "./sidemenu_items"
 import { Route, Routes } from "@solidjs/router"
-import { For, Suspense } from "solid-js"
+import { createMemo, For, Suspense } from "solid-js"
 import { routes } from "./routes"
+import { getBackendKind } from "~/utils/backend"
 
 const Manage = () => {
   const t = useT()
   useTitle(() => t("manage.title"))
+  const visibleRoutes = createMemo(() =>
+    routes.filter((r) => !r.backend || r.backend.includes(getBackendKind())),
+  )
   return (
     <Box
       css={{
@@ -46,7 +50,7 @@ const Manage = () => {
           overflowY="auto"
         >
           <Routes>
-            <For each={routes}>
+            <For each={visibleRoutes()}>
               {(route) => {
                 return <Route path={route.to!} component={route.component} />
               }}

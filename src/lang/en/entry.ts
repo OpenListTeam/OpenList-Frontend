@@ -8,6 +8,7 @@ import init from "./init.json"
 import login from "./login.json"
 import manage from "./manage.json"
 import metas from "./metas.json"
+import plugins from "./plugins.json"
 import settings_other from "./settings_other.json"
 import settings from "./settings.json"
 import shares from "./shares.json"
@@ -26,6 +27,7 @@ export const dict = {
   login,
   manage,
   metas,
+  plugins,
   settings_other,
   settings,
   shares,

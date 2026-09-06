@@ -12,6 +12,10 @@ type Uploader = {
 }
 
 // All upload methods
+//
+// 分片上传统一采用官方 multipart 协议（/fs/multipart/*），GO / TS 后端共用
+// 同一 API 契约；后端实现可不同（TS 内部桥接到会话分片）。后端对不支持分片
+// 的存储返回 data:null，前端 multipart 自动回退到流式上传。
 const AllUploads: Uploader[] = [
   {
     name: "Multipart",
