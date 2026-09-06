@@ -35,12 +35,16 @@ const Init = () => {
 
   // 若系统已初始化，跳转到登录页
   onMount(async () => {
-    const resp = (await r.get("/public/init_status")) as Resp<InitStatus>
-    if (resp.code === 200 && resp.data?.initialized) {
-      // 已初始化：整页刷新跳转，确保 App 重新读取 init_status 为 true，
-      // 避免 SPA 跳转被 App 的「未初始化」检测再次拉回本页形成循环。
-      window.location.href = base_path + "/@login"
+    try {
+      const resp = (await r.get("/public/init_status")) as Resp<InitStatus>
+      if (resp?.data?.initialized === false) {
+        return
+      }
+    } catch {
+      // 状态接口不可用时回退到登录页。
     }
+    // 已初始化或状态接口不可用时回退到登录页。
+    window.location.href = base_path + "/@login"
   })
 
   const [loading, data] = useLoading<EmptyResp>(() =>
@@ -68,7 +72,7 @@ const Init = () => {
         // 整页刷新跳转登录页，让 App 重新挂载并读取 init_status / settings
         window.location.href = base_path + "/@login"
       },
-      (msg) => notify.error(msg),
+      (msg) => notify.error(msg || t("init.failed")),
     )
   }
 

@@ -7,6 +7,7 @@
   "site_title-tips": "Site title",
   "setup": "Initialize",
   "success": "Initialized successfully, please login",
+  "failed": "Initialization failed",
   "password_mismatch": "Passwords do not match",
   "password_too_short": "Password must be at least 4 characters"
 }
