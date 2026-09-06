@@ -14,7 +14,7 @@ import { Error, FullScreenLoading } from "~/components"
 import { useLoading, useRouter, useT } from "~/hooks"
 import { setSettings } from "~/store"
 import { setArchiveExtensions } from "~/store/archive"
-import { Resp } from "~/types"
+import { InitStatus, Resp } from "~/types"
 import { base_path, bus, handleRespWithoutAuthAndNotify, r } from "~/utils"
 import { MustUser, UserOrGuest } from "./MustUser"
 import "./index.css"
@@ -44,7 +44,7 @@ const App: Component = () => {
   })
 
   const [err, setErr] = createSignal<string[]>([])
-  const [initialized, setInitialized] = createSignal<boolean | null>(null)
+  const [initialized, setInitialized] = createSignal(true)
   const [loading, data] = useLoading(() =>
     Promise.all([
       (async () => {
@@ -58,16 +58,14 @@ const App: Component = () => {
         handleRespWithoutAuthAndNotify(
           (await r.get("/public/archive_extensions")) as Resp<string[]>,
           setArchiveExtensions,
-          (e) => setErr(err().concat(e)),
+          // (e) => setErr(err().concat(e)),
         )
       })(),
       (async () => {
         handleRespWithoutAuthAndNotify(
-          (await r.get("/public/init_status")) as Resp<{
-            initialized: boolean
-          }>,
+          (await r.get("/public/init_status")) as Resp<InitStatus>,
           (data) => setInitialized(data.initialized),
-          (e) => setErr(err().concat(e)),
+          // (e) => setErr(err().concat(e)),
         )
       })(),
     ]),
