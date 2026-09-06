@@ -71,7 +71,8 @@ jobs:
             --prerelease \
             --draft=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.draft || false }} \
             ${{ steps.version.outputs.tag_name }} \
-            dist/openlist-frontend-dist-v*-*.tar.gz
+            dist/openlist-frontend-dist-v*-*.tar.gz \
+            dist/i18n.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
