@@ -9,5 +9,7 @@ export interface TaskInfo {
   start_time: string | null
   end_time: string | null
   total_bytes: number
+  file_name?: string
+  file_size?: number
   error: string
 }
