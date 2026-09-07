@@ -45,7 +45,7 @@ const Permission = (props: {
 
 const AddOrEdit = () => {
   const t = useT()
-  const { params, back } = useRouter()
+  const { params, to } = useRouter()
   const { id } = params
   const [user, setUser] = createStore<User>({
     id: 0,
@@ -58,8 +58,8 @@ const AddOrEdit = () => {
     sso_id: "",
     allow_ldap: false,
   })
-  const [userLoading, loadUser] = useFetch((): PResp<User> =>
-    r.get(`/admin/user/get?id=${id}`),
+  const [userLoading, loadUser] = useFetch(
+    (): PResp<User> => r.get(`/admin/user/get?id=${id}`),
   )
 
   const initEdit = async () => {
@@ -169,7 +169,7 @@ const AddOrEdit = () => {
               notify.success(t("global.save_success"))
               if (user.username === me().username)
                 handleResp(await (r.get("/me") as PResp<Me>), setMe)
-              back()
+              to("/@manage/users", false, { replace: true })
             })
           }}
         >

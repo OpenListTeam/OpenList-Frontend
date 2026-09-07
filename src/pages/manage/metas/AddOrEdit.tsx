@@ -123,7 +123,7 @@ const AddOrEdit = () => {
   }
 
   const t = useT()
-  const { params, back } = useRouter()
+  const { params, to } = useRouter()
   const { id } = params
   const [meta, setMeta] = createStore<Meta>({
     id: 0,
@@ -143,12 +143,12 @@ const AddOrEdit = () => {
     header: "",
     header_sub: false,
   })
-  const [metaLoading, loadMeta] = useFetch((): PResp<Meta> =>
-    r.get(`/admin/meta/get?id=${id}`),
+  const [metaLoading, loadMeta] = useFetch(
+    (): PResp<Meta> => r.get(`/admin/meta/get?id=${id}`),
   )
   const [users, setUsers] = createSignal<User[]>([])
-  const [getUsersLoading, getUsers] = useFetch((): PPageResp<User> =>
-    r.get("/admin/user/list"),
+  const [getUsersLoading, getUsers] = useFetch(
+    (): PPageResp<User> => r.get("/admin/user/list"),
   )
 
   const initEdit = async () => {
@@ -238,7 +238,7 @@ const AddOrEdit = () => {
             // TODO maybe can use handleRrespWithNotifySuccess
             handleResp(resp, () => {
               notify.success(t("global.save_success"))
-              back()
+              to("/@manage/metas", false, { replace: true })
             })
           }}
         >
