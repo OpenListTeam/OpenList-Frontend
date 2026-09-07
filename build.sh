@@ -114,7 +114,7 @@ validate_git_tag() {
 
 # Fallback to default git tag for development builds
 fallback_git_tag() {
-    git tag -d rolling >/dev/null 2>&1 || true
+    git tag -d edge >/dev/null 2>&1 || true
     git_version=$(git describe --abbrev=0 --tags 2>/dev/null || echo "v0.0.0")
     git_version_clean=${git_version#v}
     git_version_clean=${git_version_clean%%-*}
@@ -149,11 +149,11 @@ build_project() {
     log_step "==== Building i18n ===="
     if [[ "$SKIP_I18N" == "false" ]]; then
         if ! pnpm i18n:release; then
-            log_warning "Crowdin download failed, falling back to the rolling beta release"
-            fetch_i18n_from_release "rolling" || true
+            log_warning "Crowdin download failed, falling back to the edge beta release"
+            fetch_i18n_from_release "edge" || true
         fi
     else
-        fetch_i18n_from_release "rolling" || true
+        fetch_i18n_from_release "edge" || true
     fi
 
     # Always generate entry.ts and fill missing translation files for all languages
@@ -170,7 +170,7 @@ build_project() {
 
 # Fetch i18n files from release if skip-i18n flag is set
 fetch_i18n_from_release() {
-    local release_tag=${1:-rolling}
+    local release_tag=${1:-edge}
 
     log_warning "Trying to fetch i18n files from GitHub release: $release_tag"
     release_response=$(curl -fsSL "https://api.github.com/repos/OpenListTeam/OpenList-Frontend/releases/tags/$release_tag") || {
