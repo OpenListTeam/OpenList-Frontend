@@ -98,9 +98,9 @@ jobs:
       - name: Get current tag
         id: get_current_tag
         run: |
-          # Remove existing tag `rolling`, since `rolling` should always point to the latest commit
+          # Remove existing tag `edge`, since `edge` should always point to the latest commit
           # This is necessary to avoid conflicts with the changelog generation
-          git tag -d rolling 2>/dev/null || true
+          git tag -d edge 2>/dev/null || true
 
           # Get the current tag
           CURRENT_TAG=$(git describe --tags --abbrev=0)

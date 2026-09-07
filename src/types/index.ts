@@ -1,6 +1,7 @@
 export * from "./obj"
 export * from "./resp"
 export * from "./setting"
+export * from "./init"
 export * from "./storage"
 export * from "./user"
 export * from "./driver_item"

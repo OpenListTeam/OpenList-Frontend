@@ -20,7 +20,7 @@
   ],
   "homepage": "https://openlist.team/",
   "scripts": {
-    "crowdin:upload": "crowdin upload sources --auto-update",
+    "crowdin:upload": "crowdin upload sources",
     "crowdin:download": "crowdin download --verbose",
     "crowdin": "pnpm crowdin:upload && pnpm crowdin:download",
     "i18n:build": "pnpm crowdin && node ./scripts/i18n.mjs",
@@ -36,7 +36,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@crowdin/cli": "^5.0.0",
+    "@crowdin/cli": "^5.0.2",
     "@types/bencode": "^4.0.0",
     "@types/crypto-js": "^4.2.2",
     "@types/mark.js": "^8.11.12",
@@ -86,7 +86,7 @@
     "handlebars": "^4.7.9",
     "hash-wasm": "^4.12.0",
     "highlight.js": "^11.12.0",
-    "hls.js": "^1.7.1",
+    "hls.js": "^1.7.2",
     "ini": "^7.0.0",
     "katex": "^0.18.1",
     "libheif-js": "^1.19.8",

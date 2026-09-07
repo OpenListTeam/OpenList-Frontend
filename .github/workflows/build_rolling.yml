@@ -2,7 +2,7 @@
 #
 # This will:
 #
-# - Upload the release assets to GitHub (always git tagged `rolling`).
+# - Upload the release assets to GitHub (always git tagged `edge`).
 #
 # This workflow can be triggered on pushes to the `main` branch, or manually via the GitHub Actions UI.
 
@@ -56,7 +56,7 @@ jobs:
         run: |
           version=$(cat dist/VERSION)
           echo "version=$version" >> $GITHUB_OUTPUT
-          echo "tag_name=rolling" >> $GITHUB_OUTPUT
+          echo "tag_name=edge" >> $GITHUB_OUTPUT
 
       - name: Remove the existing pre-release
         run: gh release delete ${{ steps.version.outputs.tag_name }} --cleanup-tag --yes || true
@@ -71,7 +71,8 @@ jobs:
             --prerelease \
             --draft=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.draft || false }} \
             ${{ steps.version.outputs.tag_name }} \
-            dist/openlist-frontend-dist-v*-*.tar.gz
+            dist/openlist-frontend-dist-v*-*.tar.gz \
+            dist/i18n.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
