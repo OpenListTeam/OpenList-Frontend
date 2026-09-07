@@ -45,8 +45,8 @@ importers:
         specifier: ^4.1.1
         version: 4.1.1
       '@viselect/vanilla':
-        specifier: ^3.9.0
-        version: 3.9.0
+        specifier: ^3.10.1
+        version: 3.10.1
       aplayer:
         specifier: ^1.10.1
         version: 1.10.1
@@ -1695,8 +1695,8 @@ packages:
   '@upsetjs/venn.js@2.0.0':
     resolution: {integrity: sha512-WbBhLrooyePuQ1VZxrJjtLvTc4NVfpOyKx0sKqioq9bX1C1m7Jgykkn8gLrtwumBioXIqam8DLxp88Adbue6Hw==}
 
-  '@viselect/vanilla@3.9.0':
-    resolution: {integrity: sha512-E9eBgoi/crJ0SlZMAc+Yst7nU324LZ5LLvcXjzWEcrfllscdpTml2OLOKHC7O8Bbz19OybSLv6VexxnjlJrLxQ==}
+  '@viselect/vanilla@3.10.1':
+    resolution: {integrity: sha512-e0gwuYRXMftxwfuqVX0NyQAxPnrYVwA+agvKqEdVeDz+6iJXV0FN9VsI8vHLLh3K5zcl601w8seUXLiWb2kTwQ==}
 
   '@vitejs/plugin-legacy@8.2.3':
     resolution: {integrity: sha512-MMHLsn/0FrBkCQyb1x44cPYGwkfqcGr2FblcEP2ne79aXe7d5tFKoZ09xs5C4wuh8fOu2JRaNhgAS3K3uvUeJA==}
@@ -5102,7 +5102,7 @@ snapshots:
       d3-selection: 3.0.0
       d3-transition: 3.0.1(d3-selection@3.0.0)
 
-  '@viselect/vanilla@3.9.0': {}
+  '@viselect/vanilla@3.10.1': {}
 
   '@vitejs/plugin-legacy@8.2.3(terser@5.48.0)(vite@8.2.2(@types/node@24.13.3)(terser@5.48.0)(yaml@2.9.0))':
     dependencies:
