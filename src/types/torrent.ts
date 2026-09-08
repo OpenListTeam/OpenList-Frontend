@@ -69,6 +69,27 @@ export interface SeedCapabilities {
   >
 }
 
+// Per-file save method returned by the destination import planning probe.
+export type SeedSaveMethod =
+  | "189pc_cas"
+  | "put_url"
+  | "offline_download"
+  | "download_required"
+  | "unavailable"
+
+export interface SeedSaveCapabilityFile {
+  path: string
+  method: SeedSaveMethod
+  requires_download?: boolean
+}
+
+export interface SeedSaveCapabilities {
+  driver?: string
+  global_policy?: string
+  resolved_policy?: string
+  files: SeedSaveCapabilityFile[]
+}
+
 export interface SeedGenerateRequest {
   paths: string[]
   formats: SeedFormat[]
@@ -102,6 +123,7 @@ export interface SeedInfo extends Partial<TorrentInfo> {
   format: SeedFormat
   name: string
   total_size: number
+  piece_size?: number
   files: SeedCapabilityFile[]
   created_at?: string
   comment?: string
@@ -153,7 +175,9 @@ export interface SeedOperationRequest {
   selected_files?: number[]
   format?: SeedFormat
   transit_path?: string
+  remove_files?: string[]
   recalc_files?: Array<{ path: string; source_path: string }>
+  hash_matrix?: SeedHashMatrix
   options?: Record<string, unknown>
 }
 

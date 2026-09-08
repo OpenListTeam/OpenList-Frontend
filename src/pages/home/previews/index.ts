@@ -165,7 +165,7 @@ const previews: Preview[] = [
     key: "torrent",
     exts: ["torrent", "cas", "oss"],
     component: lazy(() => import("./torrent")),
-    prior: () => getSettingBool("seed_single_direct_preview"),
+    prior: true,
   },
   {
     key: "archive",

@@ -13,6 +13,7 @@ import {
   TorrentUploadParseResult,
   TorrentRapidUploadResult,
   SeedCapabilities,
+  SeedSaveCapabilities,
   SeedFormat,
   SeedGenerateRequest,
   SeedGenerateResult,
@@ -327,6 +328,14 @@ export const torrentRapidUpload = (
 // Transfer seed APIs. All seed payloads are base64 encoded.
 export const seedCapabilities = (paths: string[]): PResp<SeedCapabilities> =>
   r.post("/fs/seed/capabilities", { paths })
+
+// Probe per-file save methods for a parsed seed against a destination path.
+export const seedSaveCapabilities = (
+  seed_data: string,
+  file_name: string,
+  path: string,
+): PResp<SeedSaveCapabilities> =>
+  r.post("/fs/seed/capabilities", { seed_data, file_name, path })
 
 const seedWireFormat = (format: SeedFormat): "oss" | "torrent" | "cas" => format
 
