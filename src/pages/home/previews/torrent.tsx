@@ -149,6 +149,8 @@ const TorrentPreview = () => {
   const [targetFormat, setTargetFormat] = createSignal<SeedFormat>("oss")
   const [editComment, setEditComment] = createSignal("")
   const [operation, setOperation] = createSignal("")
+  const [transitPath, setTransitPath] = createSignal("")
+  const [recalcPaths, setRecalcPaths] = createSignal<Record<string, string>>({})
 
   const inferFormat = (): SeedFormat => {
     const extension = objStore.obj.name.toLowerCase().split(".").pop()
@@ -250,6 +252,19 @@ const TorrentPreview = () => {
       notify.error("Select at least one file")
       return
     }
+    if (name === "transit" && !transitPath().trim()) {
+      notify.error("Transit path is required")
+      return
+    }
+    if (
+      name === "recalculate" &&
+      selectedFiles().some(
+        (index) => !recalcPaths()[info.files[index]?.path]?.trim(),
+      )
+    ) {
+      notify.error("Source path is required for every selected file")
+      return
+    }
     setOperation(name)
     try {
       const resp =
@@ -258,12 +273,21 @@ const TorrentPreview = () => {
           : name === "offline" || name === "transit"
             ? await seedOfflineDownload({
                 ...request(),
+                transit_path: name === "transit" ? transitPath() : undefined,
                 options: name === "transit" ? { mode: "transfer" } : undefined,
               })
             : name === "convert"
               ? await seedConvert({ ...request(), format: targetFormat() })
               : await seedUpdate({
                   ...request(),
+                  recalc_files:
+                    name === "recalculate"
+                      ? selectedFiles().map((index) => ({
+                          path: info.files[index]?.path,
+                          source_path:
+                            recalcPaths()[info.files[index]?.path] || "",
+                        }))
+                      : undefined,
                   options: {
                     comment: editComment(),
                     recalculate: name === "recalculate",
@@ -486,6 +510,18 @@ const TorrentPreview = () => {
                 </Badge>
               </Show>
             </Box>
+            <Show when={operationSupported("transfer")}>
+              <Box>
+                <Text fontSize="$sm" mb="$1">
+                  {t("home.transfer_seed.transit_path")}
+                </Text>
+                <FolderChooseInput
+                  id="seed-preview-transit-path"
+                  value={transitPath()}
+                  onChange={setTransitPath}
+                />
+              </Box>
+            </Show>
             <HStack spacing="$2" flexWrap="wrap">
               <Button
                 loading={operation() === "rapid"}
@@ -571,6 +607,35 @@ const TorrentPreview = () => {
                 {t("home.transfer_seed.recalculate")}
               </Button>
             </HStack>
+            <Show when={operationSupported("recalculate")}>
+              <Box>
+                <Text fontSize="$sm" mb="$1">
+                  {t("home.transfer_seed.recalc_source_path")}
+                </Text>
+                <For each={selectedFiles()}>
+                  {(index) => {
+                    const path = () => torrentInfo()!.files[index]?.path || ""
+                    return (
+                      <Box mb="$2">
+                        <Text fontSize="$xs" mb="$1">
+                          {path()}
+                        </Text>
+                        <Input
+                          value={recalcPaths()[path()] || ""}
+                          placeholder="/path/to/file"
+                          onInput={(event) =>
+                            setRecalcPaths((current) => ({
+                              ...current,
+                              [path()]: event.currentTarget.value,
+                            }))
+                          }
+                        />
+                      </Box>
+                    )
+                  }}
+                </For>
+              </Box>
+            </Show>
           </Show>
         </VStack>
       </Show>

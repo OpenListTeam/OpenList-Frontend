@@ -204,7 +204,9 @@
     "transit_save": "Transfer save",
     "convert_to": "Convert to",
     "convert": "Convert",
-    "recalculate": "Recalculate"
+    "recalculate": "Recalculate",
+    "transit_path": "Transit path (intermediate storage)",
+    "recalc_source_path": "Recalculate source paths (server files)"
   },
   "upload": {
     "add_as_task": "Add as task",

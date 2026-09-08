@@ -151,6 +151,8 @@ export interface SeedOperationRequest {
   path?: string
   selected_files?: number[]
   format?: SeedFormat
+  transit_path?: string
+  recalc_files?: Array<{ path: string; source_path: string }>
   options?: Record<string, unknown>
 }
 
@@ -161,6 +163,12 @@ export interface SeedOperationResult {
   path?: string
   channel?: SeedInfo["channel"]
   artifact?: SeedArtifact
+  results?: Array<{
+    path?: string
+    name?: string
+    method?: string
+    error?: string
+  }>
 }
 
 export interface TorrentUploadParseResult {
