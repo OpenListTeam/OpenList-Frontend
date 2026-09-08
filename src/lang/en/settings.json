@@ -150,26 +150,17 @@
   "seed_site_url": "Seed site URL",
   "seed_default_matrix": "Default hash matrix",
   "seed_format_policies": "Seed format policies",
+  "seed_default_format": "Default seed format",
+  "seed_default_formats": {
+    "oss": "OSS",
+    "torrent": "Torrent",
+    "cas": "CAS"
+  },
   "seed_auto_generate_policy": "Auto-generate seeds on upload",
+  "seed_auto_generate_policys": {
+    "off": "Off",
+    "on": "On"
+  },
   "seed_single_direct_preview": "Single-file seed direct preview",
-  "seed_cas_direct_access": "CAS direct access",
-  "md5_whole": "MD5 whole file hash",
-  "md5_pieces": "MD5 piece hashes",
-  "sha1_whole": "SHA-1 whole file hash",
-  "sha1_pieces": "SHA-1 piece hashes",
-  "sha256_whole": "SHA-256 whole file hash",
-  "sha256_pieces": "SHA-256 piece hashes",
-  "oss_policy": "OSS format enabled",
-  "torrent_policy": "Torrent format enabled",
-  "cas_policy": "CAS format enabled",
-  "settings_seed": {
-    "site_url_title": "Seed Site URL",
-    "site_url": "Site URL",
-    "site_url_help": "Base URL for seed file sharing (e.g., https://example.com)",
-    "default_matrix_title": "Default Hash Matrix",
-    "default_matrix_help": "Configure which hash algorithms to compute for whole files and pieces",
-    "format_policies_title": "Seed Format Policies",
-    "format_policies_help": "Enable or disable seed file formats (OSS JSON, BitTorrent, CAS)",
-    "other_options_title": "Other Options"
-  }
+  "seed_cas_direct_access": "CAS direct access"
 }
