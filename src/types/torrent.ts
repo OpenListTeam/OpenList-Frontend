@@ -54,6 +54,7 @@ export interface SeedCapabilityFile extends TorrentFile {
   available_hashes?: SeedHashAlgorithm[]
   direct_source_available?: boolean
   share_available?: boolean
+  streamable?: boolean
   missing_reasons?: string[]
 }
 
@@ -64,6 +65,7 @@ export interface SeedCapabilities {
   missing_hashes?: SeedHashAlgorithm[]
   estimated_traffic?: number
   default_matrix?: SeedHashMatrix
+  trackers?: string[]
   conversion?: Partial<
     Record<SeedFormat, { feasible: boolean; missing?: string[] }>
   >
@@ -88,6 +90,13 @@ export interface SeedSaveCapabilities {
   global_policy?: string
   resolved_policy?: string
   files: SeedSaveCapabilityFile[]
+  driver_supports?: {
+    cas_rapid?: boolean
+    put_url?: boolean
+    offline_download?: boolean
+    rapid_hash_algos?: SeedHashAlgorithm[]
+    rapid_uses_pieces?: boolean
+  }
 }
 
 export interface SeedGenerateRequest {
@@ -100,6 +109,8 @@ export interface SeedGenerateRequest {
   trackers?: string[]
   include_share?: boolean
   include_direct_source?: boolean
+  share_files?: string[]
+  direct_files?: string[]
   output_path?: string
 }
 
@@ -175,6 +186,8 @@ export interface SeedOperationRequest {
   selected_files?: number[]
   format?: SeedFormat
   transit_path?: string
+  tool?: string
+  delete_policy?: string
   remove_files?: string[]
   recalc_files?: Array<{ path: string; source_path: string }>
   hash_matrix?: SeedHashMatrix

@@ -6,7 +6,6 @@ import {
   Badge,
   Heading,
   Box,
-  Input,
   Checkbox,
   Divider,
   Alert,
@@ -28,6 +27,7 @@ import { getSettingBool, objStore } from "~/store"
 import {
   TorrentInfo,
   CASInfo,
+  Resp,
   SeedFormat,
   SeedInfo,
   SeedParseResult,
@@ -41,6 +41,8 @@ import {
   fsGet,
   handleResp,
   notify,
+  offlineDownload,
+  r,
   seedConvert,
   seedOfflineDownload,
   seedParse,
@@ -151,7 +153,37 @@ function parseLocalTorrent(buffer: Uint8Array): TorrentInfo {
   }
 }
 
+function toMagnetUrl(torrentBuffer: Uint8Array): string {
+  const data = bencode.decode(torrentBuffer as any)
+  const infoEncode = bencode.encode(data.info) as unknown as Uint8Array
+  const infoHash = crypto
+    .SHA1(crypto.lib.WordArray.create(infoEncode))
+    .toString()
+  const params: Record<string, unknown> = {}
+  if (Number.isInteger(data?.info?.length)) params.xl = data.info.length
+  if (data.info.name) params.dn = utf8Decode(data.info.name)
+  if (data.announce) params.tr = utf8Decode(data.announce)
+  return `magnet:?xt=urn:btih:${infoHash}&${new URLSearchParams(
+    params as Record<string, string>,
+  ).toString()}`
+}
+
 const ALGORITHMS: SeedHashAlgorithm[] = ["md5", "sha1", "sha256"]
+
+const DELETE_POLICIES = [
+  "upload_download_stream",
+  "delete_on_upload_succeed",
+  "delete_on_upload_failed",
+  "delete_never",
+  "delete_always",
+] as const
+
+// 格式完整显示名称：OSS 显示格式名，CAS 显示完整名称，BT 显示为种子文件。
+const FORMAT_DISPLAY: Record<string, string> = {
+  oss: "OpenList Sharing Seed",
+  cas: "Content Addressable Storage",
+  torrent: "BitTorrent",
+}
 
 // 每个文件展示一行，包含哈希复制、分片弹窗、预览、删除、注释、重算等操作
 const SeedFileRow = (props: {
@@ -423,7 +455,8 @@ const TorrentPreview = () => {
   const [editComment, setEditComment] = createSignal("")
   const [operation, setOperation] = createSignal("")
   const [transitPath, setTransitPath] = createSignal("")
-  const [recalcPaths, setRecalcPaths] = createSignal<Record<string, string>>({})
+  // 重算源目录：种子文件对应源文件所在目录（默认当前浏览目录）
+  const [recalcSourceDir, setRecalcSourceDir] = createSignal("")
   const [recalcMatrix, setRecalcMatrix] = createSignal<SeedHashMatrix>({
     md5: { whole: false, pieces: false },
     sha1: { whole: false, pieces: false },
@@ -448,11 +481,114 @@ const TorrentPreview = () => {
   const [recalcFileIndex, setRecalcFileIndex] = createSignal<number | null>(
     null,
   )
-  const [recalcSource, setRecalcSource] = createSignal("")
+
+  // 离线下载弹窗（复用工具选择逻辑）
+  const offlineDisclosure = createDisclosure()
+  const [offlineTools, setOfflineTools] = createSignal<string[]>([])
+  const [offlineTool, setOfflineTool] = createSignal("")
+  const [offlineDeletePolicy, setOfflineDeletePolicy] = createSignal(
+    "upload_download_stream",
+  )
+  const [offlineLoading, setOfflineLoading] = createSignal(false)
+
+  const loadOfflineTools = async () => {
+    const resp = await r.get<string[]>("/public/offline_download_tools")
+    handleResp(resp as unknown as Resp<string[]>, (data) => {
+      if (Array.isArray(data)) {
+        setOfflineTools(data)
+        setOfflineTool(data[0] || "")
+      }
+    })
+  }
+
+  // 打开离线下载弹窗：BT 种子总是可以离线下载（转 magnet）
+  const openOfflineDialog = () => {
+    if (selectedFiles().length === 0) {
+      notify.error(t("home.transfer_seed.select_at_least_one"))
+      return
+    }
+    void loadOfflineTools()
+    offlineDisclosure.onOpen()
+  }
+
+  // 确认离线下载：BT 用 magnet，其余用 seed 逐文件离线下载
+  const confirmOfflineDownload = async () => {
+    const info = torrentInfo()
+    if (!info || !torrentData()) return
+    if (!offlineTool()) {
+      notify.error(t("home.transfer_seed.tool_required"))
+      return
+    }
+    setOfflineLoading(true)
+    try {
+      if (inferFormat() === "torrent") {
+        // BT 种子：转 magnet 后整体离线下载
+        const buffer = new Uint8Array(
+          atob(torrentData())
+            .split("")
+            .map((c) => c.charCodeAt(0)),
+        )
+        const magnet = toMagnetUrl(buffer)
+        const resp = await offlineDownload(
+          destination(),
+          [magnet],
+          offlineTool(),
+          offlineDeletePolicy(),
+        )
+        handleResp(resp, () => {
+          notify.success(t("global.success"))
+          offlineDisclosure.onClose()
+          refresh(undefined, true)
+        })
+      } else {
+        // 有 source 的种子：逐文件离线下载
+        const resp = await seedOfflineDownload({
+          ...request(),
+          tool: offlineTool(),
+          delete_policy: offlineDeletePolicy(),
+        })
+        handleResp(resp, (data) => {
+          applyResult(data)
+          const results = Array.isArray(data?.results) ? data.results : []
+          const failures = results.filter(
+            (result: { method?: string; error?: string }) =>
+              result.method === "unavailable" || !!result.error,
+          )
+          if (failures.length > 0) {
+            notify.error(
+              failures
+                .map(
+                  (result: { path?: string; error?: string }) =>
+                    `${result.path || "File"}: ${
+                      result.error || "Unavailable"
+                    }`,
+                )
+                .join("\n"),
+            )
+            return
+          }
+          notify.success(t("global.success"))
+          offlineDisclosure.onClose()
+          refresh(undefined, true)
+        })
+      }
+    } catch (err) {
+      notify.error(String(err))
+    } finally {
+      setOfflineLoading(false)
+    }
+  }
 
   const inferFormat = (): SeedFormat => {
     const extension = objStore.obj.name.toLowerCase().split(".").pop()
     return extension === "cas" || extension === "oss" ? extension : "torrent"
+  }
+
+  // 格式徽章：OSS 显示格式名，CAS 显示完整名称，BT 显示为种子文件名。
+  const formatDisplayName = () => {
+    const format = torrentInfo()?.format || inferFormat()
+    if (format === "torrent") return objStore.obj.name
+    return FORMAT_DISPLAY[format] || format.toUpperCase()
   }
 
   const normalizeSeedInfo = (parsed: SeedParseResult): SeedInfo => {
@@ -461,7 +597,9 @@ const TorrentPreview = () => {
     return {
       ...parsed,
       ...value,
-      format: value.format || parsed.format || inferFormat(),
+      // 优先使用后端返回的规范化 format（oss/torrent/cas），seed.format 是
+      // "openlist-sharing-seed" 这种完整标识，不能直接作为展示格式。
+      format: (parsed.format as SeedFormat) || inferFormat(),
       name: value.name || parsed.name || objStore.obj.name,
       total_size: value.total_size || parsed.total_size || 0,
       files: Array.isArray(value.files)
@@ -500,6 +638,17 @@ const TorrentPreview = () => {
       ...current,
       [algo]: { ...current[algo], [scope]: checked },
     }))
+  }
+
+  // 重算源目录：默认当前浏览目录，可手动改为其它网盘目录
+  const effectiveRecalcSourceDir = () =>
+    recalcSourceDir().trim() || destination().trim()
+
+  // 源文件路径 = 源目录 + 种子内相对路径
+  const buildRecalcSourcePath = (filePath: string) => {
+    const base = effectiveRecalcSourceDir().replace(/\/+$/, "")
+    const rel = (filePath || "").replace(/^\/+/, "")
+    return rel ? `${base}/${rel}` : base
   }
 
   const autoCASDirectAccess = async (info: SeedInfo) => {
@@ -650,13 +799,8 @@ const TorrentPreview = () => {
       notify.error(t("home.transfer_seed.transit_path_required"))
       return
     }
-    if (
-      name === "recalculate" &&
-      selectedFiles().some(
-        (index) => !recalcPaths()[info.files[index]?.path]?.trim(),
-      )
-    ) {
-      notify.error(t("home.transfer_seed.source_path_required"))
+    if (name === "recalculate" && !effectiveRecalcSourceDir().trim()) {
+      notify.error(t("home.transfer_seed.source_dir_required"))
       return
     }
     setOperation(name)
@@ -678,8 +822,9 @@ const TorrentPreview = () => {
                     name === "recalculate"
                       ? selectedFiles().map((index) => ({
                           path: info.files[index]?.path,
-                          source_path:
-                            recalcPaths()[info.files[index]?.path] || "",
+                          source_path: buildRecalcSourcePath(
+                            info.files[index]?.path,
+                          ),
                         }))
                       : undefined,
                   hash_matrix:
@@ -726,6 +871,26 @@ const TorrentPreview = () => {
     const files = saveCapabilities()?.files
     if (!files) return undefined
     return files.find((f) => f.path === path)?.method
+  }
+
+  // 目标驱动支持的秒传方式描述
+  const driverSupportsText = () => {
+    const supports = saveCapabilities()?.driver_supports
+    if (!supports) return ""
+    const parts: string[] = []
+    if (supports.cas_rapid) parts.push("CAS")
+    if (supports.put_url) parts.push("PutURL")
+    if (supports.offline_download) parts.push("Offline")
+    return parts.join(" / ")
+  }
+
+  // 当前目标下是否有文件可以秒传（非下载类方式）
+  const canRapidSave = () => {
+    const files = saveCapabilities()?.files
+    if (!files?.length) return false
+    return files.some(
+      (file) => file.method === "189pc_cas" || file.method === "put_url",
+    )
   }
 
   // 预览单个文件：先秒传保存，再跳转预览
@@ -808,8 +973,8 @@ const TorrentPreview = () => {
     if (index === null || !info || !torrentData()) return
     const file = info.files[index]
     if (!file) return
-    if (!recalcSource().trim()) {
-      notify.error(t("home.transfer_seed.source_path_required"))
+    if (!effectiveRecalcSourceDir().trim()) {
+      notify.error(t("home.transfer_seed.source_dir_required"))
       return
     }
     recalcDisclosure.onClose()
@@ -818,7 +983,9 @@ const TorrentPreview = () => {
       const resp = await seedUpdate({
         seed_data: torrentData(),
         file_name: objStore.obj.name,
-        recalc_files: [{ path: file.path, source_path: recalcSource().trim() }],
+        recalc_files: [
+          { path: file.path, source_path: buildRecalcSourcePath(file.path) },
+        ],
         hash_matrix: recalcMatrix(),
         options: { comment: editComment(), recalculate: true },
       })
@@ -832,7 +999,6 @@ const TorrentPreview = () => {
     } finally {
       setOperation("")
       setRecalcFileIndex(null)
-      setRecalcSource("")
     }
   }
 
@@ -859,9 +1025,7 @@ const TorrentPreview = () => {
                 {torrentInfo()!.name}
               </Heading>
               <HStack spacing="$2" flexWrap="wrap">
-                <Badge colorScheme="info">
-                  {torrentInfo()!.format.toUpperCase()}
-                </Badge>
+                <Badge colorScheme="info">{formatDisplayName()}</Badge>
                 <Text fontSize="$xs" color="$neutral10">
                   {formatFileSize(torrentInfo()!.total_size)}
                 </Text>
@@ -988,7 +1152,6 @@ const TorrentPreview = () => {
                   }}
                   onRecalc={() => {
                     setRecalcFileIndex(index())
-                    setRecalcSource(recalcPaths()[file.path] || "")
                     recalcDisclosure.onOpen()
                   }}
                   onCommentCopy={() => file.comment && void copy(file.comment)}
@@ -1015,45 +1178,17 @@ const TorrentPreview = () => {
           {/* 下载 / 秒传区 */}
           <Show when={!isShare()}>
             <Divider />
-            <Box>
-              <Text fontSize="$sm" mb="$1">
+            <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+              <Text fontSize="$sm" flexShrink={0}>
                 {t("home.transfer_seed.destination")}
               </Text>
-              <FolderChooseInput
-                id="seed-preview-destination"
-                value={destination()}
-                onChange={setDestination}
-              />
-              <Text fontSize="$xs" color="$neutral10" mt="$1">
-                {t("home.transfer_seed.destination_hint")}
-              </Text>
-              <Show when={destinationProvider()}>
-                <Badge mt="$1" colorScheme="info">
-                  {t("home.transfer_seed.destination_driver")}:{" "}
-                  {destinationProvider()}
-                </Badge>
-              </Show>
-              <Checkbox
-                mt="$2"
-                checked={updateChannel()}
-                onChange={() => setUpdateChannel(!updateChannel())}
-              >
-                {t("home.transfer_seed.update_channel")}
-              </Checkbox>
-            </Box>
-            <Show when={operationSupported("transfer")}>
-              <Box>
-                <Text fontSize="$sm" mb="$1">
-                  {t("home.transfer_seed.transit_path")}
-                </Text>
+              <Box w={{ "@initial": "$full", "@md": "$64" }}>
                 <FolderChooseInput
-                  id="seed-preview-transit-path"
-                  value={transitPath()}
-                  onChange={setTransitPath}
+                  id="seed-preview-destination"
+                  value={destination()}
+                  onChange={setDestination}
                 />
               </Box>
-            </Show>
-            <HStack spacing="$2" flexWrap="wrap">
               <Button
                 loading={operation() === "rapid"}
                 disabled={
@@ -1071,7 +1206,7 @@ const TorrentPreview = () => {
                   !operationSupported("offline_download") ||
                   selectedFiles().length === 0
                 }
-                onClick={() => runOperation("offline")}
+                onClick={openOfflineDialog}
               >
                 {t("home.toolbar.offline_download")}
               </Button>
@@ -1087,68 +1222,103 @@ const TorrentPreview = () => {
                 {t("home.transfer_seed.transit_save")}
               </Button>
             </HStack>
-          </Show>
-
-          {/* 转换区：合并 feasibility 与 convert */}
-          <Show when={!isShare() && operationSupported("convert")}>
-            <Divider />
-            <Box>
-              <Text fontSize="$sm" fontWeight="$semibold" mb="$1">
-                {t("home.transfer_seed.convert_to")}
-              </Text>
-              <HStack spacing="$2" alignItems="flex-end">
-                <Box flex="1">
-                  <SelectWrapper
-                    value={targetFormat()}
-                    onChange={(value) => setTargetFormat(value as SeedFormat)}
-                    options={(["torrent", "cas", "oss"] as SeedFormat[]).map(
-                      (format) => {
-                        const state = () => torrentInfo()!.conversions?.[format]
-                        return {
-                          value: format,
-                          label: `${format.toUpperCase()}${
-                            state()?.feasible
-                              ? " ✓"
-                              : state()?.missing?.length
-                                ? ` (${state()!.missing!.join(", ")})`
-                                : ""
-                          }`,
-                        }
-                      },
-                    )}
+            <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+              <Show when={destinationProvider()}>
+                <Badge colorScheme="info">
+                  {t("home.transfer_seed.destination_driver")}:{" "}
+                  {destinationProvider()}
+                </Badge>
+              </Show>
+              <Show when={driverSupportsText()}>
+                <Text fontSize="$xs" color="$neutral10">
+                  {t("home.transfer_seed.driver_supports")}:{" "}
+                  {driverSupportsText()}
+                </Text>
+              </Show>
+              <Show when={saveCapabilities()}>
+                <Badge colorScheme={canRapidSave() ? "success" : "warning"}>
+                  {canRapidSave()
+                    ? t("home.transfer_seed.rapid_available")
+                    : t("home.transfer_seed.rapid_unavailable")}
+                </Badge>
+              </Show>
+            </HStack>
+            <Checkbox
+              checked={updateChannel()}
+              onChange={() => setUpdateChannel(!updateChannel())}
+            >
+              {t("home.transfer_seed.update_channel")}
+            </Checkbox>
+            <Show when={operationSupported("transfer")}>
+              <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+                <Text fontSize="$sm" flexShrink={0}>
+                  {t("home.transfer_seed.transit_path")}
+                </Text>
+                <Box w={{ "@initial": "$full", "@md": "$64" }}>
+                  <FolderChooseInput
+                    id="seed-preview-transit-path"
+                    value={transitPath()}
+                    onChange={setTransitPath}
                   />
                 </Box>
-                <Button
-                  loading={operation() === "convert"}
-                  disabled={!conversionSupported()}
-                  onClick={() => runOperation("convert")}
-                >
-                  {t("home.transfer_seed.convert")}
-                </Button>
               </HStack>
-              <Show when={torrentInfo()!.conversions}>
-                <HStack spacing="$2" flexWrap="wrap" mt="$2">
-                  <For each={["torrent", "cas", "oss"] as SeedFormat[]}>
-                    {(format) => {
+            </Show>
+          </Show>
+
+          {/* 转换区：feasibility 与 convert 合并到一行 */}
+          <Show when={!isShare() && operationSupported("convert")}>
+            <Divider />
+            <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+              <Text fontSize="$sm" fontWeight="$semibold" flexShrink={0}>
+                {t("home.transfer_seed.convert_to")}
+              </Text>
+              <Box w={{ "@initial": "$full", "@md": "$56" }}>
+                <SelectWrapper
+                  value={targetFormat()}
+                  onChange={(value) => setTargetFormat(value as SeedFormat)}
+                  options={(["torrent", "cas", "oss"] as SeedFormat[]).map(
+                    (format) => {
                       const state = () => torrentInfo()!.conversions?.[format]
-                      return (
-                        <Badge
-                          colorScheme={
-                            state()?.feasible ? "success" : "warning"
-                          }
-                        >
-                          {format.toUpperCase()}:{" "}
-                          {state()?.feasible
-                            ? t("home.transfer_seed.feasible")
-                            : state()?.missing?.join(", ") ||
-                              t("home.transfer_seed.unavailable")}
-                        </Badge>
-                      )
-                    }}
-                  </For>
-                </HStack>
+                      return {
+                        value: format,
+                        label: `${FORMAT_DISPLAY[format] || format.toUpperCase()}${
+                          state()?.feasible
+                            ? " ✓"
+                            : state()?.missing?.length
+                              ? ` (${state()!.missing!.join(", ")})`
+                              : ""
+                        }`,
+                      }
+                    },
+                  )}
+                />
+              </Box>
+              <Button
+                loading={operation() === "convert"}
+                disabled={!conversionSupported()}
+                onClick={() => runOperation("convert")}
+              >
+                {t("home.transfer_seed.convert")}
+              </Button>
+              <Show when={torrentInfo()!.conversions}>
+                <For each={["torrent", "cas", "oss"] as SeedFormat[]}>
+                  {(format) => {
+                    const state = () => torrentInfo()!.conversions?.[format]
+                    return (
+                      <Badge
+                        colorScheme={state()?.feasible ? "success" : "warning"}
+                      >
+                        {format.toUpperCase()}:{" "}
+                        {state()?.feasible
+                          ? t("home.transfer_seed.feasible")
+                          : state()?.missing?.join(", ") ||
+                            t("home.transfer_seed.unavailable")}
+                      </Badge>
+                    )
+                  }}
+                </For>
               </Show>
-            </Box>
+            </HStack>
           </Show>
 
           {/* 整体保存 */}
@@ -1231,31 +1401,37 @@ const TorrentPreview = () => {
                   )}
                 </For>
               </SimpleGrid>
-              <Text fontSize="$xs" color="$neutral10">
-                {t("home.transfer_seed.recalc_source_path")}
+              <Text fontSize="$xs" fontWeight="$semibold" mt="$2">
+                {t("home.transfer_seed.recalc_source_dir")}
               </Text>
-              <For each={selectedFiles()}>
-                {(index) => {
-                  const path = () => torrentInfo()!.files[index]?.path || ""
-                  return (
-                    <Box mb="$2">
-                      <Text fontSize="$xs" mb="$1">
-                        {path()}
+              <HStack spacing="$2" alignItems="center" flexWrap="wrap" mb="$2">
+                <Box w={{ "@initial": "$full", "@md": "$64" }}>
+                  <FolderChooseInput
+                    id="seed-preview-recalc-source-dir"
+                    value={effectiveRecalcSourceDir()}
+                    onChange={setRecalcSourceDir}
+                  />
+                </Box>
+              </HStack>
+              <Show when={selectedFiles().length > 0}>
+                <Text fontSize="$xs" color="$neutral10">
+                  {t("home.transfer_seed.recalc_source_hint")}
+                </Text>
+                <For each={selectedFiles()}>
+                  {(index) => {
+                    const path = () => torrentInfo()!.files[index]?.path || ""
+                    return (
+                      <Text
+                        fontSize="$xs"
+                        color="$neutral10"
+                        css={{ wordBreak: "break-all" }}
+                      >
+                        {path()} → {buildRecalcSourcePath(path())}
                       </Text>
-                      <Input
-                        value={recalcPaths()[path()] || ""}
-                        placeholder="/path/to/file"
-                        onInput={(event) =>
-                          setRecalcPaths((current) => ({
-                            ...current,
-                            [path()]: event.currentTarget.value,
-                          }))
-                        }
-                      />
-                    </Box>
-                  )
-                }}
-              </For>
+                    )
+                  }}
+                </For>
+              </Show>
             </Show>
           </Show>
         </VStack>
@@ -1331,14 +1507,22 @@ const TorrentPreview = () => {
                 {torrentInfo()!.files[recalcFileIndex()!]?.path}
               </Text>
             </Show>
-            <Input
-              placeholder="/path/to/file"
-              value={recalcSource()}
-              onInput={(event) => setRecalcSource(event.currentTarget.value)}
-            />
-            <Text fontSize="$xs" color="$neutral10" mt="$1">
-              {t("home.transfer_seed.recalc_source")}
+            <Text fontSize="$sm" mb="$1">
+              {t("home.transfer_seed.recalc_source_dir")}
             </Text>
+            <FolderChooseInput
+              id="seed-preview-recalc-file-source-dir"
+              value={effectiveRecalcSourceDir()}
+              onChange={setRecalcSourceDir}
+            />
+            <Show when={recalcFileIndex() !== null && torrentInfo()}>
+              <Text fontSize="$xs" color="$neutral10" mt="$1">
+                {t("home.transfer_seed.recalc_source_hint")}:{" "}
+                {buildRecalcSourcePath(
+                  torrentInfo()!.files[recalcFileIndex()!]?.path || "",
+                )}
+              </Text>
+            </Show>
           </ModalBody>
           <ModalFooter display="flex" gap="$2">
             <Button colorScheme="neutral" onClick={recalcDisclosure.onClose}>
@@ -1348,6 +1532,53 @@ const TorrentPreview = () => {
               loading={operation() === "recalculate"}
               onClick={confirmRecalcFile}
             >
+              {t("global.confirm")}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* 离线下载弹窗（选择下载工具） */}
+      <Modal
+        opened={offlineDisclosure.isOpen()}
+        onClose={offlineDisclosure.onClose}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>{t("home.toolbar.offline_download")}</ModalHeader>
+          <ModalBody>
+            <Text fontSize="$sm" mb="$1">
+              {t("home.transfer_seed.offline_tool")}
+            </Text>
+            <SelectWrapper
+              value={offlineTool()}
+              onChange={(value) => setOfflineTool(value)}
+              options={offlineTools().map((tool) => ({
+                value: tool,
+                label: tool,
+              }))}
+            />
+            <Text fontSize="$sm" mt="$3" mb="$1">
+              {t("home.transfer_seed.offline_delete_policy")}
+            </Text>
+            <SelectWrapper
+              value={offlineDeletePolicy()}
+              onChange={(value) => setOfflineDeletePolicy(value)}
+              options={DELETE_POLICIES.filter((policy) =>
+                policy === "upload_download_stream"
+                  ? offlineTool() === "SimpleHttp"
+                  : true,
+              ).map((policy) => ({
+                value: policy,
+                label: t(`home.toolbar.delete_policy.${policy}`),
+              }))}
+            />
+          </ModalBody>
+          <ModalFooter display="flex" gap="$2">
+            <Button colorScheme="neutral" onClick={offlineDisclosure.onClose}>
+              {t("global.cancel")}
+            </Button>
+            <Button loading={offlineLoading()} onClick={confirmOfflineDownload}>
               {t("global.confirm")}
             </Button>
           </ModalFooter>

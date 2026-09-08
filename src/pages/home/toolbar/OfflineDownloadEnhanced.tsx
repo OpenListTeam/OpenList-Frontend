@@ -46,6 +46,7 @@ import {
 import {
   PResp,
   SeedCapabilities,
+  SeedCapabilityFile,
   SeedFormat,
   SeedHashAlgorithm,
   SeedHashMatrix,
@@ -118,9 +119,10 @@ export const TransferSeedGenerator = () => {
   const [formats, setFormats] = createSignal<SeedFormat[]>([])
   const [pieceSize, setPieceSize] = createSignal(10 * 1024 * 1024)
   const [comment, setComment] = createSignal("")
-  const [trackers, setTrackers] = createSignal("")
-  const [includeShare, setIncludeShare] = createSignal(false)
-  const [includeDirectSource, setIncludeDirectSource] = createSignal(false)
+  const [trackers, setTrackers] = createSignal<string[]>([])
+  const [availableTrackers, setAvailableTrackers] = createSignal<string[]>([])
+  const [shareFiles, setShareFiles] = createSignal<string[]>([])
+  const [directFiles, setDirectFiles] = createSignal<string[]>([])
   const [outputPath, setOutputPath] = createSignal("")
   const [fileComments, setFileComments] = createSignal<Record<string, string>>(
     {},
@@ -132,7 +134,7 @@ export const TransferSeedGenerator = () => {
   const [generating, setGenerating] = createSignal(false)
   const [matrix, setMatrix] = createSignal<SeedHashMatrix>({
     md5: { whole: false, pieces: false },
-    sha1: { whole: true, pieces: true },
+    sha1: { whole: false, pieces: false },
     sha256: { whole: false, pieces: false },
   })
 
@@ -175,34 +177,38 @@ export const TransferSeedGenerator = () => {
       const resp = await seedCapabilities(selectedPaths)
       handleResp(resp, (value) => {
         setCapabilities(value)
-        const defaultMatrix = value.default_matrix
-        const hasDefault =
-          !!defaultMatrix?.md5 ||
-          !!defaultMatrix?.sha1 ||
-          !!defaultMatrix?.sha256
-        if (hasDefault) {
-          setMatrix({
-            md5: {
-              whole: !!defaultMatrix.md5?.whole,
-              pieces: !!defaultMatrix.md5?.pieces,
-            },
-            sha1: {
-              whole: !!defaultMatrix.sha1?.whole,
-              pieces: !!defaultMatrix.sha1?.pieces,
-            },
-            sha256: {
-              whole: !!defaultMatrix.sha256?.whole,
-              pieces: !!defaultMatrix.sha256?.pieces,
-            },
-          })
-        } else {
-          const available = new Set(value.existing_hashes || [])
-          setMatrix({
-            md5: { whole: available.has("md5"), pieces: false },
-            sha1: { whole: available.has("sha1"), pieces: false },
-            sha256: { whole: available.has("sha256"), pieces: false },
-          })
+        setAvailableTrackers(value.trackers || [])
+        // Preselect the hashes the current driver already provides so no
+        // download is required by default. Fall back to the configured matrix
+        // only when the driver reports no hashes at all.
+        const provided = new Set<string>()
+        for (const file of value.files || []) {
+          for (const hash of file.available_hashes || []) {
+            provided.add(hash)
+          }
         }
+        const defaultMatrix = value.default_matrix
+        const hasProvided = provided.size > 0
+        setMatrix({
+          md5: {
+            whole: hasProvided
+              ? provided.has("md5")
+              : !!defaultMatrix?.md5?.whole,
+            pieces: hasProvided ? false : !!defaultMatrix?.md5?.pieces,
+          },
+          sha1: {
+            whole: hasProvided
+              ? provided.has("sha1")
+              : !!defaultMatrix?.sha1?.whole,
+            pieces: hasProvided ? false : !!defaultMatrix?.sha1?.pieces,
+          },
+          sha256: {
+            whole: hasProvided
+              ? provided.has("sha256")
+              : !!defaultMatrix?.sha256?.whole,
+            pieces: hasProvided ? false : !!defaultMatrix?.sha256?.pieces,
+          },
+        })
       })
     } finally {
       setChecking(false)
@@ -216,9 +222,10 @@ export const TransferSeedGenerator = () => {
     setFormats([])
     setPieceSize(10 * 1024 * 1024)
     setComment("")
-    setTrackers("")
-    setIncludeShare(false)
-    setIncludeDirectSource(false)
+    setTrackers([])
+    setAvailableTrackers([])
+    setShareFiles([])
+    setDirectFiles([])
     setFileComments({})
     onOpen()
     void loadCapabilities(payload.paths)
@@ -237,12 +244,9 @@ export const TransferSeedGenerator = () => {
         piece_size: pieceSize(),
         comment: comment().trim() || undefined,
         file_comments: fileComments(),
-        trackers: trackers()
-          .split("\n")
-          .map((item) => item.trim())
-          .filter(Boolean),
-        include_share: includeShare(),
-        include_direct_source: includeDirectSource(),
+        trackers: trackers(),
+        share_files: shareFiles(),
+        direct_files: directFiles(),
         output_path: outputPath(),
       })
       handleRespWithNotifySuccess(resp, () => {
@@ -255,6 +259,51 @@ export const TransferSeedGenerator = () => {
   }
 
   const capabilityFiles = () => capabilities()?.files ?? []
+
+  // 根据用户选择的格式 + 哈希矩阵，判断该文件是否需要下载计算哈希。
+  // 与后端 canReuseListedHashes 保持一致：分片哈希网盘列表不提供，
+  // 只要矩阵要求分片哈希就必须下载；整文件哈希缺一即需下载。
+  const requiresDownload = (file: SeedCapabilityFile): boolean => {
+    const matrix = effectiveMatrix()
+    if (matrix.md5.pieces || matrix.sha1.pieces || matrix.sha256.pieces) {
+      return true
+    }
+    const available = new Set(file.available_hashes || [])
+    if (matrix.md5.whole && !available.has("md5")) return true
+    if (matrix.sha1.whole && !available.has("sha1")) return true
+    if (matrix.sha256.whole && !available.has("sha256")) return true
+    return false
+  }
+
+  // 是否有文件需要下载计算哈希，但驱动不支持流式下载（禁止生成）。
+  const hasUnstreamableDownload = () =>
+    capabilityFiles().some(
+      (file) => requiresDownload(file) && file.streamable === false,
+    )
+
+  const toggleTracker = (tracker: string, checked: boolean) => {
+    setTrackers((current) =>
+      checked
+        ? Array.from(new Set([...current, tracker]))
+        : current.filter((item) => item !== tracker),
+    )
+  }
+
+  const toggleShareFile = (path: string, checked: boolean) => {
+    setShareFiles((current) =>
+      checked
+        ? Array.from(new Set([...current, path]))
+        : current.filter((item) => item !== path),
+    )
+  }
+
+  const toggleDirectFile = (path: string, checked: boolean) => {
+    setDirectFiles((current) =>
+      checked
+        ? Array.from(new Set([...current, path]))
+        : current.filter((item) => item !== path),
+    )
+  }
 
   return (
     <Modal size="xl" opened={isOpen()} onClose={onClose}>
@@ -385,39 +434,35 @@ export const TransferSeedGenerator = () => {
                 onInput={(e) => setComment(e.currentTarget.value)}
               />
             </Box>
-            <Box>
-              <Text fontSize="$sm" mb="$1">
-                {t("home.transfer_seed.trackers")}
-              </Text>
-              <Textarea
-                minH="72px"
-                value={trackers()}
-                onInput={(e) => setTrackers(e.currentTarget.value)}
-                placeholder={t("home.transfer_seed.trackers_hint")}
-              />
-            </Box>
-            <HStack spacing="$4" flexWrap="wrap">
-              <Checkbox
-                checked={includeShare()}
-                onChange={(e) => setIncludeShare(e.currentTarget.checked)}
-              >
-                {t("home.transfer_seed.include_share")}
-              </Checkbox>
-              <Checkbox
-                checked={includeDirectSource()}
-                onChange={(e) =>
-                  setIncludeDirectSource(e.currentTarget.checked)
-                }
-              >
-                {t("home.transfer_seed.include_direct_source")}
-              </Checkbox>
-            </HStack>
+            <Show when={availableTrackers().length > 0}>
+              <Box>
+                <Text fontSize="$sm" fontWeight="$semibold" mb="$2">
+                  {t("home.transfer_seed.trackers")}
+                </Text>
+                <HStack spacing="$4" flexWrap="wrap">
+                  <For each={availableTrackers()}>
+                    {(tracker) => (
+                      <Checkbox
+                        checked={trackers().includes(tracker)}
+                        onChange={(event) =>
+                          toggleTracker(tracker, event.currentTarget.checked)
+                        }
+                      >
+                        <Text fontSize="$xs" css={{ wordBreak: "break-all" }}>
+                          {tracker}
+                        </Text>
+                      </Checkbox>
+                    )}
+                  </For>
+                </HStack>
+              </Box>
+            </Show>
 
             <Box
               border="1px solid $neutral7"
               borderRadius="$md"
               p="$3"
-              maxH="240px"
+              maxH="360px"
               overflowY="auto"
             >
               <Show
@@ -440,13 +485,28 @@ export const TransferSeedGenerator = () => {
                   </Badge>
                 </HStack>
                 <For each={capabilityFiles()}>
-                  {(file) => (
-                    <VStack alignItems="stretch" spacing="$1" mb="$2">
-                      <HStack justifyContent="space-between" flexWrap="wrap">
-                        <Text fontSize="$sm" css={{ wordBreak: "break-all" }}>
-                          {file.source_path || file.path}
-                        </Text>
-                        <HStack spacing="$1">
+                  {(file) => {
+                    const directAvailable = () =>
+                      file.direct_source_available !== false
+                    const shareAvailable = () => file.share_available !== false
+                    return (
+                      <VStack
+                        alignItems="stretch"
+                        spacing="$2"
+                        mb="$3"
+                        p="$2"
+                        border="1px solid $neutral6"
+                        borderRadius="$md"
+                      >
+                        <HStack justifyContent="space-between" flexWrap="wrap">
+                          <Text fontSize="$sm" css={{ wordBreak: "break-all" }}>
+                            {file.source_path || file.path}
+                          </Text>
+                          <Text fontSize="$xs" color="$neutral10">
+                            {formatFileSize(file.size || 0)}
+                          </Text>
+                        </HStack>
+                        <HStack spacing="$1" flexWrap="wrap">
                           <For
                             each={
                               file.available_hashes ||
@@ -460,12 +520,24 @@ export const TransferSeedGenerator = () => {
                               </Badge>
                             )}
                           </For>
-                          <Show when={file.requires_fetch}>
+                          <Show when={requiresDownload(file)}>
                             <Badge colorScheme="warning">
                               {t("home.transfer_seed.requires_fetch")}
-                              <Show when={(file.estimated_traffic ?? 0) > 0}>
-                                {` · ${formatFileSize(file.estimated_traffic || 0)}`}
-                              </Show>
+                            </Badge>
+                          </Show>
+                          <Show when={!requiresDownload(file)}>
+                            <Badge colorScheme="success">
+                              {t("home.transfer_seed.direct_generate")}
+                            </Badge>
+                          </Show>
+                          <Show
+                            when={
+                              requiresDownload(file) &&
+                              file.streamable === false
+                            }
+                          >
+                            <Badge colorScheme="danger">
+                              {t("home.transfer_seed.cannot_stream")}
                             </Badge>
                           </Show>
                           <For each={file.missing_reasons || []}>
@@ -474,20 +546,52 @@ export const TransferSeedGenerator = () => {
                             )}
                           </For>
                         </HStack>
-                      </HStack>
-                      <Input
-                        size="sm"
-                        placeholder={t("home.transfer_seed.file_comment")}
-                        value={fileComments()[file.path] || ""}
-                        onInput={(event) =>
-                          setFileComments((current) => ({
-                            ...current,
-                            [file.path]: event.currentTarget.value,
-                          }))
-                        }
-                      />
-                    </VStack>
-                  )}
+                        <HStack spacing="$4" flexWrap="wrap">
+                          <Checkbox
+                            size="sm"
+                            checked={shareFiles().includes(
+                              file.source_path || file.path,
+                            )}
+                            disabled={!shareAvailable()}
+                            onChange={(event) =>
+                              toggleShareFile(
+                                file.source_path || file.path,
+                                event.currentTarget.checked,
+                              )
+                            }
+                          >
+                            {t("home.transfer_seed.include_share")}
+                          </Checkbox>
+                          <Checkbox
+                            size="sm"
+                            checked={directFiles().includes(
+                              file.source_path || file.path,
+                            )}
+                            disabled={!directAvailable()}
+                            onChange={(event) =>
+                              toggleDirectFile(
+                                file.source_path || file.path,
+                                event.currentTarget.checked,
+                              )
+                            }
+                          >
+                            {t("home.transfer_seed.include_direct_source")}
+                          </Checkbox>
+                        </HStack>
+                        <Input
+                          size="sm"
+                          placeholder={t("home.transfer_seed.file_comment")}
+                          value={fileComments()[file.path] || ""}
+                          onInput={(event) =>
+                            setFileComments((current) => ({
+                              ...current,
+                              [file.path]: event.currentTarget.value,
+                            }))
+                          }
+                        />
+                      </VStack>
+                    )
+                  }}
                 </For>
                 <Show when={!capabilityFiles().length && paths().length}>
                   <For each={paths()}>
@@ -498,13 +602,25 @@ export const TransferSeedGenerator = () => {
             </Box>
           </VStack>
         </ModalBody>
-        <ModalFooter display="flex" gap="$2">
+        <ModalFooter display="flex" gap="$2" alignItems="center">
+          <Show when={hasUnstreamableDownload()}>
+            <Text
+              fontSize="$xs"
+              color="$danger9"
+              flex={1}
+              css={{ wordBreak: "break-all" }}
+            >
+              {t("home.transfer_seed.cannot_stream_hint")}
+            </Text>
+          </Show>
           <Button colorScheme="neutral" onClick={onClose}>
             {t("global.cancel")}
           </Button>
           <Button
             loading={generating()}
-            disabled={!formats().length || checking()}
+            disabled={
+              !formats().length || checking() || hasUnstreamableDownload()
+            }
             onClick={handleGenerate}
           >
             {t("home.transfer_seed.generate")}
