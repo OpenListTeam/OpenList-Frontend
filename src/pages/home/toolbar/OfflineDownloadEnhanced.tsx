@@ -15,14 +15,20 @@ import {
   Heading,
   createDisclosure,
   notificationService,
+  Checkbox,
+  Input,
+  SimpleGrid,
+  Divider,
 } from "@hope-ui/solid"
 import { SelectWrapper, FolderChooseInput } from "~/components"
-import { useFetch, useRouter, useT } from "~/hooks"
+import { useFetch, usePath, useRouter, useT } from "~/hooks"
 import {
   offlineDownload,
   fsGet,
   torrentParse,
   torrentRapidUpload,
+  seedCapabilities,
+  seedGenerate,
   bus,
   handleRespWithNotifySuccess,
   handleResp,
@@ -35,8 +41,16 @@ import {
   Show,
   createMemo,
   createEffect,
+  For,
 } from "solid-js"
-import { PResp, TorrentInfo } from "~/types"
+import {
+  PResp,
+  SeedCapabilities,
+  SeedFormat,
+  SeedHashAlgorithm,
+  SeedHashMatrix,
+  TorrentInfo,
+} from "~/types"
 import bencode from "bencode"
 import crypto from "crypto-js"
 import { TorrentFileList } from "./TorrentFileList"
@@ -52,7 +66,7 @@ const deletePolicies = [
 type DeletePolicy = (typeof deletePolicies)[number]
 
 // Tab 类型
-type TabType = "link" | "bt"
+type TabType = "link" | "torrent"
 
 function utf8Decode(data: Uint8Array): string {
   return crypto.enc.Utf8.stringify(crypto.lib.WordArray.create(data))
@@ -93,6 +107,390 @@ function formatFileSize(bytes: number): string {
   const sizes = ["B", "KB", "MB", "GB", "TB"]
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+}
+
+export const TransferSeedGenerator = () => {
+  const t = useT()
+  const { pathname } = useRouter()
+  const { refresh } = usePath()
+  const { isOpen, onOpen, onClose } = createDisclosure()
+  const [paths, setPaths] = createSignal<string[]>([])
+  const [formats, setFormats] = createSignal<SeedFormat[]>([])
+  const [pieceSize, setPieceSize] = createSignal(10 * 1024 * 1024)
+  const [comment, setComment] = createSignal("")
+  const [trackers, setTrackers] = createSignal("")
+  const [includeShare, setIncludeShare] = createSignal(false)
+  const [includeDirectSource, setIncludeDirectSource] = createSignal(false)
+  const [outputPath, setOutputPath] = createSignal("")
+  const [fileComments, setFileComments] = createSignal<Record<string, string>>(
+    {},
+  )
+  const [capabilities, setCapabilities] = createSignal<SeedCapabilities | null>(
+    null,
+  )
+  const [checking, setChecking] = createSignal(false)
+  const [generating, setGenerating] = createSignal(false)
+  const [matrix, setMatrix] = createSignal<SeedHashMatrix>({
+    md5: { whole: false, pieces: false },
+    sha1: { whole: true, pieces: true },
+    sha256: { whole: false, pieces: false },
+  })
+
+  const effectiveMatrix = createMemo<SeedHashMatrix>(() => {
+    const value = matrix()
+    return {
+      md5: formats().includes("cas")
+        ? { whole: true, pieces: true }
+        : value.md5,
+      sha1: formats().includes("torrent")
+        ? { whole: true, pieces: true }
+        : value.sha1,
+      sha256: value.sha256,
+    }
+  })
+
+  const setHashScope = (
+    algorithm: SeedHashAlgorithm,
+    scope: "whole" | "pieces",
+    checked: boolean,
+  ) => {
+    setMatrix((previous) => ({
+      ...previous,
+      [algorithm]: { ...previous[algorithm], [scope]: checked },
+    }))
+  }
+
+  const toggleFormat = (format: SeedFormat, checked: boolean) => {
+    setFormats((current) =>
+      checked
+        ? Array.from(new Set([...current, format]))
+        : current.filter((item) => item !== format),
+    )
+    if (format === "cas" && checked) setPieceSize(10 * 1024 * 1024)
+  }
+
+  const loadCapabilities = async (selectedPaths: string[]) => {
+    setChecking(true)
+    try {
+      const resp = await seedCapabilities(selectedPaths)
+      handleResp(resp, (value) => {
+        setCapabilities(value)
+        const available = new Set(value.existing_hashes || [])
+        setMatrix({
+          md5: { whole: available.has("md5"), pieces: false },
+          sha1: { whole: available.has("sha1"), pieces: false },
+          sha256: { whole: available.has("sha256"), pieces: false },
+        })
+      })
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  const openHandler = (payload: { paths: string[] }) => {
+    setPaths(payload.paths)
+    setOutputPath(pathname())
+    setCapabilities(null)
+    setFormats([])
+    setPieceSize(10 * 1024 * 1024)
+    setComment("")
+    setTrackers("")
+    setIncludeShare(false)
+    setIncludeDirectSource(false)
+    setFileComments({})
+    onOpen()
+    void loadCapabilities(payload.paths)
+  }
+  bus.on("generate_transfer_seed", openHandler)
+  onCleanup(() => bus.off("generate_transfer_seed", openHandler))
+
+  const handleGenerate = async () => {
+    if (!formats().length || !paths().length) return
+    setGenerating(true)
+    try {
+      const resp = await seedGenerate({
+        paths: paths(),
+        formats: formats(),
+        hash_matrix: effectiveMatrix(),
+        piece_size: pieceSize(),
+        comment: comment().trim() || undefined,
+        file_comments: fileComments(),
+        trackers: trackers()
+          .split("\n")
+          .map((item) => item.trim())
+          .filter(Boolean),
+        include_share: includeShare(),
+        include_direct_source: includeDirectSource(),
+        output_path: outputPath(),
+      })
+      handleRespWithNotifySuccess(resp, () => {
+        refresh(undefined, true)
+        onClose()
+      })
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const capabilityFiles = () => capabilities()?.files ?? []
+
+  return (
+    <Modal size="xl" opened={isOpen()} onClose={onClose}>
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>{t("home.transfer_seed.generate_title")}</ModalHeader>
+        <ModalBody>
+          <VStack spacing="$4" alignItems="stretch">
+            <Box>
+              <Text fontSize="$sm" fontWeight="$semibold" mb="$2">
+                {t("home.transfer_seed.formats")}
+              </Text>
+              <HStack spacing="$4" flexWrap="wrap">
+                <For each={["torrent", "cas", "oss"] as SeedFormat[]}>
+                  {(format) => (
+                    <Checkbox
+                      checked={formats().includes(format)}
+                      disabled={
+                        capabilities()?.formats?.[format] === false &&
+                        !formats().includes(format)
+                      }
+                      onChange={(event) =>
+                        toggleFormat(format, event.currentTarget.checked)
+                      }
+                    >
+                      {format.toUpperCase()}
+                    </Checkbox>
+                  )}
+                </For>
+              </HStack>
+            </Box>
+
+            <Divider />
+            <Box>
+              <Text fontSize="$sm" fontWeight="$semibold" mb="$2">
+                {t("home.transfer_seed.hash_matrix")}
+              </Text>
+              <SimpleGrid columns={{ "@initial": 1, "@md": 3 }} gap="$3">
+                <For each={["md5", "sha1", "sha256"] as SeedHashAlgorithm[]}>
+                  {(algorithm) => {
+                    const forced = () =>
+                      (algorithm === "sha1" && formats().includes("torrent")) ||
+                      (algorithm === "md5" && formats().includes("cas"))
+                    return (
+                      <VStack
+                        alignItems="flex-start"
+                        spacing="$1"
+                        border="1px solid $neutral7"
+                        borderRadius="$md"
+                        p="$2"
+                      >
+                        <Text fontWeight="$semibold">
+                          {algorithm.toUpperCase()}
+                        </Text>
+                        <Checkbox
+                          checked={effectiveMatrix()[algorithm].whole}
+                          disabled={forced()}
+                          onChange={(event) =>
+                            setHashScope(
+                              algorithm,
+                              "whole",
+                              event.currentTarget.checked,
+                            )
+                          }
+                        >
+                          {t("home.transfer_seed.whole")}
+                        </Checkbox>
+                        <Checkbox
+                          checked={effectiveMatrix()[algorithm].pieces}
+                          disabled={forced()}
+                          onChange={(event) =>
+                            setHashScope(
+                              algorithm,
+                              "pieces",
+                              event.currentTarget.checked,
+                            )
+                          }
+                        >
+                          {t("home.transfer_seed.pieces")}
+                        </Checkbox>
+                        <Show when={forced()}>
+                          <Text fontSize="$xs" color="$neutral10">
+                            {t("home.transfer_seed.required_by_format")}
+                          </Text>
+                        </Show>
+                      </VStack>
+                    )
+                  }}
+                </For>
+              </SimpleGrid>
+            </Box>
+
+            <SimpleGrid columns={{ "@initial": 1, "@md": 2 }} gap="$3">
+              <Box>
+                <Text fontSize="$sm" mb="$1">
+                  {t("home.transfer_seed.piece_size")}
+                </Text>
+                <SelectWrapper
+                  value={pieceSize().toString()}
+                  onChange={(value) => setPieceSize(Number(value))}
+                  options={(formats().includes("cas")
+                    ? [10]
+                    : [1, 2, 4, 8, 10, 16]
+                  ).map((size) => ({
+                    value: String(size * 1024 * 1024),
+                    label: `${size} MiB`,
+                  }))}
+                />
+              </Box>
+              <Box>
+                <Text fontSize="$sm" mb="$1">
+                  {t("home.transfer_seed.output_path")}
+                </Text>
+                <FolderChooseInput
+                  id="transfer-seed-output"
+                  value={outputPath()}
+                  onChange={setOutputPath}
+                />
+              </Box>
+            </SimpleGrid>
+
+            <Box>
+              <Text fontSize="$sm" mb="$1">
+                {t("home.transfer_seed.comment")}
+              </Text>
+              <Input
+                value={comment()}
+                onInput={(e) => setComment(e.currentTarget.value)}
+              />
+            </Box>
+            <Box>
+              <Text fontSize="$sm" mb="$1">
+                {t("home.transfer_seed.trackers")}
+              </Text>
+              <Textarea
+                minH="72px"
+                value={trackers()}
+                onInput={(e) => setTrackers(e.currentTarget.value)}
+                placeholder={t("home.transfer_seed.trackers_hint")}
+              />
+            </Box>
+            <HStack spacing="$4" flexWrap="wrap">
+              <Checkbox
+                checked={includeShare()}
+                onChange={(e) => setIncludeShare(e.currentTarget.checked)}
+              >
+                {t("home.transfer_seed.include_share")}
+              </Checkbox>
+              <Checkbox
+                checked={includeDirectSource()}
+                onChange={(e) =>
+                  setIncludeDirectSource(e.currentTarget.checked)
+                }
+              >
+                {t("home.transfer_seed.include_direct_source")}
+              </Checkbox>
+            </HStack>
+
+            <Box
+              border="1px solid $neutral7"
+              borderRadius="$md"
+              p="$3"
+              maxH="240px"
+              overflowY="auto"
+            >
+              <Show
+                when={!checking()}
+                fallback={<Text>{t("home.transfer_seed.checking")}</Text>}
+              >
+                <HStack justifyContent="space-between" mb="$2" flexWrap="wrap">
+                  <Text fontWeight="$semibold">
+                    {t("home.transfer_seed.capability_summary")}
+                  </Text>
+                  <Badge colorScheme="info">
+                    {t("home.transfer_seed.estimated_traffic")}:{" "}
+                    {formatFileSize(
+                      capabilities()?.estimated_traffic ??
+                        capabilityFiles().reduce(
+                          (sum, file) => sum + (file.estimated_traffic ?? 0),
+                          0,
+                        ),
+                    )}
+                  </Badge>
+                </HStack>
+                <For each={capabilityFiles()}>
+                  {(file) => (
+                    <VStack alignItems="stretch" spacing="$1" mb="$2">
+                      <HStack justifyContent="space-between" flexWrap="wrap">
+                        <Text fontSize="$sm" css={{ wordBreak: "break-all" }}>
+                          {file.source_path || file.path}
+                        </Text>
+                        <HStack spacing="$1">
+                          <For
+                            each={
+                              file.available_hashes ||
+                              file.existing_hashes ||
+                              []
+                            }
+                          >
+                            {(hash) => (
+                              <Badge colorScheme="success">
+                                {hash.toUpperCase()}
+                              </Badge>
+                            )}
+                          </For>
+                          <Show when={file.requires_fetch}>
+                            <Badge colorScheme="warning">
+                              {t("home.transfer_seed.requires_fetch")}
+                              <Show when={(file.estimated_traffic ?? 0) > 0}>
+                                {` · ${formatFileSize(file.estimated_traffic || 0)}`}
+                              </Show>
+                            </Badge>
+                          </Show>
+                          <For each={file.missing_reasons || []}>
+                            {(reason) => (
+                              <Badge colorScheme="danger">{reason}</Badge>
+                            )}
+                          </For>
+                        </HStack>
+                      </HStack>
+                      <Input
+                        size="sm"
+                        placeholder={t("home.transfer_seed.file_comment")}
+                        value={fileComments()[file.path] || ""}
+                        onInput={(event) =>
+                          setFileComments((current) => ({
+                            ...current,
+                            [file.path]: event.currentTarget.value,
+                          }))
+                        }
+                      />
+                    </VStack>
+                  )}
+                </For>
+                <Show when={!capabilityFiles().length && paths().length}>
+                  <For each={paths()}>
+                    {(path) => <Text fontSize="$sm">{path}</Text>}
+                  </For>
+                </Show>
+              </Show>
+            </Box>
+          </VStack>
+        </ModalBody>
+        <ModalFooter display="flex" gap="$2">
+          <Button colorScheme="neutral" onClick={onClose}>
+            {t("global.cancel")}
+          </Button>
+          <Button
+            loading={generating()}
+            disabled={!formats().length || checking()}
+            onClick={handleGenerate}
+          >
+            {t("home.transfer_seed.generate")}
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  )
 }
 
 export const OfflineDownloadEnhanced = () => {
@@ -194,7 +592,7 @@ export const OfflineDownloadEnhanced = () => {
   // 当有 CAS 信息且秒传尚未失败时，默认使用天翼云秒传（不需要 aria2）
   const shouldUseCasRapidUpload = createMemo(() => {
     return (
-      activeTab() === "bt" &&
+      activeTab() === "torrent" &&
       !!torrentInfo()?.has_cas &&
       savePathProvider() === "189CloudPC" &&
       !casRapidUploadFailed()
@@ -203,7 +601,8 @@ export const OfflineDownloadEnhanced = () => {
 
   // 仅在 BT 且包含 CAS 信息时才查询目标路径 provider，减少无效请求。
   createEffect(() => {
-    const shouldCheckProvider = activeTab() === "bt" && !!torrentInfo()?.has_cas
+    const shouldCheckProvider =
+      activeTab() === "torrent" && !!torrentInfo()?.has_cas
     if (!shouldCheckProvider) {
       clearSavePathProviderTimer()
       setSavePathProvider("")
@@ -221,7 +620,7 @@ export const OfflineDownloadEnhanced = () => {
 
   // 是否应该禁用 SimpleHttp（BT种子/磁力链/ed2k 场景不支持）
   const shouldDisableSimpleHttp = createMemo(() => {
-    return activeTab() === "bt" || hasEd2kLinks() || hasMagnetLinks()
+    return activeTab() === "torrent" || hasEd2kLinks() || hasMagnetLinks()
   })
 
   // 可用的工具列表（根据场景过滤）
@@ -271,7 +670,7 @@ export const OfflineDownloadEnhanced = () => {
     setTorrentData(data.torrentData)
     setTorrentInfo(data.info)
     setSelectedFiles(data.info.files.map((_, i) => i))
-    setActiveTab("bt")
+    setActiveTab("torrent")
     const currentPath = pathname()
     setSavePath(currentPath)
     onOpen()
@@ -377,7 +776,7 @@ export const OfflineDownloadEnhanced = () => {
     e.stopPropagation()
     if (!e.dataTransfer?.files.length) return
 
-    if (activeTab() === "bt") {
+    if (activeTab() === "torrent") {
       // BT Tab: 解析第一个 torrent 文件
       for (const file of e.dataTransfer.files) {
         if (file.name.toLowerCase().endsWith(".torrent")) {
@@ -545,8 +944,8 @@ export const OfflineDownloadEnhanced = () => {
             </Button>
             <Button
               size="sm"
-              variant={activeTab() === "bt" ? "solid" : "outline"}
-              onClick={() => setActiveTab("bt")}
+              variant={activeTab() === "torrent" ? "solid" : "outline"}
+              onClick={() => setActiveTab("torrent")}
             >
               {t("home.toolbar.offline_download_enhanced.tab_bt")}
             </Button>
@@ -570,7 +969,7 @@ export const OfflineDownloadEnhanced = () => {
           </Show>
 
           {/* BT 下载 Tab */}
-          <Show when={activeTab() === "bt"}>
+          <Show when={activeTab() === "torrent"}>
             <VStack spacing="$3" alignItems="stretch">
               {/* 未解析时显示上传区域 */}
               <Show when={!torrentInfo()}>
@@ -768,7 +1167,7 @@ export const OfflineDownloadEnhanced = () => {
             {/* CAS 秒传失败后，提示用户可继续普通离线下载 */}
             <Show
               when={
-                activeTab() === "bt" &&
+                activeTab() === "torrent" &&
                 torrentInfo()?.has_cas &&
                 casRapidUploadFailed()
               }
@@ -789,7 +1188,9 @@ export const OfflineDownloadEnhanced = () => {
 
             <Show
               when={
-                activeTab() === "bt" && torrentInfo() && !torrentInfo()!.has_cas
+                activeTab() === "torrent" &&
+                torrentInfo() &&
+                !torrentInfo()!.has_cas
               }
             >
               <Box
@@ -841,7 +1242,7 @@ export const OfflineDownloadEnhanced = () => {
               {t("home.toolbar.offline_download_enhanced.start_download")}
             </Button>
           </Show>
-          <Show when={activeTab() === "bt"}>
+          <Show when={activeTab() === "torrent"}>
             <Button
               loading={btLoading() || rapidUploading()}
               onClick={handleBtSubmit}

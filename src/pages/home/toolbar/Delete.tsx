@@ -6,9 +6,10 @@ import {
   ModalBody,
   ModalFooter,
   Button,
+  Checkbox,
   createDisclosure,
 } from "@hope-ui/solid"
-import { onCleanup } from "solid-js"
+import { createSignal, onCleanup } from "solid-js"
 import { useFetch, usePath, useRouter, useT } from "~/hooks"
 import { selectedObjs } from "~/store"
 import { bus, fsRemove, handleRespWithNotifySuccess } from "~/utils"
@@ -19,8 +20,10 @@ export const Delete = () => {
   const [loading, ok] = useFetch(fsRemove)
   const { refresh } = usePath()
   const { pathname } = useRouter()
+  const [followSeed, setFollowSeed] = createSignal(false)
   const handler = (name: string) => {
     if (name === "delete") {
+      setFollowSeed(false)
       onOpen()
     }
   }
@@ -43,6 +46,14 @@ export const Delete = () => {
         <ModalHeader>{t("home.toolbar.delete")}</ModalHeader>
         <ModalBody>
           <p>{t("home.toolbar.delete-tips")}</p>
+          <Checkbox
+            mt="$2"
+            checked={followSeed()}
+            disabled={selectedObjs().some((obj) => obj.is_dir)}
+            onChange={() => setFollowSeed(!followSeed())}
+          >
+            {t("home.toolbar.follow_seed")}
+          </Checkbox>
         </ModalBody>
         <ModalFooter display="flex" gap="$2">
           <Button onClick={onClose} colorScheme="neutral">
@@ -55,6 +66,7 @@ export const Delete = () => {
               const resp = await ok(
                 pathname(),
                 selectedObjs().map((obj) => obj.name),
+                followSeed(),
               )
               handleRespWithNotifySuccess(resp, () => {
                 refresh()

@@ -12,6 +12,13 @@ import {
   TorrentInfo,
   TorrentUploadParseResult,
   TorrentRapidUploadResult,
+  SeedCapabilities,
+  SeedFormat,
+  SeedGenerateRequest,
+  SeedGenerateResult,
+  SeedOperationRequest,
+  SeedOperationResult,
+  SeedParseResult,
 } from "~/types"
 import { r } from "."
 
@@ -70,8 +77,9 @@ export const fsRename = (
   path: string,
   name: string,
   overwrite: boolean,
+  follow_seed = false,
 ): PEmptyResp => {
-  return r.post("/fs/rename", { path, name, overwrite })
+  return r.post("/fs/rename", { path, name, overwrite, follow_seed })
 }
 
 export const fsBatchRename = (
@@ -87,6 +95,7 @@ export const fsMove = (
   names: string[],
   overwrite: boolean,
   skip_existing: boolean,
+  follow_seed = false,
 ): PEmptyResp => {
   return r.post("/fs/move", {
     src_dir,
@@ -94,6 +103,7 @@ export const fsMove = (
     names,
     overwrite,
     skip_existing,
+    follow_seed,
   })
 }
 
@@ -112,6 +122,7 @@ export const fsCopy = (
   overwrite: boolean,
   skip_existing: boolean,
   merge: boolean,
+  follow_seed = false,
 ): PEmptyResp => {
   return r.post("/fs/copy", {
     src_dir,
@@ -120,11 +131,16 @@ export const fsCopy = (
     overwrite,
     skip_existing,
     merge,
+    follow_seed,
   })
 }
 
-export const fsRemove = (dir: string, names: string[]): PEmptyResp => {
-  return r.post("/fs/remove", { dir, names })
+export const fsRemove = (
+  dir: string,
+  names: string[],
+  follow_seed = false,
+): PEmptyResp => {
+  return r.post("/fs/remove", { dir, names, follow_seed })
 }
 
 export const fsRemoveEmptyDirectory = (src_dir: string): PEmptyResp => {
@@ -307,3 +323,63 @@ export const torrentRapidUpload = (
 ): PResp<TorrentRapidUploadResult> => {
   return r.post("/fs/torrent/rapid_upload", { torrent_data, path })
 }
+
+// Transfer seed APIs. All seed payloads are base64 encoded.
+export const seedCapabilities = (paths: string[]): PResp<SeedCapabilities> =>
+  r.post("/fs/seed/capabilities", { paths })
+
+const seedWireFormat = (format: SeedFormat): "oss" | "torrent" | "cas" => format
+
+export const seedGenerate = (
+  request: SeedGenerateRequest,
+): PResp<SeedGenerateResult> =>
+  r.post("/fs/seed/generate", {
+    ...request,
+    formats: request.formats.map(seedWireFormat),
+    save_path: request.output_path,
+  })
+
+export const seedParse = (
+  seed_data: string,
+  file_name = "",
+): PResp<SeedParseResult> =>
+  r.post("/fs/seed/parse", {
+    seed_data,
+    content: seed_data,
+    data: seed_data,
+    torrent_data: seed_data,
+    file_name,
+  })
+
+const seedWireRequest = (request: SeedOperationRequest) => ({
+  ...request,
+  content: request.seed_data,
+  data: request.seed_data,
+  torrent_data: request.seed_data,
+  target_path: request.path,
+})
+
+export const seedConvert = (
+  request: SeedOperationRequest,
+): PResp<SeedOperationResult> =>
+  r.post("/fs/seed/convert", {
+    ...seedWireRequest(request),
+    format: request.format ? seedWireFormat(request.format) : undefined,
+    to_format: request.format ? seedWireFormat(request.format) : undefined,
+    target_format: request.format ? seedWireFormat(request.format) : undefined,
+  })
+
+export const seedRapidUpload = (
+  request: SeedOperationRequest,
+): PResp<SeedOperationResult> =>
+  r.post("/fs/seed/rapid_upload", seedWireRequest(request))
+
+export const seedOfflineDownload = (
+  request: SeedOperationRequest,
+): PResp<SeedOperationResult> =>
+  r.post("/fs/seed/offline_download", seedWireRequest(request))
+
+export const seedUpdate = (
+  request: SeedOperationRequest,
+): PResp<SeedOperationResult> =>
+  r.post("/fs/seed/update", seedWireRequest(request))

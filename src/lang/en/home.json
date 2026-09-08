@@ -51,7 +51,7 @@
       "asciinema": "Asciinema Player",
       "video360": "Video360 Player",
       "archive": "Archive Previewer",
-      "torrent": "Torrent Previewer"
+      "torrent": "Transfer Seed Previewer"
     }
   },
   "layouts": {
@@ -78,6 +78,7 @@
     "choose_dst_folder": "Select destination folder",
     "delete": "Delete",
     "delete-tips": "Are you sure to delete the selected object?",
+    "follow_seed": "Follow transfer seed sidecars",
     "decompress": "Decompress",
     "decompress-pass": "Extraction password: ",
     "decompress-cache-full": "Cache full into a temp-file",
@@ -101,6 +102,7 @@
     "offline_download": "Offline download",
     "offline_download-tips": "One URL per line",
     "offline_download_torrent": "BT Fetch",
+    "generate_transfer_seed": "Generate transfer seed",
     "offline_download_enhanced": {
       "tab_link": "Link Download",
       "tab_bt": "BT Download",
@@ -168,6 +170,42 @@
     "find_replace": "Find and Replace",
     "find_replace_desc": "Find and Replace"
   },
+  "transfer_seed": {
+    "generate_title": "Generate transfer seed",
+    "generate": "Generate",
+    "formats": "Output formats",
+    "hash_matrix": "Content hash matrix",
+    "whole": "Whole file",
+    "pieces": "Pieces",
+    "required_by_format": "Required by selected format",
+    "piece_size": "Piece size",
+    "output_path": "Output path",
+    "comment": "Comment",
+    "file_comment": "File comment",
+    "trackers": "Trackers",
+    "trackers_hint": "One tracker per line",
+    "include_share": "Include share link",
+    "include_direct_source": "Include direct source",
+    "checking": "Checking storage capabilities...",
+    "capability_summary": "Source capability summary",
+    "estimated_traffic": "Estimated traffic",
+    "requires_fetch": "Requires fetch",
+    "parse_failed": "Failed to parse transfer seed",
+    "cas_legacy_warning": "Legacy CAS contains only name, size, MD5, aggregate slice MD5, and creation time. Conversion is lossy: per-piece lists, comments, channels, trackers, and sources cannot be preserved.",
+    "share_valid": "Share valid",
+    "share_invalid": "Share invalid",
+    "channel": "Channel",
+    "conversion_feasibility": "Conversion feasibility",
+    "feasible": "Feasible",
+    "unavailable": "Unavailable",
+    "destination": "Destination path",
+    "destination_driver": "Destination driver",
+    "rapid_save": "Rapid save",
+    "transit_save": "Transfer save",
+    "convert_to": "Convert to",
+    "convert": "Convert",
+    "recalculate": "Recalculate"
+  },
   "upload": {
     "add_as_task": "Add as task",
     "try_rapid": "Try rapid",
@@ -184,7 +222,9 @@
     "error": "Error",
     "back": "Back to Upload",
     "clear_done": "Clear Done",
-    "retry": "Retry"
+    "retry": "Retry",
+    "sidecars": "Generate transfer seed sidecars",
+    "sidecars_hint": "Sidecars are disabled by default and generated after each upload completes."
   },
   "local_settings": {
     "aria2_rpc_url": "Aria2 RPC URL",
