@@ -1,21 +1,18 @@
 import {
   Button,
-  Checkbox,
   FormControl,
   FormHelperText,
   FormLabel,
   Heading,
-  HStack,
   Input,
   SimpleGrid,
-  Switch,
-  VStack,
 } from "@hope-ui/solid"
-import { createSignal, For } from "solid-js"
+import { createSignal } from "solid-js"
 import { MaybeLoading } from "~/components"
 import { useFetch, useManageTitle, useT } from "~/hooks"
-import { PResp } from "~/types"
+import { PResp, SettingItem } from "~/types"
 import { handleResp, notify, r } from "~/utils"
+import { Item } from "./SettingItem"
 
 interface SeedHashMatrix {
   md5: { whole: boolean; pieces: boolean }
@@ -54,20 +51,28 @@ const SeedSettings = () => {
   const [singleDirectPreview, setSingleDirectPreview] = createSignal(false)
   const [casDirectAccess, setCasDirectAccess] = createSignal(false)
 
-  const [loading, getSettings] = useFetch((): PResp<Record<string, string>> =>
-    r.get("/api/public/settings"),
+  const [settings, setSettings] = createSignal<SettingItem[]>([])
+
+  const [loading, getSettings] = useFetch((): PResp<SettingItem[]> =>
+    r.get("/admin/setting/list?group=4"),
   )
 
   const refresh = async () => {
     const resp = await getSettings()
     handleResp(resp, (data) => {
+      setSettings(data)
+      const map: Record<string, string> = {}
+      data.forEach((item) => {
+        map[item.key] = item.value
+      })
+
       // Site URL
-      setSiteUrl(data.seed_site_url || "")
+      setSiteUrl(map.seed_site_url || "")
 
       // Parse Hash Matrix
       try {
         const matrix: SeedHashMatrix = JSON.parse(
-          data.seed_default_matrix ||
+          map.seed_default_matrix ||
             '{"md5":{"whole":true,"pieces":false},"sha1":{"whole":true,"pieces":false},"sha256":{"whole":true,"pieces":false}}',
         )
         setMd5Whole(matrix.md5?.whole ?? true)
@@ -83,7 +88,7 @@ const SeedSettings = () => {
       // Parse Format Policies
       try {
         const policies: SeedFormatPolicies = JSON.parse(
-          data.seed_format_policies ||
+          map.seed_format_policies ||
             '{"oss":"off","torrent":"off","cas":"off"}',
         )
         setOssPolicy(policies.oss === "on")
@@ -94,28 +99,16 @@ const SeedSettings = () => {
       }
 
       // Other Settings
-      setAutoGeneratePolicy(data.seed_auto_generate_policy === "on")
-      setSingleDirectPreview(data.seed_single_direct_preview === "true")
-      setCasDirectAccess(data.seed_cas_direct_access === "true")
+      setAutoGeneratePolicy(map.seed_auto_generate_policy === "on")
+      setSingleDirectPreview(map.seed_single_direct_preview === "true")
+      setCasDirectAccess(map.seed_cas_direct_access === "true")
     })
   }
 
   refresh()
 
-  const [saveLoading, save] = useFetch((): PResp<string> => {
-    const matrix: SeedHashMatrix = {
-      md5: { whole: md5Whole(), pieces: md5Pieces() },
-      sha1: { whole: sha1Whole(), pieces: sha1Pieces() },
-      sha256: { whole: sha256Whole(), pieces: sha256Pieces() },
-    }
-
-    const policies: SeedFormatPolicies = {
-      oss: ossPolicy() ? "on" : "off",
-      torrent: torrentPolicy() ? "on" : "off",
-      cas: casPolicy() ? "on" : "off",
-    }
-
-    return r.post("/admin/setting/save", [
+  const [saveSiteLoading, saveSite] = useFetch((): PResp<string> =>
+    r.post("/admin/setting/save", [
       {
         key: "seed_site_url",
         value: siteUrl(),
@@ -123,6 +116,16 @@ const SeedSettings = () => {
         group: 4,
         flag: 1,
       },
+    ]),
+  )
+
+  const [saveMatrixLoading, saveMatrix] = useFetch((): PResp<string> => {
+    const matrix: SeedHashMatrix = {
+      md5: { whole: md5Whole(), pieces: md5Pieces() },
+      sha1: { whole: sha1Whole(), pieces: sha1Pieces() },
+      sha256: { whole: sha256Whole(), pieces: sha256Pieces() },
+    }
+    return r.post("/admin/setting/save", [
       {
         key: "seed_default_matrix",
         value: JSON.stringify(matrix),
@@ -130,6 +133,16 @@ const SeedSettings = () => {
         group: 4,
         flag: 1,
       },
+    ])
+  })
+
+  const [savePoliciesLoading, savePolicies] = useFetch((): PResp<string> => {
+    const policies: SeedFormatPolicies = {
+      oss: ossPolicy() ? "on" : "off",
+      torrent: torrentPolicy() ? "on" : "off",
+      cas: casPolicy() ? "on" : "off",
+    }
+    return r.post("/admin/setting/save", [
       {
         key: "seed_format_policies",
         value: JSON.stringify(policies),
@@ -137,6 +150,11 @@ const SeedSettings = () => {
         group: 4,
         flag: 1,
       },
+    ])
+  })
+
+  const [saveOthersLoading, saveOthers] = useFetch((): PResp<string> =>
+    r.post("/admin/setting/save", [
       {
         key: "seed_auto_generate_policy",
         value: autoGeneratePolicy() ? "on" : "off",
@@ -158,222 +176,193 @@ const SeedSettings = () => {
         group: 4,
         flag: 0,
       },
-    ])
-  })
+    ]),
+  )
 
   return (
     <MaybeLoading loading={loading()}>
-      <VStack w="$full" alignItems="start" spacing="$4">
-        {/* Site URL */}
-        <VStack w="$full" alignItems="start" spacing="$2">
-          <Heading size="lg">{t("settings_seed.site_url_title")}</Heading>
-          <FormControl>
-            <FormLabel for="seed_site_url">
-              {t("settings_seed.site_url")}
-            </FormLabel>
-            <Input
-              id="seed_site_url"
-              placeholder="https://example.com"
-              value={siteUrl()}
-              onInput={(e) => setSiteUrl(e.currentTarget.value)}
-            />
-            <FormHelperText>{t("settings_seed.site_url_help")}</FormHelperText>
-          </FormControl>
-        </VStack>
+      <Heading mb="$2">{t("settings_seed.site_url_title")}</Heading>
+      <FormControl w="$full" display="flex" flexDirection="column">
+        <FormLabel for="seed_site_url">{t("settings_seed.site_url")}</FormLabel>
+        <Input
+          id="seed_site_url"
+          placeholder="https://example.com"
+          value={siteUrl()}
+          onInput={(e) => setSiteUrl(e.currentTarget.value)}
+        />
+        <FormHelperText>{t("settings_seed.site_url_help")}</FormHelperText>
+      </FormControl>
+      <Button
+        my="$2"
+        loading={saveSiteLoading()}
+        onClick={async () => {
+          const resp = await saveSite()
+          handleResp(resp, () => {
+            notify.success(t("global.save_success"))
+          })
+        }}
+      >
+        {t("global.save")}
+      </Button>
 
-        {/* Default Hash Matrix */}
-        <VStack w="$full" alignItems="start" spacing="$2">
-          <Heading size="lg">{t("settings_seed.default_matrix_title")}</Heading>
-          <FormHelperText mb="$2">
-            {t("settings_seed.default_matrix_help")}
-          </FormHelperText>
-          <SimpleGrid columns={{ "@initial": 1, "@md": 3 }} gap="$4" w="$full">
-            <VStack
-              alignItems="start"
-              p="$3"
-              borderWidth="1px"
-              borderRadius="$md"
-              spacing="$2"
-            >
-              <Heading size="lg">MD5</Heading>
-              <Checkbox
-                checked={md5Whole()}
-                onChange={(e: any) => setMd5Whole(e.target.checked)}
-              >
-                {t("settings_seed.whole_hash")}
-              </Checkbox>
-              <Checkbox
-                checked={md5Pieces()}
-                onChange={(e: any) => setMd5Pieces(e.target.checked)}
-              >
-                {t("settings_seed.piece_hashes")}
-              </Checkbox>
-            </VStack>
+      <Heading my="$2">{t("settings_seed.default_matrix_title")}</Heading>
+      <FormHelperText mb="$2">
+        {t("settings_seed.default_matrix_help")}
+      </FormHelperText>
+      <SimpleGrid gap="$2" columns={{ "@initial": 1, "@md": 3 }}>
+        <FormControl display="flex" flexDirection="column">
+          <FormLabel>MD5</FormLabel>
+          <Item
+            key="md5_whole"
+            type={4}
+            value={md5Whole() ? "true" : "false"}
+            onChange={(val) => setMd5Whole(val === "true")}
+            help=""
+            flag={0}
+            group={4}
+          />
+          <Item
+            key="md5_pieces"
+            type={4}
+            value={md5Pieces() ? "true" : "false"}
+            onChange={(val) => setMd5Pieces(val === "true")}
+            help=""
+            flag={0}
+            group={4}
+          />
+        </FormControl>
+        <FormControl display="flex" flexDirection="column">
+          <FormLabel>SHA-1</FormLabel>
+          <Item
+            key="sha1_whole"
+            type={4}
+            value={sha1Whole() ? "true" : "false"}
+            onChange={(val) => setSha1Whole(val === "true")}
+            help=""
+            flag={0}
+            group={4}
+          />
+          <Item
+            key="sha1_pieces"
+            type={4}
+            value={sha1Pieces() ? "true" : "false"}
+            onChange={(val) => setSha1Pieces(val === "true")}
+            help=""
+            flag={0}
+            group={4}
+          />
+        </FormControl>
+        <FormControl display="flex" flexDirection="column">
+          <FormLabel>SHA-256</FormLabel>
+          <Item
+            key="sha256_whole"
+            type={4}
+            value={sha256Whole() ? "true" : "false"}
+            onChange={(val) => setSha256Whole(val === "true")}
+            help=""
+            flag={0}
+            group={4}
+          />
+          <Item
+            key="sha256_pieces"
+            type={4}
+            value={sha256Pieces() ? "true" : "false"}
+            onChange={(val) => setSha256Pieces(val === "true")}
+            help=""
+            flag={0}
+            group={4}
+          />
+        </FormControl>
+      </SimpleGrid>
+      <Button
+        my="$2"
+        loading={saveMatrixLoading()}
+        onClick={async () => {
+          const resp = await saveMatrix()
+          handleResp(resp, () => {
+            notify.success(t("global.save_success"))
+          })
+        }}
+      >
+        {t("global.save")}
+      </Button>
 
-            <VStack
-              alignItems="start"
-              p="$3"
-              borderWidth="1px"
-              borderRadius="$md"
-              spacing="$2"
-            >
-              <Heading size="lg">SHA-1</Heading>
-              <Checkbox
-                checked={sha1Whole()}
-                onChange={(e: any) => setSha1Whole(e.target.checked)}
-              >
-                {t("settings_seed.whole_hash")}
-              </Checkbox>
-              <Checkbox
-                checked={sha1Pieces()}
-                onChange={(e: any) => setSha1Pieces(e.target.checked)}
-              >
-                {t("settings_seed.piece_hashes")}
-              </Checkbox>
-            </VStack>
+      <Heading my="$2">{t("settings_seed.format_policies_title")}</Heading>
+      <FormHelperText mb="$2">
+        {t("settings_seed.format_policies_help")}
+      </FormHelperText>
+      <SimpleGrid gap="$2" columns={{ "@initial": 1, "@md": 3 }}>
+        <Item
+          key="oss_policy"
+          type={4}
+          value={ossPolicy() ? "true" : "false"}
+          onChange={(val) => setOssPolicy(val === "true")}
+          help=""
+          flag={0}
+          group={4}
+        />
+        <Item
+          key="torrent_policy"
+          type={4}
+          value={torrentPolicy() ? "true" : "false"}
+          onChange={(val) => setTorrentPolicy(val === "true")}
+          help=""
+          flag={0}
+          group={4}
+        />
+        <Item
+          key="cas_policy"
+          type={4}
+          value={casPolicy() ? "true" : "false"}
+          onChange={(val) => setCasPolicy(val === "true")}
+          help=""
+          flag={0}
+          group={4}
+        />
+      </SimpleGrid>
+      <Button
+        my="$2"
+        loading={savePoliciesLoading()}
+        onClick={async () => {
+          const resp = await savePolicies()
+          handleResp(resp, () => {
+            notify.success(t("global.save_success"))
+          })
+        }}
+      >
+        {t("global.save")}
+      </Button>
 
-            <VStack
-              alignItems="start"
-              p="$3"
-              borderWidth="1px"
-              borderRadius="$md"
-              spacing="$2"
-            >
-              <Heading size="lg">SHA-256</Heading>
-              <Checkbox
-                checked={sha256Whole()}
-                onChange={(e: any) => setSha256Whole(e.target.checked)}
-              >
-                {t("settings_seed.whole_hash")}
-              </Checkbox>
-              <Checkbox
-                checked={sha256Pieces()}
-                onChange={(e: any) => setSha256Pieces(e.target.checked)}
-              >
-                {t("settings_seed.piece_hashes")}
-              </Checkbox>
-            </VStack>
-          </SimpleGrid>
-        </VStack>
-
-        {/* Format Policies */}
-        <VStack w="$full" alignItems="start" spacing="$2">
-          <Heading size="lg">
-            {t("settings_seed.format_policies_title")}
-          </Heading>
-          <FormHelperText mb="$2">
-            {t("settings_seed.format_policies_help")}
-          </FormHelperText>
-          <SimpleGrid columns={{ "@initial": 1, "@md": 3 }} gap="$4" w="$full">
-            <HStack
-              p="$3"
-              borderWidth="1px"
-              borderRadius="$md"
-              justifyContent="space-between"
-            >
-              <span>{t("settings_seed.oss_format")}</span>
-              <Switch
-                checked={ossPolicy()}
-                onChange={(e: any) => setOssPolicy(e.target.checked)}
-              />
-            </HStack>
-            <HStack
-              p="$3"
-              borderWidth="1px"
-              borderRadius="$md"
-              justifyContent="space-between"
-            >
-              <span>{t("settings_seed.torrent_format")}</span>
-              <Switch
-                checked={torrentPolicy()}
-                onChange={(e: any) => setTorrentPolicy(e.target.checked)}
-              />
-            </HStack>
-            <HStack
-              p="$3"
-              borderWidth="1px"
-              borderRadius="$md"
-              justifyContent="space-between"
-            >
-              <span>{t("settings_seed.cas_format")}</span>
-              <Switch
-                checked={casPolicy()}
-                onChange={(e: any) => setCasPolicy(e.target.checked)}
-              />
-            </HStack>
-          </SimpleGrid>
-        </VStack>
-
-        {/* Other Options */}
-        <VStack w="$full" alignItems="start" spacing="$2">
-          <Heading size="lg">{t("settings_seed.other_options_title")}</Heading>
-          <VStack w="$full" alignItems="start" spacing="$3">
-            <FormControl display="flex" alignItems="center">
-              <Switch
-                id="auto_generate"
-                checked={autoGeneratePolicy()}
-                onChange={(e: any) => setAutoGeneratePolicy(e.target.checked)}
-                mr="$2"
-              />
-              <FormLabel for="auto_generate" mb="0">
-                {t("settings_seed.auto_generate")}
-              </FormLabel>
-            </FormControl>
-            <FormHelperText ml="$8" mt="-$2">
-              {t("settings_seed.auto_generate_help")}
-            </FormHelperText>
-
-            <FormControl display="flex" alignItems="center">
-              <Switch
-                id="single_preview"
-                checked={singleDirectPreview()}
-                onChange={(e: any) => setSingleDirectPreview(e.target.checked)}
-                mr="$2"
-              />
-              <FormLabel for="single_preview" mb="0">
-                {t("settings_seed.single_direct_preview")}
-              </FormLabel>
-            </FormControl>
-            <FormHelperText ml="$8" mt="-$2">
-              {t("settings_seed.single_direct_preview_help")}
-            </FormHelperText>
-
-            <FormControl display="flex" alignItems="center">
-              <Switch
-                id="cas_direct_access"
-                checked={casDirectAccess()}
-                onChange={(e: any) => setCasDirectAccess(e.target.checked)}
-                mr="$2"
-              />
-              <FormLabel for="cas_direct_access" mb="0">
-                {t("settings_seed.cas_direct_access")}
-              </FormLabel>
-            </FormControl>
-            <FormHelperText ml="$8" mt="-$2">
-              {t("settings_seed.cas_direct_access_help")}
-            </FormHelperText>
-          </VStack>
-        </VStack>
-
-        {/* Save Button */}
-        <HStack spacing="$2">
-          <Button colorScheme="accent" onClick={refresh} loading={loading()}>
-            {t("global.refresh")}
-          </Button>
-          <Button
-            loading={saveLoading()}
-            onClick={async () => {
-              const resp = await save()
-              handleResp(resp, () => {
-                notify.success(t("global.save_success"))
-                refresh()
-              })
-            }}
-          >
-            {t("global.save")}
-          </Button>
-        </HStack>
-      </VStack>
+      <Heading my="$2">{t("settings_seed.other_options_title")}</Heading>
+      <SimpleGrid gap="$2" columns={{ "@initial": 1, "@md": 2 }}>
+        <Item
+          {...settings().find((i) => i.key === "seed_auto_generate_policy")!}
+          value={autoGeneratePolicy() ? "on" : "off"}
+          onChange={(val) => setAutoGeneratePolicy(val === "on")}
+        />
+        <Item
+          {...settings().find((i) => i.key === "seed_single_direct_preview")!}
+          value={singleDirectPreview() ? "true" : "false"}
+          onChange={(val) => setSingleDirectPreview(val === "true")}
+        />
+        <Item
+          {...settings().find((i) => i.key === "seed_cas_direct_access")!}
+          value={casDirectAccess() ? "true" : "false"}
+          onChange={(val) => setCasDirectAccess(val === "true")}
+        />
+      </SimpleGrid>
+      <Button
+        my="$2"
+        loading={saveOthersLoading()}
+        onClick={async () => {
+          const resp = await saveOthers()
+          handleResp(resp, () => {
+            notify.success(t("global.save_success"))
+          })
+        }}
+      >
+        {t("global.save")}
+      </Button>
     </MaybeLoading>
   )
 }
