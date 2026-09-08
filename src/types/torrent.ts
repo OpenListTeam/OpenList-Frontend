@@ -63,6 +63,7 @@ export interface SeedCapabilities {
   existing_hashes?: SeedHashAlgorithm[]
   missing_hashes?: SeedHashAlgorithm[]
   estimated_traffic?: number
+  default_matrix?: SeedHashMatrix
   conversion?: Partial<
     Record<SeedFormat, { feasible: boolean; missing?: string[] }>
   >
@@ -163,6 +164,9 @@ export interface SeedOperationResult {
   path?: string
   channel?: SeedInfo["channel"]
   artifact?: SeedArtifact
+  seed_data?: string
+  seed?: SeedInfo
+  share_status?: Record<string, boolean>
   results?: Array<{
     path?: string
     name?: string

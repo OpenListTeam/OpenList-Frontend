@@ -206,7 +206,11 @@
     "convert": "Convert",
     "recalculate": "Recalculate",
     "transit_path": "Transit path (intermediate storage)",
-    "recalc_source_path": "Recalculate source paths (server files)"
+    "recalc_source_path": "Recalculate source paths (server files)",
+    "cas_direct_access_success": "CAS file restored to this folder",
+    "cas_direct_access_failed": "CAS direct access failed",
+    "update_channel": "Update channel on success",
+    "invalid_share": "Invalid share"
   },
   "upload": {
     "add_as_task": "Add as task",

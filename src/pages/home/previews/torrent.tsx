@@ -7,12 +7,13 @@ import {
   Heading,
   Box,
   Input,
+  Checkbox,
   Divider,
   Alert,
   AlertIcon,
 } from "@hope-ui/solid"
 import { createEffect, createSignal, For, onMount, Show } from "solid-js"
-import { objStore } from "~/store"
+import { getSettingBool, objStore } from "~/store"
 import {
   TorrentInfo,
   CASInfo,
@@ -151,6 +152,7 @@ const TorrentPreview = () => {
   const [operation, setOperation] = createSignal("")
   const [transitPath, setTransitPath] = createSignal("")
   const [recalcPaths, setRecalcPaths] = createSignal<Record<string, string>>({})
+  const [updateChannel, setUpdateChannel] = createSignal(false)
 
   const inferFormat = (): SeedFormat => {
     const extension = objStore.obj.name.toLowerCase().split(".").pop()
@@ -172,6 +174,41 @@ const TorrentPreview = () => {
           ? parsed.files
           : [],
       conversions: value.conversions || parsed.conversions,
+    }
+  }
+
+  const autoCASDirectAccess = async (info: SeedInfo) => {
+    if (inferFormat() !== "cas" || info.files.length !== 1) return
+    if (!getSettingBool("seed_cas_direct_access")) return
+    if (!torrentData()) return
+    try {
+      const resp = await seedRapidUpload({
+        seed_data: torrentData(),
+        file_name: objStore.obj.name,
+        path: pathname(),
+        selected_files: [0],
+      })
+      if (resp.code === 200) {
+        const results = Array.isArray(resp.data?.results)
+          ? resp.data.results
+          : []
+        const failed = results.filter(
+          (r: { method?: string; error?: string }) =>
+            r.method === "unavailable" || !!r.error,
+        )
+        if (failed.length > 0) {
+          notify.error(
+            `${t("home.transfer_seed.cas_direct_access_failed")}: ${
+              failed[0]?.error || "Unavailable"
+            }`,
+          )
+        } else {
+          notify.success(t("home.transfer_seed.cas_direct_access_success"))
+          refresh()
+        }
+      }
+    } catch (err) {
+      console.error("CAS direct access failed:", err)
     }
   }
 
@@ -197,6 +234,7 @@ const TorrentPreview = () => {
         setTorrentInfo(info)
         setEditComment(info.comment || "")
         setSelectedFiles(info.files.map((_, index) => index))
+        void autoCASDirectAccess(info)
       } else if (inferFormat() === "torrent") {
         const legacy = parseLocalTorrent(new Uint8Array(buffer))
         setTorrentInfo({ ...legacy, format: "torrent" })
@@ -243,6 +281,7 @@ const TorrentPreview = () => {
     file_name: objStore.obj.name,
     path: destination(),
     selected_files: selectedFiles(),
+    update_channel: updateChannel(),
   })
 
   const runOperation = async (name: string) => {
@@ -294,6 +333,23 @@ const TorrentPreview = () => {
                   },
                 })
       handleResp(resp, (data) => {
+        // Apply the updated seed container returned by edit/recalculate/update-channel.
+        if (data?.seed_data) setTorrentData(data.seed_data)
+        if (data?.seed) setTorrentInfo(data.seed)
+        // Surface invalid shares detected during edit.
+        const shareStatus = data?.share_status
+        if (shareStatus && typeof shareStatus === "object") {
+          const invalid = Object.entries(shareStatus).filter(
+            ([, valid]) => !valid,
+          )
+          if (invalid.length > 0) {
+            notify.error(
+              `${t("home.transfer_seed.invalid_share")}: ${invalid
+                .map(([id]) => id)
+                .join(", ")}`,
+            )
+          }
+        }
         const results = Array.isArray(data?.results) ? data.results : []
         const failures = results.filter(
           (result: { method?: string; error?: string }) =>
@@ -509,6 +565,13 @@ const TorrentPreview = () => {
                   {destinationProvider()}
                 </Badge>
               </Show>
+              <Checkbox
+                mt="$2"
+                checked={updateChannel()}
+                onChange={() => setUpdateChannel(!updateChannel())}
+              >
+                {t("home.transfer_seed.update_channel")}
+              </Checkbox>
             </Box>
             <Show when={operationSupported("transfer")}>
               <Box>

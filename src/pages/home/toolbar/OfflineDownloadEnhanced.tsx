@@ -175,12 +175,34 @@ export const TransferSeedGenerator = () => {
       const resp = await seedCapabilities(selectedPaths)
       handleResp(resp, (value) => {
         setCapabilities(value)
-        const available = new Set(value.existing_hashes || [])
-        setMatrix({
-          md5: { whole: available.has("md5"), pieces: false },
-          sha1: { whole: available.has("sha1"), pieces: false },
-          sha256: { whole: available.has("sha256"), pieces: false },
-        })
+        const defaultMatrix = value.default_matrix
+        const hasDefault =
+          !!defaultMatrix?.md5 ||
+          !!defaultMatrix?.sha1 ||
+          !!defaultMatrix?.sha256
+        if (hasDefault) {
+          setMatrix({
+            md5: {
+              whole: !!defaultMatrix.md5?.whole,
+              pieces: !!defaultMatrix.md5?.pieces,
+            },
+            sha1: {
+              whole: !!defaultMatrix.sha1?.whole,
+              pieces: !!defaultMatrix.sha1?.pieces,
+            },
+            sha256: {
+              whole: !!defaultMatrix.sha256?.whole,
+              pieces: !!defaultMatrix.sha256?.pieces,
+            },
+          })
+        } else {
+          const available = new Set(value.existing_hashes || [])
+          setMatrix({
+            md5: { whole: available.has("md5"), pieces: false },
+            sha1: { whole: available.has("sha1"), pieces: false },
+            sha256: { whole: available.has("sha256"), pieces: false },
+          })
+        }
       })
     } finally {
       setChecking(false)
