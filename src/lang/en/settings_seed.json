@@ -1,0 +1,21 @@
+{
+  "site_url_title": "Site Configuration",
+  "site_url": "Site URL",
+  "site_url_help": "Base URL for generating share links in seed files (e.g. https://your-domain.com). Leave empty to use relative paths.",
+  "default_matrix_title": "Default Hash Matrix",
+  "default_matrix_help": "Default hash algorithms to calculate when generating seeds via right-click menu. Upload always calculates all available hashes.",
+  "whole_hash": "Whole File Hash",
+  "piece_hashes": "Piece Hashes",
+  "format_policies_title": "Seed Format Policies",
+  "format_policies_help": "Enable seed formats globally. Individual storage can override these settings.",
+  "oss_format": "OSS Format (.oss)",
+  "torrent_format": "Torrent Format (.torrent)",
+  "cas_format": "CAS Format (.cas)",
+  "other_options_title": "Other Options",
+  "auto_generate": "Auto-generate Seeds on Upload",
+  "auto_generate_help": "Automatically generate seed files when uploading (can be overridden per storage)",
+  "single_direct_preview": "Direct Preview for Single-file Seeds",
+  "single_direct_preview_help": "When opening a seed containing only one file, directly preview the file instead of showing seed details",
+  "cas_direct_access": "CAS Direct Access",
+  "cas_direct_access_help": "When opening a CAS seed, automatically rapid-upload and preview the file"
+}
