@@ -32,6 +32,8 @@ import {
   SeedInfo,
   SeedParseResult,
   SeedHashAlgorithm,
+  SeedHashMatrix,
+  SeedHashSelection,
   SeedSaveCapabilities,
 } from "~/types"
 import { useLink, usePath, useRouter, useT, useUtil } from "~/hooks"
@@ -422,6 +424,11 @@ const TorrentPreview = () => {
   const [operation, setOperation] = createSignal("")
   const [transitPath, setTransitPath] = createSignal("")
   const [recalcPaths, setRecalcPaths] = createSignal<Record<string, string>>({})
+  const [recalcMatrix, setRecalcMatrix] = createSignal<SeedHashMatrix>({
+    md5: { whole: false, pieces: false },
+    sha1: { whole: false, pieces: false },
+    sha256: { whole: false, pieces: false },
+  })
   const [updateChannel, setUpdateChannel] = createSignal(false)
   const [saveCapabilities, setSaveCapabilities] =
     createSignal<SeedSaveCapabilities | null>(null)
@@ -464,6 +471,35 @@ const TorrentPreview = () => {
           : [],
       conversions: value.conversions || parsed.conversions,
     }
+  }
+
+  // 从种子已有哈希初始化重算矩阵：默认勾选当前种子已包含的哈希类型
+  const initRecalcMatrix = (info: SeedInfo) => {
+    const matrix: SeedHashMatrix = {
+      md5: { whole: false, pieces: false },
+      sha1: { whole: false, pieces: false },
+      sha256: { whole: false, pieces: false },
+    }
+    for (const file of info.files) {
+      const hashes = file.hashes
+      if (!hashes) continue
+      for (const algo of ALGORITHMS) {
+        if (hashes[algo]) matrix[algo].whole = true
+        if (hashes.pieces?.[algo]?.length) matrix[algo].pieces = true
+      }
+    }
+    setRecalcMatrix(matrix)
+  }
+
+  const setRecalcHash = (
+    algo: SeedHashAlgorithm,
+    scope: keyof SeedHashSelection,
+    checked: boolean,
+  ) => {
+    setRecalcMatrix((current) => ({
+      ...current,
+      [algo]: { ...current[algo], [scope]: checked },
+    }))
   }
 
   const autoCASDirectAccess = async (info: SeedInfo) => {
@@ -523,6 +559,7 @@ const TorrentPreview = () => {
         setTorrentInfo(info)
         setEditComment(info.comment || "")
         setSelectedFiles(info.files.map((_, index) => index))
+        initRecalcMatrix(info)
         void autoCASDirectAccess(info)
       } else if (inferFormat() === "torrent") {
         const legacy = parseLocalTorrent(new Uint8Array(buffer))
@@ -645,6 +682,8 @@ const TorrentPreview = () => {
                             recalcPaths()[info.files[index]?.path] || "",
                         }))
                       : undefined,
+                  hash_matrix:
+                    name === "recalculate" ? recalcMatrix() : undefined,
                   options: {
                     comment: editComment(),
                     recalculate: name === "recalculate",
@@ -780,6 +819,7 @@ const TorrentPreview = () => {
         seed_data: torrentData(),
         file_name: objStore.obj.name,
         recalc_files: [{ path: file.path, source_path: recalcSource().trim() }],
+        hash_matrix: recalcMatrix(),
         options: { comment: editComment(), recalculate: true },
       })
       handleResp(resp, (data) => {
@@ -1136,7 +1176,62 @@ const TorrentPreview = () => {
               </Button>
             </HStack>
             <Show when={operationSupported("recalculate")}>
-              <Text fontSize="$xs" color="$neutral10" mt="$1">
+              <Text fontSize="$xs" fontWeight="$semibold" mt="$2">
+                {t("home.transfer_seed.recalc_matrix")}
+              </Text>
+              <SimpleGrid
+                columns={{ "@initial": 1, "@md": 3 }}
+                gap="$2"
+                mb="$2"
+              >
+                <For each={ALGORITHMS}>
+                  {(algo) => (
+                    <VStack
+                      alignItems="flex-start"
+                      spacing="$1"
+                      border="1px solid $neutral7"
+                      borderRadius="$md"
+                      bg="$background"
+                      p="$2"
+                    >
+                      <Text fontSize="$xs" fontWeight="$semibold">
+                        {algo.toUpperCase()}
+                      </Text>
+                      <Checkbox
+                        size="sm"
+                        checked={recalcMatrix()[algo].whole}
+                        onChange={(event: {
+                          currentTarget: HTMLInputElement
+                        }) =>
+                          setRecalcHash(
+                            algo,
+                            "whole",
+                            event.currentTarget.checked,
+                          )
+                        }
+                      >
+                        {t("home.transfer_seed.whole")}
+                      </Checkbox>
+                      <Checkbox
+                        size="sm"
+                        checked={recalcMatrix()[algo].pieces}
+                        onChange={(event: {
+                          currentTarget: HTMLInputElement
+                        }) =>
+                          setRecalcHash(
+                            algo,
+                            "pieces",
+                            event.currentTarget.checked,
+                          )
+                        }
+                      >
+                        {t("home.transfer_seed.pieces")}
+                      </Checkbox>
+                    </VStack>
+                  )}
+                </For>
+              </SimpleGrid>
+              <Text fontSize="$xs" color="$neutral10">
                 {t("home.transfer_seed.recalc_source_path")}
               </Text>
               <For each={selectedFiles()}>
