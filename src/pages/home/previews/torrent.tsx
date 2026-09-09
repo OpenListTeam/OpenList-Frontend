@@ -1410,25 +1410,6 @@ const TorrentPreview = () => {
                   {t("home.transfer_seed.recalculate")}
                 </Button>
               </HStack>
-              <Show when={selectedFiles().length > 0}>
-                <Text fontSize="$xs" color="$neutral10">
-                  {t("home.transfer_seed.recalc_source_hint")}
-                </Text>
-                <For each={selectedFiles()}>
-                  {(index) => {
-                    const path = () => torrentInfo()!.files[index]?.path || ""
-                    return (
-                      <Text
-                        fontSize="$xs"
-                        color="$neutral10"
-                        css={{ wordBreak: "break-all" }}
-                      >
-                        {path()} → {buildRecalcSourcePath(path())}
-                      </Text>
-                    )
-                  }}
-                </For>
-              </Show>
             </Show>
           </Show>
         </VStack>
