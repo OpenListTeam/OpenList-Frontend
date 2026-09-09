@@ -483,6 +483,16 @@ const TorrentPreview = () => {
     null,
   )
 
+  // 转换可行性详情弹窗
+  const conversionDetailDisclosure = createDisclosure()
+  const [conversionDetailFormat, setConversionDetailFormat] =
+    createSignal<SeedFormat | null>(null)
+
+  const openConversionDetail = (format: SeedFormat) => {
+    setConversionDetailFormat(format)
+    conversionDetailDisclosure.onOpen()
+  }
+
   // 离线下载弹窗（复用工具选择逻辑）
   const offlineDisclosure = createDisclosure()
   const [offlineTools, setOfflineTools] = createSignal<string[]>([])
@@ -1301,18 +1311,26 @@ const TorrentPreview = () => {
                 <For each={["torrent", "cas", "oss"] as SeedFormat[]}>
                   {(format) => {
                     const state = () => torrentInfo()!.conversions?.[format]
+                    const feasible = () => !!state()?.feasible
+                    const reasons = () => state()?.missing || []
                     return (
-                      <Button
-                        variant="soft"
-                        colorScheme={state()?.feasible ? "success" : "warning"}
-                        css={{ pointerEvents: "none", cursor: "default" }}
+                      <Tooltip
+                        label={
+                          feasible()
+                            ? t("home.transfer_seed.feasible")
+                            : reasons().join("\n") ||
+                              t("home.transfer_seed.unavailable")
+                        }
                       >
-                        {format.toUpperCase()}:{" "}
-                        {state()?.feasible
-                          ? t("home.transfer_seed.feasible")
-                          : state()?.missing?.join(", ") ||
-                            t("home.transfer_seed.unavailable")}
-                      </Button>
+                        <Button
+                          size="xs"
+                          variant="subtle"
+                          colorScheme={feasible() ? "success" : "danger"}
+                          onClick={() => openConversionDetail(format)}
+                        >
+                          {format.toUpperCase()} {feasible() ? "✓" : "✗"}
+                        </Button>
+                      </Tooltip>
                     )
                   }}
                 </For>
@@ -1558,6 +1576,60 @@ const TorrentPreview = () => {
             </Button>
             <Button loading={offlineLoading()} onClick={confirmOfflineDownload}>
               {t("global.confirm")}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* 转换可行性详情弹窗 */}
+      <Modal
+        opened={conversionDetailDisclosure.isOpen()}
+        onClose={conversionDetailDisclosure.onClose}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            {conversionDetailFormat()?.toUpperCase()} —{" "}
+            {torrentInfo()?.conversions?.[conversionDetailFormat()!]?.feasible
+              ? t("home.transfer_seed.feasible")
+              : t("home.transfer_seed.unavailable")}
+          </ModalHeader>
+          <ModalBody>
+            <Show
+              when={
+                conversionDetailFormat() &&
+                torrentInfo()?.conversions?.[conversionDetailFormat()!]
+              }
+              fallback={null}
+            >
+              {(detail) => (
+                <VStack alignItems="stretch" spacing="$2">
+                  <For each={detail()?.missing || []}>
+                    {(reason) => (
+                      <Text
+                        fontSize="$sm"
+                        color="$warning10"
+                        css={{ wordBreak: "break-all" }}
+                      >
+                        • {reason}
+                      </Text>
+                    )}
+                  </For>
+                  <Show when={!detail()?.missing?.length}>
+                    <Text fontSize="$sm" color="$success10">
+                      {t("home.transfer_seed.feasible")}
+                    </Text>
+                  </Show>
+                </VStack>
+              )}
+            </Show>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              colorScheme="neutral"
+              onClick={conversionDetailDisclosure.onClose}
+            >
+              {t("global.close")}
             </Button>
           </ModalFooter>
         </ModalContent>
