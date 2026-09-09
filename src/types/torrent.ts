@@ -104,6 +104,7 @@ export interface SeedGenerateRequest {
   formats: SeedFormat[]
   hash_matrix: SeedHashMatrix
   piece_size: number
+  name?: string
   comment?: string
   file_comments?: Record<string, string>
   trackers?: string[]

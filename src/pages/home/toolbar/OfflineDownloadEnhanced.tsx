@@ -126,6 +126,7 @@ export const TransferSeedGenerator = () => {
   const [shareFiles, setShareFiles] = createSignal<string[]>([])
   const [directFiles, setDirectFiles] = createSignal<string[]>([])
   const [outputPath, setOutputPath] = createSignal("")
+  const [seedName, setSeedName] = createSignal("")
   const [fileComments, setFileComments] = createSignal<Record<string, string>>(
     {},
   )
@@ -220,6 +221,7 @@ export const TransferSeedGenerator = () => {
   const openHandler = (payload: { paths: string[] }) => {
     setPaths(payload.paths)
     setOutputPath(pathname())
+    setSeedName("")
     setCapabilities(null)
     setFormats([])
     setPieceSize(10 * 1024 * 1024)
@@ -250,6 +252,7 @@ export const TransferSeedGenerator = () => {
         share_files: shareFiles(),
         direct_files: directFiles(),
         output_path: outputPath(),
+        name: seedName().trim() || undefined,
       })
       handleResp(resp, (data: SeedGenerateResult) => {
         if (data?.task || data?.async) {
@@ -416,6 +419,17 @@ export const TransferSeedGenerator = () => {
                     value: String(size * 1024 * 1024),
                     label: `${size} MiB`,
                   }))}
+                />
+              </Box>
+              <Box>
+                <Text fontSize="$sm" mb="$1">
+                  {t("home.transfer_seed.seed_name")}
+                </Text>
+                <Input
+                  id="transfer-seed-name"
+                  placeholder={t("home.transfer_seed.seed_name_placeholder")}
+                  value={seedName()}
+                  onInput={(e) => setSeedName(e.currentTarget.value)}
                 />
               </Box>
               <Box>

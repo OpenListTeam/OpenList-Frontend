@@ -179,6 +179,8 @@
     "pieces": "Pieces",
     "required_by_format": "Required by selected format",
     "piece_size": "Piece size",
+    "seed_name": "Seed name",
+    "seed_name_placeholder": "Leave empty to auto-derive from selection",
     "output_path": "Output path",
     "comment": "Comment",
     "file_comment": "File comment",
