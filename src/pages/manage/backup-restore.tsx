@@ -10,6 +10,7 @@ import {
   Flex,
 } from "@hope-ui/solid"
 import { r, handleRespWithoutNotify, notify } from "~/utils"
+import { isTsWorker } from "~/utils/backend"
 import { useFetch, useManageTitle, useT } from "~/hooks"
 import {
   Meta,
@@ -119,6 +120,51 @@ const BackupRestore = () => {
 
   const backup = async () => {
     appendLog(t("br.start_backup"), "info")
+    if (isTsWorker()) {
+      // TS Worker：直接调用后端完整备份接口（未脱敏），替代逐个 list 组装
+      const resp = await r.get("/admin/backup")
+      handleRespWithoutNotify(
+        resp as Resp<Data>,
+        (data) => {
+          const allData: Data = {
+            encrypted: "",
+            settings: data.settings || [],
+            users: data.users || [],
+            storages: data.storages || [],
+            metas: data.metas || [],
+            shares: data.shares || [],
+          }
+          if (password() !== "") {
+            allData.encrypted = encrypt("encrypted", password())
+            for (const name of [
+              "settings",
+              "users",
+              "storages",
+              "metas",
+              "shares",
+            ] as const) {
+              for (const obj of (allData as any)[name]) {
+                for (const key in obj) {
+                  obj[key] = encrypt(obj[key], password())
+                }
+              }
+            }
+          }
+          download(
+            "openlist_backup_" + new Date().toLocaleString() + ".json",
+            allData,
+          )
+          appendLog(t("br.finish_backup"), "info")
+        },
+        (msg) => {
+          appendLog(
+            t("br.failed_backup_item", { item: "backup" }) + ":" + msg,
+            "error",
+          )
+        },
+      )
+      return
+    }
     const allData: Data = {
       encrypted: "",
       settings: [],
@@ -300,16 +346,37 @@ const BackupRestore = () => {
             appendLog(t("br.wrong_encrypt_password"), "error")
             return
           }
-        const dataArray = Object.values(data)
-        for (let i = dataArray.length - 4; i < dataArray.length; i++) {
-          const obj = dataArray[i]
-          console.log(obj)
-          for (let a = 0; a < obj.length; a++) {
-            const obj1 = obj[a]
+        // 解密 settings + users/storages/metas/shares（备份时这 5 个数组均被加密）
+        for (const name of [
+          "settings",
+          "users",
+          "storages",
+          "metas",
+          "shares",
+        ] as const) {
+          const arr = (data as any)[name]
+          if (!Array.isArray(arr)) continue
+          for (const obj1 of arr) {
             for (const key in obj1) {
               obj1[key] = decrypt(obj1[key], password(), false, encrypted)
             }
           }
+        }
+        // TS Worker 后端：调用专用 restore 接口（后端按唯一键 upsert）
+        if (isTsWorker()) {
+          handleRespWithoutNotify(
+            await r.post("/admin/restore", { ...data, override: override() }),
+            () => {
+              appendLog(t("br.finish_restore"), "info")
+            },
+            (msg) => {
+              appendLog(
+                t("br.failed_restore_item", { item: "restore" }) + ":" + msg,
+                "error",
+              )
+            },
+          )
+          return
         }
         if (override()) {
           await backup()
