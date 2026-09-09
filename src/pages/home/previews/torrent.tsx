@@ -1324,27 +1324,6 @@ const TorrentPreview = () => {
           {/* 整体保存 */}
           <Show when={!isShare() && operationSupported("edit")}>
             <Divider />
-            <HStack spacing="$2">
-              <Button
-                variant="outline"
-                loading={operation() === "update"}
-                disabled={!operationSupported("edit")}
-                onClick={() => runOperation("update")}
-              >
-                {t("global.save")}
-              </Button>
-              <Button
-                variant="outline"
-                loading={operation() === "recalculate"}
-                disabled={
-                  !operationSupported("recalculate") ||
-                  selectedFiles().length === 0
-                }
-                onClick={() => runOperation("recalculate")}
-              >
-                {t("home.transfer_seed.recalculate")}
-              </Button>
-            </HStack>
             <Show when={operationSupported("recalculate")}>
               <Text fontSize="$xs" fontWeight="$semibold" mt="$2">
                 {t("home.transfer_seed.recalc_matrix")}
@@ -1405,13 +1384,32 @@ const TorrentPreview = () => {
                 {t("home.transfer_seed.recalc_source_dir")}
               </Text>
               <HStack spacing="$2" alignItems="center" flexWrap="wrap" mb="$2">
-                <Box w={{ "@initial": "$full", "@md": "$64" }}>
+                <Box flex="1" minW={{ "@initial": "$full", "@md": "$72" }}>
                   <FolderChooseInput
                     id="seed-preview-recalc-source-dir"
                     value={effectiveRecalcSourceDir()}
                     onChange={setRecalcSourceDir}
                   />
                 </Box>
+                <Button
+                  variant="outline"
+                  loading={operation() === "update"}
+                  disabled={!operationSupported("edit")}
+                  onClick={() => runOperation("update")}
+                >
+                  {t("global.save")}
+                </Button>
+                <Button
+                  variant="outline"
+                  loading={operation() === "recalculate"}
+                  disabled={
+                    !operationSupported("recalculate") ||
+                    selectedFiles().length === 0
+                  }
+                  onClick={() => runOperation("recalculate")}
+                >
+                  {t("home.transfer_seed.recalculate")}
+                </Button>
               </HStack>
               <Show when={selectedFiles().length > 0}>
                 <Text fontSize="$xs" color="$neutral10">
