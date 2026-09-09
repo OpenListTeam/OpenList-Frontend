@@ -1221,43 +1221,31 @@ const TorrentPreview = () => {
             </HStack>
             <HStack spacing="$2" alignItems="center" flexWrap="wrap">
               <Show when={destinationProvider()}>
-                <Button
-                  variant="soft"
-                  colorScheme="info"
-                  css={{ pointerEvents: "none", cursor: "default" }}
-                >
+                <Badge colorScheme="info">
                   {t("home.transfer_seed.destination_driver")}:{" "}
                   {destinationProvider()}
-                </Button>
+                </Badge>
               </Show>
               <Show when={driverSupportsText()}>
-                <Button
-                  variant="soft"
-                  colorScheme="neutral"
-                  css={{ pointerEvents: "none", cursor: "default" }}
-                >
+                <Badge colorScheme="neutral">
                   {t("home.transfer_seed.driver_supports")}:{" "}
                   {driverSupportsText()}
-                </Button>
+                </Badge>
               </Show>
               <Show when={saveCapabilities()}>
-                <Button
-                  variant="soft"
-                  colorScheme={canRapidSave() ? "success" : "warning"}
-                  css={{ pointerEvents: "none", cursor: "default" }}
-                >
+                <Badge colorScheme={canRapidSave() ? "success" : "warning"}>
                   {canRapidSave()
                     ? t("home.transfer_seed.rapid_available")
                     : t("home.transfer_seed.rapid_unavailable")}
-                </Button>
+                </Badge>
               </Show>
+              <Checkbox
+                checked={updateChannel()}
+                onChange={() => setUpdateChannel(!updateChannel())}
+              >
+                {t("home.transfer_seed.update_channel")}
+              </Checkbox>
             </HStack>
-            <Checkbox
-              checked={updateChannel()}
-              onChange={() => setUpdateChannel(!updateChannel())}
-            >
-              {t("home.transfer_seed.update_channel")}
-            </Checkbox>
             <Show when={operationSupported("transfer")}>
               <HStack spacing="$2" alignItems="center" flexWrap="wrap">
                 <Text fontSize="$sm" flexShrink={0}>
