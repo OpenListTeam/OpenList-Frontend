@@ -38,6 +38,7 @@ import {
 } from "~/types"
 import { useLink, usePath, useRouter, useT, useUtil } from "~/hooks"
 import {
+  formatDate,
   fsGet,
   handleResp,
   notify,
@@ -584,10 +585,9 @@ const TorrentPreview = () => {
     return extension === "cas" || extension === "oss" ? extension : "torrent"
   }
 
-  // 格式徽章：OSS 显示格式名，CAS 显示完整名称，BT 显示为种子文件名。
+  // 格式徽章：OSS/CAS/BT 显示各自格式名，标题区则显示种子文件名。
   const formatDisplayName = () => {
     const format = torrentInfo()?.format || inferFormat()
-    if (format === "torrent") return objStore.obj.name
     return FORMAT_DISPLAY[format] || format.toUpperCase()
   }
 
@@ -1022,22 +1022,19 @@ const TorrentPreview = () => {
           >
             <VStack alignItems="flex-start" spacing="$1">
               <Heading size="sm" css={{ wordBreak: "break-all" }}>
-                {torrentInfo()!.name}
+                {objStore.obj.name}
               </Heading>
-              <HStack spacing="$2" flexWrap="wrap">
+              <HStack spacing="$2" alignItems="center" flexWrap="wrap">
                 <Badge colorScheme="info">{formatDisplayName()}</Badge>
                 <Text fontSize="$xs" color="$neutral10">
-                  {formatFileSize(torrentInfo()!.total_size)}
-                </Text>
-                <Text fontSize="$xs" color="$neutral10">
+                  {formatFileSize(torrentInfo()!.total_size)} ·{" "}
                   {torrentInfo()!.files.length}{" "}
                   {t("home.transfer_seed.file_count")}
+                  <Show when={torrentInfo()!.created_at}>
+                    {" · "}
+                    {formatDate(torrentInfo()!.created_at!)}
+                  </Show>
                 </Text>
-                <Show when={torrentInfo()!.created_at}>
-                  <Text fontSize="$xs" color="$neutral10">
-                    {torrentInfo()!.created_at}
-                  </Text>
-                </Show>
               </HStack>
             </VStack>
             <HStack spacing="$2">
