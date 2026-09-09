@@ -23,6 +23,7 @@ import {
   r,
 } from "~/utils"
 import { applyCustomize } from "~/utils/customize"
+import { isTsWorker } from "~/utils/backend"
 import { MustUser, UserOrGuest } from "./MustUser"
 import "./index.css"
 import { globalStyles } from "./theme"
@@ -60,8 +61,11 @@ const App: Component = () => {
           (await r.get("/public/settings")) as Resp<Record<string, string>>,
           (data) => {
             setSettings(data)
-            // 注入自定义 CSS/JS（customize_head/body），对齐 Go 服务端注入语义
-            applyCustomize()
+            // 注入自定义 CSS/JS（customize_head/body）：仅 TS 模式前端运行时注入；
+            // Go 后端已在服务端完成注入，重复注入会导致自定义内容出现两次。
+            if (isTsWorker()) {
+              applyCustomize()
+            }
           },
           (e) => setErr(err().concat(e)),
         )
