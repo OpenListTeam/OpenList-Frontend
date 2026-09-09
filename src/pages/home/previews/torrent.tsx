@@ -601,6 +601,12 @@ const TorrentPreview = () => {
     return FORMAT_DISPLAY[format] || format.toUpperCase()
   }
 
+  // CAS 是否携带逐片 MD5 列表：有分片信息时不显示 legacy 警告。
+  const hasCasPieces = () =>
+    (torrentInfo()?.files || []).some(
+      (file) => (file.hashes?.pieces?.md5?.length ?? 0) > 0,
+    )
+
   const normalizeSeedInfo = (parsed: SeedParseResult): SeedInfo => {
     const nested = parsed.info || parsed.seed || parsed.data
     const value = (nested || parsed) as SeedInfo
@@ -1082,7 +1088,7 @@ const TorrentPreview = () => {
             </HStack>
           </HStack>
 
-          <Show when={torrentInfo()!.format === "cas"}>
+          <Show when={torrentInfo()!.format === "cas" && !hasCasPieces()}>
             <Alert status="warning">
               <AlertIcon />
               {t("home.transfer_seed.cas_legacy_warning")}
