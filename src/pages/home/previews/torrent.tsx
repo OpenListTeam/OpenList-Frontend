@@ -1179,7 +1179,7 @@ const TorrentPreview = () => {
               <Text fontSize="$sm" flexShrink={0}>
                 {t("home.transfer_seed.destination")}
               </Text>
-              <Box w={{ "@initial": "$full", "@md": "$64" }}>
+              <Box flex="1" minW={{ "@initial": "$full", "@md": "$72" }}>
                 <FolderChooseInput
                   id="seed-preview-destination"
                   value={destination()}
@@ -1221,23 +1221,35 @@ const TorrentPreview = () => {
             </HStack>
             <HStack spacing="$2" alignItems="center" flexWrap="wrap">
               <Show when={destinationProvider()}>
-                <Badge colorScheme="info">
+                <Button
+                  variant="soft"
+                  colorScheme="info"
+                  css={{ pointerEvents: "none", cursor: "default" }}
+                >
                   {t("home.transfer_seed.destination_driver")}:{" "}
                   {destinationProvider()}
-                </Badge>
+                </Button>
               </Show>
               <Show when={driverSupportsText()}>
-                <Text fontSize="$xs" color="$neutral10">
+                <Button
+                  variant="soft"
+                  colorScheme="neutral"
+                  css={{ pointerEvents: "none", cursor: "default" }}
+                >
                   {t("home.transfer_seed.driver_supports")}:{" "}
                   {driverSupportsText()}
-                </Text>
+                </Button>
               </Show>
               <Show when={saveCapabilities()}>
-                <Badge colorScheme={canRapidSave() ? "success" : "warning"}>
+                <Button
+                  variant="soft"
+                  colorScheme={canRapidSave() ? "success" : "warning"}
+                  css={{ pointerEvents: "none", cursor: "default" }}
+                >
                   {canRapidSave()
                     ? t("home.transfer_seed.rapid_available")
                     : t("home.transfer_seed.rapid_unavailable")}
-                </Badge>
+                </Button>
               </Show>
             </HStack>
             <Checkbox
@@ -1269,7 +1281,7 @@ const TorrentPreview = () => {
               <Text fontSize="$sm" fontWeight="$semibold" flexShrink={0}>
                 {t("home.transfer_seed.convert_to")}
               </Text>
-              <Box w={{ "@initial": "$full", "@md": "$56" }}>
+              <Box flex="1" minW={{ "@initial": "$full", "@md": "$64" }}>
                 <SelectWrapper
                   value={targetFormat()}
                   onChange={(value) => setTargetFormat(value as SeedFormat)}
@@ -1302,15 +1314,17 @@ const TorrentPreview = () => {
                   {(format) => {
                     const state = () => torrentInfo()!.conversions?.[format]
                     return (
-                      <Badge
+                      <Button
+                        variant="soft"
                         colorScheme={state()?.feasible ? "success" : "warning"}
+                        css={{ pointerEvents: "none", cursor: "default" }}
                       >
                         {format.toUpperCase()}:{" "}
                         {state()?.feasible
                           ? t("home.transfer_seed.feasible")
                           : state()?.missing?.join(", ") ||
                             t("home.transfer_seed.unavailable")}
-                      </Badge>
+                      </Button>
                     )
                   }}
                 </For>
