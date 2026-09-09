@@ -22,6 +22,7 @@ import {
   initPluginEngine,
   r,
 } from "~/utils"
+import { applyCustomize } from "~/utils/customize"
 import { MustUser, UserOrGuest } from "./MustUser"
 import "./index.css"
 import { globalStyles } from "./theme"
@@ -57,7 +58,11 @@ const App: Component = () => {
       (async () => {
         handleRespWithoutAuthAndNotify(
           (await r.get("/public/settings")) as Resp<Record<string, string>>,
-          setSettings,
+          (data) => {
+            setSettings(data)
+            // 注入自定义 CSS/JS（customize_head/body），对齐 Go 服务端注入语义
+            applyCustomize()
+          },
           (e) => setErr(err().concat(e)),
         )
       })(),
