@@ -672,6 +672,15 @@ const TorrentPreview = () => {
     if (!getSettingBool("seed_cas_direct_access")) return
     if (!torrentData()) return
     try {
+      // CAS 秒传目前仅天翼云(189pc)支持，先探测目标存储能力，
+      // 避免在不支持的存储上弹出 "cannot reuse the available hashes" 错误。
+      const capResp = await seedSaveCapabilities(
+        torrentData(),
+        objStore.obj.name,
+        destination(),
+      )
+      if (capResp.code !== 200 || !capResp.data?.driver_supports?.cas_rapid)
+        return
       const resp = await seedRapidUpload({
         seed_data: torrentData(),
         file_name: objStore.obj.name,
