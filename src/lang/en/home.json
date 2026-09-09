@@ -187,6 +187,7 @@
     "include_share": "Include share link",
     "include_direct_source": "Include direct source",
     "direct_generate": "Direct generation",
+    "async_task_created": "Seed generation queued. The files will appear in the destination folder once finished.",
     "cannot_stream": "Cannot stream",
     "cannot_stream_hint": "Some files require downloading to compute hashes, but the current driver cannot stream them. Seed generation is unavailable for these files.",
     "direct_source_disabled_hint": "Direct sources require an unencrypted file and enabled guest access",

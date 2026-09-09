@@ -128,6 +128,14 @@ export interface SeedGenerateResult {
   generated?: SeedArtifact[]
   estimated_traffic?: number
   message?: string
+  async?: boolean
+  task?: {
+    id?: string
+    name?: string
+    state?: string
+    status?: string
+    error?: string
+  }
 }
 
 export interface SeedInfo extends Partial<TorrentInfo> {

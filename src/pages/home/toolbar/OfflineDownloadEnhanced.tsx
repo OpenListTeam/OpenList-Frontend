@@ -32,6 +32,7 @@ import {
   bus,
   handleRespWithNotifySuccess,
   handleResp,
+  notify,
   r,
 } from "~/utils"
 import {
@@ -48,6 +49,7 @@ import {
   SeedCapabilities,
   SeedCapabilityFile,
   SeedFormat,
+  SeedGenerateResult,
   SeedHashAlgorithm,
   SeedHashMatrix,
   TorrentInfo,
@@ -249,7 +251,10 @@ export const TransferSeedGenerator = () => {
         direct_files: directFiles(),
         output_path: outputPath(),
       })
-      handleRespWithNotifySuccess(resp, () => {
+      handleResp(resp, (data: SeedGenerateResult) => {
+        if (data?.task || data?.async) {
+          notify.success(t("home.transfer_seed.async_task_created"))
+        }
         refresh(undefined, true)
         onClose()
       })
