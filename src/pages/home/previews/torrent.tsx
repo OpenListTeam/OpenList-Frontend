@@ -903,10 +903,67 @@ const TorrentPreview = () => {
     const supports = saveCapabilities()?.driver_supports
     if (!supports) return ""
     const parts: string[] = []
-    if (supports.cas_rapid) parts.push("CAS")
-    if (supports.put_url) parts.push("PutURL")
-    if (supports.offline_download) parts.push("Offline")
+    if (supports.cas_rapid) {
+      const algos = supports.rapid_hash_algos || []
+      const algosText = algos.length > 0 ? `(${algos.join("/")})` : ""
+      parts.push(`${t("home.transfer_seed.rapid_upload")} ${algosText}`)
+    }
+    if (supports.put_url) parts.push(t("home.transfer_seed.put_url"))
+    if (supports.offline_download) parts.push(t("home.transfer_seed.offline"))
     return parts.join(" / ")
+  }
+
+  // 驱动所需的哈希算法
+  const requiredHashesText = () => {
+    const supports = saveCapabilities()?.driver_supports
+    if (!supports?.cas_rapid) return ""
+    const algos = supports.rapid_hash_algos || []
+    if (algos.length === 0) return ""
+    return `${t("home.transfer_seed.requires_hashes")}: ${algos.join(", ")}`
+  }
+
+  // 种子中可用的哈希算法
+  const availableHashesText = () => {
+    const info = torrentInfo()
+    if (!info?.files?.[0]?.hashes) return ""
+    const hashes = info.files[0].hashes
+    const available: string[] = []
+    if (hashes.md5) available.push("MD5")
+    if (hashes.sha1) available.push("SHA1")
+    if (hashes.sha256) available.push("SHA256")
+    if ((hashes as any).gcid) available.push("GCID")
+    if (available.length === 0) return ""
+    return `${t("home.transfer_seed.available_hashes")}: ${available.join(", ")}`
+  }
+
+  // 检查种子是否包含目标驱动所需的哈希
+  const hasRequiredHashes = () => {
+    const supports = saveCapabilities()?.driver_supports
+    if (!supports?.cas_rapid) return false
+    const required = supports.rapid_hash_algos || []
+    if (required.length === 0) return true // 驱动未明确要求，假设可以
+    const info = torrentInfo()
+    if (!info?.files?.[0]?.hashes) return false
+    const hashes = info.files[0].hashes
+    // 检查是否至少有一个所需的哈希
+    return required.some((algo) => {
+      const key = algo.toLowerCase() as keyof typeof hashes
+      return !!(hashes[key] || (hashes as any)[algo.toLowerCase()])
+    })
+  }
+
+  // 无法秒传的原因
+  const rapidUnavailableReason = () => {
+    const supports = saveCapabilities()?.driver_supports
+    if (!supports) return t("home.transfer_seed.loading_capabilities")
+    if (!supports.cas_rapid) {
+      return t("home.transfer_seed.driver_no_rapid")
+    }
+    if (!hasRequiredHashes()) {
+      const required = supports.rapid_hash_algos || []
+      return `${t("home.transfer_seed.missing_hashes")}: ${required.join(", ")}`
+    }
+    return ""
   }
 
   // 当前目标下是否有文件可以秒传（非下载类方式）
@@ -914,7 +971,10 @@ const TorrentPreview = () => {
     const files = saveCapabilities()?.files
     if (!files?.length) return false
     return files.some(
-      (file) => file.method === "189pc_cas" || file.method === "put_url",
+      (file) =>
+        file.method === "rapid_upload" ||
+        file.method === "189pc_cas" ||
+        file.method === "put_url",
     )
   }
 
@@ -1258,11 +1318,37 @@ const TorrentPreview = () => {
                 </Badge>
               </Show>
               <Show when={saveCapabilities()}>
-                <Badge colorScheme={canRapidSave() ? "success" : "warning"}>
-                  {canRapidSave()
+                <Badge
+                  colorScheme={
+                    canRapidSave() && hasRequiredHashes()
+                      ? "success"
+                      : "warning"
+                  }
+                >
+                  {canRapidSave() && hasRequiredHashes()
                     ? t("home.transfer_seed.rapid_available")
                     : t("home.transfer_seed.rapid_unavailable")}
                 </Badge>
+              </Show>
+              <Show when={requiredHashesText()}>
+                <Badge colorScheme="accent">{requiredHashesText()}</Badge>
+              </Show>
+              <Show when={availableHashesText()}>
+                <Badge
+                  colorScheme={hasRequiredHashes() ? "success" : "warning"}
+                >
+                  {availableHashesText()}
+                </Badge>
+              </Show>
+              <Show when={rapidUnavailableReason()}>
+                <Tooltip label={rapidUnavailableReason()}>
+                  <Badge colorScheme="danger" cursor="help">
+                    <HStack spacing="$1">
+                      <BsInfoCircle />
+                      <span>{t("home.transfer_seed.unavailable_reason")}</span>
+                    </HStack>
+                  </Badge>
+                </Tooltip>
               </Show>
               <Checkbox
                 checked={updateChannel()}

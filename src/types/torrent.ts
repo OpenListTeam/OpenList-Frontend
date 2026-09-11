@@ -26,6 +26,8 @@ export interface TorrentFile {
   }>
   cas_slice_md5?: string
   cas_create_time?: string
+  /** Cloud drive identifier the CAS metadata follows (e.g. "189"); empty = "189". */
+  cas_cloud?: string
   existing_hashes?: SeedHashAlgorithm[]
   requires_fetch?: boolean
   estimated_traffic?: number
@@ -72,7 +74,11 @@ export interface SeedCapabilities {
 }
 
 // Per-file save method returned by the destination import planning probe.
+// "rapid_upload" covers hash-based rapid upload (秒传/CAS) for any cloud drive
+// that supports it (189pc, 115, aliyundrive_open, ...). "189pc_cas" is retained
+// for backward compatibility with older backends.
 export type SeedSaveMethod =
+  | "rapid_upload"
   | "189pc_cas"
   | "put_url"
   | "offline_download"
@@ -94,7 +100,7 @@ export interface SeedSaveCapabilities {
     cas_rapid?: boolean
     put_url?: boolean
     offline_download?: boolean
-    rapid_hash_algos?: SeedHashAlgorithm[]
+    rapid_hash_algos?: string[] // 支持的哈希算法名称 (MD5, SHA1, SHA256, GCID)
     rapid_uses_pieces?: boolean
   }
 }
