@@ -6,16 +6,58 @@ import {
   Badge,
   Heading,
   Box,
+  Checkbox,
+  Divider,
+  Alert,
+  AlertIcon,
+  Textarea,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Tooltip,
+  IconButton,
+  createDisclosure,
+  SimpleGrid,
 } from "@hope-ui/solid"
-import { createSignal, onMount, Show } from "solid-js"
-import { objStore } from "~/store"
-import { TorrentInfo, CASInfo, TorrentFile } from "~/types"
-import { useLink, useRouter, useT } from "~/hooks"
-import { bus } from "~/utils"
-import { TorrentFileList } from "../toolbar/TorrentFileList"
+import { createEffect, createSignal, For, onMount, Show } from "solid-js"
+import { getSettingBool, objStore } from "~/store"
+import {
+  TorrentInfo,
+  CASInfo,
+  Resp,
+  SeedFormat,
+  SeedInfo,
+  SeedParseResult,
+  SeedHashAlgorithm,
+  SeedHashMatrix,
+  SeedHashSelection,
+  SeedSaveCapabilities,
+} from "~/types"
+import { useLink, usePath, useRouter, useT, useUtil } from "~/hooks"
+import {
+  formatDate,
+  fsGet,
+  handleResp,
+  notify,
+  offlineDownload,
+  r,
+  seedConvert,
+  seedOfflineDownload,
+  seedParse,
+  seedRapidUpload,
+  seedSaveCapabilities,
+  seedUpdate,
+} from "~/utils"
+import { FolderChooseInput, SelectWrapper } from "~/components"
 import axios from "axios"
 import bencode from "bencode"
 import crypto from "crypto-js"
+import { TbCopy, TbRefresh, TbTrash } from "solid-icons/tb"
+import { BsInfoCircle } from "solid-icons/bs"
+import { FiExternalLink } from "solid-icons/fi"
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B"
@@ -63,7 +105,7 @@ function parseLocalTorrent(buffer: Uint8Array): TorrentInfo {
   const pieceCount = Math.floor(pieces.byteLength / 20)
 
   // 提取文件列表
-  const files: TorrentFile[] = []
+  const files: TorrentInfo["files"] = []
   let totalSize = 0
   if (Array.isArray(info.files) && info.files.length > 0) {
     // 多文件模式
@@ -112,57 +154,937 @@ function parseLocalTorrent(buffer: Uint8Array): TorrentInfo {
   }
 }
 
+function toMagnetUrl(torrentBuffer: Uint8Array): string {
+  const data = bencode.decode(torrentBuffer as any)
+  const infoEncode = bencode.encode(data.info) as unknown as Uint8Array
+  const infoHash = crypto
+    .SHA1(crypto.lib.WordArray.create(infoEncode))
+    .toString()
+  const params: Record<string, unknown> = {}
+  if (Number.isInteger(data?.info?.length)) params.xl = data.info.length
+  if (data.info.name) params.dn = utf8Decode(data.info.name)
+  if (data.announce) params.tr = utf8Decode(data.announce)
+  return `magnet:?xt=urn:btih:${infoHash}&${new URLSearchParams(
+    params as Record<string, string>,
+  ).toString()}`
+}
+
+const ALGORITHMS: SeedHashAlgorithm[] = ["md5", "sha1", "sha256"]
+
+const DELETE_POLICIES = [
+  "upload_download_stream",
+  "delete_on_upload_succeed",
+  "delete_on_upload_failed",
+  "delete_never",
+  "delete_always",
+] as const
+
+// 格式完整显示名称：OSS 显示格式名，CAS 显示完整名称，BT 显示为种子文件。
+const FORMAT_DISPLAY: Record<string, string> = {
+  oss: "OpenList Sharing Seed",
+  cas: "Content Addressable Storage",
+  torrent: "BitTorrent",
+}
+
+// 每个文件展示一行，包含哈希复制、分片弹窗、预览、删除、注释、重算等操作
+const SeedFileRow = (props: {
+  file: SeedInfo["files"][number]
+  selected: boolean
+  onToggle: () => void
+  saveMethod?: string
+  pieceSize: number
+  onPreview: () => void
+  onRemove: () => void
+  onRecalc: () => void
+  onCommentCopy: () => void
+}) => {
+  const t = useT()
+  const { copy } = useUtil()
+
+  const hashes = () => props.file.hashes || {}
+  const pieceHashes = () => hashes().pieces || {}
+  const pieceCount = () => {
+    const perAlgo = pieceHashes()
+    const counts = (["md5", "sha1", "sha256"] as const)
+      .map((algo) => perAlgo[algo]?.length ?? 0)
+      .filter((n) => n > 0)
+    if (counts.length > 0) return Math.max(...counts)
+    if (props.file.size && props.pieceSize > 0)
+      return Math.ceil(props.file.size / props.pieceSize)
+    return 0
+  }
+  const hasPieces = () => pieceCount() > 0
+
+  const piecesDisclosure = createDisclosure()
+
+  const copyHash = (algo: SeedHashAlgorithm) => {
+    const hash = hashes()[algo]
+    if (hash) void copy(hash)
+  }
+
+  const copyAllPieces = (algo: SeedHashAlgorithm) => {
+    const list = pieceHashes()[algo]
+    if (list && list.length) void copy(list.join("\n"))
+  }
+
+  const hashButton = (algo: SeedHashAlgorithm) => {
+    const hash = hashes()[algo]
+    return (
+      <Tooltip
+        label={
+          hash ? hash : t("home.transfer_seed.hash_missing", { alg: algo })
+        }
+      >
+        <Button
+          size="xs"
+          variant="outline"
+          colorScheme={hash ? "neutral" : undefined}
+          disabled={!hash}
+          onClick={() => copyHash(algo)}
+        >
+          {algo.toUpperCase()}
+        </Button>
+      </Tooltip>
+    )
+  }
+
+  return (
+    <Box
+      border="1px solid $neutral6"
+      borderRadius="$md"
+      p="$2"
+      mb="$2"
+      _hover={{ bg: "$neutral2" }}
+    >
+      <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+        <Checkbox
+          size="sm"
+          checked={props.selected}
+          onChange={props.onToggle}
+        />
+        <Text
+          fontSize="$sm"
+          flex={1}
+          minW="120px"
+          css={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+          title={props.file.path}
+        >
+          {props.file.path}
+        </Text>
+        <HStack spacing="$1">
+          <For each={ALGORITHMS}>{(algo) => hashButton(algo)}</For>
+          <Tooltip
+            label={
+              hasPieces()
+                ? t("home.transfer_seed.piece_info", {
+                    count: String(pieceCount()),
+                    size: formatFileSize(props.pieceSize),
+                  })
+                : t("home.transfer_seed.piece_hashes")
+            }
+          >
+            <Button
+              size="xs"
+              variant="outline"
+              colorScheme={hasPieces() ? "accent" : undefined}
+              disabled={!hasPieces()}
+              onClick={piecesDisclosure.onOpen}
+            >
+              {t("home.transfer_seed.piece_hashes")}
+            </Button>
+          </Tooltip>
+        </HStack>
+        <Text fontSize="$xs" color="$neutral10" flexShrink={0}>
+          {formatFileSize(props.file.size)}
+        </Text>
+        <Tooltip label={t("home.transfer_seed.preview_file")}>
+          <IconButton
+            icon={<FiExternalLink />}
+            aria-label={t("home.transfer_seed.preview_file")}
+            size="xs"
+            variant="ghost"
+            onClick={props.onPreview}
+          />
+        </Tooltip>
+        <Tooltip
+          label={props.file.comment || t("home.transfer_seed.no_comment")}
+        >
+          <IconButton
+            icon={<BsInfoCircle />}
+            aria-label={t("home.transfer_seed.copy_comment")}
+            size="xs"
+            variant="ghost"
+            disabled={!props.file.comment}
+            onClick={props.onCommentCopy}
+          />
+        </Tooltip>
+        <Tooltip label={t("home.transfer_seed.recalc_file")}>
+          <IconButton
+            icon={<TbRefresh />}
+            aria-label={t("home.transfer_seed.recalc_file")}
+            size="xs"
+            variant="ghost"
+            onClick={props.onRecalc}
+          />
+        </Tooltip>
+        <Tooltip label={t("home.transfer_seed.remove_file")}>
+          <IconButton
+            icon={<TbTrash />}
+            aria-label={t("home.transfer_seed.remove_file")}
+            size="xs"
+            variant="ghost"
+            colorScheme="danger"
+            onClick={props.onRemove}
+          />
+        </Tooltip>
+        <Show when={props.saveMethod}>
+          <Badge colorScheme={methodBadgeColor(props.saveMethod!)}>
+            {t(`home.transfer_seed.method_${props.saveMethod!}`)}
+          </Badge>
+        </Show>
+      </HStack>
+
+      {/* 分片哈希弹窗 */}
+      <Modal
+        size="lg"
+        opened={piecesDisclosure.isOpen()}
+        onClose={piecesDisclosure.onClose}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            {t("home.transfer_seed.piece_hashes")} · {props.file.path}
+          </ModalHeader>
+          <ModalBody>
+            <Text fontSize="$xs" color="$neutral10" mb="$2">
+              {t("home.transfer_seed.piece_info", {
+                count: String(pieceCount()),
+                size: formatFileSize(props.pieceSize),
+              })}
+            </Text>
+            <For each={ALGORITHMS}>
+              {(algo) => {
+                const list = () => pieceHashes()[algo]
+                return (
+                  <Show when={list()?.length}>
+                    <Box mb="$3">
+                      <HStack justifyContent="space-between" mb="$1">
+                        <Text fontSize="$sm" fontWeight="$semibold">
+                          {t("home.transfer_seed.piece_hash_title", {
+                            alg: algo.toUpperCase(),
+                          })}
+                        </Text>
+                        <Button
+                          size="xs"
+                          leftIcon={<TbCopy />}
+                          onClick={() => copyAllPieces(algo)}
+                        >
+                          {t("home.transfer_seed.copy_all_hashes")}
+                        </Button>
+                      </HStack>
+                      <Box
+                        maxH="160px"
+                        overflowY="auto"
+                        fontFamily="$mono"
+                        fontSize="$xs"
+                        p="$2"
+                        bg="$neutral2"
+                        borderRadius="$sm"
+                      >
+                        <For each={list()}>
+                          {(hash, index) => (
+                            <Text css={{ wordBreak: "break-all" }}>
+                              {index()}: {hash}
+                            </Text>
+                          )}
+                        </For>
+                      </Box>
+                    </Box>
+                  </Show>
+                )
+              }}
+            </For>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="neutral" onClick={piecesDisclosure.onClose}>
+              {t("global.close")}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </Box>
+  )
+}
+
+function methodBadgeColor(
+  method: string,
+): "success" | "info" | "warning" | "danger" {
+  switch (method) {
+    case "189pc_cas":
+    case "put_url":
+      return "success"
+    case "offline_download":
+      return "info"
+    case "download_required":
+      return "warning"
+    default:
+      return "danger"
+  }
+}
+
 const TorrentPreview = () => {
   const t = useT()
   const { proxyLink, rawLink } = useLink()
-  const { isShare } = useRouter()
+  const { isShare, pathname, to } = useRouter()
+  const { refresh } = usePath()
+  const { copy } = useUtil()
 
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal("")
-  const [torrentInfo, setTorrentInfo] = createSignal<TorrentInfo | null>(null)
-  const [torrentData, setTorrentData] = createSignal("") // Base64 编码
+  const [torrentInfo, setTorrentInfo] = createSignal<SeedInfo | null>(null)
+  const [torrentData, setTorrentData] = createSignal("")
   const [selectedFiles, setSelectedFiles] = createSignal<number[]>([])
+  const [destination, setDestination] = createSignal(
+    pathname().split("/").slice(0, -1).join("/") || "/",
+  )
+  const [destinationProvider, setDestinationProvider] = createSignal("")
+  const [targetFormat, setTargetFormat] = createSignal<SeedFormat>("oss")
+  const [editComment, setEditComment] = createSignal("")
+  const [operation, setOperation] = createSignal("")
+  const [transitPath, setTransitPath] = createSignal("")
+  // 重算源目录：种子文件对应源文件所在目录（默认当前浏览目录）
+  const [recalcSourceDir, setRecalcSourceDir] = createSignal("")
+  const [recalcMatrix, setRecalcMatrix] = createSignal<SeedHashMatrix>({
+    md5: { whole: false, pieces: false },
+    sha1: { whole: false, pieces: false },
+    sha256: { whole: false, pieces: false },
+  })
+  const [updateChannel, setUpdateChannel] = createSignal(false)
+  const [saveCapabilities, setSaveCapabilities] =
+    createSignal<SeedSaveCapabilities | null>(null)
+
+  // 预览文件确认弹窗
+  const previewDisclosure = createDisclosure()
+  const [previewFileIndex, setPreviewFileIndex] = createSignal<number | null>(
+    null,
+  )
+  // 删除文件确认弹窗
+  const removeDisclosure = createDisclosure()
+  const [removeFileIndex, setRemoveFileIndex] = createSignal<number | null>(
+    null,
+  )
+  // 单文件重算弹窗
+  const recalcDisclosure = createDisclosure()
+  const [recalcFileIndex, setRecalcFileIndex] = createSignal<number | null>(
+    null,
+  )
+
+  // 转换可行性详情弹窗
+  const conversionDetailDisclosure = createDisclosure()
+  const [conversionDetailFormat, setConversionDetailFormat] =
+    createSignal<SeedFormat | null>(null)
+
+  const openConversionDetail = (format: SeedFormat) => {
+    setConversionDetailFormat(format)
+    conversionDetailDisclosure.onOpen()
+  }
+
+  // 离线下载弹窗（复用工具选择逻辑）
+  const offlineDisclosure = createDisclosure()
+  const [offlineTools, setOfflineTools] = createSignal<string[]>([])
+  const [offlineTool, setOfflineTool] = createSignal("")
+  const [offlineDeletePolicy, setOfflineDeletePolicy] = createSignal(
+    "upload_download_stream",
+  )
+  const [offlineLoading, setOfflineLoading] = createSignal(false)
+
+  const loadOfflineTools = async () => {
+    const resp = await r.get<string[]>("/public/offline_download_tools")
+    handleResp(resp as unknown as Resp<string[]>, (data) => {
+      if (Array.isArray(data)) {
+        setOfflineTools(data)
+        setOfflineTool(data[0] || "")
+      }
+    })
+  }
+
+  // 打开离线下载弹窗：BT 种子总是可以离线下载（转 magnet）
+  const openOfflineDialog = () => {
+    if (selectedFiles().length === 0) {
+      notify.error(t("home.transfer_seed.select_at_least_one"))
+      return
+    }
+    void loadOfflineTools()
+    offlineDisclosure.onOpen()
+  }
+
+  // 确认离线下载：BT 用 magnet，其余用 seed 逐文件离线下载
+  const confirmOfflineDownload = async () => {
+    const info = torrentInfo()
+    if (!info || !torrentData()) return
+    if (!offlineTool()) {
+      notify.error(t("home.transfer_seed.tool_required"))
+      return
+    }
+    setOfflineLoading(true)
+    try {
+      if (inferFormat() === "torrent") {
+        // BT 种子：转 magnet 后整体离线下载
+        const buffer = new Uint8Array(
+          atob(torrentData())
+            .split("")
+            .map((c) => c.charCodeAt(0)),
+        )
+        const magnet = toMagnetUrl(buffer)
+        const resp = await offlineDownload(
+          destination(),
+          [magnet],
+          offlineTool(),
+          offlineDeletePolicy(),
+        )
+        handleResp(resp, () => {
+          notify.success(t("global.success"))
+          offlineDisclosure.onClose()
+          refresh(undefined, true)
+        })
+      } else {
+        // 有 source 的种子：逐文件离线下载
+        const resp = await seedOfflineDownload({
+          ...request(),
+          tool: offlineTool(),
+          delete_policy: offlineDeletePolicy(),
+        })
+        handleResp(resp, (data) => {
+          applyResult(data)
+          const results = Array.isArray(data?.results) ? data.results : []
+          const failures = results.filter(
+            (result: { method?: string; error?: string }) =>
+              result.method === "unavailable" || !!result.error,
+          )
+          if (failures.length > 0) {
+            notify.error(
+              failures
+                .map(
+                  (result: { path?: string; error?: string }) =>
+                    `${result.path || "File"}: ${
+                      result.error || "Unavailable"
+                    }`,
+                )
+                .join("\n"),
+            )
+            return
+          }
+          notify.success(t("global.success"))
+          offlineDisclosure.onClose()
+          refresh(undefined, true)
+        })
+      }
+    } catch (err) {
+      notify.error(String(err))
+    } finally {
+      setOfflineLoading(false)
+    }
+  }
+
+  const inferFormat = (): SeedFormat => {
+    const extension = objStore.obj.name.toLowerCase().split(".").pop()
+    return extension === "cas" || extension === "oss" ? extension : "torrent"
+  }
+
+  // 格式徽章：OSS/CAS/BT 显示各自格式名，标题区则显示种子文件名。
+  const formatDisplayName = () => {
+    const format = torrentInfo()?.format || inferFormat()
+    return FORMAT_DISPLAY[format] || format.toUpperCase()
+  }
+
+  // CAS 是否携带逐片 MD5 列表：有分片信息时不显示 legacy 警告。
+  const hasCasPieces = () =>
+    (torrentInfo()?.files || []).some(
+      (file) => (file.hashes?.pieces?.md5?.length ?? 0) > 0,
+    )
+
+  const normalizeSeedInfo = (parsed: SeedParseResult): SeedInfo => {
+    const nested = parsed.info || parsed.seed || parsed.data
+    const value = (nested || parsed) as SeedInfo
+    return {
+      ...parsed,
+      ...value,
+      // 优先使用后端返回的规范化 format（oss/torrent/cas），seed.format 是
+      // "openlist-sharing-seed" 这种完整标识，不能直接作为展示格式。
+      format: (parsed.format as SeedFormat) || inferFormat(),
+      name: value.name || parsed.name || objStore.obj.name,
+      total_size: value.total_size || parsed.total_size || 0,
+      files: Array.isArray(value.files)
+        ? value.files
+        : Array.isArray(parsed.files)
+          ? parsed.files
+          : [],
+      conversions: value.conversions || parsed.conversions,
+    }
+  }
+
+  // 从种子已有哈希初始化重算矩阵：默认勾选当前种子已包含的哈希类型
+  const initRecalcMatrix = (info: SeedInfo) => {
+    const matrix: SeedHashMatrix = {
+      md5: { whole: false, pieces: false },
+      sha1: { whole: false, pieces: false },
+      sha256: { whole: false, pieces: false },
+    }
+    for (const file of info.files) {
+      const hashes = file.hashes
+      if (!hashes) continue
+      for (const algo of ALGORITHMS) {
+        if (hashes[algo]) matrix[algo].whole = true
+        if (hashes.pieces?.[algo]?.length) matrix[algo].pieces = true
+      }
+    }
+    setRecalcMatrix(matrix)
+  }
+
+  const setRecalcHash = (
+    algo: SeedHashAlgorithm,
+    scope: keyof SeedHashSelection,
+    checked: boolean,
+  ) => {
+    setRecalcMatrix((current) => ({
+      ...current,
+      [algo]: { ...current[algo], [scope]: checked },
+    }))
+  }
+
+  // 重算源目录：默认当前浏览目录，可手动改为其它网盘目录
+  const effectiveRecalcSourceDir = () =>
+    recalcSourceDir().trim() || destination().trim()
+
+  // 源文件路径 = 源目录 + 种子内相对路径
+  const buildRecalcSourcePath = (filePath: string) => {
+    const base = effectiveRecalcSourceDir().replace(/\/+$/, "")
+    const rel = (filePath || "").replace(/^\/+/, "")
+    return rel ? `${base}/${rel}` : base
+  }
+
+  const autoCASDirectAccess = async (info: SeedInfo) => {
+    if (inferFormat() !== "cas" || info.files.length !== 1) return
+    if (!getSettingBool("seed_cas_direct_access")) return
+    if (!torrentData()) return
+    try {
+      // CAS 秒传目前仅天翼云(189pc)支持，先探测目标存储能力，
+      // 避免在不支持的存储上弹出 "cannot reuse the available hashes" 错误。
+      const capResp = await seedSaveCapabilities(
+        torrentData(),
+        objStore.obj.name,
+        destination(),
+      )
+      if (capResp.code !== 200 || !capResp.data?.driver_supports?.cas_rapid)
+        return
+      const resp = await seedRapidUpload({
+        seed_data: torrentData(),
+        file_name: objStore.obj.name,
+        path: destination(),
+        selected_files: [0],
+      })
+      if (resp.code === 200) {
+        const results = Array.isArray(resp.data?.results)
+          ? resp.data.results
+          : []
+        const failed = results.filter(
+          (r: { method?: string; error?: string }) =>
+            r.method === "unavailable" || !!r.error,
+        )
+        if (failed.length > 0) {
+          notify.error(
+            `${t("home.transfer_seed.cas_direct_access_failed")}: ${
+              failed[0]?.error || "Unavailable"
+            }`,
+          )
+        } else {
+          notify.success(t("home.transfer_seed.cas_direct_access_success"))
+          refresh()
+        }
+      }
+    } catch (err) {
+      console.error("CAS direct access failed:", err)
+    }
+  }
 
   onMount(async () => {
     try {
-      // 优先使用 proxy 链接（带签名，最稳定），失败时回退到 raw 链接
       let resp
       try {
-        const link = proxyLink(objStore.obj, true)
-        resp = await axios.get(link, { responseType: "arraybuffer" })
-      } catch (e) {
-        // 代理链接失败时尝试 raw 链接
-        const link = rawLink(objStore.obj, true)
-        resp = await axios.get(link, { responseType: "arraybuffer" })
+        resp = await axios.get(proxyLink(objStore.obj, true), {
+          responseType: "arraybuffer",
+        })
+      } catch (_) {
+        resp = await axios.get(rawLink(objStore.obj, true), {
+          responseType: "arraybuffer",
+        })
       }
 
       const buffer = resp.data as ArrayBuffer
-      const bytes = new Uint8Array(buffer)
-
-      // 本地 bencode 解析（避免调用后端 API 出现 403）
-      const info = parseLocalTorrent(bytes)
-      setTorrentInfo(info)
-      setTorrentData(arrayBufferToBase64(buffer))
-      setSelectedFiles(info.files.map((_, i) => i))
+      const encoded = arrayBufferToBase64(buffer)
+      setTorrentData(encoded)
+      const parsed = await seedParse(encoded, objStore.obj.name)
+      if (parsed.code === 200) {
+        const info = normalizeSeedInfo(parsed.data)
+        setTorrentInfo(info)
+        setEditComment(info.comment || "")
+        setSelectedFiles(info.files.map((_, index) => index))
+        initRecalcMatrix(info)
+        void autoCASDirectAccess(info)
+      } else if (inferFormat() === "torrent") {
+        const legacy = parseLocalTorrent(new Uint8Array(buffer))
+        setTorrentInfo({ ...legacy, format: "torrent" })
+        setSelectedFiles(legacy.files.map((_, index) => index))
+      } else {
+        throw new Error(parsed.message)
+      }
     } catch (err) {
-      console.error("Failed to parse torrent file:", err)
-      setError(
-        `${t("home.toolbar.offline_download_enhanced.parse_failed")}: ${err}`,
-      )
+      console.error("Failed to parse transfer seed:", err)
+      setError(`${t("home.transfer_seed.parse_failed")}: ${err}`)
     } finally {
       setLoading(false)
     }
   })
 
-  // 触发离线下载对话框（完全复用 OfflineDownloadEnhanced）
-  const handleOfflineDownload = () => {
-    const info = torrentInfo()
-    const data = torrentData()
-    if (!info || !data) return
-    bus.emit("torrent_parsed", {
-      torrentData: data,
-      info: info,
+  let destinationRequest = 0
+  createEffect(() => {
+    const path = destination().trim()
+    const requestId = ++destinationRequest
+    if (!path) {
+      setDestinationProvider("")
+      setSaveCapabilities(null)
+      return
+    }
+    void fsGet(path).then((resp) => {
+      if (requestId === destinationRequest) {
+        setDestinationProvider(
+          resp.code === 200 ? resp.data.provider || "" : "",
+        )
+      }
     })
+    // 探测每个文件在当前渠道下的秒传方式
+    if (torrentData()) {
+      void seedSaveCapabilities(torrentData(), objStore.obj.name, path).then(
+        (resp) => {
+          if (requestId === destinationRequest && resp.code === 200) {
+            setSaveCapabilities(resp.data)
+          }
+        },
+      )
+    }
+  })
+
+  const operationSupported = (
+    operationName: keyof NonNullable<SeedInfo["capabilities"]>,
+  ) => torrentInfo()?.capabilities?.[operationName] === true
+
+  const conversionSupported = () => {
+    const conversion = torrentInfo()?.conversions?.[targetFormat()]
+    return operationSupported("convert") && conversion?.feasible === true
+  }
+
+  const request = () => ({
+    seed_data: torrentData(),
+    file_name: objStore.obj.name,
+    path: destination(),
+    selected_files: selectedFiles(),
+    update_channel: updateChannel(),
+  })
+
+  const applyResult = (
+    data: Awaited<ReturnType<typeof seedUpdate>>["data"],
+  ) => {
+    if (data?.seed_data) setTorrentData(data.seed_data)
+    if (data?.seed) setTorrentInfo(data.seed)
+    const shareStatus = data?.share_status
+    if (shareStatus && typeof shareStatus === "object") {
+      const invalid = Object.entries(shareStatus).filter(([, valid]) => !valid)
+      if (invalid.length > 0) {
+        notify.error(
+          `${t("home.transfer_seed.invalid_share")}: ${invalid
+            .map(([id]) => id)
+            .join(", ")}`,
+        )
+      }
+    }
+  }
+
+  const runOperation = async (name: string) => {
+    const info = torrentInfo()
+    if (!info || !torrentData()) return
+    if (name !== "convert" && selectedFiles().length === 0) {
+      notify.error(t("home.transfer_seed.select_at_least_one"))
+      return
+    }
+    if (name === "transit" && !transitPath().trim()) {
+      notify.error(t("home.transfer_seed.transit_path_required"))
+      return
+    }
+    if (name === "recalculate" && !effectiveRecalcSourceDir().trim()) {
+      notify.error(t("home.transfer_seed.source_dir_required"))
+      return
+    }
+    setOperation(name)
+    try {
+      const resp =
+        name === "rapid"
+          ? await seedRapidUpload(request())
+          : name === "offline" || name === "transit"
+            ? await seedOfflineDownload({
+                ...request(),
+                transit_path: name === "transit" ? transitPath() : undefined,
+                options: name === "transit" ? { mode: "transfer" } : undefined,
+              })
+            : name === "convert"
+              ? await seedConvert({ ...request(), format: targetFormat() })
+              : await seedUpdate({
+                  ...request(),
+                  recalc_files:
+                    name === "recalculate"
+                      ? selectedFiles().map((index) => ({
+                          path: info.files[index]?.path,
+                          source_path: buildRecalcSourcePath(
+                            info.files[index]?.path,
+                          ),
+                        }))
+                      : undefined,
+                  hash_matrix:
+                    name === "recalculate" ? recalcMatrix() : undefined,
+                  options: {
+                    comment: editComment(),
+                    recalculate: name === "recalculate",
+                  },
+                })
+      handleResp(resp, (data) => {
+        applyResult(data)
+        const results = Array.isArray(data?.results) ? data.results : []
+        const failures = results.filter(
+          (result: { method?: string; error?: string }) =>
+            result.method === "unavailable" || !!result.error,
+        )
+        if (failures.length > 0) {
+          notify.error(
+            failures
+              .map(
+                (result: { path?: string; error?: string }) =>
+                  `${result.path || "File"}: ${result.error || "Unavailable"}`,
+              )
+              .join("\n"),
+          )
+          return
+        }
+        notify.success(t("global.success"))
+        if (data.channel) {
+          setTorrentInfo((current) =>
+            current ? { ...current, channel: data.channel } : current,
+          )
+        }
+        refresh(undefined, true)
+      })
+    } catch (err) {
+      notify.error(String(err))
+    } finally {
+      setOperation("")
+    }
+  }
+
+  const saveMethodByPath = (path: string): string | undefined => {
+    const files = saveCapabilities()?.files
+    if (!files) return undefined
+    return files.find((f) => f.path === path)?.method
+  }
+
+  // 目标驱动支持的秒传方式描述
+  const driverSupportsText = () => {
+    const supports = saveCapabilities()?.driver_supports
+    if (!supports) return ""
+    const parts: string[] = []
+    if (supports.cas_rapid) {
+      const algos = supports.rapid_hash_algos || []
+      const algosText = algos.length > 0 ? `(${algos.join("/")})` : ""
+      parts.push(`${t("home.transfer_seed.rapid_upload")} ${algosText}`)
+    }
+    if (supports.put_url) parts.push(t("home.transfer_seed.put_url"))
+    if (supports.offline_download) parts.push(t("home.transfer_seed.offline"))
+    return parts.join(" / ")
+  }
+
+  // 驱动所需的哈希算法
+  const requiredHashesText = () => {
+    const supports = saveCapabilities()?.driver_supports
+    if (!supports?.cas_rapid) return ""
+    const algos = supports.rapid_hash_algos || []
+    if (algos.length === 0) return ""
+    return `${t("home.transfer_seed.requires_hashes")}: ${algos.join(", ")}`
+  }
+
+  // 种子中可用的哈希算法
+  const availableHashesText = () => {
+    const info = torrentInfo()
+    if (!info?.files?.[0]?.hashes) return ""
+    const hashes = info.files[0].hashes
+    const available: string[] = []
+    if (hashes.md5) available.push("MD5")
+    if (hashes.sha1) available.push("SHA1")
+    if (hashes.sha256) available.push("SHA256")
+    if ((hashes as any).gcid) available.push("GCID")
+    if (available.length === 0) return ""
+    return `${t("home.transfer_seed.available_hashes")}: ${available.join(", ")}`
+  }
+
+  // 检查种子是否包含目标驱动所需的哈希
+  const hasRequiredHashes = () => {
+    const supports = saveCapabilities()?.driver_supports
+    if (!supports?.cas_rapid) return false
+    const required = supports.rapid_hash_algos || []
+    if (required.length === 0) return true // 驱动未明确要求，假设可以
+    const info = torrentInfo()
+    if (!info?.files?.[0]?.hashes) return false
+    const hashes = info.files[0].hashes
+    // 检查是否至少有一个所需的哈希
+    return required.some((algo) => {
+      const key = algo.toLowerCase() as keyof typeof hashes
+      return !!(hashes[key] || (hashes as any)[algo.toLowerCase()])
+    })
+  }
+
+  // 无法秒传的原因
+  const rapidUnavailableReason = () => {
+    const supports = saveCapabilities()?.driver_supports
+    if (!supports) return t("home.transfer_seed.loading_capabilities")
+    if (!supports.cas_rapid) {
+      return t("home.transfer_seed.driver_no_rapid")
+    }
+    if (!hasRequiredHashes()) {
+      const required = supports.rapid_hash_algos || []
+      return `${t("home.transfer_seed.missing_hashes")}: ${required.join(", ")}`
+    }
+    return ""
+  }
+
+  // 当前目标下是否有文件可以秒传（非下载类方式）
+  const canRapidSave = () => {
+    const files = saveCapabilities()?.files
+    if (!files?.length) return false
+    return files.some(
+      (file) =>
+        file.method === "rapid_upload" ||
+        file.method === "189pc_cas" ||
+        file.method === "put_url",
+    )
+  }
+
+  // 预览单个文件：先秒传保存，再跳转预览
+  const confirmPreviewFile = async () => {
+    const index = previewFileIndex()
+    const info = torrentInfo()
+    if (index === null || !info || !torrentData()) return
+    const file = info.files[index]
+    if (!file) return
+    previewDisclosure.onClose()
+    setOperation("preview")
+    try {
+      const resp = await seedRapidUpload({
+        seed_data: torrentData(),
+        file_name: objStore.obj.name,
+        path: destination(),
+        selected_files: [index],
+      })
+      handleResp(resp, (data) => {
+        const results = Array.isArray(data?.results) ? data.results : []
+        const failed = results.filter(
+          (r: { method?: string; error?: string }) =>
+            r.method === "unavailable" || !!r.error,
+        )
+        if (failed.length > 0) {
+          notify.error(
+            `${t("home.transfer_seed.preview_rapid_failed")}: ${
+              failed[0]?.error || "Unavailable"
+            }`,
+          )
+          return
+        }
+        notify.success(t("home.transfer_seed.preview_rapid_success"))
+        const baseName = file.path.split("/").pop() || file.path
+        const targetPath = `${destination().replace(/\/$/, "")}/${baseName}`
+        refresh(undefined, true)
+        to(targetPath)
+      })
+    } catch (err) {
+      notify.error(String(err))
+    } finally {
+      setOperation("")
+      setPreviewFileIndex(null)
+    }
+  }
+
+  // 删除单个文件
+  const confirmRemoveFile = async () => {
+    const index = removeFileIndex()
+    const info = torrentInfo()
+    if (index === null || !info || !torrentData()) return
+    const file = info.files[index]
+    if (!file) return
+    removeDisclosure.onClose()
+    setOperation("remove")
+    try {
+      const resp = await seedUpdate({
+        seed_data: torrentData(),
+        file_name: objStore.obj.name,
+        remove_files: [file.path],
+      })
+      handleResp(resp, (data) => {
+        applyResult(data)
+        notify.success(t("global.delete_success"))
+        setSelectedFiles((current) => current.filter((i) => i !== index))
+        refresh(undefined, true)
+      })
+    } catch (err) {
+      notify.error(String(err))
+    } finally {
+      setOperation("")
+      setRemoveFileIndex(null)
+    }
+  }
+
+  // 单文件重算
+  const confirmRecalcFile = async () => {
+    const index = recalcFileIndex()
+    const info = torrentInfo()
+    if (index === null || !info || !torrentData()) return
+    const file = info.files[index]
+    if (!file) return
+    if (!effectiveRecalcSourceDir().trim()) {
+      notify.error(t("home.transfer_seed.source_dir_required"))
+      return
+    }
+    recalcDisclosure.onClose()
+    setOperation("recalculate")
+    try {
+      const resp = await seedUpdate({
+        seed_data: torrentData(),
+        file_name: objStore.obj.name,
+        recalc_files: [
+          { path: file.path, source_path: buildRecalcSourcePath(file.path) },
+        ],
+        hash_matrix: recalcMatrix(),
+        options: { comment: editComment(), recalculate: true },
+      })
+      handleResp(resp, (data) => {
+        applyResult(data)
+        notify.success(t("global.success"))
+        refresh(undefined, true)
+      })
+    } catch (err) {
+      notify.error(String(err))
+    } finally {
+      setOperation("")
+      setRecalcFileIndex(null)
+    }
   }
 
   return (
@@ -176,8 +1098,7 @@ const TorrentPreview = () => {
       </Show>
 
       <Show when={!loading() && !error() && torrentInfo()}>
-        {/* 种子信息头部 */}
-        <VStack spacing="$2" alignItems="stretch" w="$full">
+        <VStack spacing="$3" alignItems="stretch" w="$full">
           <HStack
             justifyContent="space-between"
             alignItems="center"
@@ -186,53 +1107,634 @@ const TorrentPreview = () => {
           >
             <VStack alignItems="flex-start" spacing="$1">
               <Heading size="sm" css={{ wordBreak: "break-all" }}>
-                {torrentInfo()!.name}
+                {objStore.obj.name}
               </Heading>
-              <HStack spacing="$2" flexWrap="wrap">
+              <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+                <Badge colorScheme="info">{formatDisplayName()}</Badge>
                 <Text fontSize="$xs" color="$neutral10">
-                  {formatFileSize(torrentInfo()!.total_size)}
-                </Text>
-                <Text fontSize="$xs" color="$neutral10">
+                  {formatFileSize(torrentInfo()!.total_size)} ·{" "}
                   {torrentInfo()!.files.length}{" "}
-                  {t("home.toolbar.offline_download_enhanced.files_count")}
-                </Text>
-                <Text
-                  fontSize="$xs"
-                  color="$neutral10"
-                  css={{ wordBreak: "break-all" }}
-                >
-                  Info Hash: {torrentInfo()!.info_hash}
+                  {t("home.transfer_seed.file_count")}
+                  <Show when={torrentInfo()!.created_at}>
+                    {" · "}
+                    {formatDate(torrentInfo()!.created_at!)}
+                  </Show>
                 </Text>
               </HStack>
             </VStack>
-            <Show when={torrentInfo()!.has_cas}>
-              <Badge colorScheme="success">
-                {t("home.toolbar.offline_download_enhanced.cas_supported")}
-              </Badge>
-            </Show>
+            <HStack spacing="$2">
+              <Show when={torrentInfo()!.has_cas}>
+                <Badge colorScheme="success">
+                  {t("home.toolbar.offline_download_enhanced.cas_supported")}
+                </Badge>
+              </Show>
+              <Show when={torrentInfo()!.share}>
+                <Badge
+                  colorScheme={
+                    torrentInfo()!.share?.valid ? "success" : "danger"
+                  }
+                >
+                  {torrentInfo()!.share?.valid
+                    ? t("home.transfer_seed.share_valid")
+                    : t("home.transfer_seed.share_invalid")}
+                </Badge>
+              </Show>
+              <Show when={torrentInfo()!.channel?.status}>
+                <Badge colorScheme="accent">
+                  {torrentInfo()!.channel?.name ||
+                    t("home.transfer_seed.channel")}
+                  : {torrentInfo()!.channel?.status}
+                </Badge>
+              </Show>
+              <For each={torrentInfo()!.channels || []}>
+                {(channel) => (
+                  <Badge colorScheme="accent">
+                    {channel.driver}
+                    {channel.mount_path ? `: ${channel.mount_path}` : ""}
+                  </Badge>
+                )}
+              </For>
+            </HStack>
           </HStack>
 
-          {/* 文件列表 */}
-          <TorrentFileList
-            files={torrentInfo()!.files}
-            selectedFiles={selectedFiles()}
-            onSelectionChange={setSelectedFiles}
-          />
+          <Show when={torrentInfo()!.format === "cas" && !hasCasPieces()}>
+            <Alert status="warning">
+              <AlertIcon />
+              {t("home.transfer_seed.cas_legacy_warning")}
+            </Alert>
+          </Show>
+          <Show when={torrentInfo()!.trackers?.length}>
+            <Box>
+              <Text fontSize="$sm" fontWeight="$semibold">
+                {t("home.transfer_seed.trackers")}
+              </Text>
+              <For each={torrentInfo()!.trackers}>
+                {(tracker) => (
+                  <Text
+                    fontSize="$xs"
+                    color="$neutral10"
+                    css={{ wordBreak: "break-all" }}
+                  >
+                    {tracker}
+                  </Text>
+                )}
+              </For>
+            </Box>
+          </Show>
 
-          {/* 离线下载按钮 */}
+          {/* 文件列表 */}
+          <Box>
+            <HStack justifyContent="space-between" alignItems="center" mb="$1">
+              <Text fontSize="$sm" fontWeight="$semibold">
+                {t("home.transfer_seed.files")}
+              </Text>
+              <HStack spacing="$2">
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => {
+                    if (
+                      selectedFiles().length === torrentInfo()!.files.length
+                    ) {
+                      setSelectedFiles([])
+                    } else {
+                      setSelectedFiles(
+                        torrentInfo()!.files.map((_, index) => index),
+                      )
+                    }
+                  }}
+                >
+                  {selectedFiles().length === torrentInfo()!.files.length
+                    ? t("home.toolbar.offline_download_enhanced.cancel_select")
+                    : t("home.toolbar.offline_download_enhanced.select_all")}
+                </Button>
+              </HStack>
+            </HStack>
+            <For each={torrentInfo()!.files}>
+              {(file, index) => (
+                <SeedFileRow
+                  file={file}
+                  selected={selectedFiles().includes(index())}
+                  onToggle={() => {
+                    setSelectedFiles((current) =>
+                      current.includes(index())
+                        ? current.filter((i) => i !== index())
+                        : [...current, index()],
+                    )
+                  }}
+                  saveMethod={saveMethodByPath(file.path)}
+                  pieceSize={torrentInfo()!.piece_size || 0}
+                  onPreview={() => {
+                    setPreviewFileIndex(index())
+                    previewDisclosure.onOpen()
+                  }}
+                  onRemove={() => {
+                    setRemoveFileIndex(index())
+                    removeDisclosure.onOpen()
+                  }}
+                  onRecalc={() => {
+                    setRecalcFileIndex(index())
+                    recalcDisclosure.onOpen()
+                  }}
+                  onCommentCopy={() => file.comment && void copy(file.comment)}
+                />
+              )}
+            </For>
+          </Box>
+
+          {/* 整体注释（多行） */}
+          <Show when={!isShare() && operationSupported("edit")}>
+            <Box>
+              <Text fontSize="$sm" fontWeight="$semibold" mb="$1">
+                {t("home.transfer_seed.overall_comment")}
+              </Text>
+              <Textarea
+                rows={3}
+                placeholder={t("home.transfer_seed.comment_placeholder")}
+                value={editComment()}
+                onInput={(event) => setEditComment(event.currentTarget.value)}
+              />
+            </Box>
+          </Show>
+
+          {/* 下载 / 秒传区 */}
           <Show when={!isShare()}>
-            <Box mt="$2">
+            <Divider />
+            <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+              <Text fontSize="$sm" flexShrink={0}>
+                {t("home.transfer_seed.destination")}
+              </Text>
+              <Box flex="1" minW={{ "@initial": "$full", "@md": "$72" }}>
+                <FolderChooseInput
+                  id="seed-preview-destination"
+                  value={destination()}
+                  onChange={setDestination}
+                />
+              </Box>
               <Button
-                colorScheme="primary"
-                onClick={handleOfflineDownload}
-                disabled={!torrentInfo()}
+                loading={operation() === "rapid"}
+                disabled={
+                  !operationSupported("rapid_upload") ||
+                  selectedFiles().length === 0
+                }
+                onClick={() => runOperation("rapid")}
+              >
+                {t("home.transfer_seed.rapid_save")}
+              </Button>
+              <Button
+                variant="outline"
+                loading={operation() === "offline"}
+                disabled={
+                  !operationSupported("offline_download") ||
+                  selectedFiles().length === 0
+                }
+                onClick={openOfflineDialog}
               >
                 {t("home.toolbar.offline_download")}
               </Button>
-            </Box>
+              <Button
+                variant="outline"
+                loading={operation() === "transit"}
+                disabled={
+                  !operationSupported("transfer") ||
+                  selectedFiles().length === 0
+                }
+                onClick={() => runOperation("transit")}
+              >
+                {t("home.transfer_seed.transit_save")}
+              </Button>
+            </HStack>
+            <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+              <Show when={destinationProvider()}>
+                <Badge colorScheme="info">
+                  {t("home.transfer_seed.destination_driver")}:{" "}
+                  {destinationProvider()}
+                </Badge>
+              </Show>
+              <Show when={driverSupportsText()}>
+                <Badge colorScheme="neutral">
+                  {t("home.transfer_seed.driver_supports")}:{" "}
+                  {driverSupportsText()}
+                </Badge>
+              </Show>
+              <Show when={saveCapabilities()}>
+                <Badge
+                  colorScheme={
+                    canRapidSave() && hasRequiredHashes()
+                      ? "success"
+                      : "warning"
+                  }
+                >
+                  {canRapidSave() && hasRequiredHashes()
+                    ? t("home.transfer_seed.rapid_available")
+                    : t("home.transfer_seed.rapid_unavailable")}
+                </Badge>
+              </Show>
+              <Show when={requiredHashesText()}>
+                <Badge colorScheme="accent">{requiredHashesText()}</Badge>
+              </Show>
+              <Show when={availableHashesText()}>
+                <Badge
+                  colorScheme={hasRequiredHashes() ? "success" : "warning"}
+                >
+                  {availableHashesText()}
+                </Badge>
+              </Show>
+              <Show when={rapidUnavailableReason()}>
+                <Tooltip label={rapidUnavailableReason()}>
+                  <Badge colorScheme="danger" cursor="help">
+                    <HStack spacing="$1">
+                      <BsInfoCircle />
+                      <span>{t("home.transfer_seed.unavailable_reason")}</span>
+                    </HStack>
+                  </Badge>
+                </Tooltip>
+              </Show>
+              <Checkbox
+                checked={updateChannel()}
+                onChange={() => setUpdateChannel(!updateChannel())}
+              >
+                {t("home.transfer_seed.update_channel")}
+              </Checkbox>
+            </HStack>
+            <Show when={operationSupported("transfer")}>
+              <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+                <Text fontSize="$sm" flexShrink={0}>
+                  {t("home.transfer_seed.transit_path")}
+                </Text>
+                <Box w={{ "@initial": "$full", "@md": "$64" }}>
+                  <FolderChooseInput
+                    id="seed-preview-transit-path"
+                    value={transitPath()}
+                    onChange={setTransitPath}
+                  />
+                </Box>
+              </HStack>
+            </Show>
+          </Show>
+
+          {/* 转换区：feasibility 与 convert 合并到一行 */}
+          <Show when={!isShare() && operationSupported("convert")}>
+            <Divider />
+            <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+              <Text fontSize="$sm" fontWeight="$semibold" flexShrink={0}>
+                {t("home.transfer_seed.convert_to")}
+              </Text>
+              <Box flex="1" minW={{ "@initial": "$full", "@md": "$64" }}>
+                <SelectWrapper
+                  value={targetFormat()}
+                  onChange={(value) => setTargetFormat(value as SeedFormat)}
+                  options={(["torrent", "cas", "oss"] as SeedFormat[]).map(
+                    (format) => {
+                      const state = () => torrentInfo()!.conversions?.[format]
+                      return {
+                        value: format,
+                        label: `${FORMAT_DISPLAY[format] || format.toUpperCase()}${
+                          state()?.feasible
+                            ? " ✓"
+                            : state()?.missing?.length
+                              ? ` (${state()!.missing!.join(", ")})`
+                              : ""
+                        }`,
+                      }
+                    },
+                  )}
+                />
+              </Box>
+              <Button
+                loading={operation() === "convert"}
+                disabled={!conversionSupported()}
+                onClick={() => runOperation("convert")}
+              >
+                {t("home.transfer_seed.convert")}
+              </Button>
+              <Show when={torrentInfo()!.conversions}>
+                <For each={["torrent", "cas", "oss"] as SeedFormat[]}>
+                  {(format) => {
+                    const state = () => torrentInfo()!.conversions?.[format]
+                    const feasible = () => !!state()?.feasible
+                    const reasons = () => state()?.missing || []
+                    return (
+                      <Tooltip
+                        label={
+                          feasible()
+                            ? t("home.transfer_seed.feasible")
+                            : reasons().join("\n") ||
+                              t("home.transfer_seed.unavailable")
+                        }
+                      >
+                        <Button
+                          size="xs"
+                          variant="subtle"
+                          colorScheme={feasible() ? "success" : "danger"}
+                          onClick={() => openConversionDetail(format)}
+                        >
+                          {format.toUpperCase()} {feasible() ? "✓" : "✗"}
+                        </Button>
+                      </Tooltip>
+                    )
+                  }}
+                </For>
+              </Show>
+            </HStack>
+          </Show>
+
+          {/* 整体保存 */}
+          <Show when={!isShare() && operationSupported("edit")}>
+            <Divider />
+            <Show when={operationSupported("recalculate")}>
+              <Text fontSize="$xs" fontWeight="$semibold" mt="$2">
+                {t("home.transfer_seed.recalc_matrix")}
+              </Text>
+              <SimpleGrid
+                columns={{ "@initial": 1, "@md": 3 }}
+                gap="$2"
+                mb="$2"
+              >
+                <For each={ALGORITHMS}>
+                  {(algo) => (
+                    <VStack
+                      alignItems="flex-start"
+                      spacing="$1"
+                      border="1px solid $neutral7"
+                      borderRadius="$md"
+                      bg="$background"
+                      p="$2"
+                    >
+                      <Text fontSize="$xs" fontWeight="$semibold">
+                        {algo.toUpperCase()}
+                      </Text>
+                      <Checkbox
+                        size="sm"
+                        checked={recalcMatrix()[algo].whole}
+                        onChange={(event: {
+                          currentTarget: HTMLInputElement
+                        }) =>
+                          setRecalcHash(
+                            algo,
+                            "whole",
+                            event.currentTarget.checked,
+                          )
+                        }
+                      >
+                        {t("home.transfer_seed.whole")}
+                      </Checkbox>
+                      <Checkbox
+                        size="sm"
+                        checked={recalcMatrix()[algo].pieces}
+                        onChange={(event: {
+                          currentTarget: HTMLInputElement
+                        }) =>
+                          setRecalcHash(
+                            algo,
+                            "pieces",
+                            event.currentTarget.checked,
+                          )
+                        }
+                      >
+                        {t("home.transfer_seed.pieces")}
+                      </Checkbox>
+                    </VStack>
+                  )}
+                </For>
+              </SimpleGrid>
+              <Text fontSize="$xs" fontWeight="$semibold" mt="$2">
+                {t("home.transfer_seed.recalc_source_dir")}
+              </Text>
+              <HStack spacing="$2" alignItems="center" flexWrap="wrap" mb="$2">
+                <Box flex="1" minW={{ "@initial": "$full", "@md": "$72" }}>
+                  <FolderChooseInput
+                    id="seed-preview-recalc-source-dir"
+                    value={effectiveRecalcSourceDir()}
+                    onChange={setRecalcSourceDir}
+                  />
+                </Box>
+                <Button
+                  variant="outline"
+                  loading={operation() === "update"}
+                  disabled={!operationSupported("edit")}
+                  onClick={() => runOperation("update")}
+                >
+                  {t("global.save")}
+                </Button>
+                <Button
+                  variant="outline"
+                  loading={operation() === "recalculate"}
+                  disabled={
+                    !operationSupported("recalculate") ||
+                    selectedFiles().length === 0
+                  }
+                  onClick={() => runOperation("recalculate")}
+                >
+                  {t("home.transfer_seed.recalculate")}
+                </Button>
+              </HStack>
+            </Show>
           </Show>
         </VStack>
       </Show>
+
+      {/* 预览文件确认弹窗 */}
+      <Modal
+        opened={previewDisclosure.isOpen()}
+        onClose={previewDisclosure.onClose}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            {t("home.transfer_seed.preview_confirm_title")}
+          </ModalHeader>
+          <ModalBody>{t("home.transfer_seed.preview_confirm_body")}</ModalBody>
+          <ModalFooter display="flex" gap="$2">
+            <Button colorScheme="neutral" onClick={previewDisclosure.onClose}>
+              {t("global.cancel")}
+            </Button>
+            <Button
+              loading={operation() === "preview"}
+              onClick={confirmPreviewFile}
+            >
+              {t("global.confirm")}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* 删除文件确认弹窗 */}
+      <Modal
+        opened={removeDisclosure.isOpen()}
+        onClose={removeDisclosure.onClose}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            {t("home.transfer_seed.remove_file_confirm_title")}
+          </ModalHeader>
+          <ModalBody>
+            {t("home.transfer_seed.remove_file_confirm_body")}
+          </ModalBody>
+          <ModalFooter display="flex" gap="$2">
+            <Button colorScheme="neutral" onClick={removeDisclosure.onClose}>
+              {t("global.cancel")}
+            </Button>
+            <Button
+              colorScheme="danger"
+              loading={operation() === "remove"}
+              onClick={confirmRemoveFile}
+            >
+              {t("global.confirm")}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* 单文件重算弹窗 */}
+      <Modal
+        opened={recalcDisclosure.isOpen()}
+        onClose={recalcDisclosure.onClose}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>{t("home.transfer_seed.recalc_file")}</ModalHeader>
+          <ModalBody>
+            <Show
+              when={recalcFileIndex() !== null && torrentInfo()}
+              fallback={null}
+            >
+              <Text fontSize="$sm" mb="$2">
+                {torrentInfo()!.files[recalcFileIndex()!]?.path}
+              </Text>
+            </Show>
+            <Text fontSize="$sm" mb="$1">
+              {t("home.transfer_seed.recalc_source_dir")}
+            </Text>
+            <FolderChooseInput
+              id="seed-preview-recalc-file-source-dir"
+              value={effectiveRecalcSourceDir()}
+              onChange={setRecalcSourceDir}
+            />
+            <Show when={recalcFileIndex() !== null && torrentInfo()}>
+              <Text fontSize="$xs" color="$neutral10" mt="$1">
+                {t("home.transfer_seed.recalc_source_hint")}:{" "}
+                {buildRecalcSourcePath(
+                  torrentInfo()!.files[recalcFileIndex()!]?.path || "",
+                )}
+              </Text>
+            </Show>
+          </ModalBody>
+          <ModalFooter display="flex" gap="$2">
+            <Button colorScheme="neutral" onClick={recalcDisclosure.onClose}>
+              {t("global.cancel")}
+            </Button>
+            <Button
+              loading={operation() === "recalculate"}
+              onClick={confirmRecalcFile}
+            >
+              {t("global.confirm")}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* 离线下载弹窗（选择下载工具） */}
+      <Modal
+        opened={offlineDisclosure.isOpen()}
+        onClose={offlineDisclosure.onClose}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>{t("home.toolbar.offline_download")}</ModalHeader>
+          <ModalBody>
+            <Text fontSize="$sm" mb="$1">
+              {t("home.transfer_seed.offline_tool")}
+            </Text>
+            <SelectWrapper
+              value={offlineTool()}
+              onChange={(value) => setOfflineTool(value)}
+              options={offlineTools().map((tool) => ({
+                value: tool,
+                label: tool,
+              }))}
+            />
+            <Text fontSize="$sm" mt="$3" mb="$1">
+              {t("home.transfer_seed.offline_delete_policy")}
+            </Text>
+            <SelectWrapper
+              value={offlineDeletePolicy()}
+              onChange={(value) => setOfflineDeletePolicy(value)}
+              options={DELETE_POLICIES.filter((policy) =>
+                policy === "upload_download_stream"
+                  ? offlineTool() === "SimpleHttp"
+                  : true,
+              ).map((policy) => ({
+                value: policy,
+                label: t(`home.toolbar.delete_policy.${policy}`),
+              }))}
+            />
+          </ModalBody>
+          <ModalFooter display="flex" gap="$2">
+            <Button colorScheme="neutral" onClick={offlineDisclosure.onClose}>
+              {t("global.cancel")}
+            </Button>
+            <Button loading={offlineLoading()} onClick={confirmOfflineDownload}>
+              {t("global.confirm")}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* 转换可行性详情弹窗 */}
+      <Modal
+        opened={conversionDetailDisclosure.isOpen()}
+        onClose={conversionDetailDisclosure.onClose}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            {conversionDetailFormat()?.toUpperCase()} —{" "}
+            {torrentInfo()?.conversions?.[conversionDetailFormat()!]?.feasible
+              ? t("home.transfer_seed.feasible")
+              : t("home.transfer_seed.unavailable")}
+          </ModalHeader>
+          <ModalBody>
+            <Show
+              when={
+                conversionDetailFormat() &&
+                torrentInfo()?.conversions?.[conversionDetailFormat()!]
+              }
+              fallback={null}
+            >
+              {(detail) => (
+                <VStack alignItems="stretch" spacing="$2">
+                  <For each={detail()?.missing || []}>
+                    {(reason) => (
+                      <Text
+                        fontSize="$sm"
+                        color="$warning10"
+                        css={{ wordBreak: "break-all" }}
+                      >
+                        • {reason}
+                      </Text>
+                    )}
+                  </For>
+                  <Show when={!detail()?.missing?.length}>
+                    <Text fontSize="$sm" color="$success10">
+                      {t("home.transfer_seed.feasible")}
+                    </Text>
+                  </Show>
+                </VStack>
+              )}
+            </Show>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              colorScheme="neutral"
+              onClick={conversionDetailDisclosure.onClose}
+            >
+              {t("global.close")}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </VStack>
   )
 }
