@@ -31,5 +31,21 @@
   "env_status_ok": "Ready",
   "env_status_bad": "Not ready",
   "env_doc_link": "View configuration docs",
-  "env_blocked_tip": "Initialization is blocked until the issues above are resolved. See the docs for details."
+  "env_blocked_tip": "Initialization is blocked until the issues above are resolved. See the docs for details.",
+  "step_env": "Step 1 · Environment",
+  "step_account": "Step 2 · Admin account",
+  "step_done": "Step 3 · Finishing",
+  "next": "Next",
+  "back": "Back",
+  "env_continue": "Continue",
+  "env_next_tip": "Once the environment is ready, continue to create the admin account.",
+  "env_skip_tip": "This backend has no environment check; continue to create the admin account.",
+  "finalizing": "Finalizing...",
+  "finalizing_tip": "Please keep this page open until initialization completes.",
+  "done_title": "Initialization complete",
+  "done_subtitle": "Your OpenList instance is ready to use.",
+  "done_username": "Admin username",
+  "done_site_url": "Site address",
+  "done_go_login": "Go to login",
+  "done_go_home": "Open home page"
 }
