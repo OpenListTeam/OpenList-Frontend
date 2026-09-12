@@ -55,20 +55,20 @@ const READY_TIMEOUT_MS = 30_000
 /** 轮询间隔（毫秒） */
 const READY_POLL_MS = 1_000
 
-/**
- * 文档基址与存储配置页（与服务端 public.ts 的 DOC_BASE / DOC_STORAGE 保持一致）。
- *
- * 自检接口自身失败时（503），我们拿不到后端随 issues 下发的 docUrl，
- * 因此这里提供固定链接 —— 用户此时最需要的就是「去哪看怎么配」。
- */
-const DOC_BASE = "https://doc.oplist.org"
-const DOC_STORAGE = `${DOC_BASE}/ecosystem/official_worker/guide_env`
-
 /** 各平台部署教程：对照绑定存储驱动 */
 const DEPLOY_DOCS = [
-  { label: "Cloudflare Workers", url: DOC_STORAGE },
-  { label: "EdgeOne", url: DOC_STORAGE },
-  { label: "Alibaba Cloud ESA", url: DOC_STORAGE },
+  {
+    label: "Cloudflare Workers",
+    url: "https://doc.oplist.org/ecosystem/official_worker/guide_cfw",
+  },
+  {
+    label: "EdgeOne",
+    url: "https://doc.oplist.org/ecosystem/official_worker/guide_eom",
+  },
+  {
+    label: "Alibaba Cloud ESA",
+    url: "https://doc.oplist.org/ecosystem/official_worker/guide_esa",
+  },
 ]
 
 const Init = () => {
@@ -94,13 +94,6 @@ const Init = () => {
   const [step, setStep] = createSignal<Step>(isTsWorker() ? "env" : "account")
   const [envCheck, setEnvCheck] = createSignal<EnvCheck>()
   const [envLoading, setEnvLoading] = createSignal(false)
-  /**
-   * 后端未能确认「是否已初始化」。
-   *
-   * 存储未配置时 /public/init_status 返回 503，无法判定初始化状态。
-   * 此时必须留在向导页（而不是跳登录页），因为向导是修复配置的唯一入口。
-   */
-  const [initializedUnknown, setInitializedUnknown] = createSignal(false)
 
   /**
    * 站点地址（同源根路径）。
@@ -116,40 +109,27 @@ const Init = () => {
   /**
    * 环境是否允许进入下一步。
    *
-   * 不满足时必须阻止初始化，而不是让用户填完表单再失败：
-   *  - serverless（Worker）下内存存储是禁止的，写入即丢；
-   *  - 拿不到自检结果（接口失败/未返回）同样视为未就绪。
-   *
+   * 不满足时必须阻止初始化，而不是让用户填完表单再失败：serverless 下内存
+   * 存储重启即丢，而 ready 拿不到（接口失败）同样视为未就绪。
    * 非 TS Worker 后端没有该接口，无法自检，放行交由后端自己校验。
    */
-  const canProceed = () => {
-    if (!isTsWorker()) return true
-    const check = envCheck()
-    if (!check) return false
-    // 显式拒绝内存兜底：`ready` 已隐含排除，这里显式判定是为了
-    // 语义直白，并防止后端 ready 计算回归时前端跟着失效。
-    if (check.storage?.memory) return false
-    return Boolean(check.ready)
-  }
+  const canProceed = () => !isTsWorker() || Boolean(envCheck()?.ready)
 
   /**
-   * 是否展示环境自检步骤。
+   * 环境自检步骤仅 TS Worker 后端渲染。
    *
-   * 只有 TS Worker 后端（OpenListNext）存在「存储未配置则无法工作」的问题，
-   * 需要初始化前自检。Go 后端使用 MySQL/SQLite 等自带持久化，既没有
-   * /public/env_check 接口，也不存在需要用户先修配置的场景 —— 给它展示
-   * 一个永远通过、只有「请继续」的空步骤纯属噪音，因此整步跳过。
+   * Go 后端用 MySQL/SQLite 自带持久化，既没有 /public/env_check 接口，也不存在
+   * 「先修配置才能初始化」的场景，展示一个永远通过的空步骤纯属噪音。
    */
-  const showEnvStep = () => isTsWorker()
+  const showEnvStep = isTsWorker
 
-  /** 环境未就绪时重新拉取自检 */
+  /** 环境就绪时进入下一步，否则重新拉取自检 */
   const goNextFromEnv = () => {
     if (canProceed()) {
       setStep("account")
-      return
+    } else {
+      loadEnvCheck()
     }
-    notify.error(t("init.env_blocked_tip"))
-    loadEnvCheck()
   }
 
   /** 拉取环境自检（仅 TS Worker 后端提供该接口） */
@@ -190,15 +170,11 @@ const Init = () => {
   onMount(async () => {
     loadEnvCheck()
     const resp = (await r.get("/public/init_status")) as Resp<InitStatus>
-    if (resp?.code === 200) {
-      // 已初始化 → 去登录页；未初始化 → 留在向导
-      if (resp.data?.initialized === false) return
+    // 明确「未初始化」或「状态未知」（存储未绑定返回 503）时留在向导。
+    // 后者绝不能跳登录页 —— 那会把用户从唯一能修复配置的地方反复弹走。
+    if (resp?.code === 200 && resp.data?.initialized !== false) {
       window.location.href = base_path + "/@login"
-      return
     }
-    // 非 200：最典型的是存储未绑定（503）。此时「是否已初始化」无从判断，
-    // 绝不能跳登录页 —— 否则用户会被反复弹回，永远进不了向导。
-    setInitializedUnknown(true)
   })
 
   const [loading, data] = useLoading<EmptyResp>(() =>
@@ -506,17 +482,6 @@ const Init = () => {
               </For>
             </HStack>
           </VStack>
-
-          {/*
-            后端未能确认初始化状态（典型：存储未配置导致 init_status 503）。
-            这不是「已初始化」，明确说明并留在向导，避免用户困惑于为何
-            没有自动跳转登录页。
-          */}
-          <Show when={initializedUnknown()}>
-            <Text fontSize="$xs" color="$warning11" textAlign="center">
-              {t("init.storage_unavailable_tip")}
-            </Text>
-          </Show>
 
           <Text fontSize="$xs" color="$neutral10" textAlign="center">
             {t("init.env_next_tip")}

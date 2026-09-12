@@ -14,12 +14,7 @@ import { Error, FullScreenLoading } from "~/components"
 import { useLoading, useRouter, useT } from "~/hooks"
 import { setSettings } from "~/store"
 import { setArchiveExtensions } from "~/store/archive"
-import {
-  InitStatus,
-  Resp,
-  STORAGE_CONFIG_ERROR,
-  StorageConfigErrorData,
-} from "~/types"
+import { InitStatus, Resp, STORAGE_CONFIG_ERROR } from "~/types"
 import { markTsWorker } from "~/utils/backend"
 import {
   base_path,
@@ -58,18 +53,26 @@ const App: Component = () => {
 
   const [err, setErr] = createSignal<string[]>([])
   const [initialized, setInitialized] = createSignal(true)
+
+  /**
+   * 后端存储未绑定时，对所有依赖持久化的接口返回 503 +
+   * data.error = STORAGE_CONFIG_ERROR。
+   *
+   * 此时不能走通用错误页，而应把用户送进初始化向导 —— 那是唯一能修复配置的
+   * 地方。同时该错误码只有 TS Worker 后端会返回，可据此反推后端类型，
+   * 否则 /public/settings 同样失败会让前端误判为 Go 后端并跳过环境自检。
+   */
+  const isStorageConfigError = (resp: any, code?: number) =>
+    code === 503 && resp?.data?.error === STORAGE_CONFIG_ERROR
+
   const [loading, data] = useLoading(() =>
     Promise.all([
       (async () => {
         const resp = (await r.get("/public/settings")) as Resp<
-          Record<string, string> & Partial<StorageConfigErrorData>
+          Record<string, string>
         >
         handleRespWithoutAuthAndNotify(resp, setSettings, (msg, code) => {
-          // 存储不可用时 /public/settings 也是 503。此时不能走通用错误页，
-          // 否则用户看到的是「Failed fetching settings: <后端多行原文>」
-          // 这种无法操作的界面。改为进入初始化向导，由向导结构化展示
-          // 「数据库不可用 + 该怎么配」。
-          if (code === 503 && resp?.data?.error === STORAGE_CONFIG_ERROR) {
+          if (isStorageConfigError(resp, code)) {
             markTsWorker()
             setInitialized(false)
             return
@@ -85,27 +88,16 @@ const App: Component = () => {
         )
       })(),
       (async () => {
-        const resp = (await r.get("/public/init_status")) as Resp<
-          InitStatus & Partial<StorageConfigErrorData>
-        >
+        const resp = (await r.get("/public/init_status")) as Resp<InitStatus>
         handleRespWithoutAuthAndNotify(
           resp,
           (data) => setInitialized(data.initialized),
           (msg, code) => {
-            // 存储未配置时，后端对几乎所有接口返回 503 +
-            // data.error = "STORAGE_CONFIG_ERROR"。此状态下「是否已初始化」
-            // 无从判断，必须视为未就绪并把用户引导到初始化向导，否则：
-            //   1. initialized 停留在默认 true，守卫不跳转，用户停在主页
-            //      被各处 503 反复打击，完全不知道该做什么；
-            //   2. 该错误码只有 TS Worker 后端会产生，可作为后端类型的
-            //      反推依据 —— 否则 /public/settings 同样失败会导致前端
-            //      误判为 Go 后端，进而跳过后面的环境自检。
-            if (code === 503 && resp?.data?.error === STORAGE_CONFIG_ERROR) {
+            if (isStorageConfigError(resp, code)) {
               markTsWorker()
               setInitialized(false)
               return
             }
-            // 其他错误（含普通 503）保持原有「显式报错」行为
             setErr(err().concat(msg))
           },
         )

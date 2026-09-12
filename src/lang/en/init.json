@@ -33,7 +33,6 @@
   "env_doc_link": "View configuration docs",
   "env_blocked_tip": "Initialization is blocked until the issues above are resolved. See the docs for details.",
   "env_deploy_docs": "Deploy guide:",
-  "storage_unavailable_tip": "Storage is not available, so the initialization state cannot be determined. Fix the storage configuration above, then re-check.",
   "step_env": "Step 1 · Environment",
   "step_account": "Step 2 · Admin account",
   "step_done": "Step 3 · Finishing",
