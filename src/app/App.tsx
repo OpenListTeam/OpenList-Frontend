@@ -55,11 +55,18 @@ const App: Component = () => {
   const [loading, data] = useLoading(() =>
     Promise.all([
       (async () => {
-        handleRespWithoutAuthAndNotify(
-          (await r.get("/public/settings")) as Resp<Record<string, string>>,
-          setSettings,
-          (e) => setErr(err().concat(e)),
-        )
+        const resp = (await r.get("/public/settings")) as Resp<
+          Record<string, string>
+        >
+        handleRespWithoutAuthAndNotify(resp, setSettings, (e, code) => {
+          // 存储未绑定时 settings 返回 503。此时不能把错误塞进 err()，
+          // 否则下面 Switch 的错误分支会抢占渲染、把初始化向导挡住，
+          // 用户既看不到错误原因也无法配置存储。
+          // 交给路由渲染：init_status 已豁免该拦截，会把 initialized 置为
+          // false，从而自动进入 /@init。
+          if (code === 503) return
+          setErr(err().concat(e))
+        })
       })(),
       (async () => {
         handleRespWithoutAuthAndNotify(
