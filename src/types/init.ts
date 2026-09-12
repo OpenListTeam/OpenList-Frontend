@@ -4,6 +4,22 @@ export interface InitSetupRequest {
   site_title: string
 }
 
+/**
+ * 后端「存储配置错误」的错误码。
+ *
+ * 后端全局中间件（TSWorker backend/index.ts）在存储不可用时对所有依赖持久化
+ * 的接口返回 503 + data.error = STORAGE_CONFIG_ERROR。该错误码只有 TS Worker
+ * 后端会返回，可据此在拿不到 /public/settings 时反推后端类型。
+ */
+export const STORAGE_CONFIG_ERROR = "STORAGE_CONFIG_ERROR"
+
+/** 503 响应体中的业务数据 */
+export interface StorageConfigErrorData {
+  error: typeof STORAGE_CONFIG_ERROR
+  /** 后端生成的可读诊断（含需要配置哪项环境变量） */
+  configError: string
+}
+
 export interface InitStatus {
   initialized: boolean
   /** 后端加解密密钥是否已在真实来源可读（KV 最终一致性的就绪标志） */
@@ -39,6 +55,8 @@ export interface EnvCheck {
     configured: boolean | null
     connected: boolean | null
     platform: string | null
+    /** 是否处于内存兜底模式：本地开发可接受，serverless 下重启即丢数据 */
+    memory?: boolean
   }
   jwt: {
     ready: boolean
