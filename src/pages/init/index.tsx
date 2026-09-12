@@ -8,16 +8,26 @@ import {
   Progress,
   Text,
   Spinner,
+  Badge,
+  HStack,
+  Spacer,
   useColorModeValue,
   VStack,
 } from "@hope-ui/solid"
-import { createMemo, createSignal, onMount, Show } from "solid-js"
+import { createMemo, createSignal, For, onMount, Show } from "solid-js"
 import { SwitchColorMode, SwitchLanguageWhite } from "~/components"
 import { useLoading, useT, useTitle } from "~/hooks"
 import { getSetting } from "~/store"
 import { base_path, r, notify, handleRespWithoutAuthAndNotify } from "~/utils"
 import { isTsWorker } from "~/utils/backend"
-import { EmptyResp, InitSetupRequest, InitStatus, Resp } from "~/types"
+import {
+  EmptyResp,
+  EnvCheck,
+  EnvCheckIssue,
+  InitSetupRequest,
+  InitStatus,
+  Resp,
+} from "~/types"
 import LoginBg from "../login/LoginBg"
 
 /** 初始化阶段：idle → creating（建号中）→ syncing（等待存储同步）→ done */
@@ -45,9 +55,26 @@ const Init = () => {
     getSetting("site_title") || "OpenList",
   )
   const [phase, setPhase] = createSignal<Phase>("idle")
+  const [envCheck, setEnvCheck] = createSignal<EnvCheck>()
+  const [envLoading, setEnvLoading] = createSignal(false)
+
+  /** 拉取环境自检（仅 TS Worker 后端提供该接口） */
+  const loadEnvCheck = async () => {
+    if (!isTsWorker()) return
+    setEnvLoading(true)
+    try {
+      const resp = (await r.get("/public/env_check")) as Resp<EnvCheck>
+      setEnvCheck(resp?.data)
+    } catch {
+      // 自检失败不阻塞初始化，仅不展示面板
+    } finally {
+      setEnvLoading(false)
+    }
+  }
 
   // 若系统已初始化，跳转到登录页
   onMount(async () => {
+    loadEnvCheck()
     try {
       const resp = (await r.get("/public/init_status")) as Resp<InitStatus>
       if (resp?.data?.initialized === false) {
@@ -95,6 +122,12 @@ const Init = () => {
   }
 
   const submit = async () => {
+    // 环境未就绪时阻止初始化：让用户先按提示修正配置，而非写入半可用状态
+    const check = envCheck()
+    if (isTsWorker() && check && !check.ready) {
+      notify.error(t("init.env_blocked_tip"))
+      return
+    }
     if (password().length < 4) {
       notify.error(t("init.password_too_short"))
       return
@@ -147,6 +180,145 @@ const Init = () => {
             {t("init.title")}
           </Heading>
         </Flex>
+
+        {/* 环境自检面板（仅 TS Worker 后端提供） */}
+        <Show when={isTsWorker()}>
+          <VStack
+            w="$full"
+            spacing="$2"
+            p="$3"
+            rounded="$md"
+            bgColor="$neutral2"
+            alignItems="stretch"
+          >
+            <HStack>
+              <Text fontSize="$sm" fontWeight="$medium">
+                {t("init.env_check")}
+              </Text>
+              <Spacer />
+              <Show when={envLoading()}>
+                <Spinner size="xs" color="$info9" />
+              </Show>
+              <Show when={!envLoading() && envCheck()}>
+                <Badge
+                  colorScheme={envCheck()?.ready ? "success" : "danger"}
+                  variant="subtle"
+                >
+                  {envCheck()?.ready
+                    ? t("init.env_check_ready")
+                    : t("init.env_check_not_ready")}
+                </Badge>
+              </Show>
+            </HStack>
+
+            <Show when={envCheck()}>
+              <VStack spacing="$1" alignItems="stretch">
+                <HStack fontSize="$xs" color="$neutral11">
+                  <Text>{t("init.env_format")}</Text>
+                  <Spacer />
+                  <Text fontFamily="mono">
+                    {envCheck()?.config?.db_format}
+                    <Show
+                      when={
+                        envCheck()?.config?.resolved_format &&
+                        envCheck()?.config?.resolved_format !==
+                          envCheck()?.config?.db_format
+                      }
+                    >
+                      {" → " + envCheck()?.config?.resolved_format}
+                    </Show>
+                  </Text>
+                </HStack>
+                <HStack fontSize="$xs" color="$neutral11">
+                  <Text>{t("init.env_driver")}</Text>
+                  <Spacer />
+                  <Text fontFamily="mono">
+                    {envCheck()?.config?.db_driver}
+                    <Show
+                      when={
+                        envCheck()?.config?.resolved_driver &&
+                        envCheck()?.config?.resolved_driver !==
+                          envCheck()?.config?.db_driver
+                      }
+                    >
+                      {" → " + envCheck()?.config?.resolved_driver}
+                    </Show>
+                  </Text>
+                </HStack>
+                <HStack fontSize="$xs" color="$neutral11">
+                  <Text>{t("init.env_runtime")}</Text>
+                  <Spacer />
+                  <Text>
+                    {envCheck()?.runtime?.serverless
+                      ? t("init.env_serverless")
+                      : t("init.env_local")}
+                  </Text>
+                </HStack>
+                <HStack fontSize="$xs">
+                  <Text color="$neutral11">{t("init.env_storage")}</Text>
+                  <Spacer />
+                  <Text
+                    color={
+                      envCheck()?.storage?.available
+                        ? "$success11"
+                        : "$danger11"
+                    }
+                  >
+                    {envCheck()?.storage?.available
+                      ? t("init.env_status_ok")
+                      : t("init.env_status_bad")}
+                  </Text>
+                </HStack>
+                <HStack fontSize="$xs">
+                  <Text color="$neutral11">{t("init.env_jwt")}</Text>
+                  <Spacer />
+                  <Text
+                    color={envCheck()?.jwt?.ready ? "$success11" : "$danger11"}
+                  >
+                    {envCheck()?.jwt?.ready
+                      ? t("init.env_status_ok")
+                      : t("init.env_status_bad")}
+                  </Text>
+                </HStack>
+              </VStack>
+            </Show>
+
+            {/* 问题清单：每条附文档链接 */}
+            <For each={envCheck()?.issues ?? []}>
+              {(issue: EnvCheckIssue) => (
+                <VStack
+                  spacing="$1"
+                  alignItems="stretch"
+                  p="$2"
+                  rounded="$sm"
+                  bgColor={issue.level === "error" ? "$danger3" : "$warning3"}
+                >
+                  <Text fontSize="$xs" color="$neutral12">
+                    {issue.message}
+                  </Text>
+                  <Text
+                    as="a"
+                    href={issue.docUrl}
+                    target="_blank"
+                    rel="noopener"
+                    fontSize="$xs"
+                    color="$info11"
+                    textDecoration="underline"
+                  >
+                    {t("init.env_doc_link")}
+                  </Text>
+                </VStack>
+              )}
+            </For>
+
+            <Show when={envCheck() && !envCheck()?.ready}>
+              <Text fontSize="$xs" color="$danger11">
+                {t("init.env_blocked_tip")}
+              </Text>
+            </Show>
+          </VStack>
+        </Show>
+
         <Input
           name="username"
           placeholder={t("init.username-tips")}

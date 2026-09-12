@@ -14,5 +14,22 @@
   "waiting_storage": "Waiting for storage to sync...",
   "storage_ready": "Storage ready",
   "waiting_storage_tip": "Cloud KV storage has sync latency, please wait (usually a few seconds)",
-  "waiting_timeout": "Storage sync timed out. Try logging in; if it fails, retry shortly"
+  "waiting_timeout": "Storage sync timed out. Try logging in; if it fails, retry shortly",
+  "env_check": "Environment check",
+  "env_check_loading": "Checking environment...",
+  "env_check_ready": "Environment ready",
+  "env_check_not_ready": "Environment not ready",
+  "env_check_refresh": "Re-check",
+  "env_runtime": "Runtime",
+  "env_serverless": "Serverless",
+  "env_local": "Local / Container",
+  "env_format": "Storage format",
+  "env_driver": "Database driver",
+  "env_resolved": "Resolved as",
+  "env_storage": "Storage",
+  "env_jwt": "JWT secret",
+  "env_status_ok": "Ready",
+  "env_status_bad": "Not ready",
+  "env_doc_link": "View configuration docs",
+  "env_blocked_tip": "Initialization is blocked until the issues above are resolved. See the docs for details."
 }
