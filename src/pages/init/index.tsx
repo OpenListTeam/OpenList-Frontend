@@ -16,6 +16,7 @@ import { SwitchColorMode, SwitchLanguageWhite } from "~/components"
 import { useLoading, useT, useTitle } from "~/hooks"
 import { getSetting } from "~/store"
 import { base_path, r, notify, handleRespWithoutAuthAndNotify } from "~/utils"
+import { isTsWorker } from "~/utils/backend"
 import { EmptyResp, InitSetupRequest, InitStatus, Resp } from "~/types"
 import LoginBg from "../login/LoginBg"
 
@@ -73,8 +74,13 @@ const Init = () => {
    * 为什么需要：云端 KV 存在最终一致性，setup 写入密钥后可能尚未传播。
    * 若立即跳转登录，请求落在另一个实例会读不到密钥，导致「密码错误」。
    * 等待后端明确确认就绪，可彻底避免这次误判。
+   *
+   * 仅对 TS Worker 后端生效：`ready` 是该后端特有的就绪标志；
+   * Go 后端使用 MySQL/SQLite 等强一致存储，无传播延迟，且不返回该字段。
+   * 若不做区分，Go 环境下会白白轮询到超时并弹出误导性的失败警告。
    */
   const waitUntilReady = async (): Promise<boolean> => {
+    if (!isTsWorker()) return true
     const deadline = Date.now() + READY_TIMEOUT_MS
     while (Date.now() < deadline) {
       try {
