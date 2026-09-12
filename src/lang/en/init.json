@@ -47,5 +47,7 @@
   "done_username": "Admin username",
   "done_site_url": "Site address",
   "done_go_login": "Go to login",
-  "done_go_home": "Open home page"
+  "done_go_home": "Open home page",
+  "timeout_title": "Still syncing",
+  "timeout_tip": "Your account was created, but the backend has not confirmed that storage is ready yet. You can retry the check, or try logging in now."
 }

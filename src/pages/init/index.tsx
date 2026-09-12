@@ -30,8 +30,15 @@ import {
 } from "~/types"
 import LoginBg from "../login/LoginBg"
 
-/** 初始化阶段：idle → creating（建号中）→ syncing（等待存储同步）→ done */
-type Phase = "idle" | "creating" | "syncing" | "done"
+/**
+ * 初始化阶段：
+ *   idle    初始（第 2 步表单可编辑）
+ *   creating 正在创建账号
+ *   syncing  等待存储/密钥就绪
+ *   done     已确认就绪（真正完成）
+ *   timeout  超时未确认就绪（不谎报成功，可重试）
+ */
+type Phase = "idle" | "creating" | "syncing" | "done" | "timeout"
 
 /** 向导步骤：env（环境自检）→ account（填写管理员信息）→ done（完成） */
 type Step = "env" | "account" | "done"
@@ -172,9 +179,12 @@ const Init = () => {
         // 账号已创建，等待存储/密钥真正就绪
         setPhase("syncing")
         const ready = await waitUntilReady()
-        setPhase("done")
-        if (!ready) {
-          notify.warning(t("init.waiting_timeout"))
+        if (ready) {
+          // 仅在**真正确认**后端已就绪时才进入完成态
+          setPhase("done")
+        } else {
+          // 超时：不谎报成功，提示可重试（后端可能仍在同步）
+          setPhase("timeout")
         }
       },
       (msg) => {
@@ -184,6 +194,13 @@ const Init = () => {
         notify.error(msg || t("init.failed"))
       },
     )
+  }
+
+  /** 超时后重试：只重新等待就绪，不重复创建账号 */
+  const retryReady = async () => {
+    setPhase("syncing")
+    const ready = await waitUntilReady()
+    setPhase(ready ? "done" : "timeout")
   }
 
   const busy = () => phase() === "creating" || phase() === "syncing"
@@ -546,6 +563,31 @@ const Init = () => {
                     onClick={() => goTo("/@login")}
                   >
                     {t("init.done_go_login")}
+                  </Button>
+                </HStack>
+              </VStack>
+            </Show>
+
+            {/* 超时：不谎报成功，提示重试或直接登录 */}
+            <Show when={phase() === "timeout"}>
+              <VStack spacing="$3" w="$full" alignItems="center">
+                <Badge colorScheme="warning" variant="subtle">
+                  {t("init.timeout_title")}
+                </Badge>
+                <Text fontSize="$sm" color="$neutral11" textAlign="center">
+                  {t("init.timeout_tip")}
+                </Text>
+                <HStack w="$full" spacing="$2">
+                  <Button
+                    variant="subtle"
+                    colorScheme="neutral"
+                    flex="1"
+                    onClick={() => goTo("/@login")}
+                  >
+                    {t("init.done_go_login")}
+                  </Button>
+                  <Button colorScheme="primary" flex="1" onClick={retryReady}>
+                    {t("init.env_check_refresh")}
                   </Button>
                 </HStack>
               </VStack>
