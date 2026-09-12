@@ -59,11 +59,11 @@ const App: Component = () => {
           Record<string, string>
         >
         handleRespWithoutAuthAndNotify(resp, setSettings, (e, code) => {
-          // 存储未绑定时 settings 返回 503。此时不能把错误塞进 err()，
-          // 否则下面 Switch 的错误分支会抢占渲染、把初始化向导挡住，
-          // 用户既看不到错误原因也无法配置存储。
-          // 交给路由渲染：init_status 已豁免该拦截，会把 initialized 置为
-          // false，从而自动进入 /@init。
+          // 存储未绑定时 settings 被后端中间件以 503 拦截。此时不能把错误
+          // 塞进 err()：下面 Switch 的错误分支排在路由之前，会抢占渲染并
+          // 把初始化向导挡住，用户既看不到原因也无法配置存储。
+          // 交给路由渲染即可 —— init_status 在诊断豁免名单中，会正常返回
+          // initialized: false，守卫随即跳转到 /@init。
           if (code === 503) return
           setErr(err().concat(e))
         })

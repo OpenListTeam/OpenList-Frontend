@@ -31,8 +31,26 @@ const UNKNOWN = "-"
  */
 export const useEnvCheck = () => {
   const [check, setCheck] = createSignal<EnvCheckData>()
-  const [loading, setLoading] = createSignal(false)
-  /** 接口不可用（最典型：存储未绑定返回 503）——仍需渲染骨架而非整块消失 */
+  /**
+   * 初值为 true：表示「尚未探测」。
+   *
+   * 若初值为 false，调用方的 createEffect 会在首帧看到「探测已完成且不支持」
+   * 而误判为 Go 后端，把用户从自检步骤直接推进到账号步（步骤闪烁）。
+   * 在 refresh() 真正开始前保持 loading，可避免这个瞬时误判。
+   */
+  const [loading, setLoading] = createSignal(true)
+  /**
+   * 该后端是否提供环境自检能力。
+   *
+   * 不复用 isTsWorker()：它依赖 /public/settings 的 backend 字段，而存储
+   * 未绑定时该接口被 503 拦截，导致判定停留在默认的 Go 后端，环境自检步骤
+   * 整步不渲染——恰恰是最需要自检的场景。
+   *
+   * /public/env_check 是 TS Worker 独有接口（Go 后端未注册该路由），因此
+   * 「能否取到它」本身就是可靠的后端能力探测，且不受 settings 失败影响。
+   */
+  const [supported, setSupported] = createSignal(false)
+  /** 接口本身未返回可用结果（网络异常、超时或服务端 5xx） */
   const [failed, setFailed] = createSignal(false)
 
   const refresh = async () => {
@@ -41,10 +59,11 @@ export const useEnvCheck = () => {
     try {
       const resp = (await r.get("/public/env_check")) as Resp<EnvCheckData>
       if (resp?.code === 200 && resp.data) {
+        setSupported(true)
         setCheck(resp.data)
       } else {
-        // 非 200：后端无法给出各项状态，但仍保留面板骨架，
-        // 让用户看到「检查了哪些项、哪项没过」。
+        // 非 200：Go 后端没有该接口（未注册路由，通常 404），
+        // 或拿不到各项状态。此时不展示自检步骤，交由后端自行校验。
         setCheck(undefined)
         setFailed(true)
       }
@@ -59,7 +78,7 @@ export const useEnvCheck = () => {
   /** 环境是否允许继续：ready 为真才放行 */
   const ready = () => Boolean(check()?.ready)
 
-  return { check, loading, failed, refresh, ready }
+  return { check, loading, failed, supported, refresh, ready }
 }
 
 /** 解析值：与配置值不同时以 `配置值 → 解析值` 展示 */

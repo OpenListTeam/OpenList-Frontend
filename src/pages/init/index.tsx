@@ -26,7 +26,6 @@ import { SwitchColorMode, SwitchLanguageWhite } from "~/components"
 import { useLoading, useT, useTitle } from "~/hooks"
 import { getSetting } from "~/store"
 import { base_path, r, notify, handleRespWithoutAuthAndNotify } from "~/utils"
-import { isTsWorker } from "~/utils/backend"
 import { EmptyResp, InitSetupRequest, InitStatus, Resp } from "~/types"
 import LoginBg from "../login/LoginBg"
 import EnvCheck, { useEnvCheck } from "./EnvCheck"
@@ -66,10 +65,7 @@ const Init = () => {
     getSetting("site_title") || "OpenList",
   )
   const [phase, setPhase] = createSignal<Phase>("idle")
-  // 起始步骤取决于后端类型：Go 后端没有环境自检步骤，直接进账号表单。
-  // 注意 isTsWorker() 依赖 /public/settings 的判定结果，而该判定可能在
-  // 本组件挂载后才完成；下方 createEffect 会在类型明确后修正起始步骤。
-  const [step, setStep] = createSignal<Step>(isTsWorker() ? "env" : "account")
+  const [step, setStep] = createSignal<Step>("env")
   const env = useEnvCheck()
 
   /**
@@ -88,17 +84,19 @@ const Init = () => {
    *
    * 不满足时必须阻止初始化，而不是让用户填完表单再失败：serverless 下内存
    * 存储重启即丢，而 ready 拿不到（接口失败）同样视为未就绪。
-   * 非 TS Worker 后端没有该接口，无法自检，放行交由后端自己校验。
+   * 后端不提供自检接口（Go）时无法自检，放行交由后端自己校验。
    */
-  const canProceed = () => !isTsWorker() || env.ready()
+  const canProceed = () => !env.supported() || env.ready()
 
   /**
-   * 环境自检步骤仅 TS Worker 后端渲染。
+   * 环境自检步骤是否渲染。
    *
-   * Go 后端用 MySQL/SQLite 自带持久化，既没有 /public/env_check 接口，也不存在
-   * 「先修配置才能初始化」的场景，展示一个永远通过的空步骤纯属噪音。
+   * 以「能否取到 /public/env_check」为准，而非 isTsWorker()：后者依赖
+   * /public/settings，存储未绑定时该接口不可用，会让判定停留在 Go 后端，
+   * 导致自检步骤整步消失 —— 恰恰是最需要它的时候。
+   * Go 后端未注册该路由，探测自然失败、步骤不显示，符合预期。
    */
-  const showEnvStep = isTsWorker
+  const showEnvStep = env.supported
 
   /** 环境就绪时进入下一步，否则重新拉取自检 */
   const goNextFromEnv = () => {
@@ -110,29 +108,30 @@ const Init = () => {
   }
 
   /**
-   * 步骤列表：Go 后端只有「账号 → 完成」，TS Worker 多一个环境自检前置步。
+   * 步骤列表：后端无自检能力时只有「账号 → 完成」。
    */
   const steps = createMemo<Step[]>(() =>
     showEnvStep() ? ["env", "account", "done"] : ["account", "done"],
   )
 
   /**
-   * 后端类型判定可能在挂载后才完成（依赖 /public/settings）。
-   * 若最终判定为非 TS Worker 而当前仍停在环境自检步，需把用户推进到账号步，
+   * 探测完成后若后端不支持自检，把停留在自检步的用户推进到账号步，
    * 否则会卡在一个已不再渲染的步骤上（页面空白）。
    */
   createEffect(() => {
-    if (!showEnvStep() && step() === "env") {
+    if (!env.loading() && !env.supported() && step() === "env") {
       setStep("account")
     }
   })
 
-  // 若系统已初始化，跳转到登录页
+  // 首屏探测自检能力；若系统已初始化则跳转登录页
   onMount(async () => {
-    if (isTsWorker()) env.refresh()
+    env.refresh()
     const resp = (await r.get("/public/init_status")) as Resp<InitStatus>
-    // 明确「未初始化」或「状态未知」（存储未绑定返回 503）时留在向导。
-    // 后者绝不能跳登录页 —— 那会把用户从唯一能修复配置的地方反复弹走。
+    // init_status 在诊断豁免名单中，存储未绑定时同样返回 200 且
+    // initialized 为 false —— 即「未初始化」，应留在向导。
+    // 只有明确「已初始化」才跳登录页，否则会把用户从唯一能修复配置的
+    // 地方反复弹走。
     if (resp?.code === 200 && resp.data?.initialized !== false) {
       window.location.href = base_path + "/@login"
     }
@@ -158,7 +157,8 @@ const Init = () => {
    * 若不做区分，Go 环境下会白白轮询到超时并弹出误导性的失败警告。
    */
   const waitUntilReady = async (): Promise<boolean> => {
-    if (!isTsWorker()) return true
+    // 后端无自检能力（Go，无该路由）时无需等待存储同步，直接放行
+    if (!env.supported()) return true
     const deadline = Date.now() + READY_TIMEOUT_MS
     while (Date.now() < deadline) {
       try {
