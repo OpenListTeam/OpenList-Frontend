@@ -55,10 +55,13 @@ const READY_TIMEOUT_MS = 30_000
 /** 轮询间隔（毫秒） */
 const READY_POLL_MS = 1_000
 
+/** 自检接口不可用时各项的占位符 */
+const UNKNOWN = "-"
+
 /** 各平台部署教程：对照绑定存储驱动 */
 const DEPLOY_DOCS = [
   {
-    label: "Cloudflare Workers",
+    label: "CF Worker",
     url: "https://doc.oplist.org/ecosystem/official_worker/guide_cfw",
   },
   {
@@ -66,7 +69,7 @@ const DEPLOY_DOCS = [
     url: "https://doc.oplist.org/ecosystem/official_worker/guide_eom",
   },
   {
-    label: "Alibaba Cloud ESA",
+    label: "ESA",
     url: "https://doc.oplist.org/ecosystem/official_worker/guide_esa",
   },
 ]
@@ -94,6 +97,14 @@ const Init = () => {
   const [step, setStep] = createSignal<Step>(isTsWorker() ? "env" : "account")
   const [envCheck, setEnvCheck] = createSignal<EnvCheck>()
   const [envLoading, setEnvLoading] = createSignal(false)
+  /**
+   * 自检接口不可用（最典型：存储未绑定返回 503）。
+   *
+   * 用于区分「尚未开始 / 正在加载」与「已确认拿不到自检结果」——
+   * 后者仍需渲染完整的面板骨架（各行显示未知），让用户看到检查了哪些项，
+   * 而不是只剩孤零零一行。
+   */
+  const [envError, setEnvError] = createSignal(false)
 
   /**
    * 站点地址（同源根路径）。
@@ -136,13 +147,20 @@ const Init = () => {
   const loadEnvCheck = async () => {
     if (!isTsWorker()) return
     setEnvLoading(true)
+    setEnvError(false)
     try {
       const resp = (await r.get("/public/env_check")) as Resp<EnvCheck>
-      // 非 200（典型为存储未绑定的 503）时保持 undefined，
-      // 面板据此把「存储」行标为不可用。
-      setEnvCheck(resp?.code === 200 ? resp.data : undefined)
+      if (resp?.code === 200 && resp.data) {
+        setEnvCheck(resp.data)
+      } else {
+        // 非 200：典型为存储未绑定（503）。此时后端无法给出各项状态，
+        // 但仍渲染面板骨架并把「存储」标为不可用，而不是整块消失。
+        setEnvCheck(undefined)
+        setEnvError(true)
+      }
     } catch {
       setEnvCheck(undefined)
+      setEnvError(true)
     } finally {
       setEnvLoading(false)
     }
@@ -327,7 +345,7 @@ const Init = () => {
               <Show when={envLoading()}>
                 <Spinner size="xs" color="$info9" />
               </Show>
-              <Show when={!envLoading() && envCheck()}>
+              <Show when={!envLoading() && (envCheck() || envError())}>
                 <Badge
                   colorScheme={envCheck()?.ready ? "success" : "danger"}
                   variant="subtle"
@@ -340,27 +358,16 @@ const Init = () => {
             </HStack>
 
             {/*
-                自检接口本身失败（最典型：存储未绑定返回 503）。
-                复用下方同一套「存储」行，仅把状态标为不可用并附部署文档链接，
-                不再单独造一块信息区。
+                面板骨架始终渲染。自检接口不可用时（envCheck 为空）各行显示
+                占位符，让用户看到「检查了哪些项、哪项没过」，而不是整块消失。
               */}
-            <Show when={!envLoading() && !envCheck()}>
-              <VStack spacing="$1" alignItems="stretch">
-                <HStack fontSize="$xs">
-                  <Text color="$neutral11">{t("init.env_storage")}</Text>
-                  <Spacer />
-                  <Text color="$danger11">{t("init.env_status_bad")}</Text>
-                </HStack>
-              </VStack>
-            </Show>
-
-            <Show when={envCheck()}>
+            <Show when={envCheck() || (!envLoading() && envError())}>
               <VStack spacing="$1" alignItems="stretch">
                 <HStack fontSize="$xs" color="$neutral11">
                   <Text>{t("init.env_format")}</Text>
                   <Spacer />
                   <Text fontFamily="mono">
-                    {envCheck()?.config?.db_format}
+                    {envCheck()?.config?.db_format || UNKNOWN}
                     <Show
                       when={
                         envCheck()?.config?.resolved_format &&
@@ -376,7 +383,7 @@ const Init = () => {
                   <Text>{t("init.env_driver")}</Text>
                   <Spacer />
                   <Text fontFamily="mono">
-                    {envCheck()?.config?.db_driver}
+                    {envCheck()?.config?.db_driver || UNKNOWN}
                     <Show
                       when={
                         envCheck()?.config?.resolved_driver &&
@@ -392,9 +399,11 @@ const Init = () => {
                   <Text>{t("init.env_runtime")}</Text>
                   <Spacer />
                   <Text>
-                    {envCheck()?.runtime?.serverless
-                      ? t("init.env_serverless")
-                      : t("init.env_local")}
+                    {envCheck()
+                      ? envCheck()?.runtime?.serverless
+                        ? t("init.env_serverless")
+                        : t("init.env_local")
+                      : UNKNOWN}
                   </Text>
                 </HStack>
                 <HStack fontSize="$xs">
