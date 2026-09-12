@@ -14,8 +14,7 @@ import { Error, FullScreenLoading } from "~/components"
 import { useLoading, useRouter, useT } from "~/hooks"
 import { setSettings } from "~/store"
 import { setArchiveExtensions } from "~/store/archive"
-import { InitStatus, Resp, STORAGE_CONFIG_ERROR } from "~/types"
-import { markTsWorker } from "~/utils/backend"
+import { InitStatus, Resp } from "~/types"
 import {
   base_path,
   bus,
@@ -52,45 +51,15 @@ const App: Component = () => {
   })
 
   const [err, setErr] = createSignal<string[]>([])
-
-  /**
-   * 后端存储未绑定时，对所有依赖持久化的接口返回 503 +
-   * data.error = STORAGE_CONFIG_ERROR。
-   *
-   * 该错误码只有 TS Worker 后端会返回，可据此在拿不到 /public/settings 时
-   * 反推后端类型，否则前端会误判为 Go 后端并跳过环境自检。
-   */
-  const isStorageConfigError = (resp: any, code?: number) =>
-    code === 503 && resp?.data?.error === STORAGE_CONFIG_ERROR
-
-  /**
-   * 是否需要进入初始化向导。
-   *
-   * 两个独立触发条件，不能互相依赖：
-   *  1. init_status 明确返回 initialized === false —— 正常未初始化；
-   *  2. 状态未知（存储未绑定导致 503 / 请求失败）—— 无从判断是否已初始化，
-   *     此时也应进向导：那是唯一能修复配置的地方，且比停在主页吃错误页好。
-   *
-   * 早期实现只在收到 STORAGE_CONFIG_ERROR 时置 false，导致「其他原因的
-   * 503 / 请求失败」既不跳转也不报错，用户被卡在主页。
-   */
-  const [needSetup, setNeedSetup] = createSignal(false)
-
+  const [initialized, setInitialized] = createSignal(true)
   const [loading, data] = useLoading(() =>
     Promise.all([
       (async () => {
-        const resp = (await r.get("/public/settings")) as Resp<
-          Record<string, string>
-        >
-        handleRespWithoutAuthAndNotify(resp, setSettings, (msg, code) => {
-          // 存储未绑定时 settings 也是 503，同样说明需要进向导。
-          if (isStorageConfigError(resp, code)) {
-            markTsWorker()
-            setNeedSetup(true)
-            return
-          }
-          setErr(err().concat(msg))
-        })
+        handleRespWithoutAuthAndNotify(
+          (await r.get("/public/settings")) as Resp<Record<string, string>>,
+          setSettings,
+          (e) => setErr(err().concat(e)),
+        )
       })(),
       (async () => {
         handleRespWithoutAuthAndNotify(
@@ -100,29 +69,19 @@ const App: Component = () => {
         )
       })(),
       (async () => {
-        const resp = (await r.get("/public/init_status")) as Resp<InitStatus>
         handleRespWithoutAuthAndNotify(
-          resp,
-          (data) => {
-            // 明确未初始化 → 进向导；已初始化 → 留在原页面
-            setNeedSetup(data.initialized === false)
-          },
-          (msg, code) => {
-            // 状态未知（含存储未绑定）→ 同样进向导，而不是当作已初始化
-            if (isStorageConfigError(resp, code)) {
-              markTsWorker()
-            }
-            setNeedSetup(true)
-          },
+          (await r.get("/public/init_status")) as Resp<InitStatus>,
+          (data) => setInitialized(data.initialized),
+          // (e) => setErr(err().concat(e)),
         )
       })(),
     ]),
   )
   data()
 
-  // 系统未初始化、或初始化状态不可知时，自动跳转到安装向导
+  // 系统未初始化时，自动跳转到安装向导
   createEffect(() => {
-    if (needSetup() && !pathname().startsWith("/@init")) {
+    if (initialized() === false && !pathname().startsWith("/@init")) {
       to("/@init", true)
     }
   })
