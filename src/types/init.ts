@@ -4,14 +4,6 @@ export interface InitSetupRequest {
   site_title: string
 }
 
-/**
- * 后端「存储配置错误」错误码（TSWorker backend/index.ts 全局中间件）。
- *
- * 存储不可用时，后端对所有依赖持久化的接口返回 503 + data.error 为该值。
- * Go 后端不会返回它，故也可用于反推后端类型。
- */
-export const STORAGE_CONFIG_ERROR = "STORAGE_CONFIG_ERROR"
-
 export interface InitStatus {
   initialized: boolean
   /** 后端加解密密钥是否已在真实来源可读（KV 最终一致性的就绪标志） */
