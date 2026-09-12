@@ -56,13 +56,20 @@ const READY_TIMEOUT_MS = 30_000
 const READY_POLL_MS = 1_000
 
 /**
- * 存储配置文档地址（与服务端 public.ts 的 DOC_STORAGE 保持一致）。
+ * 文档基址与存储配置页（与服务端 public.ts 的 DOC_BASE / DOC_STORAGE 保持一致）。
  *
  * 自检接口自身失败时（503），我们拿不到后端随 issues 下发的 docUrl，
- * 因此这里提供一个固定的兜底链接 —— 用户此时最需要的就是「去哪看怎么配」。
+ * 因此这里提供固定链接 —— 用户此时最需要的就是「去哪看怎么配」。
  */
-const STORAGE_DOC_URL =
-  "https://doc.oplist.org/ecosystem/official_worker/guide_env"
+const DOC_BASE = "https://doc.oplist.org"
+const DOC_STORAGE = `${DOC_BASE}/ecosystem/official_worker/guide_env`
+
+/** 各平台部署教程：对照绑定存储驱动 */
+const DEPLOY_DOCS = [
+  { label: "Cloudflare Workers", url: DOC_STORAGE },
+  { label: "EdgeOne", url: DOC_STORAGE },
+  { label: "Alibaba Cloud ESA", url: DOC_STORAGE },
+]
 
 const Init = () => {
   const logos = getSetting("logo").split("\n")
@@ -87,15 +94,6 @@ const Init = () => {
   const [step, setStep] = createSignal<Step>(isTsWorker() ? "env" : "account")
   const [envCheck, setEnvCheck] = createSignal<EnvCheck>()
   const [envLoading, setEnvLoading] = createSignal(false)
-  /**
-   * 自检/状态接口失败的原因。
-   *
-   * 为什么需要单独保存：存储未配置时后端返回 503，`env_check` 与
-   * `init_status` 都会失败。若静默吞掉，用户只会看到「面板空白 + 按钮灰掉」，
-   * 完全没有可操作信息。这里保留后端给出的原始诊断（已含需要配置哪些
-   * 环境变量），在向导里直接展示。
-   */
-  const [envError, setEnvError] = createSignal<string>()
   /**
    * 后端未能确认「是否已初始化」。
    *
@@ -158,19 +156,13 @@ const Init = () => {
   const loadEnvCheck = async () => {
     if (!isTsWorker()) return
     setEnvLoading(true)
-    setEnvError(undefined)
     try {
       const resp = (await r.get("/public/env_check")) as Resp<EnvCheck>
-      if (resp?.code === 200 && resp.data) {
-        setEnvCheck(resp.data)
-      } else {
-        // 非 200（典型为存储未配置的 503）：保留后端诊断原文
-        setEnvCheck(undefined)
-        setEnvError(resp?.message || t("init.env_check_failed"))
-      }
-    } catch (e: any) {
+      // 非 200（典型为存储未绑定的 503）时保持 undefined，
+      // 面板据此把「存储」行标为不可用。
+      setEnvCheck(resp?.code === 200 ? resp.data : undefined)
+    } catch {
       setEnvCheck(undefined)
-      setEnvError(e?.message || t("init.env_check_failed"))
     } finally {
       setEnvLoading(false)
     }
@@ -204,10 +196,8 @@ const Init = () => {
       window.location.href = base_path + "/@login"
       return
     }
-    // 非 200：最典型的是存储未配置（503）。此时「是否已初始化」无从判断，
+    // 非 200：最典型的是存储未绑定（503）。此时「是否已初始化」无从判断，
     // 绝不能跳登录页 —— 否则用户会被反复弹回，永远进不了向导。
-    // 保存诊断信息并停留在此页，让用户看到问题并修正后重试。
-    setEnvError(resp?.message || t("init.storage_unavailable_tip"))
     setInitializedUnknown(true)
   })
 
@@ -374,57 +364,16 @@ const Init = () => {
             </HStack>
 
             {/*
-                自检接口本身失败（最典型：存储未配置 / 绑定缺失返回 503）。
-
-                这里刻意保持简短：后端原文是面向终端的排查材料，逐条摊开会得到
-                一屏无法消化的文字，且与折叠区内容重复。改为给出「缺少存储驱动 /
-                环境变量」这一句结论 + 文档链接，细节交给文档；原文折叠保留，
-                仅供排查时对照。
+                自检接口本身失败（最典型：存储未绑定返回 503）。
+                复用下方同一套「存储」行，仅把状态标为不可用并附部署文档链接，
+                不再单独造一块信息区。
               */}
-            <Show when={!envLoading() && !envCheck() && envError()}>
-              <VStack spacing="$2" alignItems="stretch">
-                <HStack spacing="$2" alignItems="center">
-                  <Badge colorScheme="danger" variant="subtle" flexShrink="0">
-                    {t("init.storage_unavailable")}
-                  </Badge>
-                  <Text fontSize="$xs" color="$neutral11">
-                    {t("init.storage_missing_hint")}
-                  </Text>
-                </HStack>
-
-                <HStack spacing="$3" alignItems="center">
-                  <Text
-                    as="a"
-                    fontSize="$xs"
-                    color="$info11"
-                    textDecoration="underline"
-                    href={STORAGE_DOC_URL}
-                    target="_blank"
-                    rel="noopener"
-                  >
-                    {t("init.storage_doc_link")}
-                  </Text>
-                  {/* 原始诊断：默认折叠，排查时对照 */}
-                  <details>
-                    <summary
-                      style={{
-                        cursor: "pointer",
-                        "font-size": "0.75rem",
-                        opacity: 0.7,
-                      }}
-                    >
-                      {t("init.storage_raw_detail")}
-                    </summary>
-                    <Text
-                      fontSize="$xs"
-                      color="$neutral11"
-                      fontFamily="mono"
-                      mt="$1"
-                      css={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
-                    >
-                      {envError()}
-                    </Text>
-                  </details>
+            <Show when={!envLoading() && !envCheck()}>
+              <VStack spacing="$1" alignItems="stretch">
+                <HStack fontSize="$xs">
+                  <Text color="$neutral11">{t("init.env_storage")}</Text>
+                  <Spacer />
+                  <Text color="$danger11">{t("init.env_status_bad")}</Text>
                 </HStack>
               </VStack>
             </Show>
@@ -534,6 +483,28 @@ const Init = () => {
                 {t("init.env_blocked_tip")}
               </Text>
             </Show>
+
+            {/* 部署教程：按平台直达，方便用户对照绑定存储 */}
+            <HStack spacing="$3" pt="$1" flexWrap="wrap">
+              <Text fontSize="$xs" color="$neutral11">
+                {t("init.env_deploy_docs")}
+              </Text>
+              <For each={DEPLOY_DOCS}>
+                {(doc) => (
+                  <Text
+                    as="a"
+                    fontSize="$xs"
+                    color="$info11"
+                    textDecoration="underline"
+                    href={doc.url}
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    {doc.label}
+                  </Text>
+                )}
+              </For>
+            </HStack>
           </VStack>
 
           {/*
