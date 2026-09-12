@@ -56,110 +56,13 @@ const READY_TIMEOUT_MS = 30_000
 const READY_POLL_MS = 1_000
 
 /**
- * 存储不可用诊断信息的结构化结果。
+ * 存储配置文档地址（与服务端 public.ts 的 DOC_STORAGE 保持一致）。
  *
- * 后端 NO_STORAGE_MESSAGE 是一段面向终端的多行文本（含缩进的 1./2./3. 选项
- * 和「Environment variables to set」清单），直接塞进 UI 会得到一坨难以阅读的
- * 等宽红字。这里把它拆成「一句话原因 + 可操作的配置项」，让用户明确知道要做什么。
+ * 自检接口自身失败时（503），我们拿不到后端随 issues 下发的 docUrl，
+ * 因此这里提供一个固定的兜底链接 —— 用户此时最需要的就是「去哪看怎么配」。
  */
-interface StorageErrorInfo {
-  /** 一句话概括问题（不照搬后端原文） */
-  reason: string
-  /** 后端消息中提炼出的候选项 / 配置指引，逐条展示 */
-  tips: string[]
-  /** 原始文本：作为 <details> 折叠展示，便于排查 */
-  raw: string
-}
-
-/**
- * 解析后端返回的存储配置错误。
- *
- * 后端可能返回两类消息：
- *  1. NO_STORAGE_MESSAGE —— 无任何可用驱动（auto 探测全失败）
- *  2. 显式配置了某驱动但不可用（DB_DRIVER=kv 但没绑定等）
- * 两者都包含可提炼的行，这里统一按行解析。
- */
-const parseStorageError = (
-  raw: string | undefined,
-): StorageErrorInfo | null => {
-  if (!raw) return null
-  const text = String(raw)
-  const lines = text.split(/\r?\n/)
-  const tips: string[] = []
-  const reasonParts: string[] = []
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (!trimmed) continue
-    // 「Environment: serverless/worker」这类补充说明不放进原因，避免噪音
-    if (/^Environment:/i.test(trimmed)) continue
-    // 带编号的条目、「Configure…」「Environment variables…」视为操作指引
-    if (
-      /^(\d+\.|[-*])\s+/.test(trimmed) ||
-      /^(Configure|Environment variables)/i.test(trimmed)
-    ) {
-      tips.push(trimmed)
-      continue
-    }
-    // 形如 `DB_DRIVER=blob | kv | cfkv` 的纯赋值行才算指引。
-    // 注意必须排除 `DB_DRIVER=kv is set but ...` 这种「以赋值开头、实为问题
-    // 描述」的句子 —— 否则问题会被误判成指引，与修复建议的位置对调。
-    const assignMatch = trimmed.match(/^([A-Z][A-Z0-9_]{2,})=(.+)$/)
-    if (
-      assignMatch &&
-      !/\b(is|are|was|were|but|missing|not|failed)\b/i.test(assignMatch[2])
-    ) {
-      tips.push(trimmed)
-      continue
-    }
-    reasonParts.push(trimmed)
-  }
-
-  // 无 tips 时（如「显式配置的驱动不可用」「缺代理密钥」），多行内容往往是
-  // 「问题描述 + 修复建议」的组合。按句子切分后，以「祈使句/建议性动词开头」
-  // 的句子判为指引，其余归为原因 —— 否则会得到一段又长又难读的 run-on，
-  // 或把建议错当成原因（顺序未必固定，不能简单取首句/末句）。
-  if (tips.length === 0 && reasonParts.length > 1) {
-    const sentences = reasonParts
-      .join(" ")
-      .split(/(?<=\.)\s+(?=[A-Z])/)
-      .map((s) => s.trim())
-      .filter(Boolean)
-
-    if (sentences.length > 1) {
-      // 以动词开头的句子（Check… / Set… / Bind… / Configure…）视为操作指引；
-      // 含 "or set"/"then set" 等从句的同样视为指引。
-      const isActionable = (s: string) =>
-        /^(Check|Set|Bind|Configure|Ensure|Use|Add|Verify)\b/i.test(s) ||
-        /\b(or set|then set|please set|make sure)\b/i.test(s)
-      // 疑问/陈述性问题描述特征，优先归为原因
-      const isDiagnostic = (s: string) =>
-        /^(No |DB_DRIVER|Unable|Cannot|Failed|Missing)\b/i.test(s)
-
-      const actionable = sentences.filter(
-        (s) => isActionable(s) && !isDiagnostic(s),
-      )
-      const causes = sentences.filter((s) => !actionable.includes(s))
-
-      if (actionable.length > 0 && causes.length > 0) {
-        return {
-          reason: causes.join(" "),
-          tips: actionable,
-          raw: text,
-        }
-      }
-    }
-  }
-
-  return {
-    reason: reasonParts.join(" ") || FALLBACK_REASON,
-    tips,
-    raw: text,
-  }
-}
-
-/** 解析不到可读原因时的兜底文案（保持单一来源，便于后续 i18n 迁移） */
-const FALLBACK_REASON = "Storage is not available in this runtime."
+const STORAGE_DOC_URL =
+  "https://doc.oplist.org/ecosystem/official_worker/guide_env"
 
 const Init = () => {
   const logos = getSetting("logo").split("\n")
@@ -193,8 +96,6 @@ const Init = () => {
    * 环境变量），在向导里直接展示。
    */
   const [envError, setEnvError] = createSignal<string>()
-  /** envError 的结构化版本：拆出「原因 + 可操作指引」，避免直接倾倒后端原文 */
-  const storageError = createMemo(() => parseStorageError(envError()))
   /**
    * 后端未能确认「是否已初始化」。
    *
@@ -474,80 +375,57 @@ const Init = () => {
 
             {/*
                 自检接口本身失败（最典型：存储未配置 / 绑定缺失返回 503）。
-                这里把后端原文拆成「原因 + 可操作指引」两块展示：
-                直接倾倒多行原文会得到一坨难读的等宽红字，用户看不出该配什么。
-                原始文本保留在折叠区，供排查时对照。
+
+                这里刻意保持简短：后端原文是面向终端的排查材料，逐条摊开会得到
+                一屏无法消化的文字，且与折叠区内容重复。改为给出「缺少存储驱动 /
+                环境变量」这一句结论 + 文档链接，细节交给文档；原文折叠保留，
+                仅供排查时对照。
               */}
-            <Show when={!envLoading() && !envCheck() && storageError()}>
+            <Show when={!envLoading() && !envCheck() && envError()}>
               <VStack spacing="$2" alignItems="stretch">
-                {/* 一句话原因 */}
-                <HStack spacing="$2" alignItems="flex-start">
+                <HStack spacing="$2" alignItems="center">
                   <Badge colorScheme="danger" variant="subtle" flexShrink="0">
                     {t("init.storage_unavailable")}
                   </Badge>
-                </HStack>
-                <Text
-                  fontSize="$xs"
-                  color="$danger11"
-                  css={{ wordBreak: "break-word" }}
-                >
-                  {storageError()?.reason}
-                </Text>
-
-                {/* 可操作指引：候选项 / 需设置的环境变量 */}
-                <Show when={(storageError()?.tips?.length ?? 0) > 0}>
                   <Text fontSize="$xs" color="$neutral11">
-                    {t("init.storage_how_to_fix")}
+                    {t("init.storage_missing_hint")}
                   </Text>
-                  <VStack spacing="$1" alignItems="stretch">
-                    <For each={storageError()?.tips}>
-                      {(tip) => (
-                        <HStack spacing="$2" alignItems="flex-start">
-                          <Text
-                            fontSize="$xs"
-                            color="$neutral11"
-                            flexShrink="0"
-                          >
-                            •
-                          </Text>
-                          <Text
-                            fontSize="$xs"
-                            color="$neutral12"
-                            fontFamily="mono"
-                            css={{
-                              wordBreak: "break-word",
-                              whiteSpace: "pre-wrap",
-                            }}
-                          >
-                            {tip}
-                          </Text>
-                        </HStack>
-                      )}
-                    </For>
-                  </VStack>
-                </Show>
+                </HStack>
 
-                {/* 原始诊断：默认折叠，避免干扰主流程 */}
-                <details>
-                  <summary
-                    style={{
-                      cursor: "pointer",
-                      "font-size": "0.75rem",
-                      opacity: 0.7,
-                    }}
-                  >
-                    {t("init.storage_raw_detail")}
-                  </summary>
+                <HStack spacing="$3" alignItems="center">
                   <Text
+                    as="a"
                     fontSize="$xs"
-                    color="$neutral11"
-                    fontFamily="mono"
-                    mt="$1"
-                    css={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+                    color="$info11"
+                    textDecoration="underline"
+                    href={STORAGE_DOC_URL}
+                    target="_blank"
+                    rel="noopener"
                   >
-                    {storageError()?.raw}
+                    {t("init.storage_doc_link")}
                   </Text>
-                </details>
+                  {/* 原始诊断：默认折叠，排查时对照 */}
+                  <details>
+                    <summary
+                      style={{
+                        cursor: "pointer",
+                        "font-size": "0.75rem",
+                        opacity: 0.7,
+                      }}
+                    >
+                      {t("init.storage_raw_detail")}
+                    </summary>
+                    <Text
+                      fontSize="$xs"
+                      color="$neutral11"
+                      fontFamily="mono"
+                      mt="$1"
+                      css={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+                    >
+                      {envError()}
+                    </Text>
+                  </details>
+                </HStack>
               </VStack>
             </Show>
 
