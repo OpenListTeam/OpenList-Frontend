@@ -9,5 +9,10 @@
   "success": "Initialized successfully, please login",
   "failed": "Initialization failed",
   "password_mismatch": "Passwords do not match",
-  "password_too_short": "Password must be at least 4 characters"
+  "password_too_short": "Password must be at least 4 characters",
+  "creating_account": "Creating admin account...",
+  "waiting_storage": "Waiting for storage to sync...",
+  "storage_ready": "Storage ready",
+  "waiting_storage_tip": "Cloud KV storage has sync latency, please wait (usually a few seconds)",
+  "waiting_timeout": "Storage sync timed out. Try logging in; if it fails, retry shortly"
 }
