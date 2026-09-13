@@ -11,7 +11,7 @@ import { me } from "~/store"
 
 const AddOrEdit = () => {
   const t = useT()
-  const { params, back, to } = useRouter()
+  const { params, to } = useRouter()
   const { id } = params
   const [shareLoading, loadShare] = useFetch(
     (): PResp<ShareInfo> => r.get(`/share/get?id=${id}`),
@@ -192,7 +192,7 @@ const AddOrEdit = () => {
             resp,
             () => {
               notify.success(t("global.save_success"))
-              back()
+              to("/@manage/shares")
             },
             (_msg, _code) => {
               if (resp.data.id) {
