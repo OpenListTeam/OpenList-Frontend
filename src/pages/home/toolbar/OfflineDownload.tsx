@@ -17,11 +17,28 @@ const deletePolicies = [
   "upload_download_stream",
   "delete_on_upload_succeed",
   "delete_on_upload_failed",
+  "delete_after_seeding",
   "delete_never",
   "delete_always",
 ] as const
 
 type DeletePolicy = (typeof deletePolicies)[number]
+
+const defaultDeletePolicy: DeletePolicy = "upload_download_stream"
+const fallbackDeletePolicy: DeletePolicy = "delete_on_upload_succeed"
+
+const supportsDeleteAfterSeeding = (tool: string) =>
+  tool === "qBittorrent" || tool === "Transmission"
+
+const supportsDeletePolicy = (policy: DeletePolicy, tool: string) => {
+  if (policy === "upload_download_stream") {
+    return tool === "SimpleHttp"
+  }
+  if (policy === "delete_after_seeding") {
+    return supportsDeleteAfterSeeding(tool)
+  }
+  return true
+}
 
 function utf8Decode(data: Uint8Array): string {
   return crypto.enc.Utf8.stringify(crypto.lib.WordArray.create(data))
@@ -58,14 +75,19 @@ export const OfflineDownload = () => {
     return r.get("/public/offline_download_tools")
   })
   const [tool, setTool] = createSignal("")
-  const [deletePolicy, setDeletePolicy] = createSignal<DeletePolicy>(
-    "upload_download_stream",
-  )
+  const [deletePolicy, setDeletePolicy] =
+    createSignal<DeletePolicy>(defaultDeletePolicy)
+  const updateTool = (nextTool: string) => {
+    if (!supportsDeletePolicy(deletePolicy(), nextTool)) {
+      setDeletePolicy(fallbackDeletePolicy)
+    }
+    setTool(nextTool)
+  }
   onMount(async () => {
     const resp = await reqTool()
     handleResp(resp, (data) => {
       setTools(data)
-      setTool(data[0])
+      updateTool(data[0])
     })
   })
 
@@ -120,13 +142,7 @@ export const OfflineDownload = () => {
           <SelectWrapper
             value={tool()}
             onChange={(v) => {
-              if (
-                v !== "SimpleHttp" &&
-                deletePolicy() === "upload_download_stream"
-              ) {
-                setDeletePolicy("delete_on_upload_succeed")
-              }
-              setTool(v)
+              updateTool(v)
             }}
             options={tools().map((tool) => {
               return { value: tool, label: tool }
@@ -140,11 +156,7 @@ export const OfflineDownload = () => {
             value={deletePolicy()}
             onChange={(v) => setDeletePolicy(v as DeletePolicy)}
             options={deletePolicies
-              .filter((policy) =>
-                policy == "upload_download_stream"
-                  ? tool() === "SimpleHttp"
-                  : true,
-              )
+              .filter((policy) => supportsDeletePolicy(policy, tool()))
               .map((policy) => {
                 return {
                   value: policy,
