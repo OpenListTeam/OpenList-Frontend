@@ -55,24 +55,44 @@ export interface TaskLocalSetter {
 
 export type TaskAttribute = TaskInfo & TaskViewAttribute & TaskLocalContainer
 
+const TaskState = {
+  Pending: 0,
+  Running: 1,
+  Canceling: 3,
+  Errored: 5,
+  Failing: 6,
+  WaitingRetry: 8,
+  BeforeRetry: 9,
+} as const
+
 const undoneStatePriority: Record<number, number> = {
-  1: 0,
-  0: 1,
-  8: 1,
-  9: 1,
-  3: 2,
-  5: 2,
-  6: 2,
+  [TaskState.Running]: 0,
+  [TaskState.Pending]: 1,
+  [TaskState.WaitingRetry]: 1,
+  [TaskState.BeforeRetry]: 1,
+  [TaskState.Canceling]: 2,
+  [TaskState.Errored]: 2,
+  [TaskState.Failing]: 2,
 }
 
+const waitingStates = new Set<number>([
+  TaskState.Pending,
+  TaskState.WaitingRetry,
+  TaskState.BeforeRetry,
+])
 export const Tasks = (props: TasksProps) => {
   const t = useT()
   const [loading, get] = useFetch((): PResp<TaskInfo[]> =>
     r.get(`/task/${props.type}/${props.done}`),
   )
   const [tasks, setTasks] = createSignal<TaskAttribute[]>([])
-  const [orderBy, setOrderBy] = createSignal<TaskOrderBy>("name")
-  const [orderReverse, setOrderReverse] = createSignal(false)
+  const [orderBy, setOrderBy] = createSignal<TaskOrderBy>(
+    props.done === "done" ? "end_time" : "name",
+  )
+  const [orderReverse, setOrderReverse] = createSignal(props.done === "done")
+  const [showOnlyRunning, setShowOnlyRunning] = createSignal(false)
+  const [page, setPage] = createSignal(1)
+  const pageSize = 20
   const sorter: Record<TaskOrderBy, (a: TaskInfo, b: TaskInfo) => number> = {
     name: (a, b) => (a.name > b.name ? 1 : -1),
     creator: (a, b) =>
@@ -93,6 +113,11 @@ export const Tasks = (props: TasksProps) => {
         : a.progress < b.progress
           ? 1
           : -1,
+    end_time: (a, b) => {
+      const aTime = a.end_time ? new Date(a.end_time).getTime() : 0
+      const bTime = b.end_time ? new Date(b.end_time).getTime() : 0
+      return aTime === bTime ? (a.id > b.id ? 1 : -1) : aTime > bTime ? 1 : -1
+    },
   }
   const curSorter = createMemo(() => {
     return (a: TaskInfo, b: TaskInfo) => {
@@ -152,10 +177,8 @@ export const Tasks = (props: TasksProps) => {
     })
   }
   refresh()
-  if (props.done === "undone") {
-    const interval = setInterval(refresh, 2000)
-    onCleanup(() => clearInterval(interval))
-  }
+  const interval = setInterval(refresh, props.done === "undone" ? 2000 : 10000)
+  onCleanup(() => clearInterval(interval))
   const [clearDoneLoading, clearDone] = useFetch((): PEmptyResp =>
     r.post(`/task/${props.type}/clear_done`),
   )
@@ -177,11 +200,20 @@ export const Tasks = (props: TasksProps) => {
     }
   })
   const [showOnlyMine, setShowOnlyMine] = createSignal(me().role !== 2)
+  const runningCount = createMemo(
+    () => tasks().filter((task) => task.state === TaskState.Running).length,
+  )
+  const waitingCount = createMemo(
+    () => tasks().filter((task) => waitingStates.has(task.state)).length,
+  )
   const taskFilter = createMemo(() => {
     const regex = regexFilter()
     const mine = showOnlyMine()
+    const runningOnly = props.done === "undone" && showOnlyRunning()
     return (task: TaskInfo): boolean =>
-      regex.test(task.name) && (!mine || task.creator === me().username)
+      regex.test(task.name) &&
+      (!mine || task.creator === me().username) &&
+      (!runningOnly || task.state === TaskState.Running)
   })
   const filteredTask = createMemo(() => {
     return tasks().filter(taskFilter())
@@ -235,9 +267,13 @@ export const Tasks = (props: TasksProps) => {
       notify.error(`${key}: ${value}`)
     })
   }
-  const [page, setPage] = createSignal(1)
-  const pageSize = 20
   const operateName = props.done === "undone" ? "cancel" : "delete"
+  createEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filteredTask().length / pageSize))
+    if (page() > maxPage) {
+      setPage(maxPage)
+    }
+  })
   const curTasks = createMemo(() => {
     const start = (page() - 1) * pageSize
     const end = start + pageSize
@@ -263,6 +299,7 @@ export const Tasks = (props: TasksProps) => {
             setOrderReverse(false)
           })
         }
+        setPage(1)
         refresh()
       },
     }
@@ -282,6 +319,26 @@ export const Tasks = (props: TasksProps) => {
     <VStack w="$full" alignItems="start" spacing="$2">
       <Heading size="lg">{t(`tasks.${props.done}`)}</Heading>
       <HStack gap="$2" flexWrap="wrap">
+        <Show when={props.done === "undone"}>
+          <Text size="sm">
+            {t("tasks.running_count", { count: runningCount() })}
+          </Text>
+          <Text size="sm">
+            {t("tasks.waiting_count", { count: waitingCount() })}
+          </Text>
+          <Button
+            size="sm"
+            colorScheme={showOnlyRunning() ? "accent" : "neutral"}
+            onClick={() => {
+              setShowOnlyRunning(!showOnlyRunning())
+              setPage(1)
+            }}
+          >
+            {showOnlyRunning()
+              ? t("tasks.show_all_undone")
+              : t("tasks.show_running_only")}
+          </Button>
+        </Show>
         <Show when={props.done === "done"}>
           <Button colorScheme="accent" loading={loading()} onClick={refresh}>
             {t(`global.refresh`)}
@@ -348,13 +405,19 @@ export const Tasks = (props: TasksProps) => {
           width="auto"
           placeholder={t(`tasks.filter`)}
           value={regexFilterValue()}
-          onInput={(e: any) => setRegexFilterValue(e.target.value as string)}
+          onInput={(e: any) => {
+            setRegexFilterValue(e.target.value as string)
+            setPage(1)
+          }}
           invalid={regexCompileFailed()}
         />
         <Show when={me().role === 2}>
           <Checkbox
             checked={showOnlyMine()}
-            onChange={(e: any) => setShowOnlyMine(e.target.checked as boolean)}
+            onChange={(e: any) => {
+              setShowOnlyMine(e.target.checked as boolean)
+              setPage(1)
+            }}
           >
             {t(`tasks.show_only_mine`)}
           </Checkbox>
