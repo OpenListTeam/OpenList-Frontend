@@ -1,7 +1,7 @@
 import { getSettingNumber, password } from "~/store"
 import { Resp } from "~/types"
 import { r } from "~/utils"
-import { SetUpload, Upload } from "./types"
+import { seedUploadHeaders, SetUpload, Upload } from "./types"
 import { calculateHash } from "./util"
 import { StreamUpload } from "./stream"
 
@@ -72,13 +72,22 @@ export const MultipartUpload: Upload = async (
   _asTask = false, // sessions are synchronous pipelines; As-Task does not apply
   overwrite = false,
   rapid = false,
+  seedOptions,
 ): Promise<Error | undefined> => {
   // a single-chunk multipart upload costs 3 requests where Stream costs 1,
   // and small files pass CDN body limits anyway — silently fall back
   const fallbackThreshold =
     Math.max(1, getSettingNumber("multipart_chunk_size", 10)) * 1024 * 1024
   if (file.size <= fallbackThreshold) {
-    return StreamUpload(uploadPath, file, setUpload, false, overwrite, rapid)
+    return StreamUpload(
+      uploadPath,
+      file,
+      setUpload,
+      false,
+      overwrite,
+      rapid,
+      seedOptions,
+    )
   }
 
   const initHeaders: Record<string, string | number> = {
@@ -91,6 +100,7 @@ export const MultipartUpload: Upload = async (
     "Last-Modified": file.lastModified,
     Password: password(),
     Overwrite: overwrite.toString(),
+    ...seedUploadHeaders(seedOptions),
   }
   if (rapid) {
     setUpload("status", "hashing")
@@ -125,7 +135,15 @@ export const MultipartUpload: Upload = async (
   // 后端不支持分片（存储驱动无会话上传能力）时返回 data:null，
   // 回退到流式上传，保证任意存储都能上传
   if (!session) {
-    return StreamUpload(uploadPath, file, setUpload, false, overwrite, rapid)
+    return StreamUpload(
+      uploadPath,
+      file,
+      setUpload,
+      false,
+      overwrite,
+      rapid,
+      seedOptions,
+    )
   }
   const uploadId = session.upload_id
   const chunkSize = session.chunk_size

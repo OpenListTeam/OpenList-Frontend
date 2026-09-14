@@ -12,6 +12,8 @@ import {
   Button,
   Box,
   Stack,
+  SimpleGrid,
+  Divider,
 } from "@hope-ui/solid"
 import { createSignal, For, Show } from "solid-js"
 import { usePath, useRouter, useT } from "~/hooks"
@@ -27,6 +29,7 @@ import { UploadFileProps, StatusBadge } from "./types"
 import { File2Upload, traverseFileTree } from "./util"
 import { SelectWrapper } from "~/components"
 import { getUploads } from "./uploads"
+import { SeedFormat, SeedHashAlgorithm, SeedHashMatrix } from "~/types"
 
 const UploadFile = (props: UploadFileProps & { onRetry?: () => void }) => {
   const t = useT()
@@ -91,6 +94,13 @@ const Upload = () => {
   const { refresh } = usePath()
   const [drag, setDrag] = createSignal(false)
   const [uploading, setUploading] = createSignal(false)
+  const [sidecars, setSidecars] = createSignal<SeedFormat[]>([])
+  const [seedPieceSize, setSeedPieceSize] = createSignal(10 * 1024 * 1024)
+  const [seedMatrix, setSeedMatrix] = createSignal<SeedHashMatrix>({
+    md5: { whole: false, pieces: false },
+    sha1: { whole: false, pieces: false },
+    sha256: { whole: false, pieces: false },
+  })
   const [uploadFiles, setUploadFiles] = createStore<{
     uploads: UploadFileProps[]
   }>({
@@ -129,7 +139,12 @@ const Upload = () => {
   const [curUploader, setCurUploader] = createSignal(uploaders[0])
   // multipart sessions are synchronous pipelines with their own progress and
   // retry semantics; "add as task" does not apply to them
-  const asTaskUnsupported = () => curUploader()?.name === "Multipart"
+  const effectiveUploader = () =>
+    sidecars().length
+      ? uploaders.find((uploader) => uploader.name === "Stream")!
+      : curUploader()
+  const asTaskUnsupported = () =>
+    sidecars().length > 0 || effectiveUploader()?.name === "Multipart"
   const retryFile = (path: string) => {
     const file = fileMap.get(path)
     if (!file) return
@@ -138,12 +153,39 @@ const Upload = () => {
     setUpload(path, "speed", 0)
     handleFile(file)
   }
+  const effectiveSeedMatrix = (): SeedHashMatrix => ({
+    md5: sidecars().includes("cas")
+      ? { whole: true, pieces: true }
+      : seedMatrix().md5,
+    sha1: sidecars().includes("torrent")
+      ? { whole: true, pieces: true }
+      : seedMatrix().sha1,
+    sha256: seedMatrix().sha256,
+  })
+  const toggleSidecar = (format: SeedFormat, checked: boolean) => {
+    setSidecars((current) =>
+      checked
+        ? Array.from(new Set([...current, format]))
+        : current.filter((item) => item !== format),
+    )
+    if (format === "cas" && checked) setSeedPieceSize(10 * 1024 * 1024)
+  }
+  const setSeedHash = (
+    algorithm: SeedHashAlgorithm,
+    scope: "whole" | "pieces",
+    checked: boolean,
+  ) => {
+    setSeedMatrix((current) => ({
+      ...current,
+      [algorithm]: { ...current[algorithm], [scope]: checked },
+    }))
+  }
   const handleFile = async (file: File) => {
     const path = file.webkitRelativePath ? file.webkitRelativePath : file.name
     setUpload(path, "status", "uploading")
     const uploadPath = pathJoin(pathname(), path)
     try {
-      const err = await curUploader()
+      const err = await effectiveUploader()
         .upload(
           uploadPath,
           file,
@@ -153,6 +195,11 @@ const Upload = () => {
           asTaskUnsupported() ? false : uploadConfig.asTask,
           uploadConfig.overwrite,
           uploadConfig.rapid,
+          {
+            formats: sidecars(),
+            hash_matrix: effectiveSeedMatrix(),
+            piece_size: seedPieceSize(),
+          },
         )
         .catch((err) => err)
       if (!err) {
@@ -359,6 +406,96 @@ const Upload = () => {
                 {t("home.upload.try_rapid")}
               </Checkbox>
             </Stack>
+            <Divider w="$full" />
+            <VStack w="$full" alignItems="stretch" spacing="$2">
+              <Text fontSize="$sm" fontWeight="$semibold">
+                {t("home.upload.sidecars")}
+              </Text>
+              <HStack spacing="$4" flexWrap="wrap">
+                <For each={["torrent", "cas", "oss"] as SeedFormat[]}>
+                  {(format) => (
+                    <Checkbox
+                      checked={sidecars().includes(format)}
+                      onChange={(event) =>
+                        toggleSidecar(format, event.currentTarget.checked)
+                      }
+                    >
+                      {format.toUpperCase()}
+                    </Checkbox>
+                  )}
+                </For>
+              </HStack>
+              <Text fontSize="$xs" color="$neutral10">
+                {t("home.upload.sidecars_hint")}
+              </Text>
+              <Show when={sidecars().length > 0}>
+                <SimpleGrid columns={{ "@initial": 1, "@md": 3 }} gap="$2">
+                  <For each={["md5", "sha1", "sha256"] as SeedHashAlgorithm[]}>
+                    {(algorithm) => {
+                      const forced = () =>
+                        (algorithm === "sha1" &&
+                          sidecars().includes("torrent")) ||
+                        (algorithm === "md5" && sidecars().includes("cas"))
+                      return (
+                        <VStack
+                          alignItems="flex-start"
+                          spacing="$1"
+                          border="1px solid $neutral7"
+                          borderRadius="$md"
+                          p="$2"
+                        >
+                          <Text fontSize="$sm" fontWeight="$semibold">
+                            {algorithm.toUpperCase()}
+                          </Text>
+                          <Checkbox
+                            checked={effectiveSeedMatrix()[algorithm].whole}
+                            disabled={forced()}
+                            onChange={(event) =>
+                              setSeedHash(
+                                algorithm,
+                                "whole",
+                                event.currentTarget.checked,
+                              )
+                            }
+                          >
+                            {t("home.transfer_seed.whole")}
+                          </Checkbox>
+                          <Checkbox
+                            checked={effectiveSeedMatrix()[algorithm].pieces}
+                            disabled={forced()}
+                            onChange={(event) =>
+                              setSeedHash(
+                                algorithm,
+                                "pieces",
+                                event.currentTarget.checked,
+                              )
+                            }
+                          >
+                            {t("home.transfer_seed.pieces")}
+                          </Checkbox>
+                        </VStack>
+                      )
+                    }}
+                  </For>
+                </SimpleGrid>
+                <Box maxW="$48">
+                  <Text fontSize="$sm" mb="$1">
+                    {t("home.transfer_seed.piece_size")}
+                  </Text>
+                  <SelectWrapper
+                    value={seedPieceSize().toString()}
+                    onChange={(value) => setSeedPieceSize(Number(value))}
+                    options={(sidecars().includes("cas")
+                      ? [10]
+                      : [1, 2, 4, 8, 10, 16]
+                    ).map((size) => ({
+                      value: String(size * 1024 * 1024),
+                      label: `${size} MiB`,
+                    }))}
+                  />
+                </Box>
+              </Show>
+            </VStack>
           </Show>
         </VStack>
       </Show>

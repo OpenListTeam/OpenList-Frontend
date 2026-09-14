@@ -9,7 +9,10 @@ import { Mkdir } from "./Mkdir"
 import { RecursiveMove } from "./RecursiveMove"
 import { RemoveEmptyDirectory } from "./RemoveEmptyDirectory"
 import { BatchRename } from "./BatchRename"
-import { OfflineDownloadEnhanced } from "./OfflineDownloadEnhanced"
+import {
+  OfflineDownloadEnhanced,
+  TransferSeedGenerator,
+} from "./OfflineDownloadEnhanced"
 import { PackageDownloadModal } from "./Download"
 import { lazy } from "solid-js"
 import { ModalWrapper } from "./ModalWrapper"
@@ -35,6 +38,7 @@ export const Modal = () => {
       <RemoveEmptyDirectory />
       <BatchRename />
       <OfflineDownloadEnhanced />
+      <TransferSeedGenerator />
       <PackageDownloadModal />
       <ModalWrapper name="upload" title="home.toolbar.upload">
         <Upload />

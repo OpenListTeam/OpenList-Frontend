@@ -8,6 +8,11 @@ const langs = import.meta.glob("~/lang/*/index.json", {
   import: "lang",
 })
 
+// glob search for all entry.ts files
+const entryModules = import.meta.glob<{ dict: RawDictionary }>(
+  "~/lang/*/entry.ts",
+)
+
 // all available languages
 export const languages = Object.keys(langs).map((langPath) => {
   const langCode = langPath.split("/")[3]
