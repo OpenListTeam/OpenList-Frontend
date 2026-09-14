@@ -3,7 +3,7 @@ import { JSXElement, mergeProps, Show } from "solid-js"
 import { getMainColor } from "~/store"
 export const FullScreenLoading = () => {
   return (
-    <Center h="100vh">
+    <Center h="100vh" role="status" aria-busy="true" aria-label="Loading">
       <Spinner
         thickness="4px"
         speed="0.65s"
@@ -14,7 +14,6 @@ export const FullScreenLoading = () => {
     </Center>
   )
 }
-
 export const FullLoading = (props: {
   py?: string
   size?: string
@@ -30,7 +29,7 @@ export const FullLoading = (props: {
     props,
   )
   return (
-    <Center ref={props.ref} h="$full" w="$full" py={merged.py}>
+    <Center ref={props.ref} h="$full" w="$full" py={merged.py} role="status" aria-busy="true" aria-label="Loading">
       <Spinner
         thickness={`${merged.thickness}px`}
         speed="0.65s"

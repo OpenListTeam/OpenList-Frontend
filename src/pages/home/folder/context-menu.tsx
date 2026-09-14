@@ -61,6 +61,7 @@ export const ContextMenu = () => {
       animation="scale"
       theme={colorMode() !== "dark" ? "light" : "dark"}
       style="z-index: var(--hope-zIndices-popover)"
+      aria-label={t("home.toolbar.more")}
     >
       <Show when={openWithPreviews().length > 0}>
         <Submenu label={<ItemContent name="open_with" />}>
@@ -81,6 +82,7 @@ export const ContextMenu = () => {
         {(name) => (
           <Item
             hidden={!userCan(name) || !objStore.write || isShare()}
+            aria-label={t(`home.toolbar.${name}`)}
             onClick={() => {
               bus.emit("tool", name)
             }}
@@ -91,6 +93,7 @@ export const ContextMenu = () => {
       </For>
       <Item
         hidden={!userCan("share") || isShare()}
+        aria-label={t("home.toolbar.share")}
         onClick={() => {
           bus.emit("tool", "share")
         }}
@@ -107,6 +110,7 @@ export const ContextMenu = () => {
             selectedObjs().some((o) => !isArchive(o.name))
           )
         }}
+        aria-label={t("home.toolbar.decompress")}
         onClick={() => {
           bus.emit("tool", "decompress")
         }}
