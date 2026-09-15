@@ -17,6 +17,8 @@
   "preset": {
     "monthly": "Monthly",
     "weekly": "Weekly",
+    "daily": "Daily",
+    "everyNHours": "Every N Hours",
     "everyN": "Every N Minutes",
     "custom": "Custom"
   },

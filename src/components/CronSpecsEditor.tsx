@@ -150,6 +150,18 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
                         </SelectOptionText>
                         <SelectOptionIndicator />
                       </SelectOption>
+                      <SelectOption value="daily">
+                        <SelectOptionText>
+                          {t("cronjobs.preset.daily")}
+                        </SelectOptionText>
+                        <SelectOptionIndicator />
+                      </SelectOption>
+                      <SelectOption value="everyNHours">
+                        <SelectOptionText>
+                          {t("cronjobs.preset.everyNHours")}
+                        </SelectOptionText>
+                        <SelectOptionIndicator />
+                      </SelectOption>
                       <SelectOption value="everyN">
                         <SelectOptionText>
                           {t("cronjobs.preset.everyN")}
@@ -249,6 +261,71 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
                         i(),
                         "hour",
                         clamp(Number(e.currentTarget.value), 0, 23),
+                      )
+                    }
+                  />
+                  <Text>{t("cronjobs.unit_hour")}</Text>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={row.minute}
+                    w="$20"
+                    onInput={(e) =>
+                      setRows(
+                        i(),
+                        "minute",
+                        clamp(Number(e.currentTarget.value), 0, 59),
+                      )
+                    }
+                  />
+                  <Text>{t("cronjobs.unit_minute")}</Text>
+                </Show>
+
+                <Show when={row.kind === "daily"}>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={row.hour}
+                    w="$20"
+                    onInput={(e) =>
+                      setRows(
+                        i(),
+                        "hour",
+                        clamp(Number(e.currentTarget.value), 0, 23),
+                      )
+                    }
+                  />
+                  <Text>{t("cronjobs.unit_hour")}</Text>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={row.minute}
+                    w="$20"
+                    onInput={(e) =>
+                      setRows(
+                        i(),
+                        "minute",
+                        clamp(Number(e.currentTarget.value), 0, 59),
+                      )
+                    }
+                  />
+                  <Text>{t("cronjobs.unit_minute")}</Text>
+                </Show>
+
+                <Show when={row.kind === "everyNHours"}>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={row.n}
+                    w="$20"
+                    onInput={(e) =>
+                      setRows(
+                        i(),
+                        "n",
+                        clamp(Number(e.currentTarget.value), 1, 24),
                       )
                     }
                   />

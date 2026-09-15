@@ -154,7 +154,8 @@ export const formatRunTime = (date: Date): string => {
 }
 
 /** 执行周期预设行类型。 */
-export type SpecRowKind = "monthly" | "weekly" | "everyN" | "custom"
+export type SpecRowKind =
+  "monthly" | "weekly" | "daily" | "everyNHours" | "everyN" | "custom"
 
 export interface SpecRow {
   kind: SpecRowKind
@@ -166,7 +167,7 @@ export interface SpecRow {
   hour: number
   /** 分钟（0-59）。 */
   minute: number
-  /** everyN：间隔分钟数。 */
+  /** everyN：间隔分钟数；everyNHours：间隔小时数。 */
   n: number
   /** custom：原始表达式。 */
   expr: string
@@ -189,6 +190,10 @@ export const rowToCron = (row: SpecRow): string => {
       return `${row.minute} ${row.hour} ${row.day} * *`
     case "weekly":
       return `${row.minute} ${row.hour} * * ${row.weekday}`
+    case "daily":
+      return `${row.minute} ${row.hour} * * *`
+    case "everyNHours":
+      return `${row.minute} */${row.n} * * *`
     case "everyN":
       return `*/${row.n} * * * *`
     default:
@@ -203,23 +208,59 @@ export const cronToRow = (spec: string): SpecRow => {
     field !== undefined && /^\d+$/.test(field) ? Number(field) : null
   if (fields.length === 5) {
     const [minute, hour, dom, month, dow] = fields
-    const step = minute.startsWith("*/")
-    const stepN = step ? Number(minute.slice(2)) : null
+    const stepOf = (field: string) =>
+      field.startsWith("*/") ? Number(field.slice(2)) : null
+    const m = single(minute)
+    const h = single(hour)
+    const d = single(dom)
+    const w = single(dow)
+    // 每N分钟：*/N * * * *
+    const minuteStep = stepOf(minute)
     if (
-      step &&
-      Number.isInteger(stepN) &&
-      stepN! > 0 &&
+      minuteStep !== null &&
+      Number.isInteger(minuteStep) &&
+      minuteStep > 0 &&
       hour === "*" &&
       dom === "*" &&
       month === "*" &&
       dow === "*"
     ) {
-      return { ...defaultSpecRow(), kind: "everyN", n: stepN! }
+      return { ...defaultSpecRow(), kind: "everyN", n: minuteStep }
     }
-    const m = single(minute)
-    const h = single(hour)
-    const d = single(dom)
-    const w = single(dow)
+    // 每N小时：M */N * * *
+    const hourStep = stepOf(hour)
+    if (
+      m !== null &&
+      hourStep !== null &&
+      Number.isInteger(hourStep) &&
+      hourStep > 0 &&
+      dom === "*" &&
+      month === "*" &&
+      dow === "*"
+    ) {
+      return {
+        ...defaultSpecRow(),
+        kind: "everyNHours",
+        n: hourStep,
+        minute: m,
+      }
+    }
+    // 每天：M H * * *
+    if (
+      m !== null &&
+      h !== null &&
+      dom === "*" &&
+      month === "*" &&
+      dow === "*"
+    ) {
+      return {
+        ...defaultSpecRow(),
+        kind: "daily",
+        hour: h,
+        minute: m,
+      }
+    }
+    // 每月：M H D * *
     if (
       m !== null &&
       h !== null &&
@@ -235,6 +276,7 @@ export const cronToRow = (spec: string): SpecRow => {
         minute: m,
       }
     }
+    // 每周：M H * * W
     if (
       m !== null &&
       h !== null &&
