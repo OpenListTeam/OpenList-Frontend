@@ -148,24 +148,20 @@ const CronJobs = () => {
                       >
                         {t("cronjobs.run")}
                       </Button>
-                      <Show
-                        when={!job.running}
-                        fallback={<Text>{t("cronjobs.running")}</Text>}
+                      <Button
+                        disabled={job.running}
+                        colorScheme="danger"
+                        loading={deletingId() === job.id}
+                        onClick={async () => {
+                          const resp = await deleteJob(job.id)
+                          handleResp(resp, () => {
+                            notify.success(t("global.delete_success"))
+                            refresh()
+                          })
+                        }}
                       >
-                        <Button
-                          colorScheme="danger"
-                          loading={deletingId() === job.id}
-                          onClick={async () => {
-                            const resp = await deleteJob(job.id)
-                            handleResp(resp, () => {
-                              notify.success(t("global.delete_success"))
-                              refresh()
-                            })
-                          }}
-                        >
-                          {t("global.delete")}
-                        </Button>
-                      </Show>
+                        {t("global.delete")}
+                      </Button>
                     </HStack>
                   </Td>
                 </Tr>
