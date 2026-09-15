@@ -362,6 +362,32 @@ const AddOrEdit = () => {
         onChange={setCronSpecs}
       />
 
+      {/* 任务参数：字段由后端 schema 决定（如 Source Path、Destination Path 等）。 */}
+      <ResponsiveGrid>
+        <For each={fields()}>
+          {(field) => (
+            <FormControl
+              w="$full"
+              display="flex"
+              flexDirection="column"
+              required={field.required}
+            >
+              <FormLabel for={`cronjob-args-${field.name}`}>
+                {t(field.label_key)}
+              </FormLabel>
+              <ArgInput
+                field={field}
+                value={args[field.name]}
+                onChange={(value) => setArgs(field.name, value)}
+              />
+              <Show when={field.help_key}>
+                <FormHelperText>{t(field.help_key)}</FormHelperText>
+              </Show>
+            </FormControl>
+          )}
+        </For>
+      </ResponsiveGrid>
+
       {/* 底部按钮使用 storages/AddOrEdit 的同一种横向排列。 */}
       <HStack
         mt="$2"
