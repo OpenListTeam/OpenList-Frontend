@@ -19,8 +19,6 @@ import {
   Tbody,
   Td,
   Text,
-  Th,
-  Thead,
   Tooltip,
   Tr,
   VStack,
@@ -115,13 +113,6 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
         {/* 窄容器下表格内容可能超过可用宽度，横向滚动而不是撑破页面。 */}
         <Box overflowX="auto" w="$full">
           <Table w="$full">
-            <Thead>
-              <Tr>
-                <Th>{t("cronjobs.column_type")}</Th>
-                <Th>{t("cronjobs.column_schedule")}</Th>
-                <Th>{t("cronjobs.column_action")}</Th>
-              </Tr>
-            </Thead>
             <Tbody>
               <For each={rows}>
                 {(row, i) => (
@@ -179,8 +170,8 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
                         </SelectContent>
                       </Select>
                     </Td>
-                    <Td>
-                      <HStack spacing="$2" wrap="wrap">
+                    <Td w="$xl">
+                      <HStack spacing="$2">
                         <Show when={row.kind === "monthly"}>
                           <Input
                             type="number"
