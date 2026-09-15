@@ -376,12 +376,9 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
                     </Show>
                   }
                 >
-                  <Button size="sm" variant="ghost" colorScheme="neutral">
-                    {t("cronjobs.preview")}
-                  </Button>
+                  <Button variant="ghost">{t("cronjobs.preview")}</Button>
                 </Tooltip>
                 <Button
-                  size="sm"
                   variant="ghost"
                   colorScheme="danger"
                   disabled={rows.length <= 1}
@@ -411,9 +408,7 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
                 </VStack>
               }
             >
-              <Button variant="ghost" colorScheme="neutral">
-                {t("cronjobs.next_runs")}
-              </Button>
+              <Button variant="ghost">{t("cronjobs.next_runs")}</Button>
             </Tooltip>
           </HStack>
         </VStack>
