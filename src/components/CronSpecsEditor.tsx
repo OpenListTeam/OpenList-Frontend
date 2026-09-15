@@ -358,7 +358,6 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
                 </Show>
 
                 <Tooltip
-                  placement="top"
                   withArrow
                   onOpen={() => setPreviewIndex(i())}
                   label={
@@ -377,9 +376,14 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
                     </Show>
                   }
                 >
-                  <Button>{t("cronjobs.preview")}</Button>
+                  <Button size="sm" variant="ghost" colorScheme="neutral">
+                    {t("cronjobs.preview")}
+                  </Button>
                 </Tooltip>
                 <Button
+                  size="sm"
+                  variant="ghost"
+                  colorScheme="danger"
                   disabled={rows.length <= 1}
                   onClick={() => removeRow(i())}
                 >
@@ -388,35 +392,33 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
               </HStack>
             )}
           </For>
-          <Button size="sm" variant="ghost" onClick={addRow}>
-            {t("cronjobs.add_spec")}
-          </Button>
+          <HStack spacing="$2">
+            <Button onClick={addRow}>{t("cronjobs.add_spec")}</Button>
+            {/* 近5次执行：hover 时按当前配置实时计算未来的执行时间。 */}
+            <Tooltip
+              withArrow
+              onOpen={() =>
+                setNextRuns(nextRunTimes(cronSpecs(), new Date(), 5))
+              }
+              label={
+                <VStack spacing="$1" alignItems="start">
+                  <For each={nextRuns()}>
+                    {(time) => <Text>{formatRunTime(time)}</Text>}
+                  </For>
+                  <Show when={nextRuns().length === 0}>
+                    <Text>{t("cronjobs.next_runs_empty")}</Text>
+                  </Show>
+                </VStack>
+              }
+            >
+              <Button variant="ghost" colorScheme="neutral">
+                {t("cronjobs.next_runs")}
+              </Button>
+            </Tooltip>
+          </HStack>
         </VStack>
         <FormHelperText>{t("cronjobs.cron_specs_help")}</FormHelperText>
       </FormControl>
-
-      {/* 近5次执行：hover 时按当前配置实时计算未来的执行时间。 */}
-      <Box w="$full" mt="$2">
-        <Tooltip
-          placement="bottom-start"
-          withArrow
-          onOpen={() => setNextRuns(nextRunTimes(cronSpecs(), new Date(), 5))}
-          label={
-            <VStack spacing="$1" alignItems="start">
-              <For each={nextRuns()}>
-                {(time) => <Text>{formatRunTime(time)}</Text>}
-              </For>
-              <Show when={nextRuns().length === 0}>
-                <Text>{t("cronjobs.next_runs_empty")}</Text>
-              </Show>
-            </VStack>
-          }
-        >
-          <Button size="sm" variant="ghost">
-            {t("cronjobs.next_runs")}
-          </Button>
-        </Tooltip>
-      </Box>
     </>
   )
 }
