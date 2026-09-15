@@ -54,8 +54,8 @@ export interface CronJob {
   name: string
   /** 任务类型；后端会根据已注册 Handler 校验。 */
   type: string
-  /** 标准 5 字段 cron 表达式。 */
-  cron_spec: string
+  /** 标准 5 字段 cron 表达式列表；任务在任一表达式命中时执行。 */
+  cron_specs: string[]
   /** 是否启用定时调度。 */
   enabled: boolean
   /** 是否正在执行；执行中不能修改或删除。 */
@@ -74,7 +74,8 @@ export interface CronJob {
 export interface CronJobReq {
   name: string
   type: string
-  cron_spec: string
+  /** 执行时间列表；每条都是标准 5 字段 cron 表达式。 */
+  cron_specs: string[]
   enabled: boolean
   args: CronJobArgs
 }

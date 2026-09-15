@@ -96,7 +96,7 @@ const CronJobs = () => {
                 each={[
                   "name",
                   "type",
-                  "cron_spec",
+                  "cron_specs",
                   "enabled",
                   "running",
                   "last_run_at",
@@ -115,7 +115,7 @@ const CronJobs = () => {
                 <Tr>
                   <Td>{job.name}</Td>
                   <Td>{t(`cronjobs.types.${job.type}`)}</Td>
-                  <Td>{job.cron_spec}</Td>
+                  <Td>{(job.cron_specs ?? []).join(", ")}</Td>
                   <Td>
                     <Wether yes={job.enabled} />
                   </Td>

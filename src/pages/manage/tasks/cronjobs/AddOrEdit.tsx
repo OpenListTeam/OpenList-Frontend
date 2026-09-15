@@ -23,6 +23,7 @@ import {
 } from "@hope-ui/solid"
 import { createMemo, createSignal, For, Match, Show, Switch } from "solid-js"
 import { createStore } from "solid-js/store"
+import { CronEditor } from "~/components/CronEditor"
 import { FolderChooseInput, MaybeLoading } from "~/components"
 import { ResponsiveGrid } from "~/pages/manage/common/ResponsiveGrid"
 import { useFetch, useT, useRouter } from "~/hooks"
@@ -155,12 +156,26 @@ const AddOrEdit = () => {
   const [selectedType, setSelectedType] = createSignal<string>("")
   /** 任务参数按 schema 保存为响应式对象，不同类型的字段不同。 */
   const [args, setArgs] = createStore<CronJobArgs>({})
-  /** 通用基础字段。 */
+  /** 通用基础字段；执行时间支持多条，每条都是标准 5 字段 cron 表达式。 */
   const [form, setForm] = createStore({
     name: "",
-    cron_spec: "*/10 * * * *",
+    cron_specs: ["*/10 * * * *"] as string[],
     enabled: true,
   })
+
+  /** 可视化 cron 编辑器状态。 */
+  const [editorOpen, setEditorOpen] = createSignal(false)
+  const [editIndex, setEditIndex] = createSignal(0)
+
+  /** 追加一条默认执行时间。 */
+  const addSpec = () => {
+    setForm("cron_specs", (specs) => [...specs, "0 * * * *"])
+  }
+
+  /** 删除指定执行时间；至少保留一条。 */
+  const removeSpec = (index: number) => {
+    setForm("cron_specs", (specs) => specs.filter((_, idx) => idx !== index))
+  }
 
   /** 当前选中类型的 schema。 */
   const typeInfo = createMemo(() => {
@@ -222,7 +237,10 @@ const AddOrEdit = () => {
         setArgs(nextArgs)
         setForm({
           name: job.name,
-          cron_spec: job.cron_spec,
+          cron_specs:
+            job.cron_specs && job.cron_specs.length > 0
+              ? job.cron_specs
+              : ["*/10 * * * *"],
           enabled: job.enabled,
         })
       })
@@ -249,6 +267,13 @@ const AddOrEdit = () => {
 
   /** 简单必填校验；更复杂的格式校验由后端 Handler.ValidateArgs 完成。 */
   const missingRequired = createMemo(() => {
+    // 至少保留一条非空执行时间。
+    if (
+      form.cron_specs.length === 0 ||
+      form.cron_specs.some((spec) => spec.trim() === "")
+    ) {
+      return true
+    }
     return fields().some((field) => {
       if (!field.required) return false
       const value = buildArgs()[field.name]
@@ -263,7 +288,7 @@ const AddOrEdit = () => {
     const req: CronJobReq = {
       name: form.name,
       type: selectedType(),
-      cron_spec: form.cron_spec,
+      cron_specs: form.cron_specs,
       enabled: form.enabled,
       args: buildArgs(),
     }
@@ -320,7 +345,7 @@ const AddOrEdit = () => {
         </Show>
       </VStack>
 
-      {/* 常规字段和当前类型的动态字段都放在同一个 Settings 布局网格中。 */}
+      {/* 名称和开关；执行时间与参数各自独立成区块。 */}
       <ResponsiveGrid>
         <FormControl w="$full" display="flex" flexDirection="column" required>
           <FormLabel for="cronjob-name">{t("cronjobs.name")}</FormLabel>
@@ -329,17 +354,6 @@ const AddOrEdit = () => {
             value={form.name}
             onInput={(e) => setForm("name", e.currentTarget.value)}
           />
-        </FormControl>
-
-        <FormControl w="$full" display="flex" flexDirection="column" required>
-          <FormLabel for="cronjob-cron">{t("cronjobs.cron_spec")}</FormLabel>
-          <Input
-            id="cronjob-cron"
-            value={form.cron_spec}
-            placeholder="*/10 * * * *"
-            onInput={(e) => setForm("cron_spec", e.currentTarget.value)}
-          />
-          <FormHelperText>{t("cronjobs.cron_spec_help")}</FormHelperText>
         </FormControl>
 
         <FormControl w="$full" display="flex" flexDirection="column">
@@ -352,7 +366,58 @@ const AddOrEdit = () => {
             }
           />
         </FormControl>
+      </ResponsiveGrid>
 
+      {/* 执行时间：支持多条 cron 表达式，每条可手输或可视化编辑。 */}
+      <FormControl
+        w="$full"
+        display="flex"
+        flexDirection="column"
+        required
+        mt="$2"
+      >
+        <FormLabel>{t("cronjobs.cron_specs")}</FormLabel>
+        <VStack w="$full" spacing="$2" alignItems="start">
+          <For each={form.cron_specs}>
+            {(spec, i) => (
+              <HStack w="$full" spacing="$2">
+                <Input
+                  id={`cronjob-cron-${i()}`}
+                  value={spec}
+                  placeholder="*/10 * * * *"
+                  onInput={(e) =>
+                    setForm("cron_specs", i(), e.currentTarget.value)
+                  }
+                />
+                <Button
+                  colorScheme="neutral"
+                  variant="outline"
+                  onClick={() => {
+                    setEditIndex(i())
+                    setEditorOpen(true)
+                  }}
+                >
+                  {t("cronjobs.editor.open")}
+                </Button>
+                <Button
+                  colorScheme="danger"
+                  variant="outline"
+                  disabled={form.cron_specs.length <= 1}
+                  onClick={() => removeSpec(i())}
+                >
+                  {t("cronjobs.remove_spec")}
+                </Button>
+              </HStack>
+            )}
+          </For>
+          <Button size="sm" variant="ghost" onClick={addSpec}>
+            {t("cronjobs.add_spec")}
+          </Button>
+        </VStack>
+        <FormHelperText>{t("cronjobs.cron_specs_help")}</FormHelperText>
+      </FormControl>
+
+      <ResponsiveGrid>
         <For each={fields()}>
           {(field) => (
             <FormControl
@@ -376,6 +441,17 @@ const AddOrEdit = () => {
           )}
         </For>
       </ResponsiveGrid>
+
+      <CronEditor
+        isOpen={editorOpen()}
+        onClose={() => setEditorOpen(false)}
+        specs={form.cron_specs}
+        editIndex={editIndex()}
+        onSubmit={(specs) => {
+          setForm("cron_specs", specs)
+          setEditorOpen(false)
+        }}
+      />
 
       {/* 底部按钮使用 storages/AddOrEdit 的同一种横向排列。 */}
       <HStack
