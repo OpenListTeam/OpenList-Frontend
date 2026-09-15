@@ -38,14 +38,6 @@ import {
   PResp,
 } from "~/types"
 
-/** 将多行表单值转换为后端的 []string；空白行会被忽略。 */
-const splitLines = (value: string): string[] => {
-  return value
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-}
-
 /**
  * 把后端默认值转换为表单值。
  * 后端 schema 统一用字符串保存 default；前端按字段类型转换成真正的 JSON 值。
@@ -63,17 +55,14 @@ const argDefault = (field: CronJobArgField): string | number | boolean => {
 
 /**
  * 编辑时把 API 参数转换为表单值。
- * 目前只有 lines 类型需要转换：后端是 []string，表单使用换行分隔文本。
+ * 后端 Args 现在统一按 JSON 值返回；未提供的字段使用 schema 默认值。
  */
 const argToFormValue = (
   field: CronJobArgField,
   value: CronJobArgs[string] | undefined,
-): string | number | boolean | string[] => {
+): string | number | boolean => {
   if (value === undefined) {
     return argDefault(field)
-  }
-  if (field.type === CronJobArgType.Lines && Array.isArray(value)) {
-    return value.join("\n")
   }
   return value
 }
@@ -81,8 +70,8 @@ const argToFormValue = (
 /** 动态参数输入控件；字段类型由后端 schema 决定。 */
 const ArgInput = (props: {
   field: CronJobArgField
-  value: string | number | boolean | string[]
-  onChange: (value: string | number | boolean | string[]) => void
+  value: string | number | boolean
+  onChange: (value: string | number | boolean) => void
 }) => {
   const t = useT()
   return (
@@ -111,15 +100,10 @@ const ArgInput = (props: {
           }
         />
       </Match>
-      <Match
-        when={
-          props.field.type === CronJobArgType.Text ||
-          props.field.type === CronJobArgType.Lines
-        }
-      >
+      <Match when={props.field.type === CronJobArgType.Text}>
         <Textarea
           id={`cronjob-args-${props.field.name}`}
-          rows={props.field.type === CronJobArgType.Lines ? 5 : 4}
+          rows={4}
           value={String(props.value ?? "")}
           onChange={(e) => props.onChange(e.currentTarget.value)}
         />
@@ -239,16 +223,11 @@ const AddOrEdit = () => {
   }
   init()
 
-  /** 把表单值转换回 API 参数；lines 字段提交为字符串数组。 */
+  /** 把表单值转换回 API 参数；值按 JSON 原样提交，多行字符串不做拆分。 */
   const buildArgs = (): CronJobArgs => {
     const result: CronJobArgs = {}
     for (const field of fields()) {
-      const value = args[field.name]
-      if (field.type === CronJobArgType.Lines) {
-        result[field.name] = splitLines(String(value ?? ""))
-      } else {
-        result[field.name] = value
-      }
+      result[field.name] = args[field.name]
     }
     return result
   }

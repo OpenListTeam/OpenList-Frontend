@@ -2,13 +2,12 @@
  * 计划任务参数统一按 JSON 值保存。
  * 不同任务类型的字段由后端 HandlerInfo 描述，前端不硬编码具体业务类型。
  */
-export type CronJobArgs = Record<string, string | number | boolean | string[]>
+export type CronJobArgs = Record<string, string | number | boolean>
 
 /** 后端参数字段类型；与 internal/cronjob.ArgFieldType 保持一致。 */
 export enum CronJobArgType {
   String = "string",
   Text = "text",
-  Lines = "lines",
   Number = "number",
   Bool = "bool",
   Path = "path",
