@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   FormControl,
   FormHelperText,
@@ -111,311 +112,318 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
         mt="$2"
       >
         <FormLabel>{t("cronjobs.cron_specs")}</FormLabel>
-        <Table w="$full">
-          <Thead>
-            <Tr>
-              <Th>{t("cronjobs.column_type")}</Th>
-              <Th>{t("cronjobs.column_schedule")}</Th>
-              <Th>{t("cronjobs.column_action")}</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            <For each={rows}>
-              {(row, i) => (
-                <Tr>
-                  <Td>
-                    <Select
-                      value={row.kind}
-                      onChange={(value: string) =>
-                        setRows(i(), "kind", value as SpecRowKind)
-                      }
-                    >
-                      <SelectTrigger w="$40">
-                        <SelectValue />
-                        <SelectIcon />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectListbox>
-                          <SelectOption value="monthly">
-                            <SelectOptionText>
-                              {t("cronjobs.preset.monthly")}
-                            </SelectOptionText>
-                            <SelectOptionIndicator />
-                          </SelectOption>
-                          <SelectOption value="weekly">
-                            <SelectOptionText>
-                              {t("cronjobs.preset.weekly")}
-                            </SelectOptionText>
-                            <SelectOptionIndicator />
-                          </SelectOption>
-                          <SelectOption value="daily">
-                            <SelectOptionText>
-                              {t("cronjobs.preset.daily")}
-                            </SelectOptionText>
-                            <SelectOptionIndicator />
-                          </SelectOption>
-                          <SelectOption value="everyNHours">
-                            <SelectOptionText>
-                              {t("cronjobs.preset.everyNHours")}
-                            </SelectOptionText>
-                            <SelectOptionIndicator />
-                          </SelectOption>
-                          <SelectOption value="everyN">
-                            <SelectOptionText>
-                              {t("cronjobs.preset.everyN")}
-                            </SelectOptionText>
-                            <SelectOptionIndicator />
-                          </SelectOption>
-                          <SelectOption value="custom">
-                            <SelectOptionText>
-                              {t("cronjobs.preset.custom")}
-                            </SelectOptionText>
-                            <SelectOptionIndicator />
-                          </SelectOption>
-                        </SelectListbox>
-                      </SelectContent>
-                    </Select>
-                  </Td>
-                  <Td>
-                    <HStack spacing="$2" wrap="wrap">
-                      <Show when={row.kind === "monthly"}>
-                        <Input
-                          type="number"
-                          min={1}
-                          max={31}
-                          value={row.day}
-                          w="$20"
-                          onInput={(e) =>
-                            setRows(
-                              i(),
-                              "day",
-                              clamp(Number(e.currentTarget.value), 1, 31),
-                            )
-                          }
-                        />
-                        <Text>{t("cronjobs.unit_day")}</Text>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={23}
-                          value={row.hour}
-                          w="$20"
-                          onInput={(e) =>
-                            setRows(
-                              i(),
-                              "hour",
-                              clamp(Number(e.currentTarget.value), 0, 23),
-                            )
-                          }
-                        />
-                        <Text>{t("cronjobs.unit_hour")}</Text>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={59}
-                          value={row.minute}
-                          w="$20"
-                          onInput={(e) =>
-                            setRows(
-                              i(),
-                              "minute",
-                              clamp(Number(e.currentTarget.value), 0, 59),
-                            )
-                          }
-                        />
-                        <Text>{t("cronjobs.unit_minute")}</Text>
-                      </Show>
-
-                      <Show when={row.kind === "weekly"}>
-                        <Select
-                          value={row.weekday}
-                          onChange={(value: string) =>
-                            setRows(i(), "weekday", Number(value))
-                          }
-                        >
-                          <SelectTrigger w="$28">
-                            <SelectValue />
-                            <SelectIcon />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectListbox>
-                              <For each={WEEK_KEYS}>
-                                {(key, wi) => (
-                                  <SelectOption value={wi()}>
-                                    <SelectOptionText>
-                                      {t(key)}
-                                    </SelectOptionText>
-                                    <SelectOptionIndicator />
-                                  </SelectOption>
-                                )}
-                              </For>
-                            </SelectListbox>
-                          </SelectContent>
-                        </Select>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={23}
-                          value={row.hour}
-                          w="$20"
-                          onInput={(e) =>
-                            setRows(
-                              i(),
-                              "hour",
-                              clamp(Number(e.currentTarget.value), 0, 23),
-                            )
-                          }
-                        />
-                        <Text>{t("cronjobs.unit_hour")}</Text>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={59}
-                          value={row.minute}
-                          w="$20"
-                          onInput={(e) =>
-                            setRows(
-                              i(),
-                              "minute",
-                              clamp(Number(e.currentTarget.value), 0, 59),
-                            )
-                          }
-                        />
-                        <Text>{t("cronjobs.unit_minute")}</Text>
-                      </Show>
-
-                      <Show when={row.kind === "daily"}>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={23}
-                          value={row.hour}
-                          w="$20"
-                          onInput={(e) =>
-                            setRows(
-                              i(),
-                              "hour",
-                              clamp(Number(e.currentTarget.value), 0, 23),
-                            )
-                          }
-                        />
-                        <Text>{t("cronjobs.unit_hour")}</Text>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={59}
-                          value={row.minute}
-                          w="$20"
-                          onInput={(e) =>
-                            setRows(
-                              i(),
-                              "minute",
-                              clamp(Number(e.currentTarget.value), 0, 59),
-                            )
-                          }
-                        />
-                        <Text>{t("cronjobs.unit_minute")}</Text>
-                      </Show>
-
-                      <Show when={row.kind === "everyNHours"}>
-                        <Input
-                          type="number"
-                          min={1}
-                          value={row.n}
-                          w="$20"
-                          onInput={(e) =>
-                            setRows(
-                              i(),
-                              "n",
-                              clamp(Number(e.currentTarget.value), 1, 24),
-                            )
-                          }
-                        />
-                        <Text>{t("cronjobs.unit_hour")}</Text>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={59}
-                          value={row.minute}
-                          w="$20"
-                          onInput={(e) =>
-                            setRows(
-                              i(),
-                              "minute",
-                              clamp(Number(e.currentTarget.value), 0, 59),
-                            )
-                          }
-                        />
-                        <Text>{t("cronjobs.unit_minute")}</Text>
-                      </Show>
-
-                      <Show when={row.kind === "everyN"}>
-                        <Input
-                          type="number"
-                          min={1}
-                          value={row.n}
-                          w="$20"
-                          onInput={(e) =>
-                            setRows(
-                              i(),
-                              "n",
-                              clamp(Number(e.currentTarget.value), 1, 1440),
-                            )
-                          }
-                        />
-                        <Text>{t("cronjobs.unit_minute")}</Text>
-                      </Show>
-
-                      <Show when={row.kind === "custom"}>
-                        <Input
-                          value={row.expr}
-                          placeholder="*/10 * * * *"
-                          w="$72"
-                          onInput={(e) =>
-                            setRows(i(), "expr", e.currentTarget.value)
-                          }
-                        />
-                      </Show>
-                    </HStack>
-                  </Td>
-                  <Td>
-                    <HStack spacing="$2">
-                      <Tooltip
-                        withArrow
-                        onOpen={() => setPreviewIndex(i())}
-                        label={
-                          <Show
-                            when={previewData()}
-                            fallback={<Text>{t("cronjobs.preview")}</Text>}
-                          >
-                            {(data) => (
-                              <VStack spacing="$1" alignItems="start">
-                                <Text>{data().spec}</Text>
-                                <For each={data().runs}>
-                                  {(time) => <Text>{formatRunTime(time)}</Text>}
-                                </For>
-                              </VStack>
-                            )}
-                          </Show>
+        {/* 窄容器下表格内容可能超过可用宽度，横向滚动而不是撑破页面。 */}
+        <Box overflowX="auto" w="$full">
+          <Table w="$full">
+            <Thead>
+              <Tr>
+                <Th>{t("cronjobs.column_type")}</Th>
+                <Th>{t("cronjobs.column_schedule")}</Th>
+                <Th>{t("cronjobs.column_action")}</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              <For each={rows}>
+                {(row, i) => (
+                  <Tr>
+                    <Td>
+                      <Select
+                        value={row.kind}
+                        onChange={(value: string) =>
+                          setRows(i(), "kind", value as SpecRowKind)
                         }
                       >
-                        <Button variant="ghost">{t("cronjobs.preview")}</Button>
-                      </Tooltip>
-                      <Button
-                        variant="ghost"
-                        colorScheme="danger"
-                        disabled={rows.length <= 1}
-                        onClick={() => removeRow(i())}
-                      >
-                        {t("global.delete")}
-                      </Button>
-                    </HStack>
-                  </Td>
-                </Tr>
-              )}
-            </For>
-          </Tbody>
-        </Table>
+                        <SelectTrigger w="$40">
+                          <SelectValue />
+                          <SelectIcon />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectListbox>
+                            <SelectOption value="monthly">
+                              <SelectOptionText>
+                                {t("cronjobs.preset.monthly")}
+                              </SelectOptionText>
+                              <SelectOptionIndicator />
+                            </SelectOption>
+                            <SelectOption value="weekly">
+                              <SelectOptionText>
+                                {t("cronjobs.preset.weekly")}
+                              </SelectOptionText>
+                              <SelectOptionIndicator />
+                            </SelectOption>
+                            <SelectOption value="daily">
+                              <SelectOptionText>
+                                {t("cronjobs.preset.daily")}
+                              </SelectOptionText>
+                              <SelectOptionIndicator />
+                            </SelectOption>
+                            <SelectOption value="everyNHours">
+                              <SelectOptionText>
+                                {t("cronjobs.preset.everyNHours")}
+                              </SelectOptionText>
+                              <SelectOptionIndicator />
+                            </SelectOption>
+                            <SelectOption value="everyN">
+                              <SelectOptionText>
+                                {t("cronjobs.preset.everyN")}
+                              </SelectOptionText>
+                              <SelectOptionIndicator />
+                            </SelectOption>
+                            <SelectOption value="custom">
+                              <SelectOptionText>
+                                {t("cronjobs.preset.custom")}
+                              </SelectOptionText>
+                              <SelectOptionIndicator />
+                            </SelectOption>
+                          </SelectListbox>
+                        </SelectContent>
+                      </Select>
+                    </Td>
+                    <Td>
+                      <HStack spacing="$2" wrap="wrap">
+                        <Show when={row.kind === "monthly"}>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={31}
+                            value={row.day}
+                            w="$20"
+                            onInput={(e) =>
+                              setRows(
+                                i(),
+                                "day",
+                                clamp(Number(e.currentTarget.value), 1, 31),
+                              )
+                            }
+                          />
+                          <Text>{t("cronjobs.unit_day")}</Text>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={23}
+                            value={row.hour}
+                            w="$20"
+                            onInput={(e) =>
+                              setRows(
+                                i(),
+                                "hour",
+                                clamp(Number(e.currentTarget.value), 0, 23),
+                              )
+                            }
+                          />
+                          <Text>{t("cronjobs.unit_hour")}</Text>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={59}
+                            value={row.minute}
+                            w="$20"
+                            onInput={(e) =>
+                              setRows(
+                                i(),
+                                "minute",
+                                clamp(Number(e.currentTarget.value), 0, 59),
+                              )
+                            }
+                          />
+                          <Text>{t("cronjobs.unit_minute")}</Text>
+                        </Show>
+
+                        <Show when={row.kind === "weekly"}>
+                          <Select
+                            value={row.weekday}
+                            onChange={(value: string) =>
+                              setRows(i(), "weekday", Number(value))
+                            }
+                          >
+                            <SelectTrigger w="$28">
+                              <SelectValue />
+                              <SelectIcon />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectListbox>
+                                <For each={WEEK_KEYS}>
+                                  {(key, wi) => (
+                                    <SelectOption value={wi()}>
+                                      <SelectOptionText>
+                                        {t(key)}
+                                      </SelectOptionText>
+                                      <SelectOptionIndicator />
+                                    </SelectOption>
+                                  )}
+                                </For>
+                              </SelectListbox>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={23}
+                            value={row.hour}
+                            w="$20"
+                            onInput={(e) =>
+                              setRows(
+                                i(),
+                                "hour",
+                                clamp(Number(e.currentTarget.value), 0, 23),
+                              )
+                            }
+                          />
+                          <Text>{t("cronjobs.unit_hour")}</Text>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={59}
+                            value={row.minute}
+                            w="$20"
+                            onInput={(e) =>
+                              setRows(
+                                i(),
+                                "minute",
+                                clamp(Number(e.currentTarget.value), 0, 59),
+                              )
+                            }
+                          />
+                          <Text>{t("cronjobs.unit_minute")}</Text>
+                        </Show>
+
+                        <Show when={row.kind === "daily"}>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={23}
+                            value={row.hour}
+                            w="$20"
+                            onInput={(e) =>
+                              setRows(
+                                i(),
+                                "hour",
+                                clamp(Number(e.currentTarget.value), 0, 23),
+                              )
+                            }
+                          />
+                          <Text>{t("cronjobs.unit_hour")}</Text>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={59}
+                            value={row.minute}
+                            w="$20"
+                            onInput={(e) =>
+                              setRows(
+                                i(),
+                                "minute",
+                                clamp(Number(e.currentTarget.value), 0, 59),
+                              )
+                            }
+                          />
+                          <Text>{t("cronjobs.unit_minute")}</Text>
+                        </Show>
+
+                        <Show when={row.kind === "everyNHours"}>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={row.n}
+                            w="$20"
+                            onInput={(e) =>
+                              setRows(
+                                i(),
+                                "n",
+                                clamp(Number(e.currentTarget.value), 1, 24),
+                              )
+                            }
+                          />
+                          <Text>{t("cronjobs.unit_hour")}</Text>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={59}
+                            value={row.minute}
+                            w="$20"
+                            onInput={(e) =>
+                              setRows(
+                                i(),
+                                "minute",
+                                clamp(Number(e.currentTarget.value), 0, 59),
+                              )
+                            }
+                          />
+                          <Text>{t("cronjobs.unit_minute")}</Text>
+                        </Show>
+
+                        <Show when={row.kind === "everyN"}>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={row.n}
+                            w="$20"
+                            onInput={(e) =>
+                              setRows(
+                                i(),
+                                "n",
+                                clamp(Number(e.currentTarget.value), 1, 1440),
+                              )
+                            }
+                          />
+                          <Text>{t("cronjobs.unit_minute")}</Text>
+                        </Show>
+
+                        <Show when={row.kind === "custom"}>
+                          <Input
+                            value={row.expr}
+                            placeholder="*/10 * * * *"
+                            w="$72"
+                            onInput={(e) =>
+                              setRows(i(), "expr", e.currentTarget.value)
+                            }
+                          />
+                        </Show>
+                      </HStack>
+                    </Td>
+                    <Td>
+                      <HStack spacing="$2">
+                        <Tooltip
+                          withArrow
+                          onOpen={() => setPreviewIndex(i())}
+                          label={
+                            <Show
+                              when={previewData()}
+                              fallback={<Text>{t("cronjobs.preview")}</Text>}
+                            >
+                              {(data) => (
+                                <VStack spacing="$1" alignItems="start">
+                                  <Text>{data().spec}</Text>
+                                  <For each={data().runs}>
+                                    {(time) => (
+                                      <Text>{formatRunTime(time)}</Text>
+                                    )}
+                                  </For>
+                                </VStack>
+                              )}
+                            </Show>
+                          }
+                        >
+                          <Button variant="ghost">
+                            {t("cronjobs.preview")}
+                          </Button>
+                        </Tooltip>
+                        <Button
+                          variant="ghost"
+                          colorScheme="danger"
+                          disabled={rows.length <= 1}
+                          onClick={() => removeRow(i())}
+                        >
+                          {t("global.delete")}
+                        </Button>
+                      </HStack>
+                    </Td>
+                  </Tr>
+                )}
+              </For>
+            </Tbody>
+          </Table>
+        </Box>
         <HStack mt="$2" spacing="$2">
           <Button onClick={addRow}>{t("cronjobs.add_spec")}</Button>
           {/* 近5次执行：hover 时按当前配置实时计算未来的执行时间。 */}
