@@ -6,13 +6,6 @@ import {
   FormLabel,
   HStack,
   Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
   Select,
   SelectContent,
   SelectIcon,
@@ -23,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
   Text,
+  Tooltip,
   VStack,
 } from "@hope-ui/solid"
 import { createEffect, createMemo, createSignal, For, Show } from "solid-js"
@@ -75,14 +69,17 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
   /** 变化时同步给父组件。 */
   createEffect(() => props.onChange(cronSpecs()))
 
-  /** 每行「预览」弹窗。 */
-  const [preview, setPreview] = createSignal<{
-    spec: string
-    runs: Date[]
-  } | null>(null)
-  /** 「近5次执行」面板。 */
+  /** 当前 hover 预览的行号；Tooltip 打开时按行计算未来执行时间。 */
+  const [previewIndex, setPreviewIndex] = createSignal<number | null>(null)
+  /** hover 行的预览数据：cron 表达式 + 未来 5 次执行时间。 */
+  const previewData = createMemo(() => {
+    const i = previewIndex()
+    if (i === null || !rows[i]) return null
+    const spec = rowToCron(rows[i])
+    return { spec, runs: nextRunTimes([spec], new Date(), 5) }
+  })
+  /** 「近5次执行」：hover 时按当前全部表达式实时计算未来执行时间。 */
   const [nextRuns, setNextRuns] = createSignal<Date[]>([])
-  const [showNext, setShowNext] = createSignal(false)
 
   const clamp = (value: number, min: number, max: number): number =>
     Math.min(
@@ -96,19 +93,6 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
   /** 删除指定执行周期；至少保留一条。 */
   const removeRow = (index: number) => {
     setRows((prev) => prev.filter((_, idx) => idx !== index))
-  }
-
-  /** 展开/收起近5次执行；展开时按当前表达式实时计算未来执行时间。 */
-  const toggleNext = () => {
-    const open = !showNext()
-    if (open) setNextRuns(nextRunTimes(cronSpecs(), new Date(), 5))
-    setShowNext(open)
-  }
-
-  /** 打开某条执行周期的预览：cron 表达式 + 未来 5 次执行时间。 */
-  const openPreview = (index: number) => {
-    const spec = rowToCron(rows[index])
-    setPreview({ spec, runs: nextRunTimes([spec], new Date(), 5) })
   }
 
   return (
@@ -373,9 +357,28 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
                   />
                 </Show>
 
-                <Button onClick={() => openPreview(i())}>
-                  {t("cronjobs.preview")}
-                </Button>
+                <Tooltip
+                  placement="top"
+                  withArrow
+                  onOpen={() => setPreviewIndex(i())}
+                  label={
+                    <Show
+                      when={previewData()}
+                      fallback={<Text>{t("cronjobs.preview")}</Text>}
+                    >
+                      {(data) => (
+                        <VStack spacing="$1" alignItems="start">
+                          <Text>{data().spec}</Text>
+                          <For each={data().runs}>
+                            {(time) => <Text>{formatRunTime(time)}</Text>}
+                          </For>
+                        </VStack>
+                      )}
+                    </Show>
+                  }
+                >
+                  <Button>{t("cronjobs.preview")}</Button>
+                </Tooltip>
                 <Button
                   disabled={rows.length <= 1}
                   onClick={() => removeRow(i())}
@@ -392,42 +395,28 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
         <FormHelperText>{t("cronjobs.cron_specs_help")}</FormHelperText>
       </FormControl>
 
-      {/* 近5次执行：按当前配置实时计算未来的执行时间。 */}
+      {/* 近5次执行：hover 时按当前配置实时计算未来的执行时间。 */}
       <Box w="$full" mt="$2">
-        <Button size="sm" variant="ghost" onClick={toggleNext}>
-          {t("cronjobs.next_runs")}
-        </Button>
-        <Show when={showNext()}>
-          <VStack spacing="$1" alignItems="start">
-            <For each={nextRuns()}>
-              {(time) => <Text>{formatRunTime(time)}</Text>}
-            </For>
-            <Show when={nextRuns().length === 0}>
-              <Text>{t("cronjobs.next_runs_empty")}</Text>
-            </Show>
-          </VStack>
-        </Show>
-      </Box>
-
-      {/* 单条执行周期的预览弹窗：cron 表达式 + 未来 5 次执行时间。 */}
-      <Modal opened={preview() !== null} onClose={() => setPreview(null)}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalCloseButton />
-          <ModalHeader>{t("cronjobs.preview")}</ModalHeader>
-          <ModalBody>
+        <Tooltip
+          placement="bottom-start"
+          withArrow
+          onOpen={() => setNextRuns(nextRunTimes(cronSpecs(), new Date(), 5))}
+          label={
             <VStack spacing="$1" alignItems="start">
-              <Text>{preview()?.spec}</Text>
-              <For each={preview()?.runs ?? []}>
+              <For each={nextRuns()}>
                 {(time) => <Text>{formatRunTime(time)}</Text>}
               </For>
+              <Show when={nextRuns().length === 0}>
+                <Text>{t("cronjobs.next_runs_empty")}</Text>
+              </Show>
             </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button onClick={() => setPreview(null)}>{t("global.ok")}</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          }
+        >
+          <Button size="sm" variant="ghost">
+            {t("cronjobs.next_runs")}
+          </Button>
+        </Tooltip>
+      </Box>
     </>
   )
 }
