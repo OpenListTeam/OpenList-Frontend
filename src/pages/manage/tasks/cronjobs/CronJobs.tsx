@@ -83,7 +83,7 @@ const CronJobs = () => {
           {t("global.refresh")}
         </Button>
         {/* 新建任务必须进入独立页面；页面会根据任务类型动态渲染配置。 */}
-        <Button onClick={() => to("/@manage/cronjobs/add")}>
+        <Button onClick={() => to("/@manage/tasks/cronjobs/add")}>
           {t("cronjobs.add")}
         </Button>
       </HStack>
@@ -129,7 +129,9 @@ const CronJobs = () => {
                     <HStack spacing="$2">
                       <Button
                         disabled={job.running}
-                        onClick={() => to(`/@manage/cronjobs/edit/${job.id}`)}
+                        onClick={() =>
+                          to(`/@manage/tasks/cronjobs/edit/${job.id}`)
+                        }
                       >
                         {t("global.edit")}
                       </Button>

@@ -186,13 +186,14 @@ export const side_menu_items: SideMenuItem[] = [
         role: UserRole.GENERAL,
         component: lazy(() => import("./tasks/Seed")),
       },
+      {
+        title: "manage.sidemenu.cronjobs",
+        icon: BsClockHistory,
+        to: "/@manage/tasks/cronjobs",
+        backend: ["go"],
+        component: lazy(() => import("./tasks/cronjobs/CronJobs")),
+      },
     ],
-  },
-  {
-    title: "manage.sidemenu.cronjobs",
-    icon: BsClockHistory,
-    to: "/@manage/cronjobs",
-    component: lazy(() => import("./cronjobs/CronJobs")),
   },
   {
     title: "manage.sidemenu.users",
