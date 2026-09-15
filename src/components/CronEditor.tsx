@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   Checkbox,
-  FormHelperText,
   Grid,
   HStack,
   Input,
@@ -14,7 +13,6 @@ import {
   ModalHeader,
   ModalOverlay,
   Text,
-  Textarea,
   VStack,
 } from "@hope-ui/solid"
 import { createEffect, createSignal, For, on, Show } from "solid-js"
@@ -24,8 +22,8 @@ import { useT } from "~/hooks"
 /**
  * Cron 表达式可视化编辑器。
  * 把 5 字段 cron（分 时 日 月 周）拆成五个字段构建区：每个字段支持
- * 全部（*）、每 N（步进）、指定值（逗号列表）三种模式；
- * 高级模式直接编辑文本，支持一次粘贴多条表达式（每行一条）。
+ * 全部（*）、每 N（步进）、指定值（逗号列表）三种模式，
+ * 构建结果实时显示在预览里，确认后写回当前行。
  */
 
 type FieldMode = "every" | "everyN" | "specific"
@@ -190,99 +188,58 @@ export const CronEditor = (props: {
   onClose: () => void
   /** 当前编辑的执行时间列表。 */
   specs: string[]
-  /** 可视化模式默认编辑的行。 */
+  /** 本次编辑的行。 */
   editIndex: number
   /** 确认后回传新的执行时间列表。 */
   onSubmit: (specs: string[]) => void
 }) => {
   const t = useT()
-  const [tab, setTab] = createSignal<"visual" | "advanced">("visual")
   const [states, setStates] = createStore<Record<string, FieldState>>({})
-  const [localSpecs, setLocalSpecs] = createSignal<string[]>(props.specs)
-  const [text, setText] = createSignal("")
   const [error, setError] = createSignal("")
-
-  const resetVisual = (spec: string) => {
-    const parsed = parseSpec(spec)
-    if (parsed) {
-      const init: Record<string, FieldState> = {}
-      FIELD_DEFS.forEach((def, i) => (init[def.key] = parsed[i]))
-      setStates(init)
-      setError("")
-      return true
-    }
-    const init: Record<string, FieldState> = {}
-    FIELD_DEFS.forEach((def) => (init[def.key] = defaultState(def)))
-    setStates(init)
-    return false
-  }
+  /** 原表达式不可解析时禁止确认，避免确认后静默覆盖。 */
+  const [allowConfirm, setAllowConfirm] = createSignal(true)
 
   createEffect(
     on(
       () => props.isOpen,
       (open) => {
         if (!open) return
-        setLocalSpecs(props.specs)
         const current = props.specs[props.editIndex] ?? ""
-        if (resetVisual(current)) {
-          setTab("visual")
+        const parsed = parseSpec(current)
+        const init: Record<string, FieldState> = {}
+        if (parsed) {
+          FIELD_DEFS.forEach((def, i) => (init[def.key] = parsed[i]))
+          setStates(init)
           setError("")
+          setAllowConfirm(true)
         } else {
-          // 构建器无法表达时自动进入高级模式，避免确认后静默覆盖原表达式。
-          setTab("advanced")
+          FIELD_DEFS.forEach((def) => (init[def.key] = defaultState(def)))
+          setStates(init)
           setError(t("cronjobs.editor.unparseable"))
+          setAllowConfirm(false)
         }
-        setText(props.specs.join("\n"))
       },
     ),
   )
 
-  const switchTab = (next: "visual" | "advanced") => {
-    if (tab() === "visual" && next === "advanced") {
-      // 离开可视化前把当前构建结果写回本地列表，再同步到文本框。
-      const built = generateSpec(specOf(states))
-      const nextList = localSpecs().map((spec, i) =>
-        i === props.editIndex ? built : spec,
-      )
-      setLocalSpecs(nextList)
-      setText(nextList.join("\n"))
-      setError("")
-    } else if (next === "visual") {
-      resetVisual(localSpecs()[props.editIndex] ?? "")
-    }
-    setTab(next)
+  /** 用户在构建器上做任意修改后，允许确认并清除提示。 */
+  const touch = () => {
+    setError("")
+    setAllowConfirm(true)
   }
 
   const confirm = () => {
-    if (tab() === "visual") {
-      for (const def of FIELD_DEFS) {
-        const state = states[def.key] ?? defaultState(def)
-        if (state.mode === "specific" && state.values.length === 0) {
-          setError(t("cronjobs.editor.specific_empty"))
-          return
-        }
-      }
-      const built = generateSpec(specOf(states))
-      props.onSubmit(
-        localSpecs().map((spec, i) => (i === props.editIndex ? built : spec)),
-      )
-    } else {
-      const lines = text()
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter(Boolean)
-      if (lines.length === 0) {
-        setError(t("cronjobs.editor.empty"))
+    for (const def of FIELD_DEFS) {
+      const state = states[def.key] ?? defaultState(def)
+      if (state.mode === "specific" && state.values.length === 0) {
+        setError(t("cronjobs.editor.specific_empty"))
         return
       }
-      for (const line of lines) {
-        if (!parseSpec(line)) {
-          setError(`${t("cronjobs.editor.invalid")}: ${line}`)
-          return
-        }
-      }
-      props.onSubmit(lines)
     }
+    const built = generateSpec(specOf(states))
+    props.onSubmit(
+      props.specs.map((spec, i) => (i === props.editIndex ? built : spec)),
+    )
     props.onClose()
   }
 
@@ -293,186 +250,114 @@ export const CronEditor = (props: {
         <ModalCloseButton />
         <ModalHeader>{t("cronjobs.editor.title")}</ModalHeader>
         <ModalBody>
-          <HStack spacing="$2" mb="$3">
-            <Button
-              size="sm"
-              variant={tab() === "visual" ? "solid" : "outline"}
-              colorScheme={tab() === "visual" ? "accent" : "neutral"}
-              onClick={() => switchTab("visual")}
-            >
-              {t("cronjobs.editor.visual")}
-            </Button>
-            <Button
-              size="sm"
-              variant={tab() === "advanced" ? "solid" : "outline"}
-              colorScheme={tab() === "advanced" ? "accent" : "neutral"}
-              onClick={() => switchTab("advanced")}
-            >
-              {t("cronjobs.editor.advanced")}
-            </Button>
-          </HStack>
-
-          <Show
-            when={tab() === "visual"}
-            fallback={
-              <>
-                <Textarea
-                  rows={8}
-                  value={text()}
-                  onInput={(e) => setText(e.currentTarget.value)}
-                  placeholder={"*/10 * * * *\n0 0 * * *"}
-                />
-                <FormHelperText>
-                  {t("cronjobs.editor.advanced_help")}
-                </FormHelperText>
-              </>
-            }
-          >
-            <VStack spacing="$4" alignItems="start">
-              <For each={FIELD_DEFS}>
-                {(def) => {
-                  const state = () => states[def.key] ?? defaultState(def)
-                  return (
-                    <Box w="$full">
-                      <HStack
-                        justifyContent="space-between"
-                        w="$full"
-                        mb="$1"
-                        wrap="wrap"
-                        spacing="$2"
+          <VStack spacing="$3" alignItems="start">
+            <For each={FIELD_DEFS}>
+              {(def) => {
+                const state = () => states[def.key] ?? defaultState(def)
+                return (
+                  <Box w="$full">
+                    <Text>{t(def.labelKey)}</Text>
+                    <HStack spacing="$2">
+                      <Button
+                        variant={state().mode === "every" ? "solid" : "subtle"}
+                        onClick={() => {
+                          touch()
+                          setStates(def.key, { ...state(), mode: "every" })
+                        }}
                       >
-                        <Text fontWeight="bold" fontSize="$sm">
-                          {t(def.labelKey)}
-                        </Text>
-                        <HStack spacing="$1">
-                          <Button
-                            size="xs"
-                            variant={
-                              state().mode === "every" ? "solid" : "outline"
-                            }
-                            colorScheme={
-                              state().mode === "every" ? "accent" : "neutral"
-                            }
-                            onClick={() =>
-                              setStates(def.key, { ...state(), mode: "every" })
-                            }
-                          >
-                            {t("cronjobs.editor.every")}
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant={
-                              state().mode === "everyN" ? "solid" : "outline"
-                            }
-                            colorScheme={
-                              state().mode === "everyN" ? "accent" : "neutral"
-                            }
-                            onClick={() =>
-                              setStates(def.key, { ...state(), mode: "everyN" })
-                            }
-                          >
-                            {t("cronjobs.editor.every_n")}
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant={
-                              state().mode === "specific" ? "solid" : "outline"
-                            }
-                            colorScheme={
-                              state().mode === "specific" ? "accent" : "neutral"
-                            }
-                            onClick={() =>
-                              setStates(def.key, {
-                                ...state(),
-                                mode: "specific",
-                              })
-                            }
-                          >
-                            {t("cronjobs.editor.specific")}
-                          </Button>
-                        </HStack>
+                        {t("cronjobs.editor.every")}
+                      </Button>
+                      <Button
+                        variant={state().mode === "everyN" ? "solid" : "subtle"}
+                        onClick={() => {
+                          touch()
+                          setStates(def.key, { ...state(), mode: "everyN" })
+                        }}
+                      >
+                        {t("cronjobs.editor.every_n")}
+                      </Button>
+                      <Button
+                        variant={
+                          state().mode === "specific" ? "solid" : "subtle"
+                        }
+                        onClick={() => {
+                          touch()
+                          setStates(def.key, {
+                            ...state(),
+                            mode: "specific",
+                          })
+                        }}
+                      >
+                        {t("cronjobs.editor.specific")}
+                      </Button>
+                    </HStack>
+                    <Show when={state().mode === "everyN"}>
+                      <HStack spacing="$2">
+                        <Text>{t("cronjobs.editor.every")}</Text>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={state().step}
+                          w="$20"
+                          onInput={(e) => {
+                            touch()
+                            const step = Math.max(
+                              1,
+                              Math.floor(Number(e.currentTarget.value) || 1),
+                            )
+                            setStates(def.key, {
+                              ...state(),
+                              mode: "everyN",
+                              step,
+                            })
+                          }}
+                        />
+                        <Text>{t(def.stepUnitKey)}</Text>
                       </HStack>
+                    </Show>
+                    <Show when={state().mode === "specific"}>
+                      <Grid templateColumns="repeat(10, 1fr)" gap="$1">
+                        <For each={range(def.min, def.max)}>
+                          {(v) => (
+                            <Checkbox
+                              checked={state().values.includes(v)}
+                              onChange={() => {
+                                touch()
+                                const values = state().values.includes(v)
+                                  ? state().values.filter((x) => x !== v)
+                                  : [...state().values, v].sort((a, b) => a - b)
+                                setStates(def.key, {
+                                  ...state(),
+                                  mode: "specific",
+                                  values,
+                                })
+                              }}
+                            >
+                              {def.key === "week" ? t(DOW_KEYS[v]) : v}
+                            </Checkbox>
+                          )}
+                        </For>
+                      </Grid>
+                    </Show>
+                  </Box>
+                )
+              }}
+            </For>
 
-                      <Show when={state().mode === "everyN"}>
-                        <HStack spacing="$2" mb="$1">
-                          <Text fontSize="$sm">
-                            {t("cronjobs.editor.every")}
-                          </Text>
-                          <Input
-                            type="number"
-                            min={1}
-                            value={state().step}
-                            w="$20"
-                            size="sm"
-                            onInput={(e) => {
-                              const step = Math.max(
-                                1,
-                                Math.floor(Number(e.currentTarget.value) || 1),
-                              )
-                              setStates(def.key, {
-                                ...state(),
-                                mode: "everyN",
-                                step,
-                              })
-                            }}
-                          />
-                          <Text fontSize="$sm">{t(def.stepUnitKey)}</Text>
-                        </HStack>
-                      </Show>
-
-                      <Show when={state().mode === "specific"}>
-                        <Grid templateColumns="repeat(10, 1fr)" gap="$1">
-                          <For each={range(def.min, def.max)}>
-                            {(v) => (
-                              <Checkbox
-                                checked={state().values.includes(v)}
-                                onChange={() => {
-                                  const values = state().values.includes(v)
-                                    ? state().values.filter((x) => x !== v)
-                                    : [...state().values, v].sort(
-                                        (a, b) => a - b,
-                                      )
-                                  setStates(def.key, {
-                                    ...state(),
-                                    mode: "specific",
-                                    values,
-                                  })
-                                }}
-                              >
-                                {def.key === "week" ? t(DOW_KEYS[v]) : v}
-                              </Checkbox>
-                            )}
-                          </For>
-                        </Grid>
-                      </Show>
-                    </Box>
-                  )
-                }}
-              </For>
-
-              <Box w="$full" p="$2" rounded="$md" bgColor="$info3">
-                <Text fontSize="$sm">
-                  {t("cronjobs.editor.preview")}:{" "}
-                  <Text as="span" fontWeight="bold">
-                    {generateSpec(specOf(states))}
-                  </Text>
-                </Text>
-              </Box>
-            </VStack>
-          </Show>
-
-          <Show when={error()}>
-            <Text color="$danger10" fontSize="$sm" mt="$2">
-              {error()}
+            <Text>
+              {t("cronjobs.editor.preview")}: {generateSpec(specOf(states))}
             </Text>
-          </Show>
+            <Show when={error()}>
+              <Text>{error()}</Text>
+            </Show>
+          </VStack>
         </ModalBody>
         <ModalFooter>
           <HStack spacing="$2">
-            <Button colorScheme="neutral" onClick={props.onClose}>
-              {t("global.cancel")}
+            <Button onClick={props.onClose}>{t("global.cancel")}</Button>
+            <Button disabled={!allowConfirm()} onClick={confirm}>
+              {t("global.ok")}
             </Button>
-            <Button onClick={confirm}>{t("global.ok")}</Button>
           </HStack>
         </ModalFooter>
       </ModalContent>
