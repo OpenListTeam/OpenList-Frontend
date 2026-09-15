@@ -73,6 +73,18 @@ export const CronSpecsEditor = (props: CronSpecsEditorProps) => {
   /** 变化时同步给父组件。 */
   createEffect(() => props.onChange(cronSpecs()))
 
+  /**
+   * 响应式回填：编辑页的 initialSpecs 由异步请求提供，
+   * 组件可能在数据返回前就已挂载（createStore 只在首次求值），
+   * 这里监听变化后重置行，保证原执行周期能自动回填。
+   */
+  createEffect(() => {
+    const specs = props.initialSpecs
+    if (specs && specs.length > 0) {
+      setRows(specs.map(cronToRow))
+    }
+  })
+
   /** 当前 hover 预览的行号；Tooltip 打开时按行计算未来执行时间。 */
   const [previewIndex, setPreviewIndex] = createSignal<number | null>(null)
   /** hover 行的预览数据：cron 表达式 + 未来 5 次执行时间。 */
