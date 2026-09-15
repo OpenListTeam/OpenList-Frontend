@@ -125,10 +125,10 @@ const ArgInput = (props: {
         />
       </Match>
       <Match when={props.field.type === CronJobArgType.Path}>
+        {/* 路径字段支持手动输入，也支持从目录树选择。 */}
         <FolderChooseInput
           id={`cronjob-args-${props.field.name}`}
           value={String(props.value ?? "")}
-          onlyFolder
           onChange={(path) => props.onChange(path)}
         />
       </Match>
@@ -138,7 +138,7 @@ const ArgInput = (props: {
 
 const AddOrEdit = () => {
   const t = useT()
-  const { params, back } = useRouter()
+  const { params, to } = useRouter()
   const editId = params.id ? Number(params.id) : null
 
   /** 类型描述列表；CronJobs 页面不硬编码任务类型。 */
@@ -199,15 +199,25 @@ const AddOrEdit = () => {
       const jobResp = await getJob()
       handleResp(jobResp, (job) => {
         setSelectedType(job.type)
+        // 后端 Args 以 JSON 字符串返回；先解析成对象，未注册描述的类型也能保留原参数。
+        let rawArgs: CronJobArgs = {}
+        try {
+          rawArgs =
+            typeof job.args === "string"
+              ? JSON.parse(job.args || "{}")
+              : job.args
+        } catch {
+          rawArgs = {}
+        }
         const info = typeInfos.find((item) => item.type === job.type)
         if (!info) {
           // 未注册描述的类型也能保留原参数，但参数区不会渲染。
-          setArgs(job.args)
+          setArgs(rawArgs)
           return
         }
         const nextArgs: CronJobArgs = {}
         for (const field of info.fields) {
-          nextArgs[field.name] = argToFormValue(field, job.args[field.name])
+          nextArgs[field.name] = argToFormValue(field, rawArgs[field.name])
         }
         setArgs(nextArgs)
         setForm({
@@ -377,13 +387,20 @@ const AddOrEdit = () => {
           "@md": "unset",
         }}
       >
+        {/* 显式跳回列表页，避免 back() 在无历史记录时失效。 */}
+        <Button
+          colorScheme="neutral"
+          onClick={() => to("/@manage/tasks/cronjobs")}
+        >
+          {t("global.back")}
+        </Button>
         <Button
           disabled={selectedType() === "" || missingRequired()}
           onClick={async () => {
             const resp = await saveJob()
             handleResp(resp, () => {
               notify.success(t("global.save_success"))
-              back()
+              to("/@manage/tasks/cronjobs")
             })
           }}
         >

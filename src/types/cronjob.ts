@@ -44,7 +44,8 @@ export interface CronJobTypeInfo {
 
 /**
  * 计划任务配置。
- * 后端返回的 Args 是 JSON 对象；当前类型系统只登记 sync 参数。
+ * 后端 Args 以 JSON 字符串存储并原样返回（如 "{\"src\":\"/a\"}"）；
+ * 编辑页需要先解析为对象再回填表单。
  */
 export interface CronJob {
   /** 数据库主键。 */
@@ -65,8 +66,8 @@ export interface CronJob {
   next_run_at: string | null
   /** 上一次执行的错误信息；成功时为空。 */
   last_error: string
-  /** 任务类型参数。 */
-  args: CronJobArgs
+  /** 任务类型参数；后端返回 JSON 字符串，前端解析后按 schema 回填。 */
+  args: CronJobArgs | string
 }
 
 /** 创建或编辑计划任务时使用的请求类型。 */
