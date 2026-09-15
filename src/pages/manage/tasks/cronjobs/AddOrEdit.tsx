@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   FormControl,
   FormHelperText,
@@ -6,6 +7,13 @@ import {
   Heading,
   HStack,
   Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
   Select,
   SelectContent,
   SelectIcon,
@@ -23,11 +31,19 @@ import {
 } from "@hope-ui/solid"
 import { createMemo, createSignal, For, Match, Show, Switch } from "solid-js"
 import { createStore } from "solid-js/store"
-import { CronEditor } from "~/components/CronEditor"
 import { FolderChooseInput, MaybeLoading } from "~/components"
 import { ResponsiveGrid } from "~/pages/manage/common/ResponsiveGrid"
 import { useFetch, useT, useRouter } from "~/hooks"
 import { handleResp, notify, r } from "~/utils"
+import {
+  SpecRow,
+  SpecRowKind,
+  cronToRow,
+  defaultSpecRow,
+  formatRunTime,
+  nextRunTimes,
+  rowToCron,
+} from "~/utils/cron"
 import {
   CronJob,
   CronJobArgField,
@@ -38,6 +54,17 @@ import {
   PEmptyResp,
   PResp,
 } from "~/types"
+
+/** 星期几的 i18n key，按下标 0=周日 … 6=周六。 */
+const WEEK_KEYS = [
+  "cronjobs.dow_sun",
+  "cronjobs.dow_mon",
+  "cronjobs.dow_tue",
+  "cronjobs.dow_wed",
+  "cronjobs.dow_thu",
+  "cronjobs.dow_fri",
+  "cronjobs.dow_sat",
+]
 
 /** 将多行表单值转换为后端的 []string；空白行会被忽略。 */
 const splitLines = (value: string): string[] => {
@@ -156,25 +183,51 @@ const AddOrEdit = () => {
   const [selectedType, setSelectedType] = createSignal<string>("")
   /** 任务参数按 schema 保存为响应式对象，不同类型的字段不同。 */
   const [args, setArgs] = createStore<CronJobArgs>({})
-  /** 通用基础字段；执行时间支持多条，每条都是标准 5 字段 cron 表达式。 */
+  /** 通用基础字段。 */
   const [form, setForm] = createStore({
     name: "",
-    cron_specs: ["*/10 * * * *"] as string[],
     enabled: true,
   })
 
-  /** 可视化 cron 编辑器状态。 */
-  const [editorOpen, setEditorOpen] = createSignal(false)
-  const [editIndex, setEditIndex] = createSignal(0)
+  /** 执行周期行；每条都是一个预设（每月/每周/每N分钟/自定义）。 */
+  const [rows, setRows] = createStore<SpecRow[]>([])
+  /** 行 → cron 表达式列表，提交和预览共用。 */
+  const cronSpecs = createMemo(() => rows.map(rowToCron))
 
-  /** 追加一条默认执行时间。 */
-  const addSpec = () => {
-    setForm("cron_specs", (specs) => [...specs, "0 * * * *"])
+  /** 每行「预览」弹窗。 */
+  const [preview, setPreview] = createSignal<{
+    spec: string
+    runs: Date[]
+  } | null>(null)
+  /** 「近5次执行」面板。 */
+  const [nextRuns, setNextRuns] = createSignal<Date[]>([])
+  const [showNext, setShowNext] = createSignal(false)
+
+  const clamp = (value: number, min: number, max: number): number =>
+    Math.min(
+      max,
+      Math.max(min, Number.isFinite(value) ? Math.floor(value) : min),
+    )
+
+  /** 追加一条默认执行周期。 */
+  const addRow = () => setRows((prev) => [...prev, defaultSpecRow()])
+
+  /** 删除指定执行周期；至少保留一条。 */
+  const removeRow = (index: number) => {
+    setRows((prev) => prev.filter((_, idx) => idx !== index))
   }
 
-  /** 删除指定执行时间；至少保留一条。 */
-  const removeSpec = (index: number) => {
-    setForm("cron_specs", (specs) => specs.filter((_, idx) => idx !== index))
+  /** 展开/收起近5次执行；展开时按当前表达式实时计算未来执行时间。 */
+  const toggleNext = () => {
+    const open = !showNext()
+    if (open) setNextRuns(nextRunTimes(cronSpecs(), new Date(), 5))
+    setShowNext(open)
+  }
+
+  /** 打开某条执行周期的预览：cron 表达式 + 未来 5 次执行时间。 */
+  const openPreview = (index: number) => {
+    const spec = rowToCron(rows[index])
+    setPreview({ spec, runs: nextRunTimes([spec], new Date(), 5) })
   }
 
   /** 当前选中类型的 schema。 */
@@ -235,18 +288,20 @@ const AddOrEdit = () => {
           nextArgs[field.name] = argToFormValue(field, rawArgs[field.name])
         }
         setArgs(nextArgs)
+        setRows(
+          job.cron_specs && job.cron_specs.length > 0
+            ? job.cron_specs.map(cronToRow)
+            : [defaultSpecRow()],
+        )
         setForm({
           name: job.name,
-          cron_specs:
-            job.cron_specs && job.cron_specs.length > 0
-              ? job.cron_specs
-              : ["*/10 * * * *"],
           enabled: job.enabled,
         })
       })
     } else if (typeInfos.length > 0) {
       setSelectedType(typeInfos[0].type)
       setArgs(createArgs(typeInfos[0]))
+      setRows([defaultSpecRow()])
     }
   }
   init()
@@ -267,10 +322,10 @@ const AddOrEdit = () => {
 
   /** 简单必填校验；更复杂的格式校验由后端 Handler.ValidateArgs 完成。 */
   const missingRequired = createMemo(() => {
-    // 至少保留一条非空执行时间。
+    // 至少保留一条执行周期；自定义表达式不能为空。
     if (
-      form.cron_specs.length === 0 ||
-      form.cron_specs.some((spec) => spec.trim() === "")
+      rows.length === 0 ||
+      rows.some((row) => row.kind === "custom" && row.expr.trim() === "")
     ) {
       return true
     }
@@ -288,7 +343,7 @@ const AddOrEdit = () => {
     const req: CronJobReq = {
       name: form.name,
       type: selectedType(),
-      cron_specs: form.cron_specs,
+      cron_specs: cronSpecs(),
       enabled: form.enabled,
       args: buildArgs(),
     }
@@ -368,7 +423,7 @@ const AddOrEdit = () => {
         </FormControl>
       </ResponsiveGrid>
 
-      {/* 执行时间：支持多条 cron 表达式，每条可手输或可视化编辑。 */}
+      {/* 执行周期：预设式配置，支持每月/每周/每N分钟/自定义多条。 */}
       <FormControl
         w="$full"
         display="flex"
@@ -378,44 +433,214 @@ const AddOrEdit = () => {
       >
         <FormLabel>{t("cronjobs.cron_specs")}</FormLabel>
         <VStack w="$full" spacing="$2" alignItems="start">
-          <For each={form.cron_specs}>
-            {(spec, i) => (
-              <HStack w="$full" spacing="$2">
-                <Input
-                  id={`cronjob-cron-${i()}`}
-                  value={spec}
-                  placeholder="*/10 * * * *"
-                  onInput={(e) =>
-                    setForm("cron_specs", i(), e.currentTarget.value)
+          <For each={rows}>
+            {(row, i) => (
+              <HStack w="$full" spacing="$2" wrap="wrap">
+                <Select
+                  value={row.kind}
+                  onChange={(value: string) =>
+                    setRows(i(), "kind", value as SpecRowKind)
                   }
-                />
-                <Button
-                  colorScheme="neutral"
-                  variant="outline"
-                  onClick={() => {
-                    setEditIndex(i())
-                    setEditorOpen(true)
-                  }}
                 >
-                  {t("cronjobs.editor.open")}
+                  <SelectTrigger w="$40">
+                    <SelectValue />
+                    <SelectIcon />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectListbox>
+                      <SelectOption value="monthly">
+                        <SelectOptionText>
+                          {t("cronjobs.preset.monthly")}
+                        </SelectOptionText>
+                        <SelectOptionIndicator />
+                      </SelectOption>
+                      <SelectOption value="weekly">
+                        <SelectOptionText>
+                          {t("cronjobs.preset.weekly")}
+                        </SelectOptionText>
+                        <SelectOptionIndicator />
+                      </SelectOption>
+                      <SelectOption value="everyN">
+                        <SelectOptionText>
+                          {t("cronjobs.preset.everyN")}
+                        </SelectOptionText>
+                        <SelectOptionIndicator />
+                      </SelectOption>
+                      <SelectOption value="custom">
+                        <SelectOptionText>
+                          {t("cronjobs.preset.custom")}
+                        </SelectOptionText>
+                        <SelectOptionIndicator />
+                      </SelectOption>
+                    </SelectListbox>
+                  </SelectContent>
+                </Select>
+
+                <Show when={row.kind === "monthly"}>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={row.day}
+                    w="$20"
+                    onInput={(e) =>
+                      setRows(
+                        i(),
+                        "day",
+                        clamp(Number(e.currentTarget.value), 1, 31),
+                      )
+                    }
+                  />
+                  <Text>{t("cronjobs.unit_day")}</Text>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={row.hour}
+                    w="$20"
+                    onInput={(e) =>
+                      setRows(
+                        i(),
+                        "hour",
+                        clamp(Number(e.currentTarget.value), 0, 23),
+                      )
+                    }
+                  />
+                  <Text>{t("cronjobs.unit_hour")}</Text>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={row.minute}
+                    w="$20"
+                    onInput={(e) =>
+                      setRows(
+                        i(),
+                        "minute",
+                        clamp(Number(e.currentTarget.value), 0, 59),
+                      )
+                    }
+                  />
+                  <Text>{t("cronjobs.unit_minute")}</Text>
+                </Show>
+
+                <Show when={row.kind === "weekly"}>
+                  <Select
+                    value={row.weekday}
+                    onChange={(value: string) =>
+                      setRows(i(), "weekday", Number(value))
+                    }
+                  >
+                    <SelectTrigger w="$28">
+                      <SelectValue />
+                      <SelectIcon />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectListbox>
+                        <For each={WEEK_KEYS}>
+                          {(key, wi) => (
+                            <SelectOption value={wi()}>
+                              <SelectOptionText>{t(key)}</SelectOptionText>
+                              <SelectOptionIndicator />
+                            </SelectOption>
+                          )}
+                        </For>
+                      </SelectListbox>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={row.hour}
+                    w="$20"
+                    onInput={(e) =>
+                      setRows(
+                        i(),
+                        "hour",
+                        clamp(Number(e.currentTarget.value), 0, 23),
+                      )
+                    }
+                  />
+                  <Text>{t("cronjobs.unit_hour")}</Text>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={row.minute}
+                    w="$20"
+                    onInput={(e) =>
+                      setRows(
+                        i(),
+                        "minute",
+                        clamp(Number(e.currentTarget.value), 0, 59),
+                      )
+                    }
+                  />
+                  <Text>{t("cronjobs.unit_minute")}</Text>
+                </Show>
+
+                <Show when={row.kind === "everyN"}>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={row.n}
+                    w="$20"
+                    onInput={(e) =>
+                      setRows(
+                        i(),
+                        "n",
+                        clamp(Number(e.currentTarget.value), 1, 1440),
+                      )
+                    }
+                  />
+                  <Text>{t("cronjobs.unit_minute")}</Text>
+                </Show>
+
+                <Show when={row.kind === "custom"}>
+                  <Input
+                    value={row.expr}
+                    placeholder="*/10 * * * *"
+                    w="$72"
+                    onInput={(e) => setRows(i(), "expr", e.currentTarget.value)}
+                  />
+                </Show>
+
+                <Button onClick={() => openPreview(i())}>
+                  {t("cronjobs.preview")}
                 </Button>
                 <Button
-                  colorScheme="danger"
-                  variant="outline"
-                  disabled={form.cron_specs.length <= 1}
-                  onClick={() => removeSpec(i())}
+                  disabled={rows.length <= 1}
+                  onClick={() => removeRow(i())}
                 >
-                  {t("cronjobs.remove_spec")}
+                  {t("global.delete")}
                 </Button>
               </HStack>
             )}
           </For>
-          <Button size="sm" variant="ghost" onClick={addSpec}>
+          <Button size="sm" variant="ghost" onClick={addRow}>
             {t("cronjobs.add_spec")}
           </Button>
         </VStack>
         <FormHelperText>{t("cronjobs.cron_specs_help")}</FormHelperText>
       </FormControl>
+
+      {/* 近5次执行：按当前配置实时计算未来的执行时间。 */}
+      <Box w="$full" mt="$2">
+        <Button size="sm" variant="ghost" onClick={toggleNext}>
+          {t("cronjobs.next_runs")}
+        </Button>
+        <Show when={showNext()}>
+          <VStack spacing="$1" alignItems="start">
+            <For each={nextRuns()}>
+              {(time) => <Text>{formatRunTime(time)}</Text>}
+            </For>
+            <Show when={nextRuns().length === 0}>
+              <Text>{t("cronjobs.next_runs_empty")}</Text>
+            </Show>
+          </VStack>
+        </Show>
+      </Box>
 
       <ResponsiveGrid>
         <For each={fields()}>
@@ -442,16 +667,25 @@ const AddOrEdit = () => {
         </For>
       </ResponsiveGrid>
 
-      <CronEditor
-        isOpen={editorOpen()}
-        onClose={() => setEditorOpen(false)}
-        specs={form.cron_specs}
-        editIndex={editIndex()}
-        onSubmit={(specs) => {
-          setForm("cron_specs", specs)
-          setEditorOpen(false)
-        }}
-      />
+      {/* 单条执行周期的预览弹窗：cron 表达式 + 未来 5 次执行时间。 */}
+      <Modal opened={preview() !== null} onClose={() => setPreview(null)}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalCloseButton />
+          <ModalHeader>{t("cronjobs.preview")}</ModalHeader>
+          <ModalBody>
+            <VStack spacing="$1" alignItems="start">
+              <Text>{preview()?.spec}</Text>
+              <For each={preview()?.runs ?? []}>
+                {(time) => <Text>{formatRunTime(time)}</Text>}
+              </For>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button onClick={() => setPreview(null)}>{t("global.ok")}</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       {/* 底部按钮使用 storages/AddOrEdit 的同一种横向排列。 */}
       <HStack
