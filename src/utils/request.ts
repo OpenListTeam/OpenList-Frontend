@@ -38,9 +38,19 @@ instance.interceptors.response.use(
     //   title: error.code,
     //   description: error.message,
     // });
+    //
+    // 服务端在非 2xx 时同样返回 { code, message, data } 结构（例如初始化
+    // 失败会给出 data.reason 说明具体原因）。这里把响应体透传出来：
+    //   - message 优先用服务端的文案，避免用户只看到 axios 的
+    //     "Request failed with status code 500"；
+    //   - data 保留给调用方展示结构化原因。
+    // 网络错误/超时没有 response，退回 axios 的 message。
+    const body = error.response?.data as
+      { message?: string; data?: unknown } | undefined
     return {
       code: axios.isCancel(error) ? -1 : error.response?.status,
-      message: error.message,
+      message: body?.message || error.message,
+      data: body?.data ?? null,
     }
   },
 )

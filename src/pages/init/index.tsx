@@ -26,7 +26,13 @@ import { SwitchColorMode, SwitchLanguageWhite } from "~/components"
 import { useLoading, useT, useTitle } from "~/hooks"
 import { getSetting } from "~/store"
 import { base_path, r, notify, handleRespWithoutAuthAndNotify } from "~/utils"
-import { EmptyResp, InitSetupRequest, InitStatus, Resp } from "~/types"
+import {
+  EmptyResp,
+  InitSetupError,
+  InitSetupRequest,
+  InitStatus,
+  Resp,
+} from "~/types"
 import LoginBg from "../login/LoginBg"
 import EnvCheck, { useEnvCheck } from "./EnvCheck"
 
@@ -67,6 +73,21 @@ const Init = () => {
   const [phase, setPhase] = createSignal<Phase>("idle")
   const [step, setStep] = createSignal<Step>("env")
   const env = useEnvCheck()
+  /**
+   * 上一次初始化失败的具体原因（来自 /public/init/setup 的 data.code/reason）。
+   *
+   * 失败时会把用户带回第 2 步，必须在这里持续展示原因 —— 只弹一条 toast
+   * 会一闪而过，用户既不知道错在哪，也不知道该改什么。
+   */
+  const [failure, setFailure] = createSignal<InitSetupError | null>(null)
+  /**
+   * 后端自报的基础设施问题（存储配置不可用 / 读库失败）。
+   *
+   * 与 env_check 的 issues 互补：env_check 回答「配置是否正确」，这里回答
+   * 「后端能不能读」。两者可能单独出现，因此都要展示，否则用户只会看到
+   * 「未初始化」加一个没有原因的 500。
+   */
+  const [storageIssue, setStorageIssue] = createSignal<string | null>(null)
 
   /**
    * 站点地址（同源根路径）。
@@ -128,6 +149,11 @@ const Init = () => {
   onMount(async () => {
     env.refresh()
     const resp = (await r.get("/public/init_status")) as Resp<InitStatus>
+    // 后端自报的存储问题（TS Worker 后端）：直接展示，否则用户只能看到
+    // 「未初始化」，然后在提交时收到一个没有原因的 500。
+    setStorageIssue(
+      resp?.data?.storage_error || resp?.data?.db_load_error || null,
+    )
     // init_status 在诊断豁免名单中，存储未绑定时同样返回 200 且
     // initialized 为 false —— 即「未初始化」，应留在向导。
     // 只有明确「已初始化」才跳登录页，否则会把用户从唯一能修复配置的
@@ -185,6 +211,17 @@ const Init = () => {
     setStep("done")
     setPhase("creating")
     const resp = await data()
+    // 失败时先取出后端给出的具体原因（data.code / data.reason），
+    // 供第 2 步持续展示；成功则清掉上一次的失败信息。
+    if ((resp as any)?.code !== 200) {
+      const detail = (resp as any)?.data as InitSetupError | null
+      setFailure({
+        code: detail?.code,
+        reason: detail?.reason || (resp as any)?.message,
+      })
+    } else {
+      setFailure(null)
+    }
     handleRespWithoutAuthAndNotify(
       resp,
       async () => {
@@ -270,6 +307,28 @@ const Init = () => {
           </For>
         </HStack>
 
+        {/* 后端自报的存储问题：任何步骤都可见，避免「未初始化 + 无原因」 */}
+        <Show when={storageIssue()}>
+          <VStack
+            spacing="$1"
+            w="$full"
+            p="$3"
+            rounded="$md"
+            bgColor="$danger3"
+            alignItems="stretch"
+          >
+            <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
+              {t("init.storage_issue_title")}
+            </Text>
+            <Text fontSize="$xs" color="$neutral12">
+              {storageIssue()}
+            </Text>
+            <Text fontSize="$xs" color="$neutral10">
+              {t("init.storage_issue_hint")}
+            </Text>
+          </VStack>
+        </Show>
+
         {/* ── 第 1 步：环境自检（仅 TS Worker 后端会渲染） ── */}
         <Show when={step() === "env"}>
           <EnvCheck
@@ -305,6 +364,33 @@ const Init = () => {
 
         {/* ── 第 2 步：填写管理员信息 ── */}
         <Show when={step() === "account"}>
+          {/* 上一次初始化的失败原因（来自后端 data.code/data.reason） */}
+          <Show when={failure()}>
+            <VStack
+              spacing="$1"
+              w="$full"
+              p="$3"
+              rounded="$md"
+              bgColor="$danger3"
+              alignItems="stretch"
+            >
+              <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
+                {t("init.error_title")}
+              </Text>
+              <Text fontSize="$xs" color="$neutral12">
+                {failure()?.reason || t("init.failed")}
+              </Text>
+              <Show when={failure()?.code}>
+                <HStack fontSize="$xs">
+                  <Text color="$neutral11">{t("init.error_code")}</Text>
+                  <Spacer />
+                  <Text fontFamily="mono" color="$neutral11">
+                    {failure()?.code}
+                  </Text>
+                </HStack>
+              </Show>
+            </VStack>
+          </Show>
           <Input
             name="username"
             placeholder={t("init.username-tips")}

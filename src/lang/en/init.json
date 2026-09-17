@@ -49,5 +49,9 @@
   "done_go_login": "Go to login",
   "done_go_home": "Open home page",
   "timeout_title": "Still syncing",
-  "timeout_tip": "Your account was created, but the backend has not confirmed that storage is ready yet. You can retry the check, or try logging in now."
+  "timeout_tip": "Your account was created, but the backend has not confirmed that storage is ready yet. You can retry the check, or try logging in now.",
+  "error_title": "Initialization failed",
+  "error_code": "Error code",
+  "storage_issue_title": "Storage problem detected",
+  "storage_issue_hint": "Fix the storage configuration, then re-check the environment before retrying."
 }

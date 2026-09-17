@@ -4,10 +4,29 @@ export interface InitSetupRequest {
   site_title: string
 }
 
+/**
+ * 初始化失败时后端给出的结构化原因（TS Worker 后端）。
+ *
+ * 兼容性：Go 后端只返回 message，因此这里的字段全部可选；展示时以
+ * `reason` 优先、`message` 兜底。
+ */
+export interface InitSetupError {
+  /** 机器可读的分类：INVALID_COMBINATION / DRIVER_UNAVAILABLE / STORAGE_READ_FAILED ... */
+  code?: string
+  /** 已脱敏的具体原因，可直接展示给用户 */
+  reason?: string
+}
+
 export interface InitStatus {
   initialized: boolean
   /** 后端加解密密钥是否已在真实来源可读（KV 最终一致性的就绪标志） */
   ready?: boolean
+  /** 内存库是否来自一次成功的持久化读取（仅 TS Worker 后端返回） */
+  db_trusted?: boolean
+  /** 存储配置不可用的原因（已脱敏，可直接展示；仅 TS Worker 后端返回） */
+  storage_error?: string | null
+  /** 上一次从持久化后端读取失败的原因（已脱敏） */
+  db_load_error?: string | null
 }
 
 /** 初始化前环境自检项 */
@@ -35,6 +54,10 @@ export interface EnvCheck {
   }
   storage: {
     available: boolean
+    /** 配置错误的机器可读分类（无错误时为 null） */
+    error_code?: string | null
+    /** 配置错误的原因（已脱敏，可直接展示） */
+    error_message?: string | null
   }
   jwt: {
     ready: boolean
