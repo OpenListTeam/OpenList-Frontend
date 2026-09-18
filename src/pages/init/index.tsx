@@ -54,9 +54,40 @@ const READY_TIMEOUT_MS = 30_000
 /** 轮询间隔（毫秒） */
 const READY_POLL_MS = 1_000
 
+/**
+ * 初始化向导的 logo 兜底地址。
+ *
+ * 为什么不能直接用 getSetting("logo")：初始化阶段 /public/settings 会被后端
+ * 以 503 拦截（存储未绑定），settings store 始终为空，于是 logo 解析成空串，
+ * <Image src=""> 渲染出一个 src 为空的 <img>（浏览器还会把当前页 URL 当作
+ * src 再请求一次，控制台报错）。
+ *
+ * 这里改用 CDN 上的绝对地址：不依赖后端、不依赖 settings，且初始化页面必然
+ * 处在「还没配置好站点设置」的状态，用官方 logo 是唯一确定的选项。
+ */
+const INIT_LOGO_FALLBACK = "https://res.oplist.org/logo/logo.png"
+
+/**
+ * 解析配置中的 logo 列表（首行亮色、末行暗色）。
+ *
+ * 历史实现写作 `getSetting("logo").split("\n")` 然后用 `logos.pop()` 取暗色
+ * 值 —— `pop()` 会**改写数组**，且空/单行配置时取到 undefined。这里统一
+ * 过滤空行后返回，由调用方做兜底。
+ */
+const resolveLogos = (): string[] =>
+  getSetting("logo")
+    .split("\n")
+    .map((i) => i.trim())
+    .filter(Boolean)
+
 const Init = () => {
-  const logos = getSetting("logo").split("\n")
-  const logo = useColorModeValue(logos[0], logos.pop())
+  // 用户已配置 logo 时优先用配置值（多行时首行为亮色、末行为暗色）；
+  // 初始化阶段 settings 为空 -> 回退到绝对地址，避免空 src。
+  const logos = resolveLogos()
+  const logo = useColorModeValue(
+    logos[0] ?? INIT_LOGO_FALLBACK,
+    logos[logos.length - 1] ?? INIT_LOGO_FALLBACK,
+  )
   const t = useT()
   const title = createMemo(
     () => `${t("init.setup_to")} ${getSetting("site_title")}`,
