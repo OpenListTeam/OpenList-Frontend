@@ -22,6 +22,7 @@ import {
   initPluginEngine,
   r,
 } from "~/utils"
+import { applyCustomize } from "~/utils/customize"
 import { MustUser, UserOrGuest } from "./MustUser"
 import "./index.css"
 import { globalStyles } from "./theme"
@@ -58,15 +59,27 @@ const App: Component = () => {
         const resp = (await r.get("/public/settings")) as Resp<
           Record<string, string>
         >
-        handleRespWithoutAuthAndNotify(resp, setSettings, (e, code) => {
-          // 存储未绑定时 settings 被后端中间件以 503 拦截。此时不能把错误
-          // 塞进 err()：下面 Switch 的错误分支排在路由之前，会抢占渲染并
-          // 把初始化向导挡住，用户既看不到原因也无法配置存储。
-          // 交给路由渲染即可 —— init_status 在诊断豁免名单中，会正常返回
-          // initialized: false，守卫随即跳转到 /@init。
-          if (code === 503) return
-          setErr(err().concat(e))
-        })
+        handleRespWithoutAuthAndNotify(
+          resp,
+          (data) => {
+            setSettings(data)
+            // 注入自定义 CSS/JS（customize_head/body）与站点图标。
+            //
+            // 这里不判断后端类型：是否注入由 applyCustomize() 内部按「HTML 里的
+            // customize 占位符是否还在」决定 —— Go 后端在服务端 UpdateIndex() 里
+            // 已经把占位符替换掉（含空值），因此天然跳过，不会重复注入。
+            applyCustomize()
+          },
+          (e, code) => {
+            // 存储未绑定时 settings 被后端中间件以 503 拦截。此时不能把错误
+            // 塞进 err()：下面 Switch 的错误分支排在路由之前，会抢占渲染并
+            // 把初始化向导挡住，用户既看不到原因也无法配置存储。
+            // 交给路由渲染即可 —— init_status 在诊断豁免名单中，会正常返回
+            // initialized: false，守卫随即跳转到 /@init。
+            if (code === 503) return
+            setErr(err().concat(e))
+          },
+        )
       })(),
       (async () => {
         handleRespWithoutAuthAndNotify(
