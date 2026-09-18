@@ -227,6 +227,7 @@ const Init = () => {
       const detail = (resp as any)?.data as InitSetupError | null
       setFailure({
         code: detail?.code,
+        summary: detail?.summary ?? null,
         reason: detail?.reason || (resp as any)?.message,
         suggestion: detail?.suggestion ?? null,
       })
@@ -402,8 +403,9 @@ const Init = () => {
               <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
                 {t("init.error_title")}
               </Text>
+              {/* 只展示一行短原因：reason 是多行/可能被截断的完整说明，留给排查 */}
               <Text fontSize="$xs" color="$neutral12">
-                {failure()?.reason || t("init.failed")}
+                {failure()?.summary || failure()?.reason || t("init.failed")}
               </Text>
               <Show when={failure()?.suggestion}>
                 <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">

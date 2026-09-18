@@ -13,7 +13,9 @@ export interface InitSetupRequest {
 export interface InitSetupError {
   /** 机器可读的分类：INVALID_COMBINATION / DRIVER_UNAVAILABLE / STORAGE_READ_FAILED ... */
   code?: string
-  /** 已脱敏的具体原因，可直接展示给用户 */
+  /** 一行短原因（完整一句，界面直接展示这个） */
+  summary?: string | null
+  /** 已脱敏的完整原因（多行、可能被截断）：仅供排查，界面不展示 */
   reason?: string
   /**
    * 一句话修复建议（「改什么」，如 `Set DB_DRIVER=d1 (or DB_DRIVER=auto)`）。
@@ -41,6 +43,9 @@ export interface InitStatus {
 export interface EnvCheckIssue {
   code: string
   level: "error" | "warning"
+  /** 一行短原因（界面展示这个；后端保证是完整的一句） */
+  summary?: string
+  /** 完整说明（多行、已脱敏）：仅排查用，界面不展示 */
   message: string
   docUrl: string
   /** 一句话修复建议（「改什么」）；无建议时为 null/缺省 */
