@@ -26,7 +26,13 @@ import { SwitchColorMode, SwitchLanguageWhite } from "~/components"
 import { useLoading, useT, useTitle } from "~/hooks"
 import { getSetting } from "~/store"
 import { base_path, r, notify, handleRespWithoutAuthAndNotify } from "~/utils"
-import { EmptyResp, InitSetupRequest, InitStatus, Resp } from "~/types"
+import {
+  EmptyResp,
+  InitSetupError,
+  InitSetupRequest,
+  InitStatus,
+  Resp,
+} from "~/types"
 import LoginBg from "../login/LoginBg"
 import EnvCheck, { useEnvCheck } from "./EnvCheck"
 
@@ -48,9 +54,40 @@ const READY_TIMEOUT_MS = 30_000
 /** 轮询间隔（毫秒） */
 const READY_POLL_MS = 1_000
 
+/**
+ * 初始化向导的 logo 兜底地址。
+ *
+ * 为什么不能直接用 getSetting("logo")：初始化阶段 /public/settings 会被后端
+ * 以 503 拦截（存储未绑定），settings store 始终为空，于是 logo 解析成空串，
+ * <Image src=""> 渲染出一个 src 为空的 <img>（浏览器还会把当前页 URL 当作
+ * src 再请求一次，控制台报错）。
+ *
+ * 这里改用 CDN 上的绝对地址：不依赖后端、不依赖 settings，且初始化页面必然
+ * 处在「还没配置好站点设置」的状态，用官方 logo 是唯一确定的选项。
+ */
+const INIT_LOGO_FALLBACK = "https://res.oplist.org/logo/logo.png"
+
+/**
+ * 解析配置中的 logo 列表（首行亮色、末行暗色）。
+ *
+ * 历史实现写作 `getSetting("logo").split("\n")` 然后用 `logos.pop()` 取暗色
+ * 值 —— `pop()` 会**改写数组**，且空/单行配置时取到 undefined。这里统一
+ * 过滤空行后返回，由调用方做兜底。
+ */
+const resolveLogos = (): string[] =>
+  getSetting("logo")
+    .split("\n")
+    .map((i) => i.trim())
+    .filter(Boolean)
+
 const Init = () => {
-  const logos = getSetting("logo").split("\n")
-  const logo = useColorModeValue(logos[0], logos.pop())
+  // 用户已配置 logo 时优先用配置值（多行时首行为亮色、末行为暗色）；
+  // 初始化阶段 settings 为空 -> 回退到绝对地址，避免空 src。
+  const logos = resolveLogos()
+  const logo = useColorModeValue(
+    logos[0] ?? INIT_LOGO_FALLBACK,
+    logos[logos.length - 1] ?? INIT_LOGO_FALLBACK,
+  )
   const t = useT()
   const title = createMemo(
     () => `${t("init.setup_to")} ${getSetting("site_title")}`,
@@ -67,6 +104,30 @@ const Init = () => {
   const [phase, setPhase] = createSignal<Phase>("idle")
   const [step, setStep] = createSignal<Step>("env")
   const env = useEnvCheck()
+  /**
+   * 上一次初始化失败的具体原因（来自 /public/init/setup 的 data.code/reason）。
+   *
+   * 失败时会把用户带回第 2 步，必须在这里持续展示原因 —— 只弹一条 toast
+   * 会一闪而过，用户既不知道错在哪，也不知道该改什么。
+   */
+  const [failure, setFailure] = createSignal<InitSetupError | null>(null)
+  /**
+   * 后端自报的基础设施问题（存储配置不可用 / 读库失败）。
+   *
+   * 与 env_check 的 issues 互补：env_check 回答「配置是否正确」，这里回答
+   * 「后端能不能读」。两者可能单独出现，因此都要展示，否则用户只会看到
+   * 「未初始化」加一个没有原因的 500。
+   */
+  const [storageIssue, setStorageIssue] = createSignal<string | null>(null)
+  /**
+   * 上述问题的修复建议（「改什么」）。
+   *
+   * 后端单独给出而不是让前端解析原因文案：原因会被截断（多行说明只透传前
+   * 3 行），而用户最需要的是下一步动作，因此这里单独成行展示。
+   */
+  const [storageSuggestion, setStorageSuggestion] = createSignal<string | null>(
+    null,
+  )
 
   /**
    * 站点地址（同源根路径）。
@@ -128,6 +189,12 @@ const Init = () => {
   onMount(async () => {
     env.refresh()
     const resp = (await r.get("/public/init_status")) as Resp<InitStatus>
+    // 后端自报的存储问题（TS Worker 后端）：直接展示，否则用户只能看到
+    // 「未初始化」，然后在提交时收到一个没有原因的 500。
+    setStorageIssue(
+      resp?.data?.storage_error || resp?.data?.db_load_error || null,
+    )
+    setStorageSuggestion(resp?.data?.storage_suggestion ?? null)
     // init_status 在诊断豁免名单中，存储未绑定时同样返回 200 且
     // initialized 为 false —— 即「未初始化」，应留在向导。
     // 只有明确「已初始化」才跳登录页，否则会把用户从唯一能修复配置的
@@ -185,6 +252,19 @@ const Init = () => {
     setStep("done")
     setPhase("creating")
     const resp = await data()
+    // 失败时先取出后端给出的具体原因（data.code / data.reason），
+    // 供第 2 步持续展示；成功则清掉上一次的失败信息。
+    if ((resp as any)?.code !== 200) {
+      const detail = (resp as any)?.data as InitSetupError | null
+      setFailure({
+        code: detail?.code,
+        summary: detail?.summary ?? null,
+        reason: detail?.reason || (resp as any)?.message,
+        suggestion: detail?.suggestion ?? null,
+      })
+    } else {
+      setFailure(null)
+    }
     handleRespWithoutAuthAndNotify(
       resp,
       async () => {
@@ -270,6 +350,50 @@ const Init = () => {
           </For>
         </HStack>
 
+        {/*
+          后端自报的存储问题（来自 /public/init_status）。
+
+          第 1 步不展示：那一屏的环境自检面板已经把同一条问题连同「怎么改」和
+          文档链接列出来了，同一个事实在一屏出现两次会让人以为出了两个问题。
+          第 2/3 步自检面板不可见，这里继续作为提醒（否则用户只看到「未初始化」
+          却看不到原因）。
+          说明：后端无自检能力时（showEnvStep 为 false）第 1 步也不会渲染面板，
+          此时横幅照常展示。
+        */}
+        <Show when={storageIssue() && (!showEnvStep() || step() !== "env")}>
+          <VStack
+            spacing="$1"
+            w="$full"
+            p="$3"
+            rounded="$md"
+            bgColor="$danger3"
+            alignItems="stretch"
+          >
+            <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
+              {t("init.storage_issue_title")}
+            </Text>
+            <Text fontSize="$xs" color="$neutral12">
+              {storageIssue()}
+            </Text>
+            <Show when={storageSuggestion()}>
+              <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
+                {t("init.env_fix_title")}
+              </Text>
+              <Text fontSize="$xs" color="$neutral12">
+                {storageSuggestion()}
+              </Text>
+            </Show>
+            <Text fontSize="$xs" color="$neutral10">
+              {t("init.storage_issue_hint")}
+            </Text>
+          </VStack>
+        </Show>
+
+        {/*
+          说明：这里不再有「存储降级告警」横幅 —— 显式配置的驱动不可用时后端
+          直接报错（不换后端），由上面的问题横幅 + 环境自检面板展示原因与建议。
+        */}
+
         {/* ── 第 1 步：环境自检（仅 TS Worker 后端会渲染） ── */}
         <Show when={step() === "env"}>
           <EnvCheck
@@ -278,9 +402,13 @@ const Init = () => {
             failed={env.failed}
           />
 
-          <Text fontSize="$xs" color="$neutral10" textAlign="center">
-            {t("init.env_next_tip")}
-          </Text>
+          {/* 就绪时才提「下一步做什么」；未就绪时面板里已有
+              「Resolve the issues above to continue」，两句话意思重复 */}
+          <Show when={canProceed()}>
+            <Text fontSize="$xs" color="$neutral10" textAlign="center">
+              {t("init.env_next_tip")}
+            </Text>
+          </Show>
 
           <HStack w="$full" spacing="$2">
             <Button
@@ -305,6 +433,42 @@ const Init = () => {
 
         {/* ── 第 2 步：填写管理员信息 ── */}
         <Show when={step() === "account"}>
+          {/* 上一次初始化的失败原因（来自后端 data.code/data.reason） */}
+          <Show when={failure()}>
+            <VStack
+              spacing="$1"
+              w="$full"
+              p="$3"
+              rounded="$md"
+              bgColor="$danger3"
+              alignItems="stretch"
+            >
+              <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
+                {t("init.error_title")}
+              </Text>
+              {/* 只展示一行短原因：reason 是多行/可能被截断的完整说明，留给排查 */}
+              <Text fontSize="$xs" color="$neutral12">
+                {failure()?.summary || failure()?.reason || t("init.failed")}
+              </Text>
+              <Show when={failure()?.suggestion}>
+                <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
+                  {t("init.env_fix_title")}
+                </Text>
+                <Text fontSize="$xs" color="$neutral12">
+                  {failure()?.suggestion}
+                </Text>
+              </Show>
+              <Show when={failure()?.code}>
+                <HStack fontSize="$xs">
+                  <Text color="$neutral11">{t("init.error_code")}</Text>
+                  <Spacer />
+                  <Text fontFamily="mono" color="$neutral11">
+                    {failure()?.code}
+                  </Text>
+                </HStack>
+              </Show>
+            </VStack>
+          </Show>
           <Input
             name="username"
             placeholder={t("init.username-tips")}
