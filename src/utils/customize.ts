@@ -81,9 +81,9 @@ function findAnchor(root: Element | null, text: string): Comment | null {
 /**
  * 重建 `<script>` 节点。
  *
- * 通过 innerHTML / cloneNode 插入的 `<script>` **不会执行**（HTML 规范里
- * 由解析器插入的脚本才会跑），因此必须手工建一个 script 元素并复制属性与
- * 文本，浏览器会正常执行它。
+ * 通过 `innerHTML` 解析出来的 `<script>` 带「already started」标记，**永远不会执行**
+ * （HTML 规范：解析器在 innerHTML 路径上创建的 script 直接标记为已启动），只有
+ * 手工 `createElement` + 复制属性与文本得到的节点，才会在插入文档时正常执行。
  */
 function rebuildScript(source: HTMLScriptElement): HTMLScriptElement {
   const script = document.createElement("script")
@@ -92,6 +92,19 @@ function rebuildScript(source: HTMLScriptElement): HTMLScriptElement {
   }
   script.textContent = source.textContent ?? ""
   return script
+}
+
+/**
+ * 重建片段内**所有层级**的 `<script>`（含 `<div><script>…</script></div>` 这类嵌套）。
+ *
+ * 只处理顶层是不够的：innerHTML 解析出的嵌套 script 同样带「already started」，
+ * 一样不会执行。`querySelectorAll` 返回的是静态列表，可安全地边遍历边 `replaceWith`。
+ * 它不会进入嵌套 `<template>` 的 content —— 那部分本就应当是惰性的。
+ */
+function rebuildScriptsDeep(root: ParentNode): void {
+  for (const script of Array.from(root.querySelectorAll("script"))) {
+    script.replaceWith(rebuildScript(script))
+  }
 }
 
 /**
@@ -105,18 +118,14 @@ function replaceAnchor(anchor: Comment, html: string): void {
   if (!parent) return
   const template = document.createElement("template")
   template.innerHTML = html
+  // 先整棵子树重建 script（含嵌套层级），再整体搬进文档 —— 这样每个 script 在
+  // 「变为已连接」时都会走正常的 prepare 流程，并按文档顺序执行。
+  rebuildScriptsDeep(template.content)
 
   const fragment = document.createDocumentFragment()
   for (const node of Array.from(template.content.childNodes)) {
-    if (
-      node.nodeType === Node.ELEMENT_NODE &&
-      (node as Element).tagName === "SCRIPT"
-    ) {
-      fragment.appendChild(rebuildScript(node as HTMLScriptElement))
-    } else {
-      // template.content 中的节点已脱离文档，可直接搬移，无需再 clone
-      fragment.appendChild(node)
-    }
+    // template.content 中的节点已脱离文档，可直接搬移，无需再 clone
+    fragment.appendChild(node)
   }
   parent.insertBefore(fragment, anchor)
   anchor.remove()
