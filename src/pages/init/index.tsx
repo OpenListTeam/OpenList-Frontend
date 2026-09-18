@@ -319,8 +319,17 @@ const Init = () => {
           </For>
         </HStack>
 
-        {/* 后端自报的存储问题：任何步骤都可见，避免「未初始化 + 无原因」 */}
-        <Show when={storageIssue()}>
+        {/*
+          后端自报的存储问题（来自 /public/init_status）。
+
+          第 1 步不展示：那一屏的环境自检面板已经把同一条问题连同「怎么改」和
+          文档链接列出来了，同一个事实在一屏出现两次会让人以为出了两个问题。
+          第 2/3 步自检面板不可见，这里继续作为提醒（否则用户只看到「未初始化」
+          却看不到原因）。
+          说明：后端无自检能力时（showEnvStep 为 false）第 1 步也不会渲染面板，
+          此时横幅照常展示。
+        */}
+        <Show when={storageIssue() && (!showEnvStep() || step() !== "env")}>
           <VStack
             spacing="$1"
             w="$full"
@@ -335,7 +344,6 @@ const Init = () => {
             <Text fontSize="$xs" color="$neutral12">
               {storageIssue()}
             </Text>
-            {/* 修复建议置顶于长文本之后、提示之前：一眼就能看到「改什么」 */}
             <Show when={storageSuggestion()}>
               <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
                 {t("init.env_fix_title")}
@@ -363,9 +371,13 @@ const Init = () => {
             failed={env.failed}
           />
 
-          <Text fontSize="$xs" color="$neutral10" textAlign="center">
-            {t("init.env_next_tip")}
-          </Text>
+          {/* 就绪时才提「下一步做什么」；未就绪时面板里已有
+              「Resolve the issues above to continue」，两句话意思重复 */}
+          <Show when={canProceed()}>
+            <Text fontSize="$xs" color="$neutral10" textAlign="center">
+              {t("init.env_next_tip")}
+            </Text>
+          </Show>
 
           <HStack w="$full" spacing="$2">
             <Button
