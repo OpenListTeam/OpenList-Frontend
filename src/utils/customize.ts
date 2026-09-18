@@ -24,7 +24,7 @@ import { isTsWorker } from "~/utils/backend"
  *    占位符必然消失。反过来，占位符还在就说明没有任何服务端注入过这份 HTML，
  *    由前端接手。这个判据同时覆盖四种组合：
  *      - Go 后端服务 HTML        → 占位符已消失 → 跳过（不重复注入）
- *      - 静态/CDN 直出的 HTML + Go 后端 → 占位符仍在 → 注入（HTMl 没经过 Go）
+ *      - 静态/CDN 直出的 HTML + Go 后端 → 占位符仍在 → 注入（HTML 没经过 Go）
  *      - TS 后端（未做服务端注入） → 占位符仍在 → 注入
  *      - 将来若 TS 后端也加了服务端注入 → 占位符被替换 → 自动跳过
  *
@@ -134,7 +134,8 @@ function isManagePath(pathname: string): boolean {
  * 只在参数一致时替换 href。
  *
  * `expected` 是 index.html 里的构建期默认值：href 已不是它，说明服务端
- * （Go 的 UpdateHtml/ManageHtml 都会做这一步）已经替换过，前端不再插手。
+ * （Go 在 UpdateIndex() 里对 ManageHtml / IndexHtml 都做过这一步）已经替换过，
+ * 前端不再插手。
  */
 function replaceHrefIfDefault(
   link: Element | null,
