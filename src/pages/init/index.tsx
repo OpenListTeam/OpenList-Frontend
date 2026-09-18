@@ -88,6 +88,22 @@ const Init = () => {
    * 「未初始化」加一个没有原因的 500。
    */
   const [storageIssue, setStorageIssue] = createSignal<string | null>(null)
+  /**
+   * 上述问题的修复建议（「改什么」）。
+   *
+   * 后端单独给出而不是让前端解析原因文案：原因会被截断（多行说明只透传前
+   * 3 行），而用户最需要的是下一步动作，因此这里单独成行展示。
+   */
+  const [storageSuggestion, setStorageSuggestion] = createSignal<string | null>(
+    null,
+  )
+  /**
+   * 存储降级告警（配的驱动不可用、后端已自动切到别的后端）。
+   *
+   * 与 storageIssue 互斥：这是 warning —— 站点可用，但数据没有落在用户配置
+   * 的那个后端上，必须知情（否则会以为数据写进了自己配置的 KV/D1）。
+   */
+  const [storageWarning, setStorageWarning] = createSignal<string | null>(null)
 
   /**
    * 站点地址（同源根路径）。
@@ -154,6 +170,8 @@ const Init = () => {
     setStorageIssue(
       resp?.data?.storage_error || resp?.data?.db_load_error || null,
     )
+    setStorageSuggestion(resp?.data?.storage_suggestion ?? null)
+    setStorageWarning(resp?.data?.storage_warning ?? null)
     // init_status 在诊断豁免名单中，存储未绑定时同样返回 200 且
     // initialized 为 false —— 即「未初始化」，应留在向导。
     // 只有明确「已初始化」才跳登录页，否则会把用户从唯一能修复配置的
@@ -218,6 +236,7 @@ const Init = () => {
       setFailure({
         code: detail?.code,
         reason: detail?.reason || (resp as any)?.message,
+        suggestion: detail?.suggestion ?? null,
       })
     } else {
       setFailure(null)
@@ -323,9 +342,49 @@ const Init = () => {
             <Text fontSize="$xs" color="$neutral12">
               {storageIssue()}
             </Text>
+            {/* 修复建议置顶于长文本之后、提示之前：一眼就能看到「改什么」 */}
+            <Show when={storageSuggestion()}>
+              <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
+                {t("init.env_fix_title")}
+              </Text>
+              <Text fontSize="$xs" color="$neutral12">
+                {storageSuggestion()}
+              </Text>
+            </Show>
             <Text fontSize="$xs" color="$neutral10">
               {t("init.storage_issue_hint")}
             </Text>
+          </VStack>
+        </Show>
+
+        {/*
+          存储降级告警：配的驱动不可用（如 CF 上 DB_DRIVER=kv 却没绑 KV），
+          后端已自动切到探测到的可用后端 —— 站点可用，但数据落在别处，必须
+          让用户看到。错误横幅存在时不重复展示（两者互斥）。
+        */}
+        <Show when={!storageIssue() && storageWarning()}>
+          <VStack
+            spacing="$1"
+            w="$full"
+            p="$3"
+            rounded="$md"
+            bgColor="$warning3"
+            alignItems="stretch"
+          >
+            <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
+              {t("init.storage_warning_title")}
+            </Text>
+            <Text fontSize="$xs" color="$neutral12">
+              {storageWarning()}
+            </Text>
+            <Show when={storageSuggestion()}>
+              <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
+                {t("init.env_fix_title")}
+              </Text>
+              <Text fontSize="$xs" color="$neutral12">
+                {storageSuggestion()}
+              </Text>
+            </Show>
           </VStack>
         </Show>
 
@@ -380,6 +439,14 @@ const Init = () => {
               <Text fontSize="$xs" color="$neutral12">
                 {failure()?.reason || t("init.failed")}
               </Text>
+              <Show when={failure()?.suggestion}>
+                <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
+                  {t("init.env_fix_title")}
+                </Text>
+                <Text fontSize="$xs" color="$neutral12">
+                  {failure()?.suggestion}
+                </Text>
+              </Show>
               <Show when={failure()?.code}>
                 <HStack fontSize="$xs">
                   <Text color="$neutral11">{t("init.error_code")}</Text>

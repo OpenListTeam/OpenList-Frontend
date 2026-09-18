@@ -15,6 +15,12 @@ export interface InitSetupError {
   code?: string
   /** 已脱敏的具体原因，可直接展示给用户 */
   reason?: string
+  /**
+   * 一句话修复建议（「改什么」，如 `Set DB_DRIVER=d1 (or DB_DRIVER=auto)`）。
+   *
+   * 后端单独给出而不是让前端解析 reason：原因会被截断，解析文案不可靠。
+   */
+  suggestion?: string | null
 }
 
 export interface InitStatus {
@@ -25,6 +31,14 @@ export interface InitStatus {
   db_trusted?: boolean
   /** 存储配置不可用的原因（已脱敏，可直接展示；仅 TS Worker 后端返回） */
   storage_error?: string | null
+  /**
+   * 存储可降级告警：配的驱动不可用、后端已自动切到别的后端（如 kv → d1）。
+   *
+   * 与 storage_error 互斥：这是 warning（站点可用），不是 error。
+   */
+  storage_warning?: string | null
+  /** 存储配置不可用 / 降级时的修复建议（「改什么」；仅 TS Worker 后端返回） */
+  storage_suggestion?: string | null
   /** 上一次从持久化后端读取失败的原因（已脱敏） */
   db_load_error?: string | null
 }
@@ -35,6 +49,8 @@ export interface EnvCheckIssue {
   level: "error" | "warning"
   message: string
   docUrl: string
+  /** 一句话修复建议（「改什么」）；无建议时为 null/缺省 */
+  suggestion?: string | null
 }
 
 /** 初始化前环境自检结果（/public/env_check） */
@@ -58,6 +74,8 @@ export interface EnvCheck {
     error_code?: string | null
     /** 配置错误的原因（已脱敏，可直接展示） */
     error_message?: string | null
+    /** 配置错误时的修复建议（「改什么」） */
+    suggestion?: string | null
   }
   jwt: {
     ready: boolean

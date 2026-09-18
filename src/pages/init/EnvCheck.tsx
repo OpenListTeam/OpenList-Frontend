@@ -188,7 +188,7 @@ const EnvCheck = (props: {
         </VStack>
       </Show>
 
-      {/* 问题清单：每条附文档链接 */}
+      {/* 问题清单：原因 + 怎么改 + 文档链接 */}
       <For each={props.check()?.issues ?? []}>
         {(issue: EnvCheckIssue) => (
           <VStack
@@ -201,6 +201,16 @@ const EnvCheck = (props: {
             <Text fontSize="$xs" color="$neutral12">
               {issue.message}
             </Text>
+            {/* 「怎么改」必须单独成段并置顶于文档链接之前：原因常是多行说明，
+                用户真正需要的是下一步动作，混在长文本里容易被忽略或截断 */}
+            <Show when={issue.suggestion}>
+              <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
+                {t("init.env_fix_title")}
+              </Text>
+              <Text fontSize="$xs" color="$neutral12">
+                {issue.suggestion}
+              </Text>
+            </Show>
             <Text
               as="a"
               href={issue.docUrl}
