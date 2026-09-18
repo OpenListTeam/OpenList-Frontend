@@ -97,13 +97,6 @@ const Init = () => {
   const [storageSuggestion, setStorageSuggestion] = createSignal<string | null>(
     null,
   )
-  /**
-   * 存储降级告警（配的驱动不可用、后端已自动切到别的后端）。
-   *
-   * 与 storageIssue 互斥：这是 warning —— 站点可用，但数据没有落在用户配置
-   * 的那个后端上，必须知情（否则会以为数据写进了自己配置的 KV/D1）。
-   */
-  const [storageWarning, setStorageWarning] = createSignal<string | null>(null)
 
   /**
    * 站点地址（同源根路径）。
@@ -171,7 +164,6 @@ const Init = () => {
       resp?.data?.storage_error || resp?.data?.db_load_error || null,
     )
     setStorageSuggestion(resp?.data?.storage_suggestion ?? null)
-    setStorageWarning(resp?.data?.storage_warning ?? null)
     // init_status 在诊断豁免名单中，存储未绑定时同样返回 200 且
     // initialized 为 false —— 即「未初始化」，应留在向导。
     // 只有明确「已初始化」才跳登录页，否则会把用户从唯一能修复配置的
@@ -358,35 +350,9 @@ const Init = () => {
         </Show>
 
         {/*
-          存储降级告警：配的驱动不可用（如 CF 上 DB_DRIVER=kv 却没绑 KV），
-          后端已自动切到探测到的可用后端 —— 站点可用，但数据落在别处，必须
-          让用户看到。错误横幅存在时不重复展示（两者互斥）。
+          说明：这里不再有「存储降级告警」横幅 —— 显式配置的驱动不可用时后端
+          直接报错（不换后端），由上面的问题横幅 + 环境自检面板展示原因与建议。
         */}
-        <Show when={!storageIssue() && storageWarning()}>
-          <VStack
-            spacing="$1"
-            w="$full"
-            p="$3"
-            rounded="$md"
-            bgColor="$warning3"
-            alignItems="stretch"
-          >
-            <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
-              {t("init.storage_warning_title")}
-            </Text>
-            <Text fontSize="$xs" color="$neutral12">
-              {storageWarning()}
-            </Text>
-            <Show when={storageSuggestion()}>
-              <Text fontSize="$xs" fontWeight="$medium" color="$neutral12">
-                {t("init.env_fix_title")}
-              </Text>
-              <Text fontSize="$xs" color="$neutral12">
-                {storageSuggestion()}
-              </Text>
-            </Show>
-          </VStack>
-        </Show>
 
         {/* ── 第 1 步：环境自检（仅 TS Worker 后端会渲染） ── */}
         <Show when={step() === "env"}>

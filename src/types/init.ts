@@ -31,13 +31,7 @@ export interface InitStatus {
   db_trusted?: boolean
   /** 存储配置不可用的原因（已脱敏，可直接展示；仅 TS Worker 后端返回） */
   storage_error?: string | null
-  /**
-   * 存储可降级告警：配的驱动不可用、后端已自动切到别的后端（如 kv → d1）。
-   *
-   * 与 storage_error 互斥：这是 warning（站点可用），不是 error。
-   */
-  storage_warning?: string | null
-  /** 存储配置不可用 / 降级时的修复建议（「改什么」；仅 TS Worker 后端返回） */
+  /** 存储配置不可用时的修复建议（「改什么」；仅 TS Worker 后端返回） */
   storage_suggestion?: string | null
   /** 上一次从持久化后端读取失败的原因（已脱敏） */
   db_load_error?: string | null

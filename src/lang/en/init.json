@@ -54,6 +54,5 @@
   "error_title": "Initialization failed",
   "error_code": "Error code",
   "storage_issue_title": "Storage problem detected",
-  "storage_issue_hint": "Fix the storage configuration, then re-check the environment before retrying.",
-  "storage_warning_title": "Storage driver fallback in use"
+  "storage_issue_hint": "Fix the storage configuration, then re-check the environment before retrying."
 }
