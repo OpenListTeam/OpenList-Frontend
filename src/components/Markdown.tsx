@@ -7,24 +7,27 @@ import rehypeStringify from "rehype-stringify"
 import remarkGfm from "remark-gfm"
 import remarkParse from "remark-parse"
 import remarkRehype from "remark-rehype"
-import { For, Show, createEffect, createMemo, createSignal, on } from "solid-js"
+import {
+  For,
+  Show,
+  createEffect,
+  createMemo,
+  createSignal,
+  on,
+  untrack,
+} from "solid-js"
 import { Motion } from "solid-motionone"
 import { unified } from "unified"
 import { useCDN, useParseText, useRouter } from "~/hooks"
 import { useScrollListener } from "~/pages/home/toolbar/BackTop.jsx"
-import { getMainColor, getSettingBool, me } from "~/store"
-import {
-  api,
-  loadCSS,
-  loadScriptIIFE,
-  notify,
-  pathDir,
-  pathJoin,
-  pathResolve,
-} from "~/utils"
+import { getMainColor, getSettingBool, objStore } from "~/store"
+import { loadCSS, loadScriptIIFE, notify, pathDir, pathJoin } from "~/utils"
 import { isMobile } from "~/utils/compatibility.js"
 import hljs from "highlight.js"
 import { EncodingSelect } from "."
+import { watchMediaSrc } from "./markdown/media-fallback"
+import { rehypeMedia } from "./markdown/rehype-media"
+import type { HastNode, MediaContext } from "./markdown/rehype-media"
 import "./markdown.css"
 
 type TocItem = { indent: number; text: string; tagName: string; key: string }
@@ -157,7 +160,7 @@ const { katexCSSPath, mermaidJSPath } = useCDN()
 
 async function renderMarkdown(
   content: string,
-  sanitize: boolean,
+  ctx: { sanitize: boolean } & MediaContext,
 ): Promise<{ html: string; hasMermaid: boolean }> {
   let processor = unified()
 
@@ -181,17 +184,60 @@ async function renderMarkdown(
   }
 
   processor.use(remarkRehype, { allowDangerousHtml: true }).use(rehypeRaw)
+  // resolve media urls and render the image syntax of a video as a player
+  processor.use(() => (tree: unknown) => rehypeMedia(tree as HastNode, ctx))
 
-  if (sanitize)
+  if (ctx.sanitize) {
+    const attrs = defaultSchema.attributes ?? {}
+    const allow = (tag: string, ...names: string[]) => [
+      ...(attrs[tag] ?? []),
+      ...names,
+    ]
     processor.use(rehypeSanitize, {
       ...defaultSchema,
+      // video/audio/track are not in the default element whitelist and
+      // would be stripped entirely, breaking markdown video previews
+      tagNames: [...(defaultSchema.tagNames ?? []), "video", "audio", "track"],
+      // the default only allows http/https, which drops inline base64 pictures
+      protocols: {
+        ...defaultSchema.protocols,
+        src: [...(defaultSchema.protocols?.src ?? []), "data"],
+      },
       attributes: {
-        ...defaultSchema.attributes,
+        ...attrs,
+        // `data-md-path` feeds the runtime fallback of media links
+        "*": allow("*", "data*"),
         code: [
           ["className", /^language-[\w-]+$/, "math-inline", "math-display"],
         ],
+        // attribute names are hast properties, not html attributes
+        video: allow(
+          "video",
+          "src",
+          "poster",
+          "controls",
+          "preload",
+          "autoplay",
+          "loop",
+          "muted",
+          "playsInline",
+          "crossOrigin",
+        ),
+        audio: allow(
+          "audio",
+          "src",
+          "controls",
+          "preload",
+          "autoplay",
+          "loop",
+          "muted",
+          "crossOrigin",
+        ),
+        source: allow("source", "src", "srcSet", "type", "media"),
+        track: allow("track", "src", "kind", "label", "srclang", "default"),
       },
     })
+  }
 
   if (hasMath) {
     const { default: rehypeKatex } = await import("rehype-katex")
@@ -220,45 +266,37 @@ export function Markdown(props: {
   const { isString, text } = useParseText(props.children)
   const { pathname } = useRouter()
 
+  // media urls of the markdown are relative to the dir it belongs to: the
+  // folder itself for a readme, the parent dir for a previewed file
+  const baseDir = createMemo(() =>
+    props.readme ? pathname() : pathDir(pathname()),
+  )
+  // the listing already carries the sign of every object next to the markdown
+  const siblingSigns = () => {
+    const signs = new Map<string, string>()
+    for (const obj of objStore.objs) {
+      if (obj.sign) signs.set(pathJoin(baseDir(), obj.name), obj.sign)
+    }
+    return signs
+  }
+
   const md = createMemo(() => {
     const raw = text(encoding())
-    const content =
-      !props.ext || props.ext.toLowerCase() === "md"
-        ? raw
-        : `\`\`\`${props.ext}\n${raw}\n\`\`\``
-
-    return content.replace(/!\[.*?\]\((.*?)\)/g, (match) => {
-      const name = match.match(/!\[(.*?)\]\(.*?\)/)![1]
-      const rawUrl = match.match(/!\[.*?\]\((.*?)\)/)![1]
-
-      if (
-        rawUrl.startsWith("data:image/") ||
-        rawUrl.startsWith("http://") ||
-        rawUrl.startsWith("https://") ||
-        rawUrl.startsWith("//")
-      ) {
-        return match
-      }
-
-      const resolvedPath = rawUrl.startsWith("/")
-        ? rawUrl
-        : pathResolve(props.readme ? pathname() : pathDir(pathname()), rawUrl)
-
-      const url = `${api}/d${pathJoin(me().base_path, resolvedPath)}`
-      const ans = `![${name}](${url})`
-      console.log(ans)
-      return ans
-    })
+    return !props.ext || props.ext.toLowerCase() === "md"
+      ? raw
+      : `\`\`\`${props.ext}\n${raw}\n\`\`\``
   })
 
   createEffect(
     on([md, mermaidTheme], async () => {
       setShow(false)
 
-      const { html, hasMermaid } = await renderMarkdown(
-        md(),
-        props.sanitize || getSettingBool("filter_readme_scripts"),
-      )
+      const { html, hasMermaid } = await renderMarkdown(md(), {
+        sanitize: props.sanitize || getSettingBool("filter_readme_scripts"),
+        baseDir: baseDir(),
+        // untracked: appending objects must not re-render the whole markdown
+        signs: untrack(siblingSigns),
+      })
       setMarkdownHTML(html)
 
       setTimeout(() => {
@@ -292,6 +330,7 @@ export function Markdown(props: {
           window.mermaid.run({ querySelector: ".language-mermaid" })
         }
 
+        watchMediaSrc(markdownRef())
         window.onMDRender?.()
       })
     }),
