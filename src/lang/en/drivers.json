@@ -854,6 +854,8 @@
     "directory_size": "Directory size",
     "directory_size-tips": "This might impact host performance",
     "mkdir_perm": "Mkdir perm",
+    "pdf_thumbnail": "Pdf thumbnail",
+    "pdf_thumbnail-tips": "Generate PDF first-page thumbnails with Quick Look on macOS",
     "recycle_bin_path": "Recycle bin path",
     "recycle_bin_path-tips": "path to recycle bin, delete permanently if empty or keep 'delete permanently'",
     "root_folder_path": "Root folder path",
