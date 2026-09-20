@@ -18,7 +18,7 @@
   "files": [
     "dist"
   ],
-  "homepage": "https://openlist.team/",
+  "homepage": "https://oplist.org/",
   "scripts": {
     "crowdin:upload": "crowdin upload sources",
     "crowdin:download": "crowdin download --verbose",
