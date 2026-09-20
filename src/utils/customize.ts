@@ -45,6 +45,9 @@ import { isTsWorker } from "~/utils/backend"
  *     `<title>` 仍是构建期默认值。
  *   - 注入位置为 `<head>` / `<body>` 内占位符原位置（与 Go 一致），
  *     而非追加到末尾。
+ *   - 注入时 `DOMContentLoaded` / `load` 可能已经触发过，依赖这两个事件的自定义
+ *     代码需要自己看 `document.readyState`；片段内脚本的执行顺序由本模块保证
+ *     （见 `runScripts`），代价是外部脚本会按顺序等待。
  */
 
 /** 占位符注释文本（与 OpenList-Frontend/index.html、Go 版 UpdateIndex() 一致）。 */
@@ -57,6 +60,17 @@ const DEFAULT_APPLE_TOUCH_ICON = "https://res.oplist.org/logo/logo.png"
 
 /** 管理页路径段（Go 端对应 conf.ManageHtml）。 */
 const MANAGE_SEGMENT = "/@manage"
+
+/** 注释占位文本：脚本先换成它占住原位置，轮到执行时再换回真正的 script。 */
+const SCRIPT_PLACEHOLDER = "customize script"
+
+/**
+ * 等待外部脚本加载的上限。
+ *
+ * 一个卡住不响应的 CDN 不能把后面的脚本一直吊着：超时后降级为「顺序不保证」，
+ * 继续执行剩余脚本。
+ */
+const SCRIPT_LOAD_TIMEOUT = 15000
 
 /** 幂等标记：一次页面加载只注入一次。 */
 let applied = false
@@ -95,32 +109,109 @@ function rebuildScript(source: HTMLScriptElement): HTMLScriptElement {
 }
 
 /**
- * 重建片段内**所有层级**的 `<script>`（含 `<div><script>…</script></div>` 这类嵌套）。
+ * 是否是可执行的「经典脚本」。
  *
- * 只处理顶层是不够的：innerHTML 解析出的嵌套 script 同样带「already started」，
- * 一样不会执行。`querySelectorAll` 返回的是静态列表，可安全地边遍历边 `replaceWith`。
- * 它不会进入嵌套 `<template>` 的 content —— 那部分本就应当是惰性的。
+ * `type` 缺省即经典脚本，比较时按规范只取 MIME 主类型（`text/javascript; charset=…`
+ * 也算）；`module` 与 `application/json` 这类数据块都不会被当经典脚本执行。
  */
-function rebuildScriptsDeep(root: ParentNode): void {
-  for (const script of Array.from(root.querySelectorAll("script"))) {
-    script.replaceWith(rebuildScript(script))
-  }
+function isClassicScript(script: HTMLScriptElement): boolean {
+  const type = (script.getAttribute("type") ?? "")
+    .split(";")[0]
+    .trim()
+    .toLowerCase()
+  if (type === "") return true
+  return /^(text|application)\/(x-)?(java|ecma)script(\d+\.\d+)?$/.test(type)
 }
 
 /**
- * 用一段 HTML 片段替换占位符锚点。
+ * 是否需要「插入后等它加载完」再执行后面的脚本。
  *
- * 之所以「替换」而不是「追加」：替换后锚点消失，语义与 Go 完全一致
- * （Go 就是把占位符原地换掉），同时也让重复调用天然变成 no-op。
+ * - 内联脚本、`type="module"`、数据块：不等。模块之间靠 import 自行保证顺序。
+ * - `async`：不等 —— 作者显式声明「不关心顺序」。
+ * - 其余外部经典脚本：等。`defer` 只对**解析器插入**的脚本生效，运行时插入的节点上
+ *   它不起作用，不等就等于把 `defer` 当 `async`，与作者「顺序执行」的意图相反。
  */
-function replaceAnchor(anchor: Comment, html: string): void {
+function shouldAwaitLoad(script: HTMLScriptElement): boolean {
+  if (!(script.getAttribute("src") ?? "").trim()) return false
+  if (script.hasAttribute("async")) return false
+  return isClassicScript(script)
+}
+
+/**
+ * 等外部脚本「结算」（load 或 error）。
+ *
+ * 对经典脚本，`load` 在脚本**执行完之后**才触发，所以等到 load 就等于等到执行完，
+ * 之后插入的脚本一定能看到它定义的全局变量。必须在插入文档**之前**调用，否则可能
+ * 错过已经派发的事件。失败与超时都不阻塞后续脚本，只打一条警告。
+ */
+function watchScriptSettled(script: HTMLScriptElement): Promise<void> {
+  return new Promise((resolve) => {
+    let timer: number | undefined
+    let done = false
+
+    const settle = (message?: string) => {
+      if (done) return
+      done = true
+      script.removeEventListener("load", onSettled)
+      script.removeEventListener("error", onSettled)
+      if (timer !== undefined) clearTimeout(timer)
+      if (message) console.warn(message)
+      resolve()
+    }
+
+    function onSettled(event: Event) {
+      settle(
+        event.type === "error"
+          ? `[customize] 自定义脚本加载失败，继续执行后续脚本：${script.src}`
+          : undefined,
+      )
+    }
+
+    script.addEventListener("load", onSettled)
+    script.addEventListener("error", onSettled)
+    timer = window.setTimeout(
+      () =>
+        settle(
+          `[customize] 自定义脚本加载超时，继续执行后续脚本：${script.src}`,
+        ),
+      SCRIPT_LOAD_TIMEOUT,
+    )
+  })
+}
+
+/** 片段里待执行的脚本：占位注释 + 重建后（尚未插入文档）的 script。 */
+type PendingScript = [placeholder: Comment, script: HTMLScriptElement]
+
+/**
+ * 把片段插到占位符位置（内容立即就位），返回其中需要执行的脚本，交给 `runScripts`。
+ *
+ * 之所以「替换锚点」而不是「追加」：替换后锚点消失，语义与 Go 完全一致（Go 就是把
+ * 占位符原地换掉），同时也让重复调用天然变成 no-op。
+ *
+ * 这里**不执行**脚本：`innerHTML` 解析出来的 script 带「already started」标记、永远
+ * 不会执行，所以先换成注释占位占住原位置。真正的执行交给 `runScripts`，它按文档顺序
+ * 逐个把占位换回重建后的 script —— 这样才能保证
+ * `<script src="a.js"></script><script>a.init()</script>` 的顺序，
+ * 不会出现内联脚本抢在 `a.js` 前面跑的情况（与 Go 后端下解析器行为一致）。
+ */
+function injectContent(anchor: Comment, html: string): PendingScript[] {
   const parent = anchor.parentNode
-  if (!parent) return
+  if (!parent) return []
+
   const template = document.createElement("template")
   template.innerHTML = html
-  // 先整棵子树重建 script（含嵌套层级），再整体搬进文档 —— 这样每个 script 在
-  // 「变为已连接」时都会走正常的 prepare 流程，并按文档顺序执行。
-  rebuildScriptsDeep(template.content)
+
+  const pending: PendingScript[] = []
+  // querySelectorAll 返回的是静态且文档顺序的列表，可安全地边遍历边 `replaceWith`；
+  // 它覆盖任意层级的 script（`<div><script>…</script></div>` 也算），但不会进入嵌套
+  // `<template>` 的 content —— 那部分本就应当是惰性的。
+  for (const script of Array.from(
+    template.content.querySelectorAll<HTMLScriptElement>("script"),
+  )) {
+    const placeholder = document.createComment(SCRIPT_PLACEHOLDER)
+    script.replaceWith(placeholder)
+    pending.push([placeholder, rebuildScript(script)])
+  }
 
   const fragment = document.createDocumentFragment()
   for (const node of Array.from(template.content.childNodes)) {
@@ -129,6 +220,27 @@ function replaceAnchor(anchor: Comment, html: string): void {
   }
   parent.insertBefore(fragment, anchor)
   anchor.remove()
+  return pending
+}
+
+/**
+ * 按文档顺序执行片段里的脚本。
+ *
+ * 需要等待的外部脚本（见 `shouldAwaitLoad`）会先插入、等它加载并执行完（load 事件）
+ * 再继续下一个，从而复刻「Go 后端下由解析器顺序执行」的语义，解决
+ * `<script src="a.js"></script><script>使用 a.js 里的东西</script>` 报错的问题。
+ *
+ * 等待只影响后续脚本：片段里的 CSS/DOM 在 `injectContent` 里已经就位，不会出现
+ * 「页面缺内容」。
+ */
+async function runScripts(pending: PendingScript[]): Promise<void> {
+  for (const [placeholder, script] of pending) {
+    // 前面的自定义脚本可能已经把这块内容删掉/换掉，占位不在文档里就跳过。
+    if (!placeholder.isConnected) continue
+    const settled = shouldAwaitLoad(script) ? watchScriptSettled(script) : null
+    placeholder.replaceWith(script)
+    if (settled) await settled
+  }
 }
 
 /** 当前路径是否为管理页（兼容 base_path 部署：/<base>/@manage/...）。 */
@@ -157,7 +269,7 @@ function replaceHrefIfDefault(
 }
 
 /** 注入 customize_head / customize_body（仅在占位符仍在时）。 */
-function applyCustomFragments(): void {
+async function applyCustomFragments(): Promise<void> {
   const headAnchor = findAnchor(document.head, HEAD_ANCHOR)
   const bodyAnchor = findAnchor(document.body, BODY_ANCHOR)
 
@@ -181,8 +293,13 @@ function applyCustomFragments(): void {
 
   const head = getSetting("customize_head")
   const body = getSetting("customize_body")
-  if (headAnchor && head) replaceAnchor(headAnchor, head)
-  if (bodyAnchor && body) replaceAnchor(bodyAnchor, body)
+
+  // 两段内容先一起插入（自定义 CSS / DOM 立即可见，不被慢脚本拖住），再让脚本按文档
+  // 顺序执行：head 的脚本跑完，body 的脚本才开始（与解析器顺序一致）。
+  const headPending = headAnchor && head ? injectContent(headAnchor, head) : []
+  const bodyPending = bodyAnchor && body ? injectContent(bodyAnchor, body) : []
+  await runScripts(headPending)
+  await runScripts(bodyPending)
 }
 
 /**
@@ -206,6 +323,9 @@ function applyBrandIcons(): void {
 export const applyCustomize = (): void => {
   if (applied) return
   applied = true
-  applyCustomFragments()
+  // 片段里的脚本是异步按顺序执行的（见 runScripts），这里只保证内容已插入。
+  applyCustomFragments().catch((e) =>
+    console.error("[customize] 注入自定义内容失败", e),
+  )
   applyBrandIcons()
 }
