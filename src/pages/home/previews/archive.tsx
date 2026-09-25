@@ -22,7 +22,6 @@ import {
   Switch,
   Suspense,
   onCleanup,
-  onMount,
 } from "solid-js"
 import { Dynamic } from "solid-js/web"
 import {
@@ -266,6 +265,8 @@ const Preview = () => {
   const [selectedPreviewKey, setSelectedPreviewKey] = createSignal("")
   // 缩放比例（Ctrl + 滚轮控制）
   const [scale, setScale] = createSignal(1)
+  // 预览容器 DOM 引用
+  let previewRef: HTMLDivElement | undefined
   const getObjsMutex = createMutex()
   const toList = (tree: ObjTree[] | Obj[]): List => {
     let l: List = {}
@@ -491,17 +492,24 @@ const Preview = () => {
   }
 
   const handleWheel = (e: WheelEvent) => {
+    console.log("[archive] wheel fired", {
+      deltaY: e.deltaY,
+      ctrl: e.ctrlKey,
+      selected: selectedFile(),
+    })
     // 只在预览单个文件时生效
     if (!selectedFile()) return
 
     if (e.ctrlKey) {
       // Ctrl + 滚轮：缩放
       e.preventDefault()
+      e.stopPropagation()
       const delta = e.deltaY < 0 ? 0.1 : -0.1
       setScale((s) => Math.min(5, Math.max(0.2, s + delta)))
     } else {
       // 普通滚轮：切换文件
       e.preventDefault()
+      e.stopPropagation()
       if (e.deltaY < 0) {
         navigateFile(-1) // 上：上一个
       } else if (e.deltaY > 0) {
@@ -509,14 +517,6 @@ const Preview = () => {
       }
     }
   }
-
-  let previewRef: HTMLDivElement | undefined
-  onMount(() => {
-    previewRef?.addEventListener("wheel", handleWheel, { passive: false })
-  })
-  onCleanup(() => {
-    previewRef?.removeEventListener("wheel", handleWheel)
-  })
 
   onCleanup(() => {
     // Restore original values
@@ -619,7 +619,11 @@ const Preview = () => {
             <VStack w="$full" spacing="$2" alignItems="center">
               <Show when={currentPreview()}>
                 <div
-                  ref={previewRef}
+                  ref={(el) => (previewRef = el)}
+                  on:wheel={{
+                    handleEvent: handleWheel,
+                    passive: false,
+                  }}
                   style={{ width: "100%", overflow: "hidden" }}
                 >
                   <Suspense fallback={<FullLoading />}>
