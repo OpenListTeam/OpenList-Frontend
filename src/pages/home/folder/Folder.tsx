@@ -7,7 +7,7 @@ import {
   Match,
   on,
 } from "solid-js"
-import { layout } from "~/store"
+import { layout, setLayout } from "~/store"
 import { ContextMenu } from "./context-menu"
 import { Pager } from "./Pager"
 import { useLink, useT } from "~/hooks"
@@ -28,10 +28,40 @@ const ListLayout = lazy(() => import("./List"))
 const GridLayout = lazy(() => import("./Grid"))
 const ImageLayout = lazy(() => import("./Images"))
 
+// 视频扩展名列表，可根据需要增删
+const VIDEO_EXTS = ["mp4", "mkv", "avi", "mov", "flv", "ts", "webm", "m4v"]
+
+const isVideo = (name: string) => {
+  const ext = name.split(".").pop()?.toLowerCase() || ""
+  return VIDEO_EXTS.includes(ext)
+}
+
 const Folder = () => {
   const { rawLink } = useLink()
   const images = createMemo(() =>
     objStore.objs.filter((obj) => obj.type === ObjType.IMAGE),
+  )
+
+  // 只有当前文件夹"只包含视频"时，才自动切换到网格视图
+  createEffect(
+    on(
+      () => objStore.objs,
+      (objs) => {
+        if (objs.length === 0) return
+
+        // 判断是否全是视频（排除文件夹）
+        const allVideos = objs.every(
+          (obj) => !obj.is_dir && isVideo(obj.name),
+        )
+
+        if (allVideos && layout() !== "grid") {
+          // setLayout 会按当前 pathname 记录布局，
+          // 只影响这个文件夹，不改变其他目录的默认布局
+          setLayout("grid")
+        }
+        // 不满足条件时不做任何事，layout() 会自动回退到用户默认布局
+      },
+    ),
   )
 
   let dynamicGallery: LightGallery | undefined
