@@ -22,6 +22,7 @@ import {
   Switch,
   Suspense,
   onCleanup,
+  onMount,
 } from "solid-js"
 import { Dynamic } from "solid-js/web"
 import {
@@ -263,6 +264,8 @@ const Preview = () => {
   )
   const [selectedFile, setSelectedFile] = createSignal<string>("")
   const [selectedPreviewKey, setSelectedPreviewKey] = createSignal("")
+  // 缩放比例（Ctrl + 滚轮控制）
+  const [scale, setScale] = createSignal(1)
   const getObjsMutex = createMutex()
   const toList = (tree: ObjTree[] | Obj[]): List => {
     let l: List = {}
@@ -453,6 +456,8 @@ const Preview = () => {
 
   const changeFile = (name: string) => {
     batch(() => {
+      // 切换文件时重置缩放
+      setScale(1)
       if (name === "") {
         // Restore
         ObjStore.setObj(originalObj)
@@ -470,6 +475,48 @@ const Preview = () => {
       }
     })
   }
+
+  // ===== 滚轮切换 / Ctrl+滚轮缩放 =====
+  const currentIndex = createMemo(() =>
+    files().findIndex((f) => f.name === selectedFile()),
+  )
+
+  const navigateFile = (offset: number) => {
+    const list = files()
+    if (list.length === 0) return
+    let idx = currentIndex()
+    if (idx < 0) return
+    idx = (idx + offset + list.length) % list.length // 循环切换
+    changeFile(list[idx].name)
+  }
+
+  const handleWheel = (e: WheelEvent) => {
+    // 只在预览单个文件时生效
+    if (!selectedFile()) return
+
+    if (e.ctrlKey) {
+      // Ctrl + 滚轮：缩放
+      e.preventDefault()
+      const delta = e.deltaY < 0 ? 0.1 : -0.1
+      setScale((s) => Math.min(5, Math.max(0.2, s + delta)))
+    } else {
+      // 普通滚轮：切换文件
+      e.preventDefault()
+      if (e.deltaY < 0) {
+        navigateFile(-1) // 上：上一个
+      } else if (e.deltaY > 0) {
+        navigateFile(1) // 下：下一个
+      }
+    }
+  }
+
+  let previewRef: HTMLDivElement | undefined
+  onMount(() => {
+    previewRef?.addEventListener("wheel", handleWheel, { passive: false })
+  })
+  onCleanup(() => {
+    previewRef?.removeEventListener("wheel", handleWheel)
+  })
 
   onCleanup(() => {
     // Restore original values
@@ -571,15 +618,29 @@ const Preview = () => {
           >
             <VStack w="$full" spacing="$2" alignItems="center">
               <Show when={currentPreview()}>
-                <Suspense fallback={<FullLoading />}>
-                  <Dynamic
-                    component={currentPreview()?.component}
-                    images={files().filter((f) => f.type === ObjType.IMAGE)}
-                    navigate={(name) => {
-                      changeFile(name)
-                    }}
-                  />
-                </Suspense>
+                <div
+                  ref={previewRef}
+                  style={{ width: "100%", overflow: "hidden" }}
+                >
+                  <Suspense fallback={<FullLoading />}>
+                    <div
+                      style={{
+                        transform: `scale(${scale()})`,
+                        "transform-origin": "center center",
+                        transition: "transform 0.1s",
+                        width: "100%",
+                      }}
+                    >
+                      <Dynamic
+                        component={currentPreview()?.component}
+                        images={files().filter((f) => f.type === ObjType.IMAGE)}
+                        navigate={(name) => {
+                          changeFile(name)
+                        }}
+                      />
+                    </div>
+                  </Suspense>
+                </div>
               </Show>
               <HStack w="$full" justifyContent="center" spacing="$2" p="$2">
                 <Show when={previews().length > 1}>
