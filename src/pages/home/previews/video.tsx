@@ -158,7 +158,8 @@ const Preview = () => {
       ? (currentLang().toLowerCase() as string)
       : "en",
     lock: true,
-    fastForward: true,
+    // 关闭长按快进（移动端长按改为全屏，避免冲突）
+    fastForward: false,
     autoPlayback: true,
     autoOrientation: true,
     airplay: true,
@@ -348,6 +349,59 @@ const Preview = () => {
     }
   }
 
+  // ============ 移动端触摸事件：单击播放/暂停，长按全屏 ============
+  let longPressTimer: ReturnType<typeof setTimeout> | null = null
+  let longPressTriggered = false
+  const LONG_PRESS_DURATION = 500
+
+  // 是否移动端（只在移动端启用自定义手势）
+  const isMobile = () =>
+    /Android|iPhone|iPad|iPod|Mobile|HarmonyOS/i.test(navigator.userAgent) ||
+    ("ontouchstart" in window && navigator.maxTouchPoints > 0)
+
+  // 阻止长按弹出系统菜单
+  const preventContextMenu = (e: Event) => {
+    e.preventDefault()
+  }
+
+  const handleTouchStart = (e: TouchEvent) => {
+    // 阻止浏览器默认长按行为（弹出菜单/选中文字）
+    e.preventDefault()
+    longPressTriggered = false
+    longPressTimer = setTimeout(() => {
+      longPressTriggered = true
+      if (player) {
+        player.fullscreen = !player.fullscreen
+        // 如需网页全屏，改用：player.fullscreenWeb = !player.fullscreenWeb
+      }
+      longPressTimer = null
+    }, LONG_PRESS_DURATION)
+  }
+
+  const handleTouchEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      longPressTimer = null
+    }
+    // 已触发长按，松手不再执行单击
+    if (longPressTriggered) {
+      longPressTriggered = false
+      return
+    }
+    // 单击：立即播放/暂停，无延迟
+    if (player) {
+      player.playing ? player.pause() : player.play()
+    }
+  }
+
+  const handleTouchCancel = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      longPressTimer = null
+    }
+    longPressTriggered = false
+  }
+
   onMount(() => {
     player = new Artplayer(option)
     createEffect(on(() => objStore.raw_url, switchUrl))
@@ -379,14 +433,40 @@ const Preview = () => {
         player.video.crossOrigin = null
       }
     })
+
+    // 只在移动端启用自定义触摸手势
+    if (isMobile() && player.video) {
+      player.video.addEventListener("touchstart", handleTouchStart, {
+        passive: false,
+      })
+      player.video.addEventListener("touchend", handleTouchEnd, {
+        passive: false,
+      })
+      player.video.addEventListener("touchcancel", handleTouchCancel, {
+        passive: false,
+      })
+      // 阻止长按弹出菜单
+      player.video.addEventListener("contextmenu", preventContextMenu)
+    }
   })
+
   onCleanup(() => {
     setShouldKeepState(false)
     if (player) {
+      if (player.video && isMobile()) {
+        player.video.removeEventListener("touchstart", handleTouchStart)
+        player.video.removeEventListener("touchend", handleTouchEnd)
+        player.video.removeEventListener("touchcancel", handleTouchCancel)
+        player.video.removeEventListener("contextmenu", preventContextMenu)
+      }
       player.fullscreenWeb = false
       player.fullscreen = false
       player.pip && (player.pip = false)
       player.destroy()
+    }
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      longPressTimer = null
     }
     flvPlayer?.destroy()
     hlsPlayer?.destroy()
