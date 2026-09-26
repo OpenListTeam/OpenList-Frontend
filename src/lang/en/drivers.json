@@ -297,6 +297,8 @@
       "default": "Default"
     },
     "api_url_address": "Api url address",
+    "callback_concurrency": "Callback concurrency",
+    "callback_concurrency-tips": "Maximum active proxied downloads shared by Aliyun user",
     "client_id": "Client id",
     "client_id-tips": "Keep it empty if you don't have one",
     "client_secret": "Client secret",
@@ -854,6 +856,8 @@
     "directory_size": "Directory size",
     "directory_size-tips": "This might impact host performance",
     "mkdir_perm": "Mkdir perm",
+    "pdf_thumbnail": "Pdf thumbnail",
+    "pdf_thumbnail-tips": "Generate PDF first-page thumbnails with Quick Look on macOS",
     "recycle_bin_path": "Recycle bin path",
     "recycle_bin_path-tips": "path to recycle bin, delete permanently if empty or keep 'delete permanently'",
     "root_folder_path": "Root folder path",
@@ -1028,6 +1032,8 @@
     },
     "refresh_token": "Refresh token",
     "root_folder_id": "Root folder id",
+    "skip_verification": "Skip verification",
+    "skip_verification-tips": "ignore the human verification URL returned by the captcha API instead of failing; enabling this may trigger PikPak risk control",
     "username": "Username"
   },
   "PikPakShare": {
