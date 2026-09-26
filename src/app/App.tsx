@@ -116,6 +116,7 @@ const App: Component = () => {
           left="0"
           right="0"
           zIndex="$banner"
+          aria-hidden="true"
           d={isRouting() ? "block" : "none"}
         >
           <ProgressIndicator />

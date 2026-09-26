@@ -23,6 +23,8 @@ const SwitchColorMode = () => {
       boxSize={icon().size}
       as={icon().component}
       onClick={toggleColorMode}
+      aria-label="Toggle color mode"
+      tabIndex={0}
       p={icon().p}
     />
   )
