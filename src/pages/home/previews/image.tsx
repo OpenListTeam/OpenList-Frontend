@@ -37,7 +37,7 @@ import {
   FullLoading,
   ImageWithError,
 } from "~/components"
-import { useCDN, useRouter, useT } from "~/hooks"
+import { useCDN, useRouter, useT, useLink } from "~/hooks"
 import { objStore, ObjStore } from "~/store"
 import { Obj, ObjType } from "~/types"
 import { ext, formatDate, getFileSize, loadScriptIIFE } from "~/utils"
