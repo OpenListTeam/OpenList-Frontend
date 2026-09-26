@@ -4,7 +4,7 @@ import "solid-contextmenu/dist/style.css"
 import { HStack, Icon, Text, useColorMode, Image } from "@hope-ui/solid"
 import { operations } from "../toolbar/operations"
 import { createMemo, For, Show } from "solid-js"
-import { bus, convertURL, notify, torrentParse } from "~/utils"
+import { bus, convertURL, notify, pathJoin, torrentParse } from "~/utils"
 import { ObjType, UserMethods } from "~/types"
 import {
   getSettingBool,
@@ -46,7 +46,7 @@ export const ContextMenu = () => {
     return UserMethods.is_admin(me()) || getSettingBool("package_download")
   }
   const { rawLink } = useLink()
-  const { isShare, pushHref, to } = useRouter()
+  const { isShare, pathname, pushHref, to } = useRouter()
   const openWithPreviews = createMemo(() => {
     const objs = selectedObjs()
     if (objs.length !== 1) return []
@@ -96,6 +96,20 @@ export const ContextMenu = () => {
         }}
       >
         <ItemContent name="share" />
+      </Item>
+      <Item
+        hidden={() =>
+          isShare() ||
+          !haveSelected() ||
+          selectedObjs().some((obj) => obj.is_dir)
+        }
+        onClick={() => {
+          bus.emit("generate_transfer_seed", {
+            paths: selectedObjs().map((obj) => pathJoin(pathname(), obj.name)),
+          })
+        }}
+      >
+        <ItemContent name="generate_transfer_seed" />
       </Item>
       <Item
         hidden={() => {

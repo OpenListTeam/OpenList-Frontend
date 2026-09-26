@@ -26,6 +26,7 @@ export const HttpDirectUpload: Upload = async (
   _asTask: boolean,
   overwrite: boolean,
   _rapid: boolean,
+  seedOptions,
 ) => {
   const path = pathDir(uploadPath)
 
@@ -37,6 +38,7 @@ export const HttpDirectUpload: Upload = async (
       file_name: file.name,
       file_size: file.size,
       tool: "HttpDirect",
+      seed_options: seedOptions?.formats.length ? seedOptions : undefined,
     },
     {
       headers: {
