@@ -38,7 +38,7 @@ import {
   ImageWithError,
 } from "~/components"
 import { useCDN, useRouter, useT } from "~/hooks"
-import { objStore } from "~/store"
+import { objStore, ObjStore } from "~/store"
 import { Obj, ObjType } from "~/types"
 import { ext, formatDate, getFileSize, loadScriptIIFE } from "~/utils"
 
@@ -48,6 +48,7 @@ const ZOOM_MIN = 0.1
 const ZOOM_MAX = 10
 const ZOOM_WHEEL_FACTOR = 1.08
 const ZOOM_BTN_STEP = 0.25
+const PRELOAD_COUNT = 10 // ★ 之前被注释了，这里放开；不需要可删
 
 interface PreviewProps {
   images?: Obj[]
@@ -142,7 +143,8 @@ const HeifView = (props: {
 // ── Preview ─────────────────────────────────────────────────────────
 const Preview = (props: PreviewProps) => {
   const t = useT()
-  const { replace } = useRouter()
+  const { replace } = useRouter() // ★ 保留但不主动调用
+  const { rawLink } = useLink()
 
   const [scale, setScale] = createSignal(1)
   const [rotation, setRotation] = createSignal(0)
@@ -170,20 +172,52 @@ const Preview = (props: PreviewProps) => {
 
   const curIdx = () => images.findIndex((f) => f.name === objStore.obj.name)
 
-  // ── reset on image change ──
+  // ── 预加载：把后 PRELOAD_COUNT 张图缓存到浏览器 ──
+  const preloadCache: HTMLImageElement[] = []
+  const preloadAround = () => {
+    const i = curIdx()
+    if (i < 0) return
+    preloadCache.length = 0
+
+    const offsets = []
+    for (let k = 1; k <= PRELOAD_COUNT; k++) {
+      offsets.push(k, -k) // 后 k 张、前 k 张
+    }
+
+    for (const offset of offsets) {
+      const idx = (i + offset + images.length) % images.length
+      const obj = images[idx]
+      if (!obj) continue
+      if (isHeif(obj.name)) continue
+      if (!isHeif(obj.name) && obj.type !== ObjType.IMAGE) continue
+
+      const img = new Image()
+      img.src = rawLink(obj)
+      preloadCache.push(img)
+    }
+  }
+
+  // ── ★ 切图时重置视图状态（保持"进入新图 = 初始视图"）──
+  // 如果你希望切图保留缩放/旋转，把 resetTransform() 一行删掉即可。
   createEffect(() => {
-    objStore.obj.name
+    objStore.obj.name // 依赖：当前图片变化
+    setImgSize({ w: 0, h: 0 })
     setScale(1)
     setRotation(0)
     setTx(0)
     setTy(0)
-    setImgSize({ w: 0, h: 0 })
+    setFitMode("contain")
+    preloadAround()
   })
 
-  // ── navigation ──
+  // ── ★ navigation：只改 store，不跳路由 (避免容器每次都缩成0) ──
   const goTo = (obj: Obj) => {
+    // 通知外部（如果外部想同步到 URL，由外部决定，不在这里 replace）
     if (props.navigate) props.navigate(obj.name)
-    else replace(obj.name)
+
+    // 关键：更新数据源，Preview 组件本身不卸载
+    ObjStore.setObj(obj)
+    ObjStore.setRawUrl(rawLink(obj))
   }
   const prev = () => {
     const i = curIdx()
@@ -228,12 +262,20 @@ const Preview = (props: PreviewProps) => {
     setTy(0)
   }
 
+  // ── fullscreen toggle ──
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen()
+    } else {
+      containerRef?.requestFullscreen()
+    }
+  }
+
   // ── wheel: switch file (Ctrl + wheel: zoom) ──
   const onWheel = (e: WheelEvent) => {
     e.preventDefault()
 
     if (e.ctrlKey) {
-      // Ctrl + 滚轮：缩放（朝光标方向）
       const rect = areaRef.getBoundingClientRect()
       const cx = e.clientX - rect.left - rect.width / 2
       const cy = e.clientY - rect.top - rect.height / 2
@@ -245,7 +287,6 @@ const Preview = (props: PreviewProps) => {
       setTy(cy - r * (cy - ty()))
       setScale(newS)
     } else {
-      // 普通滚轮：切换上/下一个文件
       if (e.deltaY < 0) prev()
       else if (e.deltaY > 0) next()
     }
@@ -267,14 +308,19 @@ const Preview = (props: PreviewProps) => {
     setTy(startTy + (e.clientY - dragOY))
   }
   const onMouseUp = () => setDragging(false)
-  const onDblClick = () => (scale() === 1 ? setScale(2) : resetTransform())
+  const onDblClick = () => toggleFullscreen()
 
   // ── image load ──
+  // ★ 注意：这里不再重置 scale/rotation/tx/ty，
+  //   因为切图时 createEffect 已经重置过了。
+  //   这里只更新尺寸信息。
   const onImgLoad = (e: Event) => {
     const img = e.target as HTMLImageElement
     setImgSize({ w: img.naturalWidth, h: img.naturalHeight })
   }
-  const onHeifLoad = (w: number, h: number) => setImgSize({ w, h })
+  const onHeifLoad = (w: number, h: number) => {
+    setImgSize({ w, h })
+  }
 
   // ── keyboard ──
   const onKey = (e: KeyboardEvent) => {
@@ -303,14 +349,13 @@ const Preview = (props: PreviewProps) => {
       case "w":
         return fitWidth()
       case "f":
-      // TODO toggleFs()
+        return toggleFullscreen()
     }
   }
 
   // ── fullscreen detection ──
   const updateFullscreen = () => {
-    const native = !!document.fullscreenElement
-    setIsFullscreen(native)
+    setIsFullscreen(!!document.fullscreenElement)
   }
 
   onMount(() => {
@@ -318,11 +363,13 @@ const Preview = (props: PreviewProps) => {
     areaRef?.addEventListener("wheel", onWheel, { passive: false })
     document.addEventListener("fullscreenchange", updateFullscreen)
     updateFullscreen()
+    preloadAround()
   })
   onCleanup(() => {
     window.removeEventListener("keydown", onKey)
     areaRef?.removeEventListener("wheel", onWheel)
     document.removeEventListener("fullscreenchange", updateFullscreen)
+    preloadCache.length = 0
   })
 
   const imgTransform = () =>
@@ -330,253 +377,234 @@ const Preview = (props: PreviewProps) => {
   const cursor = () =>
     scale() > 1 ? (dragging() ? "grabbing" : "grab") : "default"
 
+  const imgStyle = () => ({
+    "max-width": "100%",
+    "max-height": "100%",
+    ...(fitMode() === "contain"
+      ? { width: "auto", height: "auto", "object-fit": "contain" }
+      : fitMode() === "height"
+        ? { height: "100%", width: "auto" }
+        : { width: "100%", height: "auto" }),
+  })
+
   // ── render ──────────────────────────────────────────────────────
   return (
-    <BoxWithFullScreen w="$full" h="70vh">
-      <VStack ref={containerRef} w="$full" h="$full">
-        {/* ── Toolbar ── */}
-        <Flex
-          w="$full"
-          bg="$neutral1"
-          p="$2"
-          position={isFullscreen() ? "absolute" : "relative"}
-          top={isFullscreen() ? "0" : undefined}
-          left={isFullscreen() ? "0" : undefined}
-          zIndex="$docked"
-          transition="opacity 0.3s ease"
-          opacity={isFullscreen() ? "0.7" : undefined}
-          _hover={{ opacity: isFullscreen() ? "1" : undefined }}
-        >
-          <HStack spacing="$1">
-            <Show when={curIdx() > 0}>
-              <Tooltip label="Previous (←)">
-                <IconButton
-                  icon={<FaSolidAngleLeft />}
-                  aria-label="Previous"
-                  variant="ghost"
-                  size="sm"
-                  onClick={prev}
-                />
-              </Tooltip>
-            </Show>
-            <Show when={curIdx() < images.length - 1}>
-              <Tooltip label="Next (→)">
-                <IconButton
-                  icon={<FaSolidAngleRight />}
-                  aria-label="Next"
-                  variant="ghost"
-                  size="sm"
-                  onClick={next}
-                />
-              </Tooltip>
-            </Show>
-            <Text
-              size="sm"
-              maxW="280px"
-              overflow="hidden"
-              ml="$1"
-              css={{
-                "text-overflow": "ellipsis",
-                "white-space": "nowrap",
-              }}
-              display={{ "@initial": "none", "@sm": "block" }}
-            >
-              {objStore.obj.name}
-            </Text>
-            <Show when={images.length > 1}>
-              <Text color="$neutral11" size="xs">
-                {curIdx() + 1}/{images.length}
-              </Text>
-            </Show>
-          </HStack>
-          <Spacer />
-          <HStack spacing="$1">
-            <Tooltip label="Info (I)">
-              <IconButton
-                icon={<BsInfoCircle />}
-                aria-label="Info"
-                variant={showInfo() ? "subtle" : "ghost"}
-                size="sm"
-                onClick={() => setShowInfo((v) => !v)}
-              />
-            </Tooltip>
-
-            <Tooltip label="Zoom out (−)">
-              <IconButton
-                icon={<BsZoomOut />}
-                aria-label="Zoom out"
-                variant="ghost"
-                size="sm"
-                onClick={zoomOut}
-              />
-            </Tooltip>
-            <Tooltip label="Zoom in (+)">
-              <IconButton
-                icon={<BsZoomIn />}
-                aria-label="Zoom in"
-                variant="ghost"
-                size="sm"
-                onClick={zoomIn}
-              />
-            </Tooltip>
-            <Tooltip label="Fit page (C)">
-              <IconButton
-                icon={<TbArrowAutofitContent />}
-                aria-label="Fit page"
-                variant="ghost"
-                size="sm"
-                onClick={fitPage}
-              />
-            </Tooltip>
-            <Tooltip label="Fit height (H)">
-              <IconButton
-                icon={<TbArrowAutofitHeight />}
-                aria-label="Fit height"
-                variant="ghost"
-                size="sm"
-                onClick={fitHeight}
-              />
-            </Tooltip>
-            <Tooltip label="Fit width (W)">
-              <IconButton
-                icon={<TbArrowAutofitWidth />}
-                aria-label="Fit width"
-                variant="ghost"
-                size="sm"
-                onClick={fitWidth}
-              />
-            </Tooltip>
-            <Tooltip label="Rotate left (R)">
-              <IconButton
-                icon={<BsArrowCounterclockwise />}
-                aria-label="Rotate left"
-                variant="ghost"
-                size="sm"
-                onClick={rotL}
-              />
-            </Tooltip>
-            <Tooltip label="Rotate right (Shift+R)">
-              <IconButton
-                icon={<BsArrowClockwise />}
-                aria-label="Rotate right"
-                variant="ghost"
-                size="sm"
-                onClick={rotR}
-              />
-            </Tooltip>
-          </HStack>
-        </Flex>
-
-        {/* ── Image area ── */}
-        <Center
-          ref={areaRef}
-          w="$full"
-          h={isFullscreen() ? "$full" : undefined}
-          flex="1"
-          backgroundColor="$neutral2"
-          overflow="hidden"
-          cursor={cursor()}
-          onMouseDown={onMouseDown}
-          onMouseMove={onMouseMove}
-          onMouseUp={onMouseUp}
-          onMouseLeave={onMouseUp}
-          onDblClick={onDblClick}
-        >
-          <Center
-            {...(fitMode() === "contain"
-              ? { w: "$full", h: "$full" }
-              : {
-                  css:
-                    fitMode() === "height"
-                      ? { height: "100%", width: "fit-content" }
-                      : { width: "100%", height: "fit-content" },
-                })}
-            transform={imgTransform()}
-            transition={dragging() ? "none" : "transform 0.15s ease"}
-            transform-origin="center center"
+    <div id="preview-root" style={{ width: "100%", height: "100%" }}>
+      <BoxWithFullScreen w="$full" h="70vh">
+        <VStack ref={containerRef} w="$full" h="$full">
+          {/* ── Toolbar ── */}
+          <Flex
+            w="$full"
+            bg="$neutral1"
+            p="$2"
+            position={isFullscreen() ? "absolute" : "relative"}
+            top={isFullscreen() ? "0" : undefined}
+            left={isFullscreen() ? "0" : undefined}
+            zIndex="$docked"
+            transition="opacity 0.3s ease"
+            opacity={isFullscreen() ? "0.7" : undefined}
+            _hover={{ opacity: isFullscreen() ? "1" : undefined }}
           >
-            <Switch
-              fallback={
-                <ImageWithError
-                  src={objStore.raw_url}
-                  fallback={<FullLoading />}
-                  fallbackErr={
-                    <Error msg={t("home.preview.failed_load_img")} />
-                  }
-                  onLoad={onImgLoad}
-                  {...(fitMode() === "contain"
-                    ? { w: "$full", h: "$full", objectFit: "contain" }
-                    : {
-                        css:
-                          fitMode() === "height"
-                            ? {
-                                height: "100%",
-                                width: "auto",
-                                "max-width": "none",
-                              }
-                            : {
-                                width: "100%",
-                                height: "auto",
-                                "max-height": "none",
-                              },
-                      })}
-                />
-              }
-            >
-              <Match when={isHeif(objStore.obj.name)}>
-                <HeifView
-                  src={objStore.raw_url}
-                  onLoad={onHeifLoad}
-                  style={
-                    fitMode() === "contain"
-                      ? {
-                          width: "100%",
-                          height: "100%",
-                          "object-fit": "contain",
-                        }
-                      : fitMode() === "height"
-                        ? { height: "100%", width: "auto" }
-                        : { width: "100%", height: "auto" }
-                  }
-                />
-              </Match>
-            </Switch>
-          </Center>
-
-          {/* ── Info overlay ── */}
-          <Show when={showInfo()}>
-            <Box
-              position="absolute"
-              bottom="$2"
-              left="$2"
-              p="$2"
-              bg="$blackAlpha9"
-              borderRadius="$md"
-              zIndex="$docked"
-              fontSize="$sm"
-              css={{
-                "backdrop-filter": "blur(8px)",
-              }}
-            >
-              <Text color="$whiteAlpha12" fontWeight="$semibold">
+            <HStack spacing="$1">
+              <Show when={curIdx() > 0}>
+                <Tooltip label="Previous (←)">
+                  <IconButton
+                    icon={<FaSolidAngleLeft />}
+                    aria-label="Previous"
+                    variant="ghost"
+                    size="sm"
+                    onClick={prev}
+                  />
+                </Tooltip>
+              </Show>
+              <Show when={curIdx() < images.length - 1}>
+                <Tooltip label="Next (→)">
+                  <IconButton
+                    icon={<FaSolidAngleRight />}
+                    aria-label="Next"
+                    variant="ghost"
+                    size="sm"
+                    onClick={next}
+                  />
+                </Tooltip>
+              </Show>
+              <Text
+                size="sm"
+                maxW="280px"
+                overflow="hidden"
+                ml="$1"
+                css={{
+                  "text-overflow": "ellipsis",
+                  "white-space": "nowrap",
+                }}
+                display={{ "@initial": "none", "@sm": "block" }}
+              >
                 {objStore.obj.name}
               </Text>
-              <Text color="$whiteAlpha11">
-                {getFileSize(objStore.obj.size)}
-              </Text>
-              <Show when={imgSize().w > 0}>
-                <Text color="$whiteAlpha11">
-                  {imgSize().w} × {imgSize().h}px
+              <Show when={images.length > 1}>
+                <Text color="$neutral11" size="xs">
+                  {curIdx() + 1}/{images.length}
                 </Text>
               </Show>
-              <Text color="$whiteAlpha11">
-                {formatDate(objStore.obj.modified)}
-              </Text>
-            </Box>
-          </Show>
-        </Center>
-      </VStack>
-    </BoxWithFullScreen>
+            </HStack>
+            <Spacer />
+            <HStack spacing="$1">
+              <Tooltip label="Info (I)">
+                <IconButton
+                  icon={<BsInfoCircle />}
+                  aria-label="Info"
+                  variant={showInfo() ? "subtle" : "ghost"}
+                  size="sm"
+                  onClick={() => setShowInfo((v) => !v)}
+                />
+              </Tooltip>
+
+              <Tooltip label="Zoom out (−)">
+                <IconButton
+                  icon={<BsZoomOut />}
+                  aria-label="Zoom out"
+                  variant="ghost"
+                  size="sm"
+                  onClick={zoomOut}
+                />
+              </Tooltip>
+              <Tooltip label="Zoom in (+)">
+                <IconButton
+                  icon={<BsZoomIn />}
+                  aria-label="Zoom in"
+                  variant="ghost"
+                  size="sm"
+                  onClick={zoomIn}
+                />
+              </Tooltip>
+              <Tooltip label="Fit page (C)">
+                <IconButton
+                  icon={<TbArrowAutofitContent />}
+                  aria-label="Fit page"
+                  variant="ghost"
+                  size="sm"
+                  onClick={fitPage}
+                />
+              </Tooltip>
+              <Tooltip label="Fit height (H)">
+                <IconButton
+                  icon={<TbArrowAutofitHeight />}
+                  aria-label="Fit height"
+                  variant="ghost"
+                  size="sm"
+                  onClick={fitHeight}
+                />
+              </Tooltip>
+              <Tooltip label="Fit width (W)">
+                <IconButton
+                  icon={<TbArrowAutofitWidth />}
+                  aria-label="Fit width"
+                  variant="ghost"
+                  size="sm"
+                  onClick={fitWidth}
+                />
+              </Tooltip>
+              <Tooltip label="Rotate left (R)">
+                <IconButton
+                  icon={<BsArrowCounterclockwise />}
+                  aria-label="Rotate left"
+                  variant="ghost"
+                  size="sm"
+                  onClick={rotL}
+                />
+              </Tooltip>
+              <Tooltip label="Rotate right (Shift+R)">
+                <IconButton
+                  icon={<BsArrowClockwise />}
+                  aria-label="Rotate right"
+                  variant="ghost"
+                  size="sm"
+                  onClick={rotR}
+                />
+              </Tooltip>
+            </HStack>
+          </Flex>
+
+          {/* ── Image area ── */}
+          <Center
+            ref={areaRef}
+            w="$full"
+            h={isFullscreen() ? "$full" : undefined}
+            flex="1"
+            backgroundColor="$neutral2"
+            overflow="hidden"
+            cursor={cursor()}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+            onDblClick={onDblClick}
+          >
+            <Center
+              w="$full"
+              h="$full"
+              transform={imgTransform()}
+              transition={dragging() ? "none" : "transform 0.15s ease"}
+              transform-origin="center center"
+            >
+              <Switch
+                fallback={
+                  <ImageWithError
+                    src={objStore.raw_url}
+                    fallback={<FullLoading />}
+                    fallbackErr={
+                      <Error msg={t("home.preview.failed_load_img")} />
+                    }
+                    onLoad={onImgLoad}
+                    style={imgStyle()}
+                  />
+                }
+              >
+                <Match when={isHeif(objStore.obj.name)}>
+                  <HeifView
+                    src={objStore.raw_url}
+                    onLoad={onHeifLoad}
+                    style={imgStyle()}
+                  />
+                </Match>
+              </Switch>
+            </Center>
+
+            {/* ── Info overlay ── */}
+            <Show when={showInfo()}>
+              <Box
+                position="absolute"
+                bottom="$2"
+                left="$2"
+                p="$2"
+                bg="$blackAlpha9"
+                borderRadius="$md"
+                zIndex="$docked"
+                fontSize="$sm"
+                css={{
+                  "backdrop-filter": "blur(8px)",
+                }}
+              >
+                <Text color="$whiteAlpha12" fontWeight="$semibold">
+                  {objStore.obj.name}
+                </Text>
+                <Text color="$whiteAlpha11">
+                  {getFileSize(objStore.obj.size)}
+                </Text>
+                <Show when={imgSize().w > 0}>
+                  <Text color="$whiteAlpha11">
+                    {imgSize().w} × {imgSize().h}px
+                  </Text>
+                </Show>
+                <Text color="$whiteAlpha11">
+                  {formatDate(objStore.obj.modified)}
+                </Text>
+              </Box>
+            </Show>
+          </Center>
+        </VStack>
+      </BoxWithFullScreen>
+    </div>
   )
 }
 
