@@ -12,6 +12,7 @@ import {
 import { DeletePopover } from "../common/DeletePopover"
 import { getSetting, me } from "~/store"
 import { Show } from "solid-js"
+import { Wether } from "~/components"
 
 interface ShareProps {
   share: ShareInfo
@@ -138,6 +139,10 @@ export function ShareListItem(props: ShareProps) {
       <Td>{accessed()}</Td>
       <Td>{t(`shares.status_list.${status()}`)}</Td>
       <Td>{props.share.remark}</Td>
+      <Td>{props.share.domain ? props.share.domain : "-"}</Td>
+      <Td>
+        <Wether yes={!!props.share.web_hosting} />
+      </Td>
       <Td>
         <HStack spacing="$2">
           <Button
