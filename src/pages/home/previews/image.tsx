@@ -187,11 +187,15 @@ const Preview = (props: PreviewProps) => {
   }
   const prev = () => {
     const i = curIdx()
-    if (i > 0) goTo(images[i - 1])
+    if (i < 0) return
+    const newIdx = (i - 1 + images.length) % images.length
+    goTo(images[newIdx])
   }
   const next = () => {
     const i = curIdx()
-    if (i < images.length - 1) goTo(images[i + 1])
+    if (i < 0) return
+    const newIdx = (i + 1) % images.length
+    goTo(images[newIdx])
   }
 
   // ── transforms ──
@@ -224,19 +228,27 @@ const Preview = (props: PreviewProps) => {
     setTy(0)
   }
 
-  // ── wheel zoom (towards cursor) ──
+  // ── wheel: switch file (Ctrl + wheel: zoom) ──
   const onWheel = (e: WheelEvent) => {
     e.preventDefault()
-    const rect = areaRef.getBoundingClientRect()
-    const cx = e.clientX - rect.left - rect.width / 2
-    const cy = e.clientY - rect.top - rect.height / 2
-    const oldS = scale()
-    const factor = e.deltaY < 0 ? ZOOM_WHEEL_FACTOR : 1 / ZOOM_WHEEL_FACTOR
-    const newS = Math.min(Math.max(oldS * factor, ZOOM_MIN), ZOOM_MAX)
-    const r = newS / oldS
-    setTx(cx - r * (cx - tx()))
-    setTy(cy - r * (cy - ty()))
-    setScale(newS)
+
+    if (e.ctrlKey) {
+      // Ctrl + 滚轮：缩放（朝光标方向）
+      const rect = areaRef.getBoundingClientRect()
+      const cx = e.clientX - rect.left - rect.width / 2
+      const cy = e.clientY - rect.top - rect.height / 2
+      const oldS = scale()
+      const factor = e.deltaY < 0 ? ZOOM_WHEEL_FACTOR : 1 / ZOOM_WHEEL_FACTOR
+      const newS = Math.min(Math.max(oldS * factor, ZOOM_MIN), ZOOM_MAX)
+      const r = newS / oldS
+      setTx(cx - r * (cx - tx()))
+      setTy(cy - r * (cy - ty()))
+      setScale(newS)
+    } else {
+      // 普通滚轮：切换上/下一个文件
+      if (e.deltaY < 0) prev()
+      else if (e.deltaY > 0) next()
+    }
   }
 
   // ── drag ──
