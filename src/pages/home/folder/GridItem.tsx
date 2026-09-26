@@ -1,8 +1,8 @@
-import { Center, VStack, Icon, Text } from "@hope-ui/solid"
+import { Center, Icon, Text, VStack } from "@hope-ui/solid"
 import { Motion } from "solid-motionone"
 import { useContextMenu } from "solid-contextmenu"
 import { batch, Show } from "solid-js"
-import { CenterLoading, LinkWithPush, ImageWithError } from "~/components"
+import { CenterLoading, ImageWithError, LinkWithPush } from "~/components"
 import { usePath, useRouter, useUtil } from "~/hooks"
 import { checkboxOpen, getMainColor, local, selectIndex } from "~/store"
 import { ObjType, StoreObj } from "~/types"
@@ -115,16 +115,39 @@ export const GridItem = (props: { obj: StoreObj; index: number }) => {
               }}
             />
           </Show>
-          <Show when={props.obj.thumb} fallback={objIcon}>
+          <Show
+            when={props.obj.is_dir}
+            fallback={
+              <ImageWithError
+                maxH="$full"
+                maxW="$full"
+                rounded="$lg"
+                shadow="$md"
+                fallback={<CenterLoading size="lg" />}
+                fallbackErr={objIcon}
+                src={props.obj.thumb}
+                loading="lazy"
+              />
+            }
+          >
+            <Icon
+              color={getMainColor()}
+              boxSize={`${parseInt(local["grid_item_size"])}px`}
+              as={getIconByObj(props.obj)}
+            />
             <ImageWithError
-              maxH="$full"
-              maxW="$full"
               rounded="$lg"
               shadow="$md"
               fallback={<CenterLoading size="lg" />}
-              fallbackErr={objIcon}
               src={props.obj.thumb}
               loading="lazy"
+              style={{
+                position: "absolute",
+                width: "100%",
+                height: `${parseInt(local["grid_item_size"]) * 0.6}px`,
+                bottom: 0,
+                "object-fit": "cover",
+              }}
             />
           </Show>
         </Center>
