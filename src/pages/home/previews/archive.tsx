@@ -587,33 +587,31 @@ const Preview = () => {
           <Show
             when={selectedFile()}
             fallback={
-              <MaybeLoading loading={loading()}>
-                <VStack class="list" w="$full" spacing="$1">
-                  <ListTitle sortCallback={sortObjs} disableCheckbox />
-                  <For each={sortedObjs()}>
-                    {(obj, i) => {
-                      const objWithInner = buildObjWithInner(obj)
-                      // Use rawLink to construct the URL for the object
-                      let url = !obj.is_dir ? rawLink(objWithInner) : undefined
-                      let innerPath = buildInnerUrl(obj.name)
-                      return (
-                        <ListItem
-                          obj={obj}
-                          index={i()}
-                          jumpCallback={() =>
-                            setInnerPaths(innerPaths().concat(obj.name))
-                          }
-                          innerPath={innerPath}
-                          url={url}
-                          pass={archive_pass}
-                          onFileClick={() => changeFile(obj.name)}
-                        />
-                      )
-                    }}
-                  </For>
-                  <ContextMenu />
-                </VStack>
-              </MaybeLoading>
+              <VStack class="list" w="$full" spacing="$1">
+                <ListTitle sortCallback={sortObjs} disableCheckbox />
+                <For each={sortedObjs()}>
+                  {(obj, i) => {
+                    const objWithInner = buildObjWithInner(obj)
+                    // Use rawLink to construct the URL for the object
+                    let url = !obj.is_dir ? rawLink(objWithInner) : undefined
+                    let innerPath = buildInnerUrl(obj.name)
+                    return (
+                      <ListItem
+                        obj={obj}
+                        index={i()}
+                        jumpCallback={() =>
+                          setInnerPaths(innerPaths().concat(obj.name))
+                        }
+                        innerPath={innerPath}
+                        url={url}
+                        pass={archive_pass}
+                        onFileClick={() => changeFile(obj.name)}
+                      />
+                    )
+                  }}
+                </For>
+                <ContextMenu />
+              </VStack>
             }
           >
             <VStack w="$full" spacing="$2" alignItems="center">
@@ -626,24 +624,22 @@ const Preview = () => {
                   }}
                   style={{ width: "100%", overflow: "hidden" }}
                 >
-                  <Suspense fallback={<FullLoading />}>
-                    <div
-                      style={{
-                        transform: `scale(${scale()})`,
-                        "transform-origin": "center center",
-                        transition: "transform 0.1s",
-                        width: "100%",
+                  <div
+                    style={{
+                      transform: `scale(${scale()})`,
+                      "transform-origin": "center center",
+                      transition: "transform 0.1s",
+                      width: "100%",
+                    }}
+                  >
+                    <Dynamic
+                      component={currentPreview()?.component}
+                      images={files().filter((f) => f.type === ObjType.IMAGE)}
+                      navigate={(name) => {
+                        changeFile(name)
                       }}
-                    >
-                      <Dynamic
-                        component={currentPreview()?.component}
-                        images={files().filter((f) => f.type === ObjType.IMAGE)}
-                        navigate={(name) => {
-                          changeFile(name)
-                        }}
-                      />
-                    </div>
-                  </Suspense>
+                    />
+                  </div>
                 </div>
               </Show>
               <HStack w="$full" justifyContent="center" spacing="$2" p="$2">

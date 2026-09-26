@@ -111,7 +111,7 @@ export default defineConfig({
         // DEV_PROXY_TARGET 允许 dev 时对接不同后端：
         //   Go 版 OpenList 后端   -> 默认 http://localhost:5244
         //   OpenListNext(TS) 后端 -> DEV_PROXY_TARGET=http://localhost:8787
-        target: process.env.DEV_PROXY_TARGET || "http://localhost:5244",
+        target: "http://192.168.1.100:5246",
         changeOrigin: true,
         // rewrite: (path) => path.replace(/^\/api/, ""),
       },

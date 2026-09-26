@@ -1,64 +1,30 @@
 import { Center, ElementType, Spinner, SpinnerProps } from "@hope-ui/solid"
 import { JSXElement, mergeProps, Show } from "solid-js"
 import { getMainColor } from "~/store"
+
 export const FullScreenLoading = () => {
-  return (
-    <Center h="100vh">
-      <Spinner
-        thickness="4px"
-        speed="0.65s"
-        emptyColor="$neutral4"
-        color={getMainColor()}
-        size="xl"
-      />
-    </Center>
-  )
+  return null
 }
 
-export const FullLoading = (props: {
+export const FullLoading = (_props: {
   py?: string
   size?: string
   thickness?: number
   ref?: any
 }) => {
-  const merged = mergeProps(
-    {
-      py: "$8",
-      size: "xl",
-      thickness: 4,
-    },
-    props,
-  )
-  return (
-    <Center ref={props.ref} h="$full" w="$full" py={merged.py}>
-      <Spinner
-        thickness={`${merged.thickness}px`}
-        speed="0.65s"
-        emptyColor="$neutral4"
-        color={getMainColor()}
-        size={merged.size as any}
-      />
-    </Center>
-  )
+  return null
 }
 
 export const MaybeLoading = (props: {
   children?: JSXElement
   loading?: boolean
 }) => {
-  return (
-    <Show when={!props.loading} fallback={<FullLoading />}>
-      {props.children}
-    </Show>
-  )
+  return <>{props.children}</>
 }
 
 export const CenterLoading = <C extends ElementType = "div">(
-  props: SpinnerProps<C>,
+  _props: SpinnerProps<C>,
 ) => {
-  return (
-    <Center w="$full" h="$full">
-      <Spinner color={getMainColor()} {...props} />
-    </Center>
-  )
+  return null
 }
+// 把 FullLoading.tsx 里的四个组件改成不同文字：
