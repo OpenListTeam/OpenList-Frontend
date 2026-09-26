@@ -9,6 +9,7 @@ import {
   HStack,
   Icon,
   useColorMode,
+  Button,
 } from "@hope-ui/solid"
 import { Motion } from "solid-motionone"
 import {
@@ -46,6 +47,7 @@ import { useFetch, useRouter, useT, useUtil, useLink } from "~/hooks"
 import { ListTitle } from "~/pages/home/folder/List"
 import { cols } from "~/pages/home/folder/ListItem"
 import { Error, MaybeLoading, FullLoading, SelectWrapper } from "~/components"
+import { ArchiveCover } from "~/components/ArchiveCover"
 import { OpenWith } from "../file/open-with"
 import { getPreviews } from "."
 import {
@@ -71,6 +73,213 @@ import "solid-contextmenu/dist/style.css"
 const download = (url: string) => {
   window.open(url, "_blank")
 }
+
+/* ============================================================
+ *  图片网格
+ * ============================================================ */
+
+type ImageGridProps = {
+  images: ArchiveObj[]
+  rawLink: (obj: ArchiveObj) => string
+  onImageClick: (name: string) => void
+}
+
+const ImageGrid = (props: ImageGridProps) => {
+  return (
+    <div
+      style={{
+        display: "grid",
+        "grid-template-columns": "repeat(auto-fill, minmax(140px, 1fr))",
+        gap: "8px",
+        width: "100%",
+        padding: "8px",
+      }}
+    >
+      <For each={props.images}>
+        {(img) => {
+          const url = () => props.rawLink(img)
+          return (
+            <div
+              style={{
+                cursor: "pointer",
+                "border-radius": "8px",
+                overflow: "hidden",
+                "background-color": "var(--hope-colors-neutral2)",
+                transition: "transform 0.2s",
+              }}
+              onMouseEnter={(e: {
+                currentTarget: { style: { transform: string } }
+              }) => {
+                e.currentTarget.style.transform = "scale(1.03)"
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)"
+              }}
+              onClick={() => props.onImageClick(img.name)}
+              title={img.name}
+            >
+              <img
+                src={url()}
+                alt={img.name}
+                loading="lazy"
+                style={{
+                  width: "100%",
+                  height: "120px",
+                  "object-fit": "cover",
+                  display: "block",
+                }}
+                onError={(e) => {
+                  e.currentTarget.style.display = "none"
+                }}
+              />
+              <div
+                style={{
+                  padding: "4px 6px",
+                  "font-size": "12px",
+                  overflow: "hidden",
+                  "text-overflow": "ellipsis",
+                  "white-space": "nowrap",
+                }}
+              >
+                {img.name}
+              </div>
+            </div>
+          )
+        }}
+      </For>
+    </div>
+  )
+}
+
+/* ============================================================
+ *  归档文件网格（压缩包封面）
+ * ============================================================ */
+
+type ArchiveGridProps = {
+  objs: Obj[]
+  pathname: string
+  password: string
+  jumpCallback: (obj: Obj) => void
+  rawLink: (obj: ArchiveObj) => string
+}
+
+const ArchiveGrid = (props: ArchiveGridProps) => {
+  return (
+    <div
+      style={{
+        display: "grid",
+        "grid-template-columns": "repeat(auto-fill, minmax(140px, 1fr))",
+        gap: "8px",
+        width: "100%",
+        padding: "8px",
+      }}
+    >
+      <For each={props.objs}>
+        {(obj) => {
+          const isArchive = () => obj.type === ObjType.ARCHIVE
+          const isImage = () => obj.type === ObjType.IMAGE
+          const isDir = () => obj.is_dir
+
+          return (
+            <div
+              style={{
+                cursor: "pointer",
+                "border-radius": "8px",
+                overflow: "hidden",
+                "background-color": "var(--hope-colors-neutral2)",
+                transition: "transform 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "scale(1.03)"
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)"
+              }}
+              onClick={() => {
+                if (isDir()) {
+                  props.jumpCallback(obj)
+                } else if (isArchive()) {
+                  props.jumpCallback(obj)
+                }
+              }}
+              title={obj.name}
+            >
+              <div style={{ height: "120px" }}>
+                <Show
+                  when={isArchive()}
+                  fallback={
+                    <Show
+                      when={isImage()}
+                      fallback={
+                        <div
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            "align-items": "center",
+                            "justify-content": "center",
+                          }}
+                        >
+                          <Icon
+                            as={getIconByObj(obj)}
+                            boxSize="$8"
+                            color={getMainColor()}
+                          />
+                        </div>
+                      }
+                    >
+                      <img
+                        src={props.rawLink({
+                          ...obj,
+                          sign: "",
+                          inner_path: "",
+                          archive: obj as ArchiveObj,
+                          pass: "",
+                        } as ArchiveObj)}
+                        loading="lazy"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          "object-fit": "cover",
+                          display: "block",
+                        }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none"
+                        }}
+                      />
+                    </Show>
+                  }
+                >
+                  <ArchiveCover
+                    obj={obj}
+                    pathname={props.pathname}
+                    password={props.password}
+                    height={120}
+                  />
+                </Show>
+              </div>
+              <div
+                style={{
+                  padding: "4px 6px",
+                  "font-size": "12px",
+                  overflow: "hidden",
+                  "text-overflow": "ellipsis",
+                  "white-space": "nowrap",
+                }}
+              >
+                {obj.name}
+              </div>
+            </div>
+          )
+        }}
+      </For>
+    </div>
+  )
+}
+
+/* ============================================================
+ *  列表项
+ * ============================================================ */
 
 type ListItemProps = {
   obj: Obj
@@ -135,9 +344,8 @@ const ListItem = (props: ListItemProps) => {
                 filenameStyle() === "scrollable" ? "auto" : "hidden",
               textOverflow:
                 filenameStyle() === "ellipsis" ? "ellipsis" : "unset",
-              "scrollbar-width": "none", // firefox
+              "scrollbar-width": "none",
               "&::-webkit-scrollbar": {
-                // webkit
                 display: "none",
               },
             }}
@@ -161,6 +369,10 @@ const ListItem = (props: ListItemProps) => {
     </Motion.div>
   )
 }
+
+/* ============================================================
+ *  右键菜单
+ * ============================================================ */
 
 const operations: Operations = {
   extract: { icon: TbCopy, color: "$success9" },
@@ -234,9 +446,15 @@ const ItemContent = (props: { name: string }) => {
   )
 }
 
+/* ============================================================
+ *  Preview 主组件
+ * ============================================================ */
+
 type List = {
   [name: string]: Obj & { children: List | null }
 }
+
+type ViewMode = "list" | "grid"
 
 const Preview = () => {
   const t = useT()
@@ -263,11 +481,11 @@ const Preview = () => {
   )
   const [selectedFile, setSelectedFile] = createSignal<string>("")
   const [selectedPreviewKey, setSelectedPreviewKey] = createSignal("")
-  // 缩放比例（Ctrl + 滚轮控制）
   const [scale, setScale] = createSignal(1)
-  // 预览容器 DOM 引用
+  const [viewMode, setViewMode] = createSignal<ViewMode>("list")
   let previewRef: HTMLDivElement | undefined
   const getObjsMutex = createMutex()
+
   const toList = (tree: ObjTree[] | Obj[]): List => {
     let l: List = {}
     tree.forEach((item: any) => {
@@ -278,6 +496,7 @@ const Preview = () => {
     })
     return l
   }
+
   const handleErrorResponse = (message: string, code: number | undefined) => {
     if (code === 202) {
       batch(() => {
@@ -291,11 +510,13 @@ const Preview = () => {
       setError(message)
     }
   }
+
   const dealWithError = <T,>(resp: Resp<T>): boolean => {
     let err = true
     handleRespWithoutNotify(resp, () => (err = false), handleErrorResponse)
     return err
   }
+
   const getObjs = async (innerPath: string[]) => {
     await getObjsMutex.acquire()
     if (requiringPassword() && archive_pass === "") {
@@ -369,6 +590,7 @@ const Preview = () => {
     getObjsMutex.release()
     return Object.values(l)
   }
+
   const [objs, setObjs] = createSignal<Obj[]>([])
   createEffect(() => {
     getObjs(innerPaths()).then((ret) => setObjs(ret))
@@ -377,6 +599,7 @@ const Preview = () => {
     getObjs(innerPaths()).then((ret) => setObjs(ret))
   }
   refresh()
+
   const sortedObjs = () => {
     let ret = objs()
     if (orderBy()) {
@@ -393,13 +616,13 @@ const Preview = () => {
     }
     return ret
   }
-  // Build inner file url for current path by filename
+
   const buildInnerUrl = (name: string) => {
     const innerPath =
       (innerPaths().length > 0 ? "/" + innerPaths().join("/") : "") + "/" + name
     return innerPath
   }
-  // Build obj with inner property
+
   const buildObjWithInner = (obj: Obj): ArchiveObj => {
     const innerPath =
       innerPaths().length > 0 ? "/" + innerPaths().join("/") : ""
@@ -423,11 +646,14 @@ const Preview = () => {
     })
   }
 
-  // Get all files for navigation
   const files = createMemo(() =>
     sortedObjs()
       .filter((obj) => !obj.is_dir)
       .map((f) => buildObjWithInner(f)),
+  )
+
+  const imageFiles = createMemo(() =>
+    files().filter((f) => f.type === ObjType.IMAGE),
   )
 
   const previews = createMemo(() => {
@@ -447,7 +673,6 @@ const Preview = () => {
     return p[0]
   })
 
-  // Cast to ArchiveObj to make sure onCleanup can delete archive property correctly
   const originalObj: ArchiveObj = {
     ...objStore.obj,
     inner_path: undefined,
@@ -457,15 +682,12 @@ const Preview = () => {
 
   const changeFile = (name: string) => {
     batch(() => {
-      // 切换文件时重置缩放
       setScale(1)
       if (name === "") {
-        // Restore
         ObjStore.setObj(originalObj)
         ObjStore.setRawUrl(originalRawUrl)
         setSelectedFile("")
       } else {
-        // Set new
         const file = files().find((f) => f.name === name)
         if (file) {
           const innerUrl = rawLink(file)
@@ -477,7 +699,6 @@ const Preview = () => {
     })
   }
 
-  // ===== 滚轮切换 / Ctrl+滚轮缩放 =====
   const currentIndex = createMemo(() =>
     files().findIndex((f) => f.name === selectedFile()),
   )
@@ -487,39 +708,30 @@ const Preview = () => {
     if (list.length === 0) return
     let idx = currentIndex()
     if (idx < 0) return
-    idx = (idx + offset + list.length) % list.length // 循环切换
+    idx = (idx + offset + list.length) % list.length
     changeFile(list[idx].name)
   }
 
   const handleWheel = (e: WheelEvent) => {
-    console.log("[archive] wheel fired", {
-      deltaY: e.deltaY,
-      ctrl: e.ctrlKey,
-      selected: selectedFile(),
-    })
-    // 只在预览单个文件时生效
     if (!selectedFile()) return
 
     if (e.ctrlKey) {
-      // Ctrl + 滚轮：缩放
       e.preventDefault()
       e.stopPropagation()
       const delta = e.deltaY < 0 ? 0.1 : -0.1
       setScale((s) => Math.min(5, Math.max(0.2, s + delta)))
     } else {
-      // 普通滚轮：切换文件
       e.preventDefault()
       e.stopPropagation()
       if (e.deltaY < 0) {
-        navigateFile(-1) // 上：上一个
+        navigateFile(-1)
       } else if (e.deltaY > 0) {
-        navigateFile(1) // 下：下一个
+        navigateFile(1)
       }
     }
   }
 
   onCleanup(() => {
-    // Restore original values
     ObjStore.setObj(originalObj)
     ObjStore.setRawUrl(originalRawUrl)
   })
@@ -528,6 +740,15 @@ const Preview = () => {
     selectedFile()
     setSelectedPreviewKey("")
   })
+
+  const jumpToObj = (obj: Obj) => {
+    if (obj.is_dir) {
+      setInnerPaths(innerPaths().concat(obj.name))
+    } else {
+      changeFile(obj.name)
+    }
+  }
+
   return (
     <VStack spacing="$2" w="$full">
       <Breadcrumb pl="$2" pr="$2" w="$full">
@@ -565,10 +786,12 @@ const Preview = () => {
           </BreadcrumbItem>
         </Show>
       </Breadcrumb>
+
       <Switch>
         <Match when={error() !== ""}>
           <Error msg={error()} disableColor />
         </Match>
+
         <Match when={requiringPassword()}>
           <Password
             title={t("home.toolbar.archive.input_password")}
@@ -583,33 +806,81 @@ const Preview = () => {
             </Show>
           </Password>
         </Match>
+
         <Match when={!requiringPassword() && error() === ""}>
           <Show
             when={selectedFile()}
             fallback={
               <VStack class="list" w="$full" spacing="$1">
-                <ListTitle sortCallback={sortObjs} disableCheckbox />
-                <For each={sortedObjs()}>
-                  {(obj, i) => {
-                    const objWithInner = buildObjWithInner(obj)
-                    // Use rawLink to construct the URL for the object
-                    let url = !obj.is_dir ? rawLink(objWithInner) : undefined
-                    let innerPath = buildInnerUrl(obj.name)
-                    return (
-                      <ListItem
-                        obj={obj}
-                        index={i()}
-                        jumpCallback={() =>
-                          setInnerPaths(innerPaths().concat(obj.name))
-                        }
-                        innerPath={innerPath}
-                        url={url}
-                        pass={archive_pass}
-                        onFileClick={() => changeFile(obj.name)}
+                <HStack
+                  w="$full"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  px="$2"
+                >
+                  <ListTitle sortCallback={sortObjs} disableCheckbox />
+                  <HStack spacing="$1">
+                    <Button
+                      size="xs"
+                      variant={viewMode() === "list" ? "solid" : "ghost"}
+                      on:click={() => setViewMode("list")}
+                    >
+                      列表
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant={viewMode() === "grid" ? "solid" : "ghost"}
+                      on:click={() => setViewMode("grid")}
+                    >
+                      网格
+                    </Button>
+                  </HStack>
+                </HStack>
+
+                <Show when={viewMode() === "list"}>
+                  <For each={sortedObjs()}>
+                    {(obj, i) => {
+                      const objWithInner = buildObjWithInner(obj)
+                      let url = !obj.is_dir ? rawLink(objWithInner) : undefined
+                      let innerPath = buildInnerUrl(obj.name)
+                      return (
+                        <ListItem
+                          obj={obj}
+                          index={i()}
+                          jumpCallback={() =>
+                            setInnerPaths(innerPaths().concat(obj.name))
+                          }
+                          innerPath={innerPath}
+                          url={url}
+                          pass={archive_pass}
+                          onFileClick={() => changeFile(obj.name)}
+                        />
+                      )
+                    }}
+                  </For>
+                </Show>
+
+                <Show when={viewMode() === "grid"}>
+                  <Show
+                    when={imageFiles().length > 0}
+                    fallback={
+                      <ArchiveGrid
+                        objs={sortedObjs()}
+                        pathname={pathname()}
+                        password={password()}
+                        jumpCallback={jumpToObj}
+                        rawLink={rawLink}
                       />
-                    )
-                  }}
-                </For>
+                    }
+                  >
+                    <ImageGrid
+                      images={imageFiles()}
+                      rawLink={rawLink}
+                      onImageClick={(name) => changeFile(name)}
+                    />
+                  </Show>
+                </Show>
+
                 <ContextMenu />
               </VStack>
             }
@@ -659,6 +930,7 @@ const Preview = () => {
           </Show>
         </Match>
       </Switch>
+
       <Show when={comment() !== ""}>
         <Divider />
         <Text w="$full" pl="$1" pr="$1">
