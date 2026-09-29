@@ -18,6 +18,8 @@ export const CenterIcon = <C extends ElementType = "svg">(
     <Tooltip placement="top" withArrow label={t(`home.toolbar.${props.name}`)}>
       <Icon
         class={`toolbar-${props.name}`}
+        aria-label={t(`home.toolbar.${props.name}`)}
+        tabIndex={0}
         _hover={{
           bgColor: hoverColor(),
         }}
@@ -57,6 +59,8 @@ export const RightIcon = <C extends ElementType = "svg">(
       <Icon
         // bgColor="$info4"
         color={getMainColor()}
+        aria-label={props.tips ? t(`home.toolbar.${props.tips}`) : undefined}
+        tabIndex={0}
         _hover={{
           bgColor: getMainColor(),
           color: "white",

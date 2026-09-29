@@ -17,6 +17,8 @@ const notify = {
       render: (props) => {
         return (
           <Box
+            role="status"
+            aria-live="polite"
             css={{
               display: "flex",
               backdropFilter: "blur(8px)",
