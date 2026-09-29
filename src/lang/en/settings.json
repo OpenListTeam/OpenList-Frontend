@@ -146,5 +146,21 @@
   "version": "Version",
   "video_autoplay": "Video autoplay",
   "video_types": "Video types",
-  "webauthn_login_enabled": "WebAuthn login enabled"
+  "webauthn_login_enabled": "WebAuthn login enabled",
+  "seed_site_url": "Seed site URL",
+  "seed_default_matrix": "Default hash matrix",
+  "seed_format_policies": "Seed format policies",
+  "seed_default_format": "Default seed format",
+  "seed_default_formats": {
+    "oss": "OSS",
+    "torrent": "Torrent",
+    "cas": "CAS"
+  },
+  "seed_auto_generate_policy": "Auto-generate seeds on upload",
+  "seed_auto_generate_policys": {
+    "off": "Off",
+    "on": "On"
+  },
+  "seed_single_direct_preview": "Single-file seed direct preview",
+  "seed_cas_direct_access": "CAS direct access"
 }
