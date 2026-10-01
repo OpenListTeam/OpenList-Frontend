@@ -77,7 +77,7 @@
     "artplayer": "^5.4.0",
     "artplayer-plugin-danmuku": "^5.3.0",
     "asciinema-player": "^3.17.0",
-    "axios": "^1.19.0",
+    "axios": "^1.20.0",
     "bencode": "^4.0.1",
     "chardet": "^2.2.0",
     "clsx": "^2.1.1",
