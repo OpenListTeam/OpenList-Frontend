@@ -113,6 +113,18 @@
   /* background-color: #fff; */
 }
 
+/* media referenced by a markdown file must not overflow the container */
+.markdown-body video,
+.markdown-body audio {
+  max-width: 100%;
+}
+
+.markdown-body video {
+  display: block;
+  height: auto;
+  margin: 0.5em 0;
+}
+
 .markdown-body code,
 .markdown-body kbd,
 .markdown-body pre {
