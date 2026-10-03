@@ -151,10 +151,16 @@
   },
   "189CloudPC": {
     "access_token": "Access token",
+    "client_sn": "Client sn",
+    "client_sn-tips": "Device serial number captured from the official client, leave it empty if you do not have one",
+    "device_id": "Device id",
+    "device_id-tips": "DEVICEID cookie issued after the second device verification, keep it to avoid verifying again",
     "family_id": "Family id",
     "family_transfer": "Family transfer",
     "generate_torrent": "Generate torrent",
     "generate_torrent-tips": "Generate torrent file with CAS extension after upload",
+    "jg_open_id": "Jg open id",
+    "jg_open_id-tips": "Optional push id reported by the official client",
     "login_type": "Login type",
     "login_types": {
       "password": "Password",
@@ -173,10 +179,13 @@
       "desc": "Desc"
     },
     "password": "Password",
+    "password-tips": "Not needed when an access token or refresh token is provided",
     "rapid_upload": "Rapid upload",
     "refresh_token": "Refresh token",
     "refresh_token-tips": "To switch accounts, please clear this field",
     "root_folder_id": "Root folder id",
+    "sms_code": "Sms code",
+    "sms_code-tips": "SMS code for the second device verification, fill it in and save again when login asks for it",
     "type": "Type",
     "types": {
       "family": "Family",
@@ -190,7 +199,10 @@
     },
     "upload_thread": "Upload thread",
     "upload_thread-tips": "1\u003c=thread\u003c=32",
+    "user_finger": "User finger",
+    "user_finger-tips": "Device fingerprint sent with login requests, generated and kept automatically when empty",
     "username": "Username",
+    "username-tips": "Not needed when an access token or refresh token is provided",
     "validate_code": "Validate code"
   },
   "189CloudTV": {
