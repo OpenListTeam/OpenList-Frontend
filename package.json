@@ -48,7 +48,7 @@
     "cross-env": "^10.1.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
-    "mermaid": "^11.17.2",
+    "mermaid": "^12.1.0",
     "prettier": "3.9.9",
     "rehype-stringify": "^10.0.1",
     "remark-parse": "^11.0.0",
