@@ -31,7 +31,6 @@ const OtherSettings = () => {
   const [pikpakTempDir, setPikPakTempDir] = createSignal("")
   const [thunderTempDir, setThunderTempDir] = createSignal("")
   const [thunderBrowserTempDir, setThunderBrowserTempDir] = createSignal("")
-  const [thunderXTempDir, setThunderXTempDir] = createSignal("")
   const [guangYaPanTempDir, setGuangYaPanTempDir] = createSignal("")
   const [token, setToken] = createSignal("")
   const [settings, setSettings] = createSignal<SettingItem[]>([])
@@ -85,11 +84,6 @@ const OtherSettings = () => {
       temp_dir: thunderTempDir(),
     }),
   )
-  const [setThunderXLoading, setThunderX] = useFetch((): PResp<string> =>
-    r.post("/admin/setting/set_thunderx", {
-      temp_dir: thunderXTempDir(),
-    }),
-  )
   const [setThunderBrowserLoading, setThunderBrowser] = useFetch(
     (): PResp<string> =>
       r.post("/admin/setting/set_thunder_browser", {
@@ -133,9 +127,6 @@ const OtherSettings = () => {
       )
       setThunderTempDir(
         data.find((i) => i.key === "thunder_temp_dir")?.value || "",
-      )
-      setThunderXTempDir(
-        data.find((i) => i.key === "thunderx_temp_dir")?.value || "",
       )
       setThunderBrowserTempDir(
         data.find((i) => i.key === "thunder_browser_temp_dir")?.value || "",
@@ -399,29 +390,6 @@ const OtherSettings = () => {
         loading={setThunderBrowserLoading()}
         onClick={async () => {
           const resp = await setThunderBrowser()
-          handleResp(resp, (data) => {
-            notify.success(data)
-          })
-        }}
-      >
-        {t("global.save")}
-      </Button>
-      <Heading my="$2">{t("settings_other.thunderx")}</Heading>
-      <FormControl w="$full" display="flex" flexDirection="column">
-        <FormLabel for="thunderX_temp_dir" display="flex" alignItems="center">
-          {t("settings_other.thunderX_temp_dir")}
-        </FormLabel>
-        <FolderChooseInput
-          id="thunderX_temp_dir"
-          value={thunderXTempDir()}
-          onChange={(path) => setThunderXTempDir(path)}
-        />
-      </FormControl>
-      <Button
-        my="$2"
-        loading={setThunderXLoading()}
-        onClick={async () => {
-          const resp = await setThunderX()
           handleResp(resp, (data) => {
             notify.success(data)
           })

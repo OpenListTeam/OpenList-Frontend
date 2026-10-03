@@ -1393,47 +1393,6 @@
     "username": "Username",
     "username-tips": "login type is user,this is required"
   },
-  "ThunderX": {
-    "captcha_token": "Captcha token",
-    "password": "Password",
-    "root_folder_id": "Root folder id",
-    "use_video_url": "Use video url",
-    "username": "Username"
-  },
-  "ThunderXExpert": {
-    "algorithms": "Algorithms",
-    "algorithms-tips": "sign type is algorithms,this is required",
-    "captcha_sign": "Captcha sign",
-    "captcha_sign-tips": "sign type is captcha_sign,this is required",
-    "captcha_token": "Captcha token",
-    "client_id": "Client id",
-    "client_secret": "Client secret",
-    "client_version": "Client version",
-    "device_id": "Device id",
-    "download_user_agent": "Download user agent",
-    "login_type": "Login type",
-    "login_types": {
-      "refresh_token": "Refresh token",
-      "user": "User"
-    },
-    "package_name": "Package name",
-    "password": "Password",
-    "password-tips": "login type is user,this is required",
-    "refresh_token": "Refresh token",
-    "refresh_token-tips": "login type is refresh_token,this is required",
-    "root_folder_id": "Root folder id",
-    "sign_type": "Sign type",
-    "sign_types": {
-      "algorithms": "Algorithms",
-      "captcha_sign": "Captcha sign"
-    },
-    "timestamp": "Timestamp",
-    "timestamp-tips": "sign type is captcha_sign,this is required",
-    "use_video_url": "Use video url",
-    "user_agent": "User agent",
-    "username": "Username",
-    "username-tips": "login type is user,this is required"
-  },
   "UC": {
     "cookie": "Cookie",
     "only_list_video_file": "Only list video file",
@@ -1692,8 +1651,6 @@
     "ThunderBrowser": {},
     "ThunderBrowserExpert": {},
     "ThunderExpert": {},
-    "ThunderX": {},
-    "ThunderXExpert": {},
     "UC": {},
     "UCTV": {},
     "USS": {},
@@ -1787,8 +1744,6 @@
     "ThunderBrowser": "ThunderBrowser",
     "ThunderBrowserExpert": "ThunderBrowserExpert",
     "ThunderExpert": "ThunderExpert",
-    "ThunderX": "ThunderX",
-    "ThunderXExpert": "ThunderXExpert",
     "UC": "UC",
     "UCTV": "UCTV",
     "USS": "USS",

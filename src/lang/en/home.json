@@ -129,7 +129,7 @@
       "no_cas_hint": "No CAS info found. Files will be downloaded first, then uploaded.",
       "reselect": "Reselect",
       "simplehttp_not_supported": "SimpleHttp does not support BT/magnet downloads. Please select aria2 or another tool.",
-      "ed2k_tool_hint": "ed2k links detected. aria2/qBittorrent do not support ed2k protocol. The system will automatically try Thunder tools, or you can manually select Thunder/ThunderX/ThunderBrowser.",
+      "ed2k_tool_hint": "ed2k links detected. aria2/qBittorrent do not support ed2k protocol. The system will automatically try Thunder tools, or you can manually select Thunder/ThunderBrowser.",
       "generate_cas_file": "Generate CAS File",
       "cas_file_generated": "CAS file generated successfully",
       "cas_file_generate_failed": "Failed to generate CAS file",
