@@ -47,6 +47,8 @@
     },
     "offline_download": {
       "url": "URL",
+      "file_name": "File Name",
+      "file_size": "File Size",
       "path": "Destination Path",
       "transfer_src": "Source Path",
       "transfer_src_local": "Source Path (Local)",
