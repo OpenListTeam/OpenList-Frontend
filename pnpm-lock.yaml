@@ -96,8 +96,8 @@ importers:
         specifier: ^0.18.1
         version: 0.18.1
       libheif-js:
-        specifier: ^1.23.2
-        version: 1.23.2
+        specifier: ^1.23.5
+        version: 1.23.5
       lightgallery:
         specifier: ^2.9.0
         version: 2.9.0
@@ -2548,8 +2548,8 @@ packages:
   layout-base@2.0.1:
     resolution: {integrity: sha512-dp3s92+uNI1hWIpPGH3jK2kxE2lMjdXdr+DH8ynZHpd6PUlH6x6cbuXnoMmiNumznqaNO31xu9e79F0uuZ0JFg==}
 
-  libheif-js@1.23.2:
-    resolution: {integrity: sha512-qvHIXtggEsw1lCNCWBYKloL2Z36DJBm0R9ThGiH2JnhKYdeZFLPFkP30Lw4yMskxxhx0bKg1gLrBHX1D2w2pSw==}
+  libheif-js@1.23.5:
+    resolution: {integrity: sha512-umXZPthnWZtF3iG/5mQG+AZ2V6i0UeYpo3z2CkggTEgL8dKmIIwJT6TDuAMuabXa1yTW8uJ1ZAgR+CxNTklYYw==}
     engines: {node: '>=8.0.0'}
 
   lie@3.3.0:
@@ -6031,7 +6031,7 @@ snapshots:
 
   layout-base@2.0.1: {}
 
-  libheif-js@1.23.2: {}
+  libheif-js@1.23.5: {}
 
   lie@3.3.0:
     dependencies:
