@@ -35,6 +35,7 @@ export const Header = () => {
       {...stickyProps}
       bgColor="$background"
       class="header"
+      role="banner"
       w="$full"
       // shadow="$md"
     >
