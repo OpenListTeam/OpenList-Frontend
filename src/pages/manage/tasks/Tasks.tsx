@@ -247,18 +247,39 @@ export const Tasks = (props: TasksProps) => {
       notify.warning(t("tasks.path_explicit_root_required"))
       return
     }
-    if (pathAction() === "delete") {
-      const ok = window.confirm(
-        t("tasks.delete_by_path_confirm", { path: trimmed }),
-      )
-      if (!ok) return
-    }
     setPathBatchLoading(true)
     try {
-      const resp = (await r.post(
-        `/task/${props.type}/${pathAction()}_by_path`,
-        { path: trimmed },
-      )) as Resp<TaskPathResult>
+      const action = pathAction()
+      const endpoint = `/task/${props.type}/${action}_by_path`
+      const preview = (await r.post(endpoint, {
+        path: trimmed,
+        dry_run: true,
+      })) as Resp<TaskPathResult>
+      if (preview.code !== 200) {
+        handleResp(preview)
+        return
+      }
+
+      const matched = preview.data.matched
+      if (matched === 0) {
+        notify.warning(t("tasks.path_no_matches"))
+        return
+      }
+      const ok = window.confirm(
+        action === "delete"
+          ? t("tasks.delete_by_path_confirm", { path: trimmed, matched })
+          : t("tasks.path_batch_confirm", {
+              action: t(`tasks.${action}_by_path`),
+              path: trimmed,
+              matched,
+            }),
+      )
+      if (!ok) return
+
+      const resp = (await r.post(endpoint, {
+        path: trimmed,
+        expected_count: matched,
+      })) as Resp<TaskPathResult>
       handleResp(resp, (data) => {
         notify.success(
           t("tasks.path_batch_result", {
