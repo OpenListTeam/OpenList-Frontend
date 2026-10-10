@@ -143,12 +143,12 @@ const AddOrEdit = () => {
     header: "",
     header_sub: false,
   })
-  const [metaLoading, loadMeta] = useFetch(
-    (): PResp<Meta> => r.get(`/admin/meta/get?id=${id}`),
+  const [metaLoading, loadMeta] = useFetch((): PResp<Meta> =>
+    r.get(`/admin/meta/get?id=${id}`),
   )
   const [users, setUsers] = createSignal<User[]>([])
-  const [getUsersLoading, getUsers] = useFetch(
-    (): PPageResp<User> => r.get("/admin/user/list"),
+  const [getUsersLoading, getUsers] = useFetch((): PPageResp<User> =>
+    r.get("/admin/user/list"),
   )
 
   const initEdit = async () => {
