@@ -7,7 +7,7 @@
     "url": "https://github.com/OpenListTeam"
   },
   "description": "A new AList Fork to Anti Trust Crisis",
-  "packageManager": "pnpm@11.28.3",
+  "packageManager": "pnpm@12.11.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/OpenListTeam/OpenList-Frontend.git"
