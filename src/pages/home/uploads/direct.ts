@@ -36,6 +36,7 @@ export const HttpDirectUpload: Upload = async (
       path,
       file_name: file.name,
       file_size: file.size,
+      content_type: file.type || "application/octet-stream",
       tool: "HttpDirect",
     },
     {
