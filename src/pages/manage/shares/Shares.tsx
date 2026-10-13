@@ -79,7 +79,16 @@ const Shares = () => {
               <Show when={UserMethods.is_admin(me())}>
                 <Th>{t(`shares.creator`)}</Th>
               </Show>
-              <For each={["expires", "accessed", "status", "remark"]}>
+              <For
+                each={[
+                  "expires",
+                  "accessed",
+                  "status",
+                  "remark",
+                  "domain",
+                  "web_hosting",
+                ]}
+              >
                 {(title) => <Th>{t(`shares.${title}`)}</Th>}
               </For>
               <Th>{t("global.operations")}</Th>
