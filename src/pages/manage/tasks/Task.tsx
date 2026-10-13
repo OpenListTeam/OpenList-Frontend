@@ -77,7 +77,7 @@ export const TaskState = (props: { state: number }) => {
   )
 }
 
-export type TaskOrderBy = "name" | "creator" | "state" | "progress"
+export type TaskOrderBy = "name" | "creator" | "state" | "progress" | "end_time"
 
 export interface TaskCol {
   name: TaskOrderBy | "speed" | "operation"
@@ -151,7 +151,7 @@ export const Task = (props: TaskAttribute & TasksProps & TaskLocalSetter) => {
     }
     return `${delta.toFixed(2)} ${units[unit_i]}`
   }
-  if (props.done) {
+  if (props.done === "done") {
     if (
       props.start_time !== props.end_time &&
       props.progress > 0 &&
@@ -162,6 +162,7 @@ export const Task = (props: TaskAttribute & TasksProps & TaskLocalSetter) => {
       speedText = parseSpeedText(timeDelta, lengthDelta)
     }
   } else if (
+    props.done === "undone" &&
     props.prevProgress !== undefined &&
     props.prevFetchTime !== undefined
   ) {
