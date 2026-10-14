@@ -186,6 +186,8 @@ const Login = () => {
   })
 
   const Login = async () => {
+    if (loading()) return
+
     if (!useauthn()) {
       if (remember() === "true") {
         localStorage.setItem("username", username())
@@ -250,7 +252,13 @@ const Login = () => {
               name="otp"
               placeholder={t("login.otp-tips")}
               value={opt()}
-              onInput={(e) => setOpt(e.currentTarget.value)}
+              onInput={(e) => {
+                const code = e.currentTarget.value
+                setOpt(code)
+                if (/^\d{6}$/.test(code)) {
+                  void Login()
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   Login()
