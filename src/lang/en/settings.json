@@ -138,6 +138,7 @@
   },
   "sso_oidc_username_key": "SSO oidc username key",
   "sso_organization_name": "SSO organization name",
+  "sso_postmessage_origin": "Sso postmessage origin",
   "text_types": "Text types",
   "token": "Token",
   "transmission_seedtime": "Transmission seedtime",
