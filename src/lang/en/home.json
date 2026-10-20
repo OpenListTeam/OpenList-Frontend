@@ -197,6 +197,8 @@
     "capability_summary": "Source capability summary",
     "estimated_traffic": "Estimated traffic",
     "requires_fetch": "Requires fetch",
+    "missing_hashes": "Missing {{hashes}}",
+    "hash_reuse_only_hint": "This backend only reuses hashes already returned by the storage driver. Unsupported formats and hashes stay disabled; pick files whose driver exposes the required hashes.",
     "parse_failed": "Failed to parse transfer seed",
     "cas_legacy_warning": "Legacy CAS contains only name, size, MD5, aggregate slice MD5, and creation time. Conversion is lossy: per-piece lists, comments, channels, trackers, and sources cannot be preserved.",
     "share_valid": "Share valid",

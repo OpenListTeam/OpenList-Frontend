@@ -181,35 +181,54 @@ export const TransferSeedGenerator = () => {
       handleResp(resp, (value) => {
         setCapabilities(value)
         setAvailableTrackers(value.trackers || [])
-        // Preselect the hashes the current driver already provides so no
-        // download is required by default. Fall back to the configured matrix
-        // only when the driver reports no hashes at all.
+        // Drop formats the backend just declared unsupported for this selection.
+        setFormats((current) =>
+          current.filter((format) => value.formats?.[format] !== false),
+        )
+        // Preselect only hashes shared by every selected file. Fall back to the
+        // configured matrix only when the driver reports no hashes at all.
         const provided = new Set<string>()
-        for (const file of value.files || []) {
-          for (const hash of file.available_hashes || []) {
+        const files = value.files || []
+        for (const hash of files[0]?.available_hashes || []) {
+          if (
+            files.every((file) => (file.available_hashes || []).includes(hash))
+          ) {
             provided.add(hash)
           }
         }
         const defaultMatrix = value.default_matrix
         const hasProvided = provided.size > 0
+        const reuseOnly = value.hash_reuse_only === true
         setMatrix({
           md5: {
             whole: hasProvided
               ? provided.has("md5")
               : !!defaultMatrix?.md5?.whole,
-            pieces: hasProvided ? false : !!defaultMatrix?.md5?.pieces,
+            pieces: reuseOnly
+              ? false
+              : hasProvided
+                ? false
+                : !!defaultMatrix?.md5?.pieces,
           },
           sha1: {
             whole: hasProvided
               ? provided.has("sha1")
               : !!defaultMatrix?.sha1?.whole,
-            pieces: hasProvided ? false : !!defaultMatrix?.sha1?.pieces,
+            pieces: reuseOnly
+              ? false
+              : hasProvided
+                ? false
+                : !!defaultMatrix?.sha1?.pieces,
           },
           sha256: {
             whole: hasProvided
               ? provided.has("sha256")
               : !!defaultMatrix?.sha256?.whole,
-            pieces: hasProvided ? false : !!defaultMatrix?.sha256?.pieces,
+            pieces: reuseOnly
+              ? false
+              : hasProvided
+                ? false
+                : !!defaultMatrix?.sha256?.pieces,
           },
         })
       })
@@ -267,11 +286,55 @@ export const TransferSeedGenerator = () => {
   }
 
   const capabilityFiles = () => capabilities()?.files ?? []
+  const reuseOnly = () => capabilities()?.hash_reuse_only === true
+
+  // Hashes shared by every selected file: only those can be turned into a
+  // seed without downloading the content again.
+  const availableWholeHashes = createMemo<Set<SeedHashAlgorithm>>(() => {
+    const files = capabilityFiles()
+    if (!files.length) return new Set()
+    const first = files[0].available_hashes || []
+    return new Set(
+      first.filter((algorithm) =>
+        files.every((file) =>
+          (file.available_hashes || []).includes(algorithm),
+        ),
+      ),
+    )
+  })
+
+  const availablePieceHashes = createMemo<Set<SeedHashAlgorithm>>(() => {
+    const files = capabilityFiles()
+    if (!files.length) return new Set()
+    const first = files[0].available_piece_hashes || []
+    return new Set(
+      first.filter((algorithm) =>
+        files.every((file) =>
+          (file.available_piece_hashes || []).includes(algorithm),
+        ),
+      ),
+    )
+  })
+
+  const missingHashes = (file: SeedCapabilityFile): SeedHashAlgorithm[] => {
+    const matrix = effectiveMatrix()
+    const whole = new Set(file.available_hashes || [])
+    const pieces = new Set(file.available_piece_hashes || [])
+    const missing: SeedHashAlgorithm[] = []
+    if (matrix.md5.whole && !whole.has("md5")) missing.push("md5")
+    if (matrix.sha1.whole && !whole.has("sha1")) missing.push("sha1")
+    if (matrix.sha256.whole && !whole.has("sha256")) missing.push("sha256")
+    if (matrix.md5.pieces && !pieces.has("md5")) missing.push("md5")
+    if (matrix.sha1.pieces && !pieces.has("sha1")) missing.push("sha1")
+    if (matrix.sha256.pieces && !pieces.has("sha256")) missing.push("sha256")
+    return missing
+  }
 
   // 根据用户选择的格式 + 哈希矩阵，判断该文件是否需要下载计算哈希。
-  // 与后端 canReuseListedHashes 保持一致：分片哈希网盘列表不提供，
-  // 只要矩阵要求分片哈希就必须下载；整文件哈希缺一即需下载。
+  // Go 后端在缺少哈希时会下载计算；TS 后端（hash_reuse_only）只复用驱动
+  // 已返回的哈希，因此这里不再承诺下载。
   const requiresDownload = (file: SeedCapabilityFile): boolean => {
+    if (reuseOnly()) return false
     const matrix = effectiveMatrix()
     if (matrix.md5.pieces || matrix.sha1.pieces || matrix.sha256.pieces) {
       return true
@@ -282,6 +345,11 @@ export const TransferSeedGenerator = () => {
     if (matrix.sha256.whole && !available.has("sha256")) return true
     return false
   }
+
+  // 是否有文件缺少所选哈希，导致当前后端无法生成（禁止生成）。
+  const hasUnsupportedHashes = () =>
+    reuseOnly() &&
+    capabilityFiles().some((file) => missingHashes(file).length > 0)
 
   // 是否有文件需要下载计算哈希，但驱动不支持流式下载（禁止生成）。
   const hasUnstreamableDownload = () =>
@@ -368,7 +436,11 @@ export const TransferSeedGenerator = () => {
                         </Text>
                         <Checkbox
                           checked={effectiveMatrix()[algorithm].whole}
-                          disabled={forced()}
+                          disabled={
+                            forced() ||
+                            (reuseOnly() &&
+                              !availableWholeHashes().has(algorithm))
+                          }
                           onChange={(event) =>
                             setHashScope(
                               algorithm,
@@ -381,7 +453,11 @@ export const TransferSeedGenerator = () => {
                         </Checkbox>
                         <Checkbox
                           checked={effectiveMatrix()[algorithm].pieces}
-                          disabled={forced()}
+                          disabled={
+                            forced() ||
+                            (reuseOnly() &&
+                              !availablePieceHashes().has(algorithm))
+                          }
                           onChange={(event) =>
                             setHashScope(
                               algorithm,
@@ -539,18 +615,33 @@ export const TransferSeedGenerator = () => {
                               </Badge>
                             )}
                           </For>
-                          <Show when={requiresDownload(file)}>
+                          <Show
+                            when={reuseOnly() && missingHashes(file).length > 0}
+                          >
+                            <Badge colorScheme="danger">
+                              {t("home.transfer_seed.missing_hashes", {
+                                hashes: missingHashes(file).join(", "),
+                              })}
+                            </Badge>
+                          </Show>
+                          <Show when={!reuseOnly() && requiresDownload(file)}>
                             <Badge colorScheme="warning">
                               {t("home.transfer_seed.requires_fetch")}
                             </Badge>
                           </Show>
-                          <Show when={!requiresDownload(file)}>
+                          <Show
+                            when={
+                              !requiresDownload(file) &&
+                              !(reuseOnly() && missingHashes(file).length > 0)
+                            }
+                          >
                             <Badge colorScheme="success">
                               {t("home.transfer_seed.direct_generate")}
                             </Badge>
                           </Show>
                           <Show
                             when={
+                              !reuseOnly() &&
                               requiresDownload(file) &&
                               file.streamable === false
                             }
@@ -622,7 +713,17 @@ export const TransferSeedGenerator = () => {
           </VStack>
         </ModalBody>
         <ModalFooter display="flex" gap="$2" alignItems="center">
-          <Show when={hasUnstreamableDownload()}>
+          <Show when={hasUnsupportedHashes()}>
+            <Text
+              fontSize="$xs"
+              color="$danger9"
+              flex={1}
+              css={{ wordBreak: "break-all" }}
+            >
+              {t("home.transfer_seed.hash_reuse_only_hint")}
+            </Text>
+          </Show>
+          <Show when={!hasUnsupportedHashes() && hasUnstreamableDownload()}>
             <Text
               fontSize="$xs"
               color="$danger9"
@@ -638,7 +739,10 @@ export const TransferSeedGenerator = () => {
           <Button
             loading={generating()}
             disabled={
-              !formats().length || checking() || hasUnstreamableDownload()
+              !formats().length ||
+              checking() ||
+              hasUnstreamableDownload() ||
+              hasUnsupportedHashes()
             }
             onClick={handleGenerate}
           >

@@ -54,6 +54,8 @@ export interface TorrentInfo {
 export interface SeedCapabilityFile extends TorrentFile {
   source_path?: string
   available_hashes?: SeedHashAlgorithm[]
+  /** Piece hashes exposed by the storage driver (empty when unsupported). */
+  available_piece_hashes?: SeedHashAlgorithm[]
   direct_source_available?: boolean
   share_available?: boolean
   streamable?: boolean
@@ -65,6 +67,11 @@ export interface SeedCapabilities {
   files: SeedCapabilityFile[]
   existing_hashes?: SeedHashAlgorithm[]
   missing_hashes?: SeedHashAlgorithm[]
+  /**
+   * True when the backend can only use hashes returned by the storage driver.
+   * In that mode the UI must not promise a download-based hash calculation.
+   */
+  hash_reuse_only?: boolean
   estimated_traffic?: number
   default_matrix?: SeedHashMatrix
   trackers?: string[]
