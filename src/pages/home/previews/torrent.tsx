@@ -512,6 +512,21 @@ const TorrentPreview = () => {
     })
   }
 
+  // Keep the delete policy inside the options offered for the selected tool.
+  createEffect(() => {
+    const tool = offlineTool()
+    const available = DELETE_POLICIES.filter((policy) =>
+      policy === "upload_download_stream" ? tool === "SimpleHttp" : true,
+    )
+    if (
+      !available.includes(
+        offlineDeletePolicy() as (typeof DELETE_POLICIES)[number],
+      )
+    ) {
+      setOfflineDeletePolicy(available[0] || "delete_on_upload_succeed")
+    }
+  })
+
   // 打开离线下载弹窗：BT 种子总是可以离线下载（转 magnet）
   const openOfflineDialog = () => {
     if (selectedFiles().length === 0) {
@@ -1009,8 +1024,15 @@ const TorrentPreview = () => {
           return
         }
         notify.success(t("home.transfer_seed.preview_rapid_success"))
-        const baseName = file.path.split("/").pop() || file.path
-        const targetPath = `${destination().replace(/\/$/, "")}/${baseName}`
+        const match = results.find(
+          (result: { path?: string; target?: string }) =>
+            result.path === file.path,
+        )
+        // Keep the full relative path (nested directories included) and prefer
+        // the concrete path reported by the backend when it is available.
+        const targetPath =
+          match?.target ||
+          `${destination().replace(/\/$/, "")}/${file.path.replace(/^\//, "")}`
         refresh(undefined, true)
         to(targetPath)
       })

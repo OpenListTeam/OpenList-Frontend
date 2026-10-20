@@ -229,6 +229,8 @@ export interface SeedOperationResult {
   results?: Array<{
     path?: string
     name?: string
+    /** Actual saved virtual path reported by the backend, when available. */
+    target?: string
     method?: string
     error?: string
   }>

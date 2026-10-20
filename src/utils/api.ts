@@ -354,27 +354,18 @@ export const seedParse = (
 ): PResp<SeedParseResult> =>
   r.post("/fs/seed/parse", {
     seed_data,
-    content: seed_data,
-    data: seed_data,
-    torrent_data: seed_data,
     file_name,
   })
 
-const seedWireRequest = (request: SeedOperationRequest) => ({
-  ...request,
-  content: request.seed_data,
-  data: request.seed_data,
-  torrent_data: request.seed_data,
-  target_path: request.path,
-})
+// Seed payloads are base64 and can be several megabytes. Send each value once;
+// the backend reads `seed_data` and `path` directly.
+const seedWireRequest = (request: SeedOperationRequest) => request
 
 export const seedConvert = (
   request: SeedOperationRequest,
 ): PResp<SeedOperationResult> =>
   r.post("/fs/seed/convert", {
     ...seedWireRequest(request),
-    format: request.format ? seedWireFormat(request.format) : undefined,
-    to_format: request.format ? seedWireFormat(request.format) : undefined,
     target_format: request.format ? seedWireFormat(request.format) : undefined,
   })
 
