@@ -1,4 +1,4 @@
-import { IconProps, IconTemplate } from "solid-icons/lib"
+import { IconProps, IconTemplate } from "solid-icons"
 
 export function VscodeIconsFileTypePhotoshop2(props: IconProps) {
   return IconTemplate(

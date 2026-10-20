@@ -67,7 +67,16 @@ export const getLinkByDirAndObj = (
 export const useLink = () => {
   const { pathname, isShare } = useRouter()
   const getLinkByObj = (obj: Obj, type?: URLType, encodeAll?: boolean) => {
-    const dir = objStore.state !== State.File ? pathname() : pathDir(pathname())
+    let dir: string
+    if (objStore.state === State.File) {
+      dir = pathDir(pathname())
+      if (isShare() && dir === "/@s") {
+        dir = pathname()
+        obj = { ...obj, name: "" }
+      }
+    } else {
+      dir = pathname()
+    }
     return getLinkByDirAndObj(dir, obj, type, isShare(), encodeAll)
   }
   const rawLink = (obj: Obj, encodeAll?: boolean) => {

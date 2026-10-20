@@ -34,7 +34,8 @@
     "media_image": "Images",
     "media_book": "Books",
     "media_settings": "Settings",
-    "transcode": "Transcode"
+    "transcode": "Transcode",
+    "plugins": "Plugins"
   },
   "title": "OpenList Management",
   "not_admin": "You are not an admin user, please login with an admin account.",

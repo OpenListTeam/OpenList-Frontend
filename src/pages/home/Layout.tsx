@@ -4,6 +4,7 @@ import { getSetting } from "~/store"
 import { notify } from "~/utils"
 import { Body } from "./Body"
 import { Footer } from "./Footer"
+import { Header } from "./header/Header"
 import { Toolbar } from "./toolbar/Toolbar"
 
 const Index = () => {
@@ -13,17 +14,12 @@ const Index = () => {
     notify.render(<Markdown children={announcement} />)
   }
   return (
-    <div
-      style={{
-        "min-height": "100vh",
-        display: "flex",
-        "flex-direction": "column",
-      }}
-    >
+    <>
+      <Header />
       <Toolbar />
       <Body />
       <Footer />
-    </div>
+    </>
   )
 }
 

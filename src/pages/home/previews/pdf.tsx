@@ -3,6 +3,7 @@ import pdfiumWasmUrl from "@embedpdf/snippet/dist/pdfium.wasm?url"
 import { Box, useColorMode } from "@hope-ui/solid"
 import { onMount } from "solid-js"
 import { currentLang } from "~/app/i18n"
+import { BoxWithFullScreen } from "~/components"
 import { objStore } from "~/store"
 import { base_path } from "~/utils"
 
@@ -30,7 +31,11 @@ const PDFViewer = () => {
       })
     }
   })
-  return <Box w="$full" h="60vh" ref={(el) => (ref = el)} />
+  return (
+    <BoxWithFullScreen w="$full" h="60vh">
+      <Box ref={ref} w="$full" h="$full" />
+    </BoxWithFullScreen>
+  )
 }
 
 export default PDFViewer

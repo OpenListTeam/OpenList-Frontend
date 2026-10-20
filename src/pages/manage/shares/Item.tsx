@@ -165,7 +165,9 @@ const Item = (props: ItemProps) => {
             value={props.value as string}
             valid={props.valid}
             readOnly={props.readonly}
-            basePath={props.basePath}
+            basePath={
+              props.type === Type.MultiPath ? props.basePath : undefined
+            }
             onChange={(value) => {
               if (props.type === Type.MultiPath) {
                 props.onChange?.(value)

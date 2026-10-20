@@ -71,7 +71,7 @@ export const Center = () => {
                   }}
                 </For>
               </Show>
-              <Show when={userCan("share")}>
+              <Show when={userCan("share") && !isShare()}>
                 <CenterIcon
                   name="share"
                   onClick={() => {

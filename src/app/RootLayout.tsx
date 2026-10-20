@@ -15,7 +15,6 @@ import { useColorMode, Icon } from "@hope-ui/solid"
 import { TbChevronLeft, TbChevronRight } from "solid-icons/tb"
 import { Nav } from "~/pages/home/Nav"
 import { Layout } from "~/pages/home/header/layout"
-import { TopBarActions } from "~/pages/home/toolbar/Right"
 import { useRouter } from "~/hooks"
 import { getSetting, objStore, State } from "~/store"
 import { BsSearch } from "solid-icons/bs"
@@ -183,8 +182,7 @@ const TopBar = () => {
             </button>
           </Show>
 
-          {/* 工具操作按钮 */}
-          <TopBarActions />
+          {/* 工具操作按钮（工具栏已由 main 的 Header/Toolbar 提供） */}
 
           {/* 布局切换 */}
           <Show when={isFolder()}>

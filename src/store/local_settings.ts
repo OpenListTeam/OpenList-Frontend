@@ -72,6 +72,18 @@ export const initialLocalSettings = [
     type: "number",
   },
   {
+    key: "editor_word_wrap",
+    default: "false",
+    type: "select",
+    options: ["false", "true"],
+  },
+  {
+    key: "editor_minimap",
+    default: "true",
+    type: "select",
+    options: ["false", "true"],
+  },
+  {
     key: "show_gallery_thumbnails",
     default: "visible",
     type: "select",

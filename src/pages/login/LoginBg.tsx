@@ -11,7 +11,7 @@ const LoginBg = () => {
       top="0"
       left="0"
       overflow="hidden"
-      zIndex="-1"
+      zIndex="$hide"
       w="100vw"
       h="100vh"
     >

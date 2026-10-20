@@ -252,7 +252,7 @@ export const BatchRename = () => {
           <ModalBody>
             <RadioGroup
               defaultValue="1"
-              onChange={(event) => {
+              onChange={(event: string) => {
                 setType(event)
                 if (event === "1" || event === "3") {
                   setNewNameType("string")

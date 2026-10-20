@@ -11,11 +11,10 @@ interface WebauthnItemProps {
 
 export const WebauthnItem = (props: WebauthnItemProps) => {
   const t = useT()
-  const [removeLoading, remove] = useFetch(
-    (): PEmptyResp =>
-      r.post(`/authn/delete_authn`, {
-        id: props.id,
-      }),
+  const [removeLoading, remove] = useFetch((): PEmptyResp =>
+    r.post(`/authn/delete_authn`, {
+      id: props.id,
+    }),
   )
   const [deleted, setDeleted] = createSignal(false)
   return (

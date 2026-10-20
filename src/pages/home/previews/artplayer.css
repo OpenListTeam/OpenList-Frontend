@@ -2,15 +2,17 @@
 
 /* Hide previous and next buttons on small screens */
 @media (max-width: 440px) {
-  .art-control.art-control-previous-button,
-  .art-control.art-control-next-button {
+  .art-video-player .art-controls .art-control-previous-button,
+  .art-video-player .art-controls .art-control-next-button,
+  .art-video-player .art-controls .art-control-screenshot,
+  .art-video-player .art-controls .art-control-time {
     display: none;
   }
 }
 
-/* Hide time on smaller screens */
-@media (max-width: 360px) {
-  .art-control.art-control-time {
+/* Hide time on small screens */
+@media (max-width: 600px) {
+  .art-video-player .art-controls .art-control-time {
     display: none;
   }
 }

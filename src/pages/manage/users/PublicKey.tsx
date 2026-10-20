@@ -33,14 +33,11 @@ export const PublicKey = (props: PublicKeysProps & SSHPublicKey) => {
   const t = useT()
   const [deleted, setDeleted] = createSignal(false)
   const [delLoading, del] = props.isMine
-    ? useFetch(
-        (): PResp<SSHPublicKey[]> => r.post(`/me/sshkey/delete?id=${props.id}`),
+    ? useFetch((): PResp<SSHPublicKey[]> =>
+        r.post(`/me/sshkey/delete?id=${props.id}`),
       )
-    : useFetch(
-        (): PResp<SSHPublicKey[]> =>
-          r.post(
-            `/admin/user/sshkey/delete?uid=${props.userId}&id=${props.id}`,
-          ),
+    : useFetch((): PResp<SSHPublicKey[]> =>
+        r.post(`/admin/user/sshkey/delete?uid=${props.userId}&id=${props.id}`),
       )
   const textEllipsisCss = {
     whiteSpace: "nowrap",

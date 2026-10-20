@@ -1,10 +1,5 @@
 type Status =
-  | "pending"
-  | "hashing"
-  | "uploading"
-  | "backending"
-  | "success"
-  | "error"
+  "pending" | "hashing" | "uploading" | "backending" | "success" | "error"
 export interface UploadFileProps {
   name: string
   path: string

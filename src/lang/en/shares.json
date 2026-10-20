@@ -37,6 +37,7 @@
     "back": "Folders at Bottom"
   },
   "input_password": "Please enter Share Code",
+  "share_gone": "This share has expired or been cancelled",
   "copy_msg": "Copy link",
   "no_permission_tip": "To create a share, you need \"Share\" permission."
 }

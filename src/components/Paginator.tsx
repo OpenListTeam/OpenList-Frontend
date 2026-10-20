@@ -17,13 +17,7 @@ import { TbSelector } from "solid-icons/tb"
 
 export interface PaginatorProps {
   colorScheme?:
-    | "primary"
-    | "accent"
-    | "neutral"
-    | "success"
-    | "info"
-    | "warning"
-    | "danger"
+    "primary" | "accent" | "neutral" | "success" | "info" | "warning" | "danger"
   // size?: "xs" | "sm" | "lg" | "xl" | "md";
   defaultCurrent?: number
   onChange?: (current: number) => void

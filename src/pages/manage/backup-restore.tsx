@@ -62,7 +62,7 @@ const BackupRestore = () => {
   const [password, setPassword] = createSignal("")
   const t = useT()
   useManageTitle("manage.sidemenu.backup-restore")
-  let logRef: HTMLDivElement
+  let logRef!: HTMLDivElement
   const [log, setLog] = createSignal<
     {
       type: LogType
@@ -73,20 +73,20 @@ const BackupRestore = () => {
     setLog((prev) => [...prev, { type, msg }])
     logRef.scrollTop = logRef.scrollHeight
   }
-  const [getSettingsLoading, getSettings] = useFetch(
-    (): PResp<any> => r.get("/admin/setting/list"),
+  const [getSettingsLoading, getSettings] = useFetch((): PResp<any> =>
+    r.get("/admin/setting/list"),
   )
-  const [getUsersLoading, getUsers] = useFetch(
-    (): PPageResp<User> => r.get("/admin/user/list"),
+  const [getUsersLoading, getUsers] = useFetch((): PPageResp<User> =>
+    r.get("/admin/user/list"),
   )
-  const [getMetasLoading, getMetas] = useFetch(
-    (): PPageResp<Meta> => r.get("/admin/meta/list"),
+  const [getMetasLoading, getMetas] = useFetch((): PPageResp<Meta> =>
+    r.get("/admin/meta/list"),
   )
-  const [getStoragesLoading, getStorages] = useFetch(
-    (): PPageResp<Storage> => r.get("/admin/storage/list"),
+  const [getStoragesLoading, getStorages] = useFetch((): PPageResp<Storage> =>
+    r.get("/admin/storage/list"),
   )
-  const [getSharesLoading, getShares] = useFetch(
-    (): PPageResp<ShareInfo> => r.get("/share/list"),
+  const [getSharesLoading, getShares] = useFetch((): PPageResp<ShareInfo> =>
+    r.get("/share/list"),
   )
   const backupLoading = () => {
     return (
@@ -300,12 +300,19 @@ const BackupRestore = () => {
             appendLog(t("br.wrong_encrypt_password"), "error")
             return
           }
-        const dataArray = Object.values(data)
-        for (let i = dataArray.length - 4; i < dataArray.length; i++) {
-          const obj = dataArray[i]
-          console.log(obj)
-          for (let a = 0; a < obj.length; a++) {
-            const obj1 = obj[a]
+        // 解密 settings + users/storages/metas/shares（备份时这 5 个数组均被加密）。
+        // 原实现用 Object.values(data) 从 length-4 开始解密，会漏掉 settings
+        // （加密备份恢复后 settings 仍是密文，导致 customize_head/body 等配置失效）。
+        for (const name of [
+          "settings",
+          "users",
+          "storages",
+          "metas",
+          "shares",
+        ] as const) {
+          const arr = (data as any)[name]
+          if (!Array.isArray(arr)) continue
+          for (const obj1 of arr) {
             for (const key in obj1) {
               obj1[key] = decrypt(obj1[key], password(), false, encrypted)
             }

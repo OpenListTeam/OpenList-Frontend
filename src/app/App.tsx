@@ -14,8 +14,15 @@ import { Error, FullScreenLoading } from "~/components"
 import { useLoading, useRouter, useT } from "~/hooks"
 import { setSettings } from "~/store"
 import { setArchiveExtensions } from "~/store/archive"
-import { Resp } from "~/types"
-import { base_path, bus, handleRespWithoutAuthAndNotify, r } from "~/utils"
+import { InitStatus, Resp } from "~/types"
+import {
+  base_path,
+  bus,
+  handleRespWithoutAuthAndNotify,
+  initPluginEngine,
+  r,
+} from "~/utils"
+import { applyCustomize } from "~/utils/customize"
 import { MustUser, UserOrGuest } from "./MustUser"
 import "./index.css"
 import { globalStyles } from "./theme"
@@ -25,6 +32,7 @@ import { RootLayout } from "./RootLayout"
 const Home = lazy(() => import("~/pages/home/Layout"))
 const Manage = lazy(() => import("~/pages/manage"))
 const Login = lazy(() => import("~/pages/login"))
+const Init = lazy(() => import("~/pages/init"))
 const Test = lazy(() => import("~/pages/test"))
 const VideoLibrary = lazy(() => import("~/pages/media/video/VideoLibrary"))
 const MusicLibrary = lazy(() => import("~/pages/media/music/MusicLibrary"))
@@ -34,6 +42,7 @@ const BookLibrary = lazy(() => import("~/pages/media/book/BookLibrary"))
 const App: Component = () => {
   const t = useT()
   globalStyles()
+  initPluginEngine()
   const isRouting = useIsRouting()
   const { to, pathname } = useRouter()
   const onTo = (path: string) => {
@@ -49,25 +58,59 @@ const App: Component = () => {
   })
 
   const [err, setErr] = createSignal<string[]>([])
+  const [initialized, setInitialized] = createSignal(true)
   const [loading, data] = useLoading(() =>
     Promise.all([
       (async () => {
+        const resp = (await r.get("/public/settings")) as Resp<
+          Record<string, string>
+        >
         handleRespWithoutAuthAndNotify(
-          (await r.get("/public/settings")) as Resp<Record<string, string>>,
-          setSettings,
-          (e) => setErr(err().concat(e)),
+          resp,
+          (data) => {
+            setSettings(data)
+            // 注入自定义 CSS/JS（customize_head/body）与站点图标。
+            //
+            // 这里不判断后端类型：是否注入由 applyCustomize() 内部按「HTML 里的
+            // customize 占位符是否还在」决定 —— Go 后端在服务端 UpdateIndex() 里
+            // 已经把占位符替换掉（含空值），因此天然跳过，不会重复注入。
+            applyCustomize()
+          },
+          (e, code) => {
+            // 存储未绑定时 settings 被后端中间件以 503 拦截。此时不能把错误
+            // 塞进 err()：下面 Switch 的错误分支排在路由之前，会抢占渲染并
+            // 把初始化向导挡住，用户既看不到原因也无法配置存储。
+            // 交给路由渲染即可 —— init_status 在诊断豁免名单中，会正常返回
+            // initialized: false，守卫随即跳转到 /@init。
+            if (code === 503) return
+            setErr(err().concat(e))
+          },
         )
       })(),
       (async () => {
         handleRespWithoutAuthAndNotify(
           (await r.get("/public/archive_extensions")) as Resp<string[]>,
           setArchiveExtensions,
-          (e) => setErr(err().concat(e)),
+          // (e) => setErr(err().concat(e)),
+        )
+      })(),
+      (async () => {
+        handleRespWithoutAuthAndNotify(
+          (await r.get("/public/init_status")) as Resp<InitStatus>,
+          (data) => setInitialized(data.initialized),
+          // (e) => setErr(err().concat(e)),
         )
       })(),
     ]),
   )
   data()
+
+  // 系统未初始化时，自动跳转到安装向导
+  createEffect(() => {
+    if (initialized() === false && !pathname().startsWith("/@init")) {
+      to("/@init", true)
+    }
+  })
   return (
     <>
       <Portal>
@@ -89,6 +132,7 @@ const App: Component = () => {
           <Routes base={base_path}>
             <Route path="/@test" component={Test} />
             <Route path="/@login" component={Login} />
+            <Route path="/@init" component={Init} />
             <Route
               path="/@manage/*"
               element={

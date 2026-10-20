@@ -67,7 +67,13 @@ export const players: {
     icon: "figplayer",
     name: "Fig Player",
     scheme: "figplayer://weblink?url=$durl",
-    platforms: ["MacOS"],
+    platforms: ["Windows", "MacOS"],
+  },
+  {
+    icon: "vivid",
+    name: "Vivid Player",
+    scheme: "vividplayer://play?src=direct&u=$edurl&title=$name",
+    platforms: ["Windows"],
   },
   {
     icon: "infuse",

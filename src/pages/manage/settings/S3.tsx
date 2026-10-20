@@ -25,8 +25,8 @@ const bucket_parse = (settings: SettingItem[]) => {
 const S3Settings = () => {
   const t = useT()
   useManageTitle(`manage.sidemenu.s3`)
-  const [settingsLoading, getSettings] = useFetch(
-    (): PResp<SettingItem[]> => r.get(`/admin/setting/list?group=${Group.S3}`),
+  const [settingsLoading, getSettings] = useFetch((): PResp<SettingItem[]> =>
+    r.get(`/admin/setting/list?group=${Group.S3}`),
   )
   const [settings, setSettings] = createStore<SettingItem[]>([])
   const refresh = async () => {
@@ -34,8 +34,8 @@ const S3Settings = () => {
     handleResp<SettingItem[]>(resp, setSettings)
   }
   refresh()
-  const [saveLoading, saveSettings] = useFetch(
-    (): PEmptyResp => r.post("/admin/setting/save", getTarget(settings)),
+  const [saveLoading, saveSettings] = useFetch((): PEmptyResp =>
+    r.post("/admin/setting/save", getTarget(settings)),
   )
   const [loading, setLoading] = createSignal(false)
   return (

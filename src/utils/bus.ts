@@ -1,4 +1,5 @@
 import mitt from "mitt"
+import { TorrentInfo } from "~/types"
 
 type Events = {
   to: string
@@ -6,6 +7,9 @@ type Events = {
   tool: string
   pathname: string
   extract: string
+  torrent_parsed: { torrentData: string; info: TorrentInfo }
+  "plugin:file_action_registered": any
+  "plugin:header_action_registered": any
 }
 
 export const bus = mitt<Events>()
