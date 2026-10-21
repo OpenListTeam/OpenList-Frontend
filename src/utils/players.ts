@@ -128,9 +128,17 @@ export const externalPlayers: ExternalPlayer[] = [
   },
 ]
 
-/** 按当前平台过滤可用播放器 */
-export const playersForPlatform = (platform: string) =>
-  externalPlayers.filter((p) => p.platforms.includes(platform))
+/**
+ * 返回播放器列表：不再按平台隐藏，保证所有客户端都能在菜单里看到；
+ * 当前平台可用的排在前面。
+ */
+export const playersForPlatform = (platform: string) => {
+  return [...externalPlayers].sort((a, b) => {
+    const aMatch = a.platforms.includes(platform) ? 1 : 0
+    const bMatch = b.platforms.includes(platform) ? 1 : 0
+    return bMatch - aMatch
+  })
+}
 
 const toBase64 = (value: string) => {
   try {
