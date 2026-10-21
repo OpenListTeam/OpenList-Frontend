@@ -10,6 +10,7 @@ import {
   FormLabel,
   HStack,
   Heading,
+  Icon,
   Input,
   Modal,
   ModalBody,
@@ -36,6 +37,7 @@ import {
   Textarea,
   Th,
   Thead,
+  Tooltip,
   Tr,
   VStack,
 } from "@hope-ui/solid"
@@ -48,8 +50,15 @@ import {
   createSignal,
   onCleanup,
 } from "solid-js"
-import type { MediaConfig, MediaItem, MediaScanPath, MediaType } from "~/types"
-import { notify } from "~/utils"
+import type {
+  MediaConfig,
+  MediaItem,
+  MediaScanPath,
+  MediaType,
+  Storage,
+} from "~/types"
+import { notify, r } from "~/utils"
+import { TbAlertTriangle } from "solid-icons/tb"
 import {
   adminClearMediaDB,
   adminClearMediaScanPathDB,
@@ -209,13 +218,50 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
   const total = () => itemsData()?.total ?? 0
   const totalPages = () => Math.max(1, Math.ceil(total() / pageSize()))
 
+  // 检查签名相关配置：媒体播放依赖直链，开启签名会导致无法播放
+  const checkSigningConflict = async (): Promise<string[]> => {
+    const conflicts: string[] = []
+    try {
+      const resp: any = await r.get("/admin/setting/list?group=4")
+      const items: { key: string; value: string }[] = resp?.data ?? []
+      if (items.find((i) => i.key === "sign_all")?.value === "true") {
+        conflicts.push("「全局设置 → 签名所有」已开启")
+      }
+    } catch {
+      // 检测失败不影响保存流程
+    }
+    try {
+      const resp: any = await r.get("/admin/storage/list")
+      const list = (resp?.data?.content ?? []) as (Storage & {
+        enable_sign?: boolean
+      })[]
+      if (list.some((s) => s.enable_sign && !s.disabled)) {
+        conflicts.push("「存储驱动 → 启用签名」已开启")
+      }
+    } catch {
+      // 检测失败不影响保存流程
+    }
+    return conflicts
+  }
+
   // 保存配置
   const handleSaveConfig = async () => {
     setConfigSaving(true)
     const resp = await adminSaveMediaConfig(config())
     setConfigSaving(false)
-    if (resp.code === 200) notify.success("配置保存成功")
-    else notify.error("保存失败: " + resp.message)
+    if (resp.code !== 200) {
+      notify.error("保存失败: " + resp.message)
+      return
+    }
+    notify.success("配置保存成功")
+    if (config().enabled) {
+      const conflicts = await checkSigningConflict()
+      if (conflicts.length > 0) {
+        notify.warning(
+          `已启用${props.title}，但检测到 ${conflicts.join("、")}，可能导致媒体无法正常播放，建议关闭后使用`,
+        )
+      }
+    }
   }
 
   // ============== 扫描路径操作 ==============
@@ -624,8 +670,58 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                 )}
               </For>
             </HStack>
-            <HStack spacing="$2" alignItems="center">
-              <FormControl display="flex" alignItems="center" gap="$2" w="auto">
+            <HStack
+              spacing="$1"
+              alignItems="center"
+              justifyContent="flex-end"
+              flexWrap="wrap"
+            >
+              <Button
+                size="xs"
+                colorScheme="success"
+                loading={scanning()}
+                onClick={handleScanAll}
+              >
+                扫描全部
+              </Button>
+              <Button
+                size="xs"
+                colorScheme="warning"
+                loading={scraping()}
+                onClick={handleScrape}
+              >
+                立即刮削
+              </Button>
+              <Button size="xs" variant="outline" onClick={handleExportAll}>
+                导出全部
+              </Button>
+              <Button size="xs" variant="outline" onClick={handleImportAll}>
+                导入数据
+              </Button>
+              <Button size="xs" variant="ghost" onClick={handleDeleteInvalid}>
+                删除已失效
+              </Button>
+              <Button size="xs" variant="ghost" onClick={handleClearScrape}>
+                清空刮削
+              </Button>
+              <Button
+                size="xs"
+                variant="ghost"
+                colorScheme="danger"
+                onClick={handleClearAll}
+              >
+                清空全部
+              </Button>
+              <Button size="xs" variant="ghost" onClick={handleGenerateStrm}>
+                生成 STRM
+              </Button>
+              <FormControl
+                display="flex"
+                alignItems="center"
+                gap="$2"
+                w="auto"
+                ml="$2"
+              >
                 <FormLabel m="0" fontSize="$sm">
                   启用{props.title}
                 </FormLabel>
@@ -640,55 +736,29 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                 />
               </FormControl>
               <Button
-                size="sm"
+                size="xs"
                 colorScheme="accent"
                 loading={configSaving()}
                 onClick={handleSaveConfig}
               >
                 保存配置
               </Button>
+              <Tooltip
+                label="请关闭「全局设置」→「签名所有」和「存储驱动」→「启用签名」，并且不要对扫描路径及其父路径设置「元信息」→「密码」，否则将无法正常播放媒体内容。"
+                placement="top"
+              >
+                <Box
+                  as="span"
+                  display="inline-flex"
+                  alignItems="center"
+                  color="$warning9"
+                  cursor="help"
+                  ml="$1"
+                >
+                  <Icon as={TbAlertTriangle} boxSize="$5" />
+                </Box>
+              </Tooltip>
             </HStack>
-          </HStack>
-          <HStack spacing="$2" flexWrap="wrap">
-            <Button
-              size="sm"
-              colorScheme="success"
-              loading={scanning()}
-              onClick={handleScanAll}
-            >
-              扫描全部
-            </Button>
-            <Button
-              size="sm"
-              colorScheme="warning"
-              loading={scraping()}
-              onClick={handleScrape}
-            >
-              立即刮削
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleExportAll}>
-              导出全部
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleImportAll}>
-              导入数据
-            </Button>
-            <Button size="sm" variant="ghost" onClick={handleDeleteInvalid}>
-              删除已失效
-            </Button>
-            <Button size="sm" variant="ghost" onClick={handleClearScrape}>
-              清空刮削
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              colorScheme="danger"
-              onClick={handleClearAll}
-            >
-              清空全部
-            </Button>
-            <Button size="sm" variant="ghost" onClick={handleGenerateStrm}>
-              生成 STRM
-            </Button>
           </HStack>
           <Show when={progress()}>
             <Alert status="success" variant="subtle">
@@ -1432,16 +1502,6 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-
-      {/* 提示 */}
-      <Alert status="warning" variant="subtle">
-        <AlertIcon />
-        <AlertDescription>
-          <Text fontSize="$sm">
-            请关闭「全局设置」→「签名所有」和「存储驱动」→「启用签名」，并且不要对扫描路径及其父路径设置「元信息」→「密码」，否则将无法正常播放媒体内容。
-          </Text>
-        </AlertDescription>
-      </Alert>
     </VStack>
   )
 }
