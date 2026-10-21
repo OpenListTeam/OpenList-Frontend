@@ -1,6 +1,7 @@
 import { Box, Button, HStack, Heading, Text, VStack } from "@hope-ui/solid"
 import { createSignal, onMount } from "solid-js"
 import CommonSettings from "../settings/Common"
+import { useT } from "~/hooks"
 import { Group, type MediaType } from "~/types"
 import { notify } from "~/utils"
 import { adminGenerateStrm, getMediaStatus } from "~/utils/media_api"
@@ -16,13 +17,14 @@ const STRM_KEYS = [
 ]
 
 const GENERATE_TYPES: { type: MediaType; label: string }[] = [
-  { type: "video", label: "电影视频" },
-  { type: "music", label: "音乐歌曲" },
-  { type: "image", label: "图片壁纸" },
-  { type: "book", label: "电子书籍" },
+  { type: "video", label: "manage.media_lib.strm_gen_video" },
+  { type: "music", label: "manage.media_lib.strm_gen_music" },
+  { type: "image", label: "manage.media_lib.strm_gen_image" },
+  { type: "book", label: "manage.media_lib.strm_gen_book" },
 ]
 
 const MediaStrmPage = () => {
+  const t = useT()
   const [generating, setGenerating] = createSignal<string | null>(null)
 
   const loadStatus = async () => {
@@ -37,11 +39,14 @@ const MediaStrmPage = () => {
     setGenerating(null)
     if (resp.code === 200) {
       notify.success(
-        `已生成 ${resp.data.written} 个 .strm 文件到 ${resp.data.path}`,
+        t("manage.media_lib.strm_generated", {
+          count: resp.data.written,
+          path: resp.data.path,
+        }),
       )
       loadStatus()
     } else {
-      notify.error("生成失败: " + resp.message)
+      notify.error(t("manage.media_lib.strm_gen_failed") + ": " + resp.message)
     }
   }
 
@@ -54,9 +59,9 @@ const MediaStrmPage = () => {
       maxW="1300px"
     >
       <VStack alignItems="flex-start" spacing="2px">
-        <Heading size="lg">STRM设置</Heading>
+        <Heading size="lg">{t("manage.sidemenu.media_strm")}</Heading>
         <Text fontSize="$sm" color="$neutral11">
-          扫描时自动生成 STRM，或在此手动批量生成
+          {t("manage.media_lib.strm_desc")}
         </Text>
       </VStack>
 
@@ -64,14 +69,15 @@ const MediaStrmPage = () => {
 
       <Box bgColor="$neutral1" rounded="$lg" border="1px solid $neutral4">
         <HStack px="$4" py="$3" borderBottom="1px solid $neutral4">
-          <Heading size="sm">手动生成</Heading>
+          <Heading size="sm">{t("manage.media_lib.strm_manual")}</Heading>
         </HStack>
         <VStack spacing="$3" alignItems="stretch" p="$4">
           <Text fontSize="$sm" color="$neutral11">
-            输出位置：
+            {t("manage.media_lib.strm_output")}
             {mediaStatus().strm_same_dir
-              ? "与媒体文件同目录（同名 .strm）"
-              : mediaStatus().strm_path || "未配置（请先在上方保存 STRM 目录）"}
+              ? t("manage.media_lib.strm_output_same_dir")
+              : mediaStatus().strm_path ||
+                t("manage.media_lib.strm_output_missing")}
           </Text>
           <HStack spacing="$2" flexWrap="wrap">
             {GENERATE_TYPES.map((item) => (
@@ -80,7 +86,7 @@ const MediaStrmPage = () => {
                 loading={generating() === item.type}
                 onClick={() => generate(item.type)}
               >
-                生成{item.label} STRM
+                {t(item.label)}
               </Button>
             ))}
             <Button
@@ -89,7 +95,7 @@ const MediaStrmPage = () => {
               loading={generating() === "all"}
               onClick={() => generate()}
             >
-              生成全部
+              {t("manage.media_lib.strm_gen_all")}
             </Button>
           </HStack>
         </VStack>

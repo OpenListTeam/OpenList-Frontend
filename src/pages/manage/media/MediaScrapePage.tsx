@@ -1,5 +1,6 @@
 import { Heading, Text, VStack } from "@hope-ui/solid"
 import CommonSettings from "../settings/Common"
+import { useT } from "~/hooks"
 import { Group } from "~/types"
 
 /** 刮削相关设置项（TMDB API Key ~ Scrape concurrency） */
@@ -18,6 +19,7 @@ const SCRAPE_KEYS = [
 ]
 
 const MediaScrapePage = () => {
+  const t = useT()
   return (
     <VStack
       w="$full"
@@ -27,9 +29,9 @@ const MediaScrapePage = () => {
       maxW="1300px"
     >
       <VStack alignItems="flex-start" spacing="2px">
-        <Heading size="lg">刮削设置</Heading>
+        <Heading size="lg">{t("manage.sidemenu.media_scrape")}</Heading>
         <Text fontSize="$sm" color="$neutral11">
-          TMDB / Discogs 数据源、缩略图存储方式与刮削并发数
+          {t("manage.media_lib.scrape_desc")}
         </Text>
       </VStack>
       <CommonSettings

@@ -25,6 +25,7 @@ import {
   VStack,
 } from "@hope-ui/solid"
 import { Show, createSignal, onMount } from "solid-js"
+import { useT } from "~/hooks"
 import type { MediaConfig } from "~/types"
 import { notify } from "~/utils"
 import { adminGetMediaConfigs, adminSaveMediaConfig } from "~/utils/media_api"
@@ -46,6 +47,7 @@ interface ScraperConfig {
  * 未配置时回落到「媒体设置」里的全局缩略图设置。
  */
 export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
+  const t = useT()
   const [loading, setLoading] = createSignal(true)
   const [saving, setSaving] = createSignal(false)
   const [cfg, setCfg] = createSignal<MediaConfig | null>(null)
@@ -91,7 +93,7 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
   const save = async () => {
     const current = cfg()
     if (!current) {
-      notify.error("未读取到该媒体类型的配置，请刷新重试")
+      notify.error(t("manage.media_lib.thumb_config_missing"))
       return
     }
     setSaving(true)
@@ -107,10 +109,12 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
     })
     setSaving(false)
     if (resp.code === 200) {
-      notify.success("缩略图设置已保存，重新刮削后生效")
+      notify.success(t("manage.media_lib.thumb_saved"))
       await load()
     } else {
-      notify.error("保存失败: " + resp.message)
+      notify.error(
+        t("manage.media_lib.thumb_save_failed") + ": " + resp.message,
+      )
     }
   }
 
@@ -125,15 +129,21 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
       >
         <VStack alignItems="flex-start" spacing="2px">
           <Heading size="sm">
-            {props.mediaType === "image" ? "图片缩略图设置" : "书籍缩略图设置"}
+            {props.mediaType === "image"
+              ? t("manage.media_lib.thumb_image_title")
+              : t("manage.media_lib.thumb_book_title")}
           </Heading>
           <Text fontSize="$xs" color="$neutral11">
-            仅对「{props.mediaType === "image" ? "图片壁纸" : "电子书籍"}
-            」生效；未设置时使用媒体设置里的全局值。
+            {t("manage.media_lib.thumb_scope", {
+              type:
+                props.mediaType === "image"
+                  ? t("manage.media_lib.type_image")
+                  : t("manage.media_lib.type_book"),
+            })}
           </Text>
         </VStack>
         <Button colorScheme="accent" loading={saving()} onClick={save}>
-          保存
+          {t("manage.media_lib.save")}
         </Button>
       </HStack>
 
@@ -148,19 +158,19 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
         <VStack spacing="$4" alignItems="stretch" p="$4">
           <Show when={props.mediaType === "image"}>
             <FormControl display="flex" alignItems="center" gap="$2" w="auto">
-              <FormLabel m="0">存储缩略图</FormLabel>
+              <FormLabel m="0">{t("manage.media_lib.thumb_store")}</FormLabel>
               <Switch
                 checked={storeThumbnail()}
                 onChange={(e) => setStoreThumbnail(e.currentTarget.checked)}
               />
               <FormHelperText m="0">
-                开启后刮削时生成缩略图；关闭则直接使用原图路径作为封面
+                {t("manage.media_lib.thumb_store_tips")}
               </FormHelperText>
             </FormControl>
           </Show>
 
           <FormControl>
-            <FormLabel>缩略图存储方式</FormLabel>
+            <FormLabel>{t("manage.media_lib.thumb_mode")}</FormLabel>
             <Select
               value={mode()}
               onChange={(v) => setMode(v as "base64" | "local")}
@@ -172,18 +182,20 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
               <SelectContent>
                 <SelectListbox>
                   <SelectOption value="base64">
-                    <SelectOptionText>Base64（存入数据库）</SelectOptionText>
+                    <SelectOptionText>
+                      {t("manage.media_lib.mode_base64")}
+                    </SelectOptionText>
                     <SelectOptionIndicator />
                   </SelectOption>
                   <SelectOption value="runtime">
                     <SelectOptionText>
-                      运行目录（默认，data/imgs）
+                      {t("manage.media_lib.mode_runtime")}
                     </SelectOptionText>
                     <SelectOptionIndicator />
                   </SelectOption>
                   <SelectOption value="local">
                     <SelectOptionText>
-                      本地文件（挂载目录 VFS）
+                      {t("manage.media_lib.mode_local")}
                     </SelectOptionText>
                     <SelectOptionIndicator />
                   </SelectOption>
@@ -192,16 +204,16 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
             </Select>
             <FormHelperText>
               {mode() === "base64"
-                ? "缩略图以 base64 编码存入数据库，无需额外文件存储，但会增大数据库体积"
+                ? t("manage.media_lib.mode_base64_tips")
                 : mode() === "runtime"
-                  ? "缩略图保存到程序数据目录 data 下，默认 data/imgs，无需挂载存储"
-                  : "缩略图写入挂载目录下的 VFS 路径，需该路径可写（如 /imgs）"}
+                  ? t("manage.media_lib.mode_runtime_tips")
+                  : t("manage.media_lib.mode_local_tips")}
             </FormHelperText>
           </FormControl>
 
           <Show when={mode() === "local"}>
             <FormControl>
-              <FormLabel>本地存储路径</FormLabel>
+              <FormLabel>{t("manage.media_lib.thumb_path")}</FormLabel>
               <Input
                 placeholder="/imgs"
                 value={path()}
@@ -209,8 +221,8 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
               />
               <FormHelperText>
                 {mode() === "runtime"
-                  ? "相对程序数据目录 data 的路径，默认 imgs，即 data/imgs"
-                  : "VFS 路径，相对挂载根 /，例如 /imgs 或 /.thumbnail"}
+                  ? t("manage.media_lib.thumb_path_tips_runtime")
+                  : t("manage.media_lib.thumb_path_tips_local")}
               </FormHelperText>
             </FormControl>
           </Show>
@@ -218,9 +230,7 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
           <Alert status="info" variant="subtle">
             <AlertIcon />
             <AlertDescription>
-              <Text fontSize="$sm">
-                修改后需重新刮削（可先在「媒体管理」里清空刮削再执行刮削）才会生效。
-              </Text>
+              <Text fontSize="$sm">{t("manage.media_lib.thumb_rerun")}</Text>
             </AlertDescription>
           </Alert>
         </VStack>
