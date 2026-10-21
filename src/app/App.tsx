@@ -33,7 +33,7 @@ import { applyCustomize } from "~/utils/customize"
 import { MustUser, UserOrGuest } from "./MustUser"
 import "./index.css"
 import { globalStyles } from "./theme"
-import { MusicPlayer } from "~/pages/media/music/MusicLibrary"
+import { MusicPlayer } from "~/pages/media/music/player"
 import { MediaShell } from "./MediaShell"
 import {
   MediaSidebar,

@@ -249,10 +249,10 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
   const total = () => mediaData()?.total ?? 0
   const totalPages = () => Math.ceil(total() / pageSize)
 
-  // 数据变化时通知父组件
+  // 数据变化时通知父组件（空列表也要通知，否则父组件会保留上一页的陈旧数据）
   createEffect(() => {
-    const list = items()
-    if (list.length > 0) props.onItemsChange?.(list)
+    if (mediaData.loading) return
+    props.onItemsChange?.(items())
   })
 
   // 批量拉取当前页条目的收藏状态

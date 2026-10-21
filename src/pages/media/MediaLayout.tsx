@@ -1,14 +1,13 @@
 import { JSX } from "solid-js"
 import { useColorMode } from "@hope-ui/solid"
 import { createMemo } from "solid-js"
-import { playerState } from "./music/MusicLibrary"
+import { playerState } from "./music/player"
 import { useTitle } from "~/hooks"
 import { getSetting } from "~/store"
 
 interface MediaLayoutProps {
   children: JSX.Element
   title: string
-  headerRight?: JSX.Element
 }
 
 export const MediaLayout = (props: MediaLayoutProps) => {
@@ -22,7 +21,6 @@ export const MediaLayout = (props: MediaLayoutProps) => {
   const bg = createMemo(() =>
     isDark() ? "rgba(15,20,35,1)" : "rgba(248,250,252,1)",
   )
-  const titleColor = createMemo(() => (isDark() ? "#f1f5f9" : "#0f172a"))
 
   return (
     <div
