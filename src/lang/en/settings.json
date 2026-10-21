@@ -164,6 +164,8 @@
     "local": "Mounted directory (VFS)"
   },
   "media_thumbnail_path": "Thumbnail storage path",
+  "media_thumbnail_path-tips": "Only editable in Mounted directory (VFS) mode. Runtime directory mode always uses data/imgs; Base64 mode stores covers in the database.",
+  "media_thumbnail_mode-tips": "Base64: stored in database. Runtime: stored under the program data directory (data/imgs). Mounted directory: written to a writable VFS path such as /imgs.",
   "media_enabled": "Enable media library",
   "media_emby_enabled": "Enable Emby compatible API",
   "media_subsonic_enabled": "Enable OpenSubsonic API",

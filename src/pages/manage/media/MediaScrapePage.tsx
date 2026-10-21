@@ -32,7 +32,15 @@ const MediaScrapePage = () => {
           TMDB / Discogs 数据源、缩略图存储方式与刮削并发数
         </Text>
       </VStack>
-      <CommonSettings group={Group.MEDIA} keys={SCRAPE_KEYS} />
+      <CommonSettings
+        group={Group.MEDIA}
+        keys={SCRAPE_KEYS}
+        readOnlyKey={(key, all) => {
+          if (key !== "media_thumbnail_path") return false
+          const mode = all.find((i) => i.key === "media_thumbnail_mode")?.value
+          return mode !== "local"
+        }}
+      />
     </VStack>
   )
 }
