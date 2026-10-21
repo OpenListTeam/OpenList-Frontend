@@ -1,4 +1,5 @@
 import {
+  Box,
   HStack,
   useColorModeValue,
   Image,
@@ -19,7 +20,7 @@ import { bus } from "~/utils"
 import { Layout } from "./layout"
 import { isMac } from "~/utils/compatibility"
 
-export const Header = () => {
+export const Header = (props: { flush?: boolean } = {}) => {
   const logos = getSetting("logo").split("\n")
   const logo = useColorModeValue(logos[0], logos.pop())
 
@@ -32,6 +33,52 @@ export const Header = () => {
     }
   })
 
+  const content = () => (
+    <HStack
+      px="calc(2% + 0.5rem)"
+      py="$2"
+      w="$full"
+      justifyContent="space-between"
+    >
+      <HStack class="header-left" h="44px" spacing="$2">
+        <Show when={mediaEnabled()}>
+          <MediaSidebarTrigger />
+        </Show>
+        <Image src={logo()!} h="$full" w="auto" fallback={<CenterLoading />} />
+      </HStack>
+      <HStack class="header-right" spacing="$2">
+        <Show when={objStore.state === State.Folder}>
+          <Show when={getSetting("search_index") !== "none"}>
+            <HStack
+              bg="$neutral4"
+              w="$32"
+              p="$1"
+              rounded="$md"
+              justifyContent="space-between"
+              border="2px solid transparent"
+              cursor="pointer"
+              color={getMainColor()}
+              bgColor={changeColor(getMainColor(), { alpha: 0.15 })}
+              _hover={{
+                bgColor: changeColor(getMainColor(), { alpha: 0.2 }),
+              }}
+              onClick={() => {
+                bus.emit("tool", "search")
+              }}
+            >
+              <Icon as={BsSearch} />
+              <HStack>
+                {isMac ? <Kbd>Cmd</Kbd> : <Kbd>Ctrl</Kbd>}
+                <Kbd>K</Kbd>
+              </HStack>
+            </HStack>
+          </Show>
+          <Layout />
+        </Show>
+      </HStack>
+    </HStack>
+  )
+
   return (
     <Center
       {...stickyProps}
@@ -40,56 +87,9 @@ export const Header = () => {
       w="$full"
       // shadow="$md"
     >
-      <Container>
-        <HStack
-          px="calc(2% + 0.5rem)"
-          py="$2"
-          w="$full"
-          justifyContent="space-between"
-        >
-          <HStack class="header-left" h="44px" spacing="$2">
-            <Show when={mediaEnabled()}>
-              <MediaSidebarTrigger />
-            </Show>
-            <Image
-              src={logo()!}
-              h="$full"
-              w="auto"
-              fallback={<CenterLoading />}
-            />
-          </HStack>
-          <HStack class="header-right" spacing="$2">
-            <Show when={objStore.state === State.Folder}>
-              <Show when={getSetting("search_index") !== "none"}>
-                <HStack
-                  bg="$neutral4"
-                  w="$32"
-                  p="$1"
-                  rounded="$md"
-                  justifyContent="space-between"
-                  border="2px solid transparent"
-                  cursor="pointer"
-                  color={getMainColor()}
-                  bgColor={changeColor(getMainColor(), { alpha: 0.15 })}
-                  _hover={{
-                    bgColor: changeColor(getMainColor(), { alpha: 0.2 }),
-                  }}
-                  onClick={() => {
-                    bus.emit("tool", "search")
-                  }}
-                >
-                  <Icon as={BsSearch} />
-                  <HStack>
-                    {isMac ? <Kbd>Cmd</Kbd> : <Kbd>Ctrl</Kbd>}
-                    <Kbd>K</Kbd>
-                  </HStack>
-                </HStack>
-              </Show>
-              <Layout />
-            </Show>
-          </HStack>
-        </HStack>
-      </Container>
+      <Show when={props.flush} fallback={<Container>{content()}</Container>}>
+        <Box w="$full">{content()}</Box>
+      </Show>
     </Center>
   )
 }

@@ -21,7 +21,7 @@ export const MediaShell = (props: MediaShellProps) => {
           width: "100%",
         }}
       >
-        <Header />
+        <Header flush />
         <div style={{ flex: "1", "min-width": "0", display: "flex" }}>
           {props.children}
         </div>
