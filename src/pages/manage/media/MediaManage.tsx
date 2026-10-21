@@ -88,14 +88,14 @@ interface ConfirmState {
   onConfirm: () => void | Promise<void>
 }
 
-type TabKey = "config" | "paths" | "items" | "settings"
+type TabKey = "paths" | "items" | "settings"
 
 /**
  * 每种媒体类型一个页面：基础配置 / 扫描路径 / 媒体管理（/ 设置）四个 Tab。
  * 扫描路径严格按 props.mediaType 隔离，接口调用与字段与改造前完全一致。
  */
 export const MediaManagePage = (props: MediaManagePageProps) => {
-  const [tab, setTab] = createSignal<TabKey>("config")
+  const [tab, setTab] = createSignal<TabKey>("paths")
 
   // 确认弹窗（替代自写 ConfirmDialog）
   const [confirmState, setConfirmState] = createSignal<ConfirmState | null>(
@@ -574,7 +574,6 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
   // 页签列表（图片 / 书籍额外提供缩略图设置）
   const tabItems = createMemo(() => {
     const list: { key: TabKey; label: string }[] = [
-      { key: "config", label: "基础配置" },
       { key: "paths", label: "扫描路径" },
       { key: "items", label: "媒体管理" },
     ]
@@ -602,24 +601,55 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
         </VStack>
       </HStack>
 
-      {/* 基础配置 */}
-      <Show when={tab() === "config"}>
-        <Box bgColor="$neutral1" rounded="$lg" border="1px solid $neutral4">
+      {/* 工具栏：页签 + 操作按钮 + 当前类型开关（原「基础配置」合并到这里） */}
+      <Box bgColor="$neutral1" rounded="$lg" border="1px solid $neutral4">
+        <VStack px="$4" py="$3" spacing="$2" alignItems="stretch">
           <HStack
-            px="$4"
-            py="$3"
-            borderBottom="1px solid $neutral4"
             justifyContent="space-between"
             alignItems="center"
             flexWrap="wrap"
             gap="$2"
           >
-            <Text fontWeight="$semibold">基础配置</Text>
-            <Text fontSize="$xs" color="$neutral11">
-              当前类型：{props.title}
-            </Text>
+            <HStack spacing="$1" flexWrap="wrap">
+              <For each={tabItems()}>
+                {(item) => (
+                  <Button
+                    size="sm"
+                    variant={tab() === item.key ? "subtle" : "ghost"}
+                    colorScheme={tab() === item.key ? "accent" : "neutral"}
+                    onClick={() => setTab(item.key)}
+                  >
+                    {item.label}
+                  </Button>
+                )}
+              </For>
+            </HStack>
+            <HStack spacing="$2" alignItems="center">
+              <FormControl display="flex" alignItems="center" gap="$2" w="auto">
+                <FormLabel m="0" fontSize="$sm">
+                  启用{props.title}
+                </FormLabel>
+                <Switch
+                  checked={config().enabled}
+                  onChange={(e) =>
+                    setConfig((c) => ({
+                      ...c,
+                      enabled: e.currentTarget.checked,
+                    }))
+                  }
+                />
+              </FormControl>
+              <Button
+                size="sm"
+                colorScheme="accent"
+                loading={configSaving()}
+                onClick={handleSaveConfig}
+              >
+                保存配置
+              </Button>
+            </HStack>
           </HStack>
-          <HStack px="$4" py="$3" spacing="$2" flexWrap="wrap">
+          <HStack spacing="$2" flexWrap="wrap">
             <Button
               size="sm"
               colorScheme="success"
@@ -661,66 +691,19 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
             </Button>
           </HStack>
           <Show when={progress()}>
-            <Box px="$4" pb="$3">
-              <Alert status="success" variant="subtle">
-                <AlertIcon />
-                <AlertDescription>
-                  {progress()!.status}
-                  <Show when={(progress()?.total ?? 0) > 0}>
-                    {" "}
-                    ({progress()!.current} / {progress()!.total})
-                  </Show>
-                </AlertDescription>
-              </Alert>
-            </Box>
+            <Alert status="success" variant="subtle">
+              <AlertIcon />
+              <AlertDescription>
+                {progress()!.status}
+                <Show when={(progress()?.total ?? 0) > 0}>
+                  {" "}
+                  ({progress()!.current} / {progress()!.total})
+                </Show>
+              </AlertDescription>
+            </Alert>
           </Show>
-        </Box>
-      </Show>
-
-      {/* Tab 切换：左侧页签，右侧当前类型开关与保存 */}
-      <HStack
-        justifyContent="space-between"
-        alignItems="center"
-        flexWrap="wrap"
-        gap="$2"
-        borderBottom="1px solid $neutral4"
-      >
-        <HStack spacing="$1" flexWrap="wrap">
-          <For each={tabItems()}>
-            {(item) => (
-              <Button
-                size="sm"
-                variant={tab() === item.key ? "subtle" : "ghost"}
-                colorScheme={tab() === item.key ? "accent" : "neutral"}
-                onClick={() => setTab(item.key)}
-              >
-                {item.label}
-              </Button>
-            )}
-          </For>
-        </HStack>
-        <HStack spacing="$2" alignItems="center" pb="$1">
-          <FormControl display="flex" alignItems="center" gap="$2" w="auto">
-            <FormLabel m="0" fontSize="$sm">
-              启用{props.title}
-            </FormLabel>
-            <Switch
-              checked={config().enabled}
-              onChange={(e) =>
-                setConfig((c) => ({ ...c, enabled: e.currentTarget.checked }))
-              }
-            />
-          </FormControl>
-          <Button
-            size="sm"
-            colorScheme="accent"
-            loading={configSaving()}
-            onClick={handleSaveConfig}
-          >
-            保存配置
-          </Button>
-        </HStack>
-      </HStack>
+        </VStack>
+      </Box>
 
       {/* 扫描路径 */}
       <Show when={tab() === "paths"}>
@@ -896,31 +879,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
             borderBottom="1px solid $neutral4"
             alignItems="stretch"
           >
-            <HStack
-              justifyContent="space-between"
-              alignItems="center"
-              flexWrap="wrap"
-              gap="$2"
-            >
-              <Text fontWeight="$semibold">媒体管理（共 {total()} 条）</Text>
-              <HStack spacing="$2" flexWrap="wrap">
-                <Button size="sm" variant="outline" onClick={handleExportAll}>
-                  导出全部
-                </Button>
-                <Button size="sm" variant="outline" onClick={handleImportAll}>
-                  导入数据
-                </Button>
-                <Button size="sm" variant="ghost" onClick={handleClearScrape}>
-                  清空刮削
-                </Button>
-                <Button size="sm" variant="ghost" onClick={handleDeleteInvalid}>
-                  删除已失效
-                </Button>
-                <Button size="sm" variant="ghost" onClick={handleGenerateStrm}>
-                  生成 STRM
-                </Button>
-              </HStack>
-            </HStack>
+            <Text fontWeight="$semibold">媒体管理（共 {total()} 条）</Text>
             <HStack spacing="$2" flexWrap="wrap" alignItems="center">
               <Box w="200px">
                 <Select
