@@ -27,7 +27,7 @@ import {
   FaSolidDatabase,
   FaSolidPuzzlePiece,
 } from "solid-icons/fa"
-import { TbArchive } from "solid-icons/tb"
+import { TbArchive, TbSeeding } from "solid-icons/tb"
 
 export type SideMenuItem = SideMenuItemProps & {
   component?: Component
@@ -72,6 +72,12 @@ export const side_menu_items: SideMenuItem[] = [
         icon: BsJoystick,
         to: "/@manage/settings/global",
         component: () => <CommonSettings group={Group.GLOBAL} />,
+      },
+      {
+        title: "manage.sidemenu.seed",
+        icon: TbSeeding,
+        to: "/@manage/settings/seed",
+        component: lazy(() => import("./settings/Seed")),
       },
       {
         title: "manage.sidemenu.sso",

@@ -122,9 +122,15 @@ const App: Component = () => {
     }
   })
 
-  // 媒体库关闭时，/@media/* 等同于不存在
+  // 媒体库关闭时，除设置页外的 /@media/* 等同于不存在
+  // 设置页必须保留：它是打开总开关的唯一入口
   createEffect(() => {
-    if (!loading() && !mediaEnabled() && pathname().startsWith("/@media")) {
+    if (
+      !loading() &&
+      !mediaEnabled() &&
+      pathname().startsWith("/@media") &&
+      !pathname().startsWith("/@media/settings")
+    ) {
       to("/", true)
     }
   })

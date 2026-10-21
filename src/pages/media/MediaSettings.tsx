@@ -100,6 +100,9 @@ const MediaSettings = () => {
   const mediaSettings = createMemo(() =>
     settings.filter((s) => s.group === MEDIA_GROUP),
   )
+  const masterSwitch = createMemo(() =>
+    settings.find((s) => s.key === "media_enabled"),
+  )
   const transcodeSettings = createMemo(() =>
     settings.filter((s) => s.group === TRANSCODE_GROUP),
   )
@@ -257,8 +260,42 @@ const MediaSettings = () => {
         <Text fontSize="$sm" color="$neutral11">
           总开关、抓取源、缩略图与刷新策略均来自服务端设置项。
         </Text>
+
+        {/* 总开关：单独置顶，保存后立即生效 */}
+        <Show when={masterSwitch()}>
+          {(item) => (
+            <HStack
+              justifyContent="space-between"
+              alignItems="center"
+              gap="$4"
+              p="$4"
+              rounded="$md"
+              bgColor="$accent3"
+              border="1px solid $accent6"
+            >
+              <VStack alignItems="flex-start" spacing="$1">
+                <Text fontWeight="$semibold">启用媒体库</Text>
+                <Text fontSize="$xs" color="$neutral11">
+                  关闭时媒体库页面、侧栏入口、Emby 与 Subsonic
+                  端点全部不可用；开启并保存后立即生效。
+                </Text>
+              </VStack>
+              <Switch
+                checked={item().value === "true"}
+                onChange={(e) =>
+                  setSettings(
+                    (s) => s.key === "media_enabled",
+                    "value",
+                    e.currentTarget.checked ? "true" : "false",
+                  )
+                }
+              />
+            </HStack>
+          )}
+        </Show>
+
         <SimpleGrid columns={{ "@initial": 1, "@md": 2 }} gap="$4">
-          <For each={mediaSettings()}>
+          <For each={mediaSettings().filter((s) => s.key !== "media_enabled")}>
             {(item) => (
               <Item
                 {...item}
