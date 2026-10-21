@@ -1,4 +1,5 @@
-import { createSignal, Show, For, onCleanup, onMount } from "solid-js"
+﻿import { createSignal, Show, For, onCleanup, onMount } from "solid-js"
+import { accent } from "~/utils/accent"
 import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
 import type { MediaItem } from "~/types"
@@ -258,7 +259,7 @@ const ImageViewer = (props: {
                   opacity: realIndex === currentIndex() ? "1" : "0.5",
                   border:
                     realIndex === currentIndex()
-                      ? "2px solid #6366f1"
+                      ? `2px solid ${accent()}`
                       : "2px solid transparent",
                   transition: "opacity 0.2s",
                   "flex-shrink": "0",

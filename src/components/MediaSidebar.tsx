@@ -10,7 +10,7 @@
   useColorMode,
   VStack,
 } from "@hope-ui/solid"
-import { For, Show, createMemo } from "solid-js"
+import { For, Show, createMemo, createSignal, onMount } from "solid-js"
 import { useRouter, useT } from "~/hooks"
 import {
   mediaEnabled,
@@ -24,14 +24,23 @@ import {
   TbBook,
   TbBook2,
   TbBrandGithub,
+  TbCheck,
   TbChevronLeft,
   TbFolder,
   TbMoon,
   TbMovie,
   TbMusic,
+  TbPalette,
   TbPhoto,
   TbSun,
 } from "solid-icons/tb"
+import {
+  ACCENT_PRESETS,
+  accentColor,
+  initAccent,
+  resetAccentColor,
+  setAccentColor,
+} from "~/store/accent"
 import { AiOutlineCloudServer } from "solid-icons/ai"
 import { Component } from "solid-js"
 
@@ -50,6 +59,8 @@ export const MediaSidebar = () => {
   const t = useT()
   const { colorMode, toggleColorMode } = useColorMode()
   const { pathname, to } = useRouter()
+  const [showPalette, setShowPalette] = createSignal(false)
+  onMount(initAccent)
   const items = createMemo<NavEntry[]>(() => {
     const list: NavEntry[] = [
       {
@@ -188,6 +199,19 @@ export const MediaSidebar = () => {
                 <Icon as={TbBook2} boxSize="$4" />
               </Anchor>
             </Tooltip>
+            <Tooltip label="主题色">
+              <Button
+                size="xs"
+                variant="ghost"
+                colorScheme="neutral"
+                minW="0"
+                px="$1"
+                aria-label="theme color"
+                onClick={() => setShowPalette(!showPalette())}
+              >
+                <Icon as={TbPalette} boxSize="$4" />
+              </Button>
+            </Tooltip>
             <Tooltip
               label={colorMode() === "dark" ? "Light mode" : "Dark mode"}
             >
@@ -223,6 +247,69 @@ export const MediaSidebar = () => {
             </Show>
           </HStack>
         </HStack>
+
+        <Show when={showPalette()}>
+          <Box
+            position="fixed"
+            left="12px"
+            bottom="64px"
+            zIndex="$popover"
+            w="200px"
+            p="$3"
+            bgColor="$neutral1"
+            rounded="$lg"
+            border="1px solid $neutral4"
+            shadow="$lg"
+          >
+            <VStack spacing="$2" alignItems="stretch">
+              <Text fontSize="$xs" color="$neutral11">
+                主题色
+              </Text>
+              <HStack spacing="$2" flexWrap="wrap">
+                <For each={ACCENT_PRESETS}>
+                  {(preset) => (
+                    <Tooltip label={preset.name}>
+                      <Box
+                        as="button"
+                        w="$6"
+                        h="$6"
+                        rounded="$full"
+                        border={
+                          accentColor() === preset.color
+                            ? "2px solid $accent9"
+                            : "2px solid transparent"
+                        }
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        style={{ background: preset.color }}
+                        aria-label={preset.name}
+                        onClick={() => {
+                          setAccentColor(preset.color)
+                          setShowPalette(false)
+                        }}
+                      >
+                        <Show when={accentColor() === preset.color}>
+                          <Icon as={TbCheck} boxSize="$3" color="white" />
+                        </Show>
+                      </Box>
+                    </Tooltip>
+                  )}
+                </For>
+              </HStack>
+              <Button
+                size="xs"
+                variant="ghost"
+                onClick={() => {
+                  resetAccentColor()
+                  setShowPalette(false)
+                }}
+              >
+                跟随站点默认
+              </Button>
+            </VStack>
+          </Box>
+        </Show>
       </VStack>
     </Box>
   )

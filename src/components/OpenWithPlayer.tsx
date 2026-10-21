@@ -23,6 +23,8 @@ interface OpenWithPlayerProps {
   name?: string
   size?: "xs" | "sm" | "md"
   variant?: "solid" | "subtle" | "outline" | "ghost" | "link"
+  /** 深色背景（如底部播放条）下使用浅色描边样式 */
+  dark?: boolean
 }
 
 /**
@@ -94,6 +96,15 @@ export const OpenWithPlayer = (props: OpenWithPlayerProps) => {
         colorScheme="neutral"
         loading={loading()}
         rightIcon={<Icon as={FaSolidAngleDown} />}
+        style={
+          props.dark
+            ? {
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.16)",
+                color: "#e2e8f0",
+              }
+            : undefined
+        }
       >
         本地播放器
       </MenuTrigger>

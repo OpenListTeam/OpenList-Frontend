@@ -1,4 +1,5 @@
 ﻿import { resolveMediaCover } from "~/utils/media_cover"
+import { accentBar, accentGradient } from "~/utils/accent"
 import {
   createSignal,
   createResource,
@@ -13,6 +14,7 @@ import { Dynamic } from "solid-js/web"
 import {
   TbArrowRight,
   TbArrowsShuffle,
+  TbChevronDown,
   TbMusic,
   TbPlayerPauseFilled,
   TbPlayerPlayFilled,
@@ -22,6 +24,7 @@ import {
   TbRepeatOnce,
   TbVolume,
   TbVolumeOff,
+  TbX,
 } from "solid-icons/tb"
 import { MediaLayout } from "../MediaLayout"
 import {
@@ -113,6 +116,23 @@ export const playPlaylist = (items: MediaItem[], startIndex = 0) => {
     currentIndex: startIndex,
   }))
   playTrack(items[startIndex])
+}
+
+// 关闭底部播放器（清空播放列表并停止播放）
+export const closePlayer = () => {
+  const audio = initAudio()
+  audio.pause()
+  audio.removeAttribute("src")
+  audio.load()
+  setPlayerState((s) => ({
+    ...s,
+    playlist: [],
+    currentIndex: 0,
+    playing: false,
+    currentTime: 0,
+    duration: 0,
+    showLyrics: false,
+  }))
 }
 
 export const togglePlay = () => {
@@ -264,6 +284,7 @@ const LyricsPage = () => {
       >
         <button
           onClick={() => setPlayerState((s) => ({ ...s, showLyrics: false }))}
+          title="收起歌词页"
           style={{
             background: "rgba(255,255,255,0.1)",
             border: "1px solid rgba(255,255,255,0.15)",
@@ -278,9 +299,18 @@ const LyricsPage = () => {
             "backdrop-filter": "blur(10px)",
           }}
         >
-          ↓ 收起
+          <TbChevronDown size={16} />
+          收起
         </button>
-        <div style={{ color: "rgba(255,255,255,0.5)", "font-size": "13px" }}>
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            color: "rgba(255,255,255,0.5)",
+            "font-size": "13px",
+          }}
+        >
           正在播放
         </div>
         <div style={{ width: "80px" }} />
@@ -293,10 +323,13 @@ const LyricsPage = () => {
           "z-index": "1",
           flex: "1",
           display: "flex",
-          gap: "0",
+          gap: "40px",
           "align-items": "stretch",
           overflow: "hidden",
-          padding: "0 5vw",
+          padding: "0 40px",
+          width: "100%",
+          "max-width": "1150px",
+          margin: "0 auto",
         }}
       >
         {/* 左侧：封面 + 信息 + 控制 */}
@@ -329,7 +362,7 @@ const LyricsPage = () => {
                 background:
                   "radial-gradient(circle, #2a2a2a 30%, #1a1a1a 60%, #111 100%)",
                 "box-shadow":
-                  "0 0 60px rgba(99,102,241,0.35), 0 20px 60px rgba(0,0,0,0.6)",
+                  "0 0 60px rgba(24,144,255,0.35), 0 20px 60px rgba(0,0,0,0.6)",
                 animation: playerState().playing
                   ? "spin 20s linear infinite"
                   : "none",
@@ -354,7 +387,7 @@ const LyricsPage = () => {
                     style={{
                       width: "100%",
                       height: "100%",
-                      background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                      background: accentGradient(),
                       display: "flex",
                       "align-items": "center",
                       "justify-content": "center",
@@ -436,7 +469,7 @@ const LyricsPage = () => {
               <div
                 style={{
                   height: "100%",
-                  background: "linear-gradient(90deg, #6366f1, #a78bfa)",
+                  background: accentBar(),
                   "border-radius": "2px",
                   width: `${
                     playerState().duration > 0
@@ -495,7 +528,7 @@ const LyricsPage = () => {
                 width: "52px",
                 height: "52px",
                 "border-radius": "50%",
-                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                background: accentGradient(),
                 border: "none",
                 color: "white",
                 "font-size": "20px",
@@ -503,7 +536,7 @@ const LyricsPage = () => {
                 display: "flex",
                 "align-items": "center",
                 "justify-content": "center",
-                "box-shadow": "0 4px 20px rgba(99,102,241,0.5)",
+                "box-shadow": "0 4px 20px rgba(24,144,255,0.5)",
                 transition: "transform 0.15s, box-shadow 0.15s",
               }}
             >
@@ -527,10 +560,12 @@ const LyricsPage = () => {
         <div
           style={{
             flex: "1",
+            "min-width": "0",
+            "max-width": "680px",
             display: "flex",
             "flex-direction": "column",
             overflow: "hidden",
-            padding: "20px 0 100px 40px",
+            padding: "20px 0 100px 0",
           }}
         >
           <Show
@@ -593,8 +628,12 @@ const LyricsPage = () => {
                 style={{
                   transition:
                     "transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-                  transform: `translateY(calc(40vh - ${currentLyricIndex() * 52 + 26}px))`,
+                  transform: `translateY(calc(38vh - ${currentLyricIndex() * 52 + 26}px))`,
                   "padding-top": "20px",
+                  display: "flex",
+                  "flex-direction": "column",
+                  "align-items": "center",
+                  width: "100%",
                 }}
               >
                 <For each={lyrics()}>
@@ -608,6 +647,7 @@ const LyricsPage = () => {
                         "align-items": "center",
                         gap: "12px",
                         cursor: "pointer",
+                        "max-width": "100%",
                         "padding-left": "8px",
                         "font-size":
                           i() === currentLyricIndex() ? "22px" : "16px",
@@ -627,7 +667,7 @@ const LyricsPage = () => {
                           i() === currentLyricIndex() ? "0.02em" : "0",
                         "text-shadow":
                           i() === currentLyricIndex()
-                            ? "0 0 30px rgba(167,139,250,0.6)"
+                            ? "0 0 30px rgba(24,144,255,0.6)"
                             : "none",
                       }}
                     >
@@ -784,7 +824,7 @@ export const MusicPlayer = () => {
             <div
               style={{
                 height: "100%",
-                background: "linear-gradient(90deg, #6366f1, #a78bfa)",
+                background: accentBar(),
                 width: `${
                   playerState().duration > 0
                     ? (playerState().currentTime / playerState().duration) * 100
@@ -829,12 +869,12 @@ export const MusicPlayer = () => {
                   "border-radius": "8px",
                   overflow: "hidden",
                   "flex-shrink": "0",
-                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  background: accentGradient(),
                   display: "flex",
                   "align-items": "center",
                   "justify-content": "center",
                   "font-size": "20px",
-                  "box-shadow": "0 2px 12px rgba(99,102,241,0.3)",
+                  "box-shadow": "0 2px 12px rgba(24,144,255,0.3)",
                 }}
               >
                 <Show
@@ -979,7 +1019,7 @@ export const MusicPlayer = () => {
                   width: "42px",
                   height: "42px",
                   "border-radius": "50%",
-                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  background: accentGradient(),
                   border: "none",
                   color: "white",
                   "font-size": "16px",
@@ -987,7 +1027,7 @@ export const MusicPlayer = () => {
                   display: "flex",
                   "align-items": "center",
                   "justify-content": "center",
-                  "box-shadow": "0 2px 16px rgba(99,102,241,0.45)",
+                  "box-shadow": "0 2px 16px rgba(24,144,255,0.45)",
                   transition: "transform 0.15s, box-shadow 0.15s",
                   "flex-shrink": "0",
                 }}
@@ -1014,7 +1054,11 @@ export const MusicPlayer = () => {
                       "margin-left": "4px",
                     }}
                   >
-                    <OpenWithPlayer itemId={cur().id} name={cur().file_name} />
+                    <OpenWithPlayer
+                      itemId={cur().id}
+                      name={cur().file_name}
+                      dark
+                    />
                   </div>
                 )}
               </Show>
@@ -1085,13 +1129,22 @@ export const MusicPlayer = () => {
                   <div
                     style={{
                       height: "100%",
-                      background: "linear-gradient(90deg, #6366f1, #a78bfa)",
+                      background: accentBar(),
                       "border-radius": "2px",
                       width: `${playerState().volume * 100}%`,
                     }}
                   />
                 </div>
               </div>
+
+              {/* 关闭底部播放器 */}
+              <button
+                onClick={closePlayer}
+                style={ctrlBtnStyle}
+                title="关闭播放器"
+              >
+                <TbX size={16} />
+              </button>
             </div>
           </div>
         </div>
@@ -1294,7 +1347,7 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
                 width: "180px",
                 height: "180px",
                 "border-radius": "12px",
-                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                background: accentGradient(),
                 display: "flex",
                 "align-items": "center",
                 "justify-content": "center",
@@ -1361,7 +1414,7 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
               if (t && t.length > 0) playPlaylist(t, 0)
             }}
             style={{
-              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              background: accentGradient(),
               border: "none",
               "border-radius": "10px",
               color: "white",
@@ -1481,8 +1534,8 @@ const MusicLibrary = () => {
     isDark() ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
   )
   const sortLabelColor = createMemo(() => (isDark() ? "#475569" : "#64748b"))
-  const sortActiveBg = "rgba(99,102,241,0.3)"
-  const sortActiveBorder = "rgba(99,102,241,0.5)"
+  const sortActiveBg = "rgba(24,144,255,0.3)"
+  const sortActiveBorder = "rgba(24,144,255,0.5)"
   const sortActiveColor = "#a5b4fc"
   const sortInactiveBg = createMemo(() =>
     isDark() ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
@@ -1491,8 +1544,8 @@ const MusicLibrary = () => {
     isDark() ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.12)",
   )
   const sortInactiveColor = createMemo(() => (isDark() ? "#94a3b8" : "#475569"))
-  const btnActiveBg = "rgba(99,102,241,0.3)"
-  const btnActiveBorder = "rgba(99,102,241,0.5)"
+  const btnActiveBg = "rgba(24,144,255,0.3)"
+  const btnActiveBorder = "rgba(24,144,255,0.5)"
   const btnActiveColor = "#a5b4fc"
   const btnInactiveBorder = createMemo(() =>
     isDark() ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.12)",

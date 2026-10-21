@@ -1,4 +1,5 @@
 ﻿import { resolveMediaCover } from "~/utils/media_cover"
+import { accentGradient } from "~/utils/accent"
 import {
   createSignal,
   createResource,
@@ -263,7 +264,7 @@ const PDFReader = (props: { url: string; title: string }) => {
                         currentPage() === item.page ? "#a5b4fc" : "#94a3b8",
                       background:
                         currentPage() === item.page
-                          ? "rgba(99,102,241,0.15)"
+                          ? "rgba(24,144,255,0.15)"
                           : "transparent",
                       "font-size": "13px",
                       "margin-bottom": "2px",
@@ -492,7 +493,7 @@ const EPUBReader = (props: { url: string; title: string }) => {
                     }}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.background =
-                        "rgba(99,102,241,0.15)")
+                        "rgba(24,144,255,0.15)")
                     }
                     onMouseLeave={(e) =>
                       (e.currentTarget.style.background = "transparent")
@@ -649,7 +650,7 @@ const BookReader = (props: {
               href={downloadUrl()}
               download={fileNameForExt()}
               style={{
-                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                background: accentGradient(),
                 border: "none",
                 "border-radius": "10px",
                 color: "white",
@@ -1013,7 +1014,7 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
                     setShowReader(true)
                   }}
                   style={{
-                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    background: accentGradient(),
                     border: "none",
                     "border-radius": "10px",
                     color: "white",
@@ -1074,7 +1075,7 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
                                 title={ep.file_name}
                                 style={{
                                   background: isActive()
-                                    ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                                    ? accentGradient()
                                     : isDark()
                                       ? "rgba(255,255,255,0.06)"
                                       : "rgba(0,0,0,0.05)",
@@ -1100,7 +1101,7 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
                                   "white-space": "nowrap",
                                   transition: "all 0.15s",
                                   "box-shadow": isActive()
-                                    ? "0 2px 8px rgba(99,102,241,0.4)"
+                                    ? "0 2px 8px rgba(24,144,255,0.4)"
                                     : "none",
                                 }}
                               >

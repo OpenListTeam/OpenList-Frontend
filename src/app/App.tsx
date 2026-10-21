@@ -35,6 +35,7 @@ import {
 } from "~/components/MediaSidebar"
 import { mediaEnabled, mediaSidebarOpen, setMediaStatus } from "~/store/media"
 import type { MediaStatus } from "~/store/media"
+import { initAccent } from "~/store/accent"
 
 const Home = lazy(() => import("~/pages/home/Layout"))
 const Manage = lazy(() => import("~/pages/manage"))
@@ -47,6 +48,7 @@ const ImageLibrary = lazy(() => import("~/pages/media/image/ImageLibrary"))
 const BookLibrary = lazy(() => import("~/pages/media/book/BookLibrary"))
 
 const App: Component = () => {
+  initAccent()
   const t = useT()
   globalStyles()
   initPluginEngine()

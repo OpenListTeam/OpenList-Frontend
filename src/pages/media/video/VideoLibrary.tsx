@@ -1,4 +1,5 @@
 ﻿import { resolveMediaCover } from "~/utils/media_cover"
+import { accentGradient } from "~/utils/accent"
 import {
   createSignal,
   createResource,
@@ -758,8 +759,8 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                   <Show when={data().video_type}>
                     <span
                       style={{
-                        background: "rgba(99,102,241,0.15)",
-                        border: "1px solid rgba(99,102,241,0.3)",
+                        background: "rgba(24,144,255,0.15)",
+                        border: "1px solid rgba(24,144,255,0.3)",
                         "border-radius": "6px",
                         padding: "3px 8px",
                         color: "#a5b4fc",
@@ -850,7 +851,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                         setShowPlayer(true)
                       }}
                       style={{
-                        background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                        background: accentGradient(),
                         border: "none",
                         "border-radius": "10px",
                         color: "white",
@@ -861,7 +862,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                         display: "flex",
                         "align-items": "center",
                         gap: "8px",
-                        "box-shadow": "0 4px 16px rgba(99,102,241,0.4)",
+                        "box-shadow": "0 4px 16px rgba(24,144,255,0.4)",
                       }}
                     >
                       ▶ 立即播放
@@ -930,7 +931,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                                   title={ep.file_name}
                                   style={{
                                     background: isActive()
-                                      ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                                      ? accentGradient()
                                       : isDark()
                                         ? "rgba(255,255,255,0.06)"
                                         : "rgba(0,0,0,0.05)",
@@ -952,7 +953,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                                     "white-space": "nowrap",
                                     transition: "all 0.15s",
                                     "box-shadow": isActive()
-                                      ? "0 2px 8px rgba(99,102,241,0.4)"
+                                      ? "0 2px 8px rgba(24,144,255,0.4)"
                                       : "none",
                                   }}
                                 >
