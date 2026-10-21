@@ -18,8 +18,7 @@ import {
 } from "solid-icons/tb"
 import { api, getPlatform, notify } from "~/utils"
 import { getMediaStreamUrl } from "~/utils/media_api"
-import { mediaPrimaryBtn } from "~/pages/media/ui"
-import { accentGradient } from "~/utils/accent"
+import { accent } from "~/store/accent"
 import { playersForPlatform, renderPlayerScheme } from "~/utils/players"
 
 const TARGET_KEY = "media-play-target"
@@ -211,48 +210,73 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
 
   return (
     <div ref={rootRef} style={{ position: "relative", display: "inline-flex" }}>
-      {/* 主按钮与下拉箭头共用一层渐变背景，视觉上是一个整体 */}
+      {/* 主按钮与下拉箭头共用一层纯色背景，无阴影，视觉上是一个胶囊 */}
+      <style>{`
+        .media-split-btn {
+          appearance: none;
+          -webkit-appearance: none;
+          border: 0;
+          margin: 0;
+          background: transparent;
+          color: #fff;
+          font-family: inherit;
+          font-size: 14px;
+          font-weight: 600;
+          line-height: 1.2;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: none;
+          outline: none;
+        }
+        .media-split-btn:hover,
+        .media-split-btn:focus,
+        .media-split-btn:active {
+          background: rgba(255, 255, 255, 0.1);
+          box-shadow: none;
+          outline: none;
+        }
+        .media-split-btn--main {
+          gap: 8px;
+          padding: 10px 18px;
+        }
+        .media-split-btn--caret {
+          width: 26px;
+          flex: 0 0 26px;
+          padding: 0;
+          border-left: 1px solid rgba(255, 255, 255, 0.22);
+        }
+      `}</style>
       <div
         style={{
           display: "inline-flex",
-          "border-radius": "10px",
+          "align-items": "stretch",
+          "border-radius": "8px",
           overflow: "hidden",
-          background: accentGradient(),
-          "box-shadow": "0 4px 16px rgba(0,0,0,0.18)",
+          background: accent(),
+          "box-shadow": "none",
         }}
       >
         <button
+          class="media-split-btn media-split-btn--main"
           onClick={play}
           onMouseEnter={prefetch}
           onFocus={prefetch}
-          style={{
-            ...mediaPrimaryBtn,
-            background: "transparent",
-            "border-radius": "0",
-            "box-shadow": "none",
-            "padding-right": "16px",
-          }}
         >
           <Dynamic component={iconOf(target())} size={17} />
           {label()}
         </button>
         <button
+          class="media-split-btn media-split-btn--caret"
           aria-label="选择播放器"
           title="选择播放器"
           onClick={(e) => {
             e.stopPropagation()
             setOpen(!open())
           }}
-          style={{
-            ...mediaPrimaryBtn,
-            background: "transparent",
-            "border-radius": "0",
-            "box-shadow": "none",
-            padding: "10px 9px",
-            "border-left": "1px solid rgba(255,255,255,0.28)",
-          }}
         >
-          <TbChevronDown size={16} />
+          <TbChevronDown size={15} />
         </button>
       </div>
 
