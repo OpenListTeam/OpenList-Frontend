@@ -222,6 +222,60 @@ export const adminGenerateStrm = (mediaType?: MediaType, scanPathId?: number) =>
     scan_path_id: scanPathId ?? 0,
   }) as Promise<Resp<{ written: number; path: string }>>
 
+/* ==================== 播放进度与收藏 ==================== */
+
+export interface MediaUserData {
+  item_id: number
+  episode_index: number
+  played: boolean
+  play_count: number
+  is_favorite: boolean
+  position_ticks: number
+}
+
+export const getMediaUserData = (ids: number[]) =>
+  r.get(`/fs/media/userdata?ids=${ids.join(",")}`) as Promise<
+    Resp<MediaUserData[]>
+  >
+
+export const getMediaProgress = (itemId: number, episodeIndex = 0) =>
+  r.get("/fs/media/progress", {
+    params: { item_id: itemId, episode_index: episodeIndex },
+  }) as Promise<Resp<MediaUserData | null>>
+
+export const saveMediaProgress = (payload: {
+  item_id: number
+  episode_index?: number
+  position: number
+  duration: number
+  played?: boolean
+}) => r.post("/fs/media/progress", payload) as Promise<Resp<MediaUserData>>
+
+export const setMediaFavorite = (
+  itemId: number,
+  favorite: boolean,
+  episodeIndex = 0,
+) =>
+  r.post("/fs/media/favorite", {
+    item_id: itemId,
+    episode_index: episodeIndex,
+    favorite,
+  }) as Promise<Resp<{ favorite: boolean }>>
+
+export const getMediaFavorites = (
+  mediaType?: string,
+  page = 1,
+  pageSize = 40,
+) =>
+  r.get("/fs/media/favorites", {
+    params: { media_type: mediaType, page, page_size: pageSize },
+  }) as Promise<Resp<{ content: any[]; total: number }>>
+
+export const getMediaResume = (mediaType?: string, limit = 20) =>
+  r.get("/fs/media/resume", {
+    params: { media_type: mediaType, limit },
+  }) as Promise<Resp<any[]>>
+
 /** 媒体应用密钥 */
 export interface MediaAppKey {
   id: number

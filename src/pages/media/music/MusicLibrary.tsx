@@ -32,6 +32,8 @@ import {
   getAlbumTracks,
   getMediaItem,
   getMediaFolders,
+  getMediaProgress,
+  saveMediaProgress,
 } from "~/utils/media_api"
 import type { MediaItem, AlbumInfo } from "~/types"
 import { getMediaName, parseAuthors, formatDuration } from "~/types"
@@ -72,9 +74,31 @@ export const initAudio = () => {
     audioEl = new Audio()
     audioEl.volume = playerState().volume
 
+    let lastSavedAt = 0
+    const persist = (played = false) => {
+      const s = playerState()
+      const item = s.playlist[s.currentIndex]
+      if (!item || !audioEl) return
+      const position = audioEl.currentTime
+      if (position < 2 && !played) return
+      saveMediaProgress({
+        item_id: item.id,
+        position,
+        duration: audioEl.duration || 0,
+        played,
+      }).catch(() => {
+        /* ignore */
+      })
+    }
     audioEl.addEventListener("timeupdate", () => {
       setPlayerState((s) => ({ ...s, currentTime: audioEl!.currentTime }))
+      const now = Date.now()
+      if (now - lastSavedAt < 10_000) return
+      lastSavedAt = now
+      persist()
     })
+    audioEl.addEventListener("pause", () => persist())
+    audioEl.addEventListener("ended", () => persist(true))
     audioEl.addEventListener("loadedmetadata", () => {
       setPlayerState((s) => ({ ...s, duration: audioEl!.duration }))
     })
@@ -91,6 +115,21 @@ export const playTrack = (item: MediaItem) => {
   const folder = item.folder_path?.replace(/\/$/, "") ?? ""
   const url = `${api}/p${folder}/${item.file_name}?force`
   audio.src = url
+  // 续播：读取上次进度，metadata 就绪后跳转
+  getMediaProgress(item.id)
+    .then((resp) => {
+      if (resp.code !== 200 || !resp.data || resp.data.played) return
+      const seconds = resp.data.position_ticks / 10_000_000
+      if (seconds <= 5) return
+      const seekOnce = () => {
+        audio.currentTime = seconds
+        audio.removeEventListener("loadedmetadata", seekOnce)
+      }
+      audio.addEventListener("loadedmetadata", seekOnce)
+    })
+    .catch(() => {
+      /* ignore */
+    })
   audio.play()
   // 先清空外部歌词，再异步尝试加载同名 .lrc 文件
   setPlayerState((s) => ({ ...s, playing: true, externalLyrics: "" }))

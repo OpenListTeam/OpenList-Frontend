@@ -35,7 +35,12 @@ import {
 } from "~/components/MediaSidebar"
 import { mediaEnabled, mediaSidebarOpen, setMediaStatus } from "~/store/media"
 import type { MediaStatus } from "~/store/media"
-import { initAccent } from "~/store/accent"
+import {
+  accent,
+  applyAccentPalette,
+  clearAccentPalette,
+  initAccent,
+} from "~/store/accent"
 
 const Home = lazy(() => import("~/pages/home/Layout"))
 const Manage = lazy(() => import("~/pages/manage"))
@@ -132,6 +137,15 @@ const App: Component = () => {
   createEffect(() => {
     if (!loading() && !mediaEnabled() && pathname().startsWith("/@media")) {
       to("/", true)
+    }
+  })
+
+  // 登录 / 初始化页使用系统默认配色，不跟随媒体主题色
+  createEffect(() => {
+    if (pathname().startsWith("/@login") || pathname().startsWith("/@init")) {
+      clearAccentPalette()
+    } else {
+      applyAccentPalette(accent())
     }
   })
 

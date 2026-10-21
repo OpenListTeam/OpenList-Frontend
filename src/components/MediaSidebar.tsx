@@ -27,6 +27,7 @@ import {
   TbCheck,
   TbChevronLeft,
   TbFolder,
+  TbLogout,
   TbMoon,
   TbMovie,
   TbMusic,
@@ -34,6 +35,7 @@ import {
   TbPhoto,
   TbSun,
 } from "solid-icons/tb"
+import { changeToken, handleResp, notify, r } from "~/utils"
 import {
   ACCENT_PRESETS,
   accentColor,
@@ -60,7 +62,24 @@ export const MediaSidebar = () => {
   const { colorMode, toggleColorMode } = useColorMode()
   const { pathname, to } = useRouter()
   const [showPalette, setShowPalette] = createSignal(false)
+  const [loggingOut, setLoggingOut] = createSignal(false)
   onMount(initAccent)
+
+  const logout = async () => {
+    setLoggingOut(true)
+    try {
+      const resp: any = await r.get("/auth/logout")
+      setLoggingOut(false)
+      handleResp(resp, () => {
+        changeToken()
+        notify.success(t("manage.logout_success"))
+        to(`/@login?redirect=${encodeURIComponent(location.pathname)}`)
+      })
+    } catch {
+      setLoggingOut(false)
+      notify.error("Sign out failed")
+    }
+  }
   const items = createMemo<NavEntry[]>(() => {
     const list: NavEntry[] = [
       {
@@ -167,86 +186,119 @@ export const MediaSidebar = () => {
         </VStack>
         <Box flex="1" />
         <Divider />
-        <HStack
-          px="$2"
-          py="$1"
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          <Text fontSize="$xs" color="$neutral11">
-            v{mediaStatus().version || "dev"}
-          </Text>
-          <HStack spacing="$1" alignItems="center">
-            <Tooltip label="GitHub Repository">
-              <Anchor
-                href="https://github.com/OpenListTeam/OpenList"
-                external
-                display="inline-flex"
-                color="$neutral11"
-                _hover={{ color: "$accent9" }}
-              >
-                <Icon as={TbBrandGithub} boxSize="$4" />
-              </Anchor>
-            </Tooltip>
-            <Tooltip label="Documentation">
-              <Anchor
-                href="https://doc.oplist.org"
-                external
-                display="inline-flex"
-                color="$neutral11"
-                _hover={{ color: "$accent9" }}
-              >
-                <Icon as={TbBook2} boxSize="$4" />
-              </Anchor>
-            </Tooltip>
-            <Tooltip label="主题色">
-              <Button
-                size="xs"
-                variant="ghost"
-                colorScheme="neutral"
-                minW="0"
-                px="$1"
-                aria-label="theme color"
-                onClick={() => setShowPalette(!showPalette())}
-              >
-                <Icon as={TbPalette} boxSize="$4" />
-              </Button>
-            </Tooltip>
-            <Tooltip
-              label={colorMode() === "dark" ? "Light mode" : "Dark mode"}
-            >
-              <Button
-                size="xs"
-                variant="ghost"
-                colorScheme="neutral"
-                minW="0"
-                px="$1"
-                aria-label="toggle color mode"
-                onClick={toggleColorMode}
-              >
-                <Icon
-                  as={colorMode() === "dark" ? TbSun : TbMoon}
-                  boxSize="$4"
-                />
-              </Button>
-            </Tooltip>
-            <Show when={UserMethods.is_admin(me())}>
-              <Tooltip label={t("home.media.nav_manage")}>
+        <VStack px="$2" py="$1" spacing="$1" alignItems="stretch">
+          <HStack justifyContent="space-between" alignItems="center">
+            <Text fontSize="$xs" fontWeight="$semibold" color="$neutral11">
+              OpenList
+            </Text>
+            <HStack spacing="$1" alignItems="center">
+              <Tooltip label="GitHub Repository">
+                <Anchor
+                  href="https://github.com/OpenListTeam/OpenList"
+                  external
+                  display="inline-flex"
+                  color="$neutral11"
+                  _hover={{ color: "$accent9" }}
+                >
+                  <Icon as={TbBrandGithub} boxSize="$4" />
+                </Anchor>
+              </Tooltip>
+              <Tooltip label="Documentation">
+                <Anchor
+                  href="https://doc.oplist.org"
+                  external
+                  display="inline-flex"
+                  color="$neutral11"
+                  _hover={{ color: "$accent9" }}
+                >
+                  <Icon as={TbBook2} boxSize="$4" />
+                </Anchor>
+              </Tooltip>
+              <Tooltip label="Theme color">
                 <Button
-                  variant={manageActive() ? "subtle" : "ghost"}
-                  colorScheme={manageActive() ? "accent" : "neutral"}
                   size="xs"
+                  variant="ghost"
+                  colorScheme="neutral"
                   minW="0"
                   px="$1"
-                  aria-label={t("home.media.nav_manage")}
-                  onClick={() => to("/@manage/media")}
+                  aria-label="theme color"
+                  onClick={() => setShowPalette(!showPalette())}
                 >
-                  <Icon as={AiOutlineCloudServer} boxSize="$4" />
+                  <Icon as={TbPalette} boxSize="$4" />
                 </Button>
               </Tooltip>
-            </Show>
+            </HStack>
           </HStack>
-        </HStack>
+          <HStack justifyContent="space-between" alignItems="center">
+            <Text fontSize="$xs" color="$neutral11">
+              v{mediaStatus().version || "dev"}
+            </Text>
+            <HStack spacing="$1" alignItems="center">
+              <Tooltip
+                label={colorMode() === "dark" ? "Light mode" : "Dark mode"}
+              >
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  colorScheme="neutral"
+                  minW="0"
+                  px="$1"
+                  aria-label="toggle color mode"
+                  onClick={toggleColorMode}
+                >
+                  <Icon
+                    as={colorMode() === "dark" ? TbSun : TbMoon}
+                    boxSize="$4"
+                  />
+                </Button>
+              </Tooltip>
+              <Show when={UserMethods.is_admin(me())}>
+                <Tooltip label={t("home.media.nav_manage")}>
+                  <Button
+                    variant={manageActive() ? "subtle" : "ghost"}
+                    colorScheme={manageActive() ? "accent" : "neutral"}
+                    size="xs"
+                    minW="0"
+                    px="$1"
+                    aria-label={t("home.media.nav_manage")}
+                    onClick={() => to("/@manage/media")}
+                  >
+                    <Icon as={AiOutlineCloudServer} boxSize="$4" />
+                  </Button>
+                </Tooltip>
+              </Show>
+              <Show when={!UserMethods.is_guest(me())}>
+                <Tooltip label="Sign out">
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    colorScheme="neutral"
+                    minW="0"
+                    px="$1"
+                    loading={loggingOut()}
+                    aria-label="Sign out"
+                    onClick={logout}
+                  >
+                    <Icon as={TbLogout} boxSize="$4" />
+                  </Button>
+                </Tooltip>
+              </Show>
+              <Tooltip label="Collapse sidebar">
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  colorScheme="neutral"
+                  minW="0"
+                  px="$1"
+                  aria-label="collapse media sidebar"
+                  onClick={() => setMediaSidebarOpen(false)}
+                >
+                  <Icon as={TbChevronLeft} boxSize="$4" />
+                </Button>
+              </Tooltip>
+            </HStack>
+          </HStack>
+        </VStack>
 
         <Show when={showPalette()}>
           <Box
@@ -263,7 +315,7 @@ export const MediaSidebar = () => {
           >
             <VStack spacing="$2" alignItems="stretch">
               <Text fontSize="$xs" color="$neutral11">
-                主题色
+                Theme color
               </Text>
               <HStack spacing="$2" flexWrap="wrap">
                 <For each={ACCENT_PRESETS}>
@@ -305,7 +357,7 @@ export const MediaSidebar = () => {
                   setShowPalette(false)
                 }}
               >
-                跟随站点默认
+                Follow site default
               </Button>
             </VStack>
           </Box>

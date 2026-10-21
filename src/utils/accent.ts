@@ -1,16 +1,16 @@
 import { changeColor } from "seemly"
-import { accent } from "~/store/accent"
+import { accent, shiftLightness } from "~/store/accent"
 
-/** 当前主题色 */
+/** Current accent color. */
 export { accent }
 
-/** 主按钮/强调块渐变 */
+/** Primary button / hero block gradient (subtle light-to-dark shift). */
 export const accentGradient = () =>
-  `linear-gradient(135deg, ${accent()}, ${changeColor(accent(), { alpha: 0.72 })})`
+  `linear-gradient(135deg, ${shiftLightness(accent(), 0.05)}, ${shiftLightness(accent(), -0.08)})`
 
-/** 进度条/细条渐变 */
+/** Progress bar / thin indicator gradient. */
 export const accentBar = () =>
-  `linear-gradient(90deg, ${accent()}, ${changeColor(accent(), { alpha: 0.62 })})`
+  `linear-gradient(90deg, ${shiftLightness(accent(), 0.03)}, ${accent()})`
 
-/** 主题色阴影 */
+/** Accent glow / shadow. */
 export const accentShadow = (alpha = 0.4) => changeColor(accent(), { alpha })

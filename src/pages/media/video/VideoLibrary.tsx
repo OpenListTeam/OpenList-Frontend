@@ -12,7 +12,12 @@ import {
 import { useColorMode } from "@hope-ui/solid"
 import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
-import { getMediaItem, requestTranscodePlay } from "~/utils/media_api"
+import {
+  getMediaItem,
+  getMediaProgress,
+  requestTranscodePlay,
+  saveMediaProgress,
+} from "~/utils/media_api"
 import type { MediaItem, EpisodeInfo } from "~/types"
 import { getMediaName, parseAuthors, parseEpisodes } from "~/types"
 import { api, base_path, ext } from "~/utils"
@@ -174,6 +179,7 @@ const VideoPlayer = (props: {
   // 可选：指定播放的文件路径和标题（用于选集播放）
   filePath?: string
   title?: string
+  episodeIndex?: number
   onClose: () => void
 }) => {
   let playerContainer: HTMLDivElement | undefined
@@ -192,6 +198,20 @@ const VideoPlayer = (props: {
   onMount(async () => {
     if (!playerContainer) return
     let fileExt = ext(props.item.file_name)
+
+    // 读取上次播放进度，用于续播
+    let resumeSeconds = 0
+    try {
+      const prog = await getMediaProgress(
+        props.item.id,
+        props.episodeIndex ?? 0,
+      )
+      if (prog.code === 200 && prog.data && !prog.data.played) {
+        resumeSeconds = prog.data.position_ticks / 10_000_000
+      }
+    } catch {
+      // 忽略进度读取失败
+    }
 
     // ---- 云端转码判断 ----
     // 播放前先调用后端转码决策接口，如果需要转码则使用 HLS master_url 播放
@@ -483,6 +503,59 @@ const VideoPlayer = (props: {
         },
       ],
     })
+
+    // Artplayer 默认在媒体就绪前一直显示加载转圈；HLS 采用懒加载（点击播放才开始拉流），
+    // 初始阶段必须隐藏加载层，只在真正开始缓冲/播放时显示，避免页面一打开就一直转圈。
+    player.loading.show = false
+    player.on("video:play", () => {
+      if (player) player.loading.show = true
+    })
+    player.on("video:waiting", () => {
+      if (player) player.loading.show = true
+    })
+    player.on("video:playing", () => {
+      if (player) player.loading.show = false
+    })
+    player.on("video:canplay", () => {
+      if (player) player.loading.show = false
+    })
+    player.on("video:error", () => {
+      if (player) player.loading.show = false
+    })
+
+    // ---- 播放进度：续播 + 定时上报（与 Emby 共用 user_data）----
+    let lastSavedAt = 0
+    let resumed = false
+    const persistProgress = (played = false) => {
+      if (!player) return
+      const duration = player.duration || 0
+      const position = player.currentTime || 0
+      if (position < 2 && !played) return
+      saveMediaProgress({
+        item_id: props.item.id,
+        episode_index: props.episodeIndex ?? 0,
+        position,
+        duration,
+        played,
+      }).catch(() => {
+        /* ignore */
+      })
+    }
+    player.on("video:playing", () => {
+      if (!resumed && resumeSeconds > 5) {
+        player!.seek = resumeSeconds
+        resumed = true
+      }
+    })
+    player.on("video:timeupdate", () => {
+      const now = Date.now()
+      if (now - lastSavedAt < 10_000) return
+      lastSavedAt = now
+      persistProgress()
+    })
+    player.on("video:pause", () => persistProgress())
+    player.on("video:ended", () => persistProgress(true))
+    onCleanup(() => persistProgress())
 
     // "仅音频"模式：原生 <video> 负责视频解码，mediabunny 只提供音轨。
     // 仅在直链模式下生效，转码模式已经是 HLS 流，不需要 mediabunny 音频补丁。
@@ -830,6 +903,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                           : currentEpisode()!.title
                         : undefined
                     }
+                    episodeIndex={currentEpisode()?.index ?? 0}
                     onClose={() => setShowPlayer(false)}
                   />
                 </Show>
