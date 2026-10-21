@@ -4,6 +4,7 @@ import {
   createSignal,
   createResource,
   createMemo,
+  createEffect,
   Show,
   For,
   onMount,
@@ -12,13 +13,20 @@ import {
 import { useColorMode } from "@hope-ui/solid"
 import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
-import { mediaBackBtn, mediaChip, mediaSecondaryBtn } from "../ui"
+import {
+  formatMediaSize,
+  mediaBackBtn,
+  mediaChip,
+  mediaSecondaryBtn,
+} from "../ui"
 import {
   downloadMediaStrm,
   getMediaItem,
   getMediaProgress,
+  getMediaUserData,
   requestTranscodePlay,
   saveMediaProgress,
+  setMediaFavorite,
 } from "~/utils/media_api"
 import type { MediaItem, EpisodeInfo } from "~/types"
 import { getMediaName, parseAuthors, parseEpisodes } from "~/types"
@@ -72,6 +80,8 @@ const VideoCard = (props: { item: MediaItem }) => {
   const titleColor = createMemo(() => (isDark() ? "#e2e8f0" : "#1e293b"))
   const subColor = createMemo(() => (isDark() ? "#64748b" : "#94a3b8"))
   const name = () => getMediaName(props.item)
+  const [hover, setHover] = createSignal(false)
+  const authors = () => parseAuthors(props.item.authors)
   return (
     <div
       style={{
@@ -82,12 +92,14 @@ const VideoCard = (props: { item: MediaItem }) => {
         transition: "transform 0.2s, box-shadow 0.2s",
       }}
       onMouseEnter={(e) => {
+        setHover(true)
         e.currentTarget.style.transform = "translateY(-4px)"
         e.currentTarget.style.boxShadow = isDark()
           ? "0 12px 32px rgba(0,0,0,0.4)"
           : "0 12px 32px rgba(0,0,0,0.15)"
       }}
       onMouseLeave={(e) => {
+        setHover(false)
         e.currentTarget.style.transform = "translateY(0)"
         e.currentTarget.style.boxShadow = "none"
       }}
@@ -137,7 +149,7 @@ const VideoCard = (props: { item: MediaItem }) => {
             style={{
               position: "absolute",
               top: "8px",
-              right: "8px",
+              left: "8px",
               background: "rgba(0,0,0,0.7)",
               "border-radius": "6px",
               padding: "2px 6px",
@@ -147,6 +159,65 @@ const VideoCard = (props: { item: MediaItem }) => {
             }}
           >
             ⭐ {props.item.rating.toFixed(1)}
+          </div>
+        </Show>
+        {/* 悬浮详情 */}
+        <Show when={hover()}>
+          <div
+            style={{
+              position: "absolute",
+              inset: "0",
+              display: "flex",
+              "flex-direction": "column",
+              "justify-content": "flex-end",
+              gap: "5px",
+              padding: "12px",
+              background:
+                "linear-gradient(to top, rgba(0,0,0,0.94), rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.1))",
+              color: "#e2e8f0",
+              "font-size": "11px",
+              "line-height": "1.5",
+              "pointer-events": "none",
+            }}
+          >
+            <Show when={authors().length > 0}>
+              <div
+                style={{
+                  overflow: "hidden",
+                  "text-overflow": "ellipsis",
+                  "white-space": "nowrap",
+                }}
+              >
+                演员：{authors().slice(0, 4).join(" / ")}
+              </div>
+            </Show>
+            <Show when={props.item.plot || props.item.description}>
+              <div
+                style={{
+                  display: "-webkit-box",
+                  "-webkit-line-clamp": "4",
+                  "-webkit-box-orient": "vertical",
+                  overflow: "hidden",
+                  color: "rgba(226,232,240,0.8)",
+                }}
+              >
+                {props.item.plot || props.item.description}
+              </div>
+            </Show>
+            <div
+              style={{
+                color: "rgba(148,163,184,0.9)",
+                "font-size": "10px",
+              }}
+            >
+              {[
+                props.item.release_date?.slice(0, 4),
+                props.item.genre,
+                formatMediaSize(props.item.file_size),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </div>
           </div>
         </Show>
       </div>
@@ -166,11 +237,30 @@ const VideoCard = (props: { item: MediaItem }) => {
         >
           {name()}
         </div>
-        <Show when={props.item.release_date}>
-          <div style={{ color: subColor(), "font-size": "11px" }}>
-            {props.item.release_date?.slice(0, 4)}
-          </div>
-        </Show>
+        <div
+          style={{
+            color: subColor(),
+            "font-size": "11px",
+            overflow: "hidden",
+            "text-overflow": "ellipsis",
+            "white-space": "nowrap",
+          }}
+          title={[
+            props.item.release_date?.slice(0, 4),
+            props.item.genre,
+            formatMediaSize(props.item.file_size),
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        >
+          {[
+            props.item.release_date?.slice(0, 4),
+            props.item.genre?.split(",")[0],
+            formatMediaSize(props.item.file_size),
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </div>
       </div>
     </div>
   )
@@ -254,7 +344,7 @@ const VideoPlayer = (props: {
       url: actualUrl,
       title: videoTitle(),
       volume: 1.0,
-      autoplay: false,
+      autoplay: true,
       autoSize: false,
       loop: false,
       flip: true,
@@ -510,14 +600,15 @@ const VideoPlayer = (props: {
     // Artplayer 默认在媒体就绪前一直显示加载转圈；HLS 采用懒加载（点击播放才开始拉流），
     // 初始阶段必须隐藏加载层，只在真正开始缓冲/播放时显示，避免页面一打开就一直转圈。
     player.loading.show = false
-    player.on("video:play", () => {
-      if (player) player.loading.show = true
-    })
-    player.on("video:waiting", () => {
-      if (player) player.loading.show = true
-    })
+    // 不再用 Artplayer 的加载层：它会在未起播时一直转圈并挡住中间的播放按钮
     player.on("video:playing", () => {
       if (player) player.loading.show = false
+    })
+    // 部分浏览器会拦截自动播放：失败时保持暂停，用户点击中间的播放键即可
+    player.on("ready", () => {
+      player?.play().catch(() => {
+        /* autoplay blocked */
+      })
     })
     player.on("video:canplay", () => {
       if (player) player.loading.show = false
@@ -699,6 +790,34 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
   const [currentEpisode, setCurrentEpisode] = createSignal<EpisodeInfo | null>(
     null,
   )
+  const [favorite, setFavorite] = createSignal(false)
+
+  // 详情页收藏状态
+  createEffect(() => {
+    const it = item()
+    if (!it) return
+    getMediaUserData([it.id])
+      .then((resp) => {
+        if (resp.code !== 200 || !resp.data) return
+        const row = resp.data.find((d) => d.item_id === it.id)
+        setFavorite(!!row?.is_favorite)
+      })
+      .catch(() => {
+        /* 访客场景忽略 */
+      })
+  })
+
+  const toggleFavorite = async () => {
+    const it = item()
+    if (!it) return
+    const next = !favorite()
+    setFavorite(next)
+    const resp = await setMediaFavorite(it.id, next)
+    if (resp.code !== 200) {
+      setFavorite(!next)
+      notify.error("收藏失败: " + resp.message)
+    }
+  }
 
   // 下载 .strm：必须带鉴权头，因此走 axios 再触发本地保存
   const downloadStrm = async (item: MediaItem) => {
@@ -820,17 +939,61 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
 
               {/* 信息 */}
               <div style={{ flex: "1", "min-width": "280px" }}>
-                <h1
+                <div
                   style={{
-                    margin: "0 0 8px",
-                    "font-size": "28px",
-                    "font-weight": "700",
-                    color: titleColor(),
-                    "line-height": "1.2",
+                    display: "flex",
+                    "align-items": "flex-start",
+                    gap: "12px",
+                    "flex-wrap": "wrap",
+                    "margin-bottom": "8px",
                   }}
                 >
-                  {getMediaName(data())}
-                </h1>
+                  <h1
+                    style={{
+                      margin: "0",
+                      "font-size": "28px",
+                      "font-weight": "700",
+                      color: titleColor(),
+                      "line-height": "1.2",
+                    }}
+                  >
+                    {getMediaName(data())}
+                  </h1>
+                  <button
+                    onClick={toggleFavorite}
+                    title={favorite() ? "取消收藏" : "收藏"}
+                    aria-label={favorite() ? "取消收藏" : "收藏"}
+                    style={{
+                      display: "inline-flex",
+                      "align-items": "center",
+                      gap: "6px",
+                      padding: "6px 14px",
+                      "border-radius": "999px",
+                      cursor: "pointer",
+                      "font-size": "13px",
+                      "font-weight": "500",
+                      background: favorite()
+                        ? "rgba(251,191,36,0.16)"
+                        : isDark()
+                          ? "rgba(255,255,255,0.06)"
+                          : "rgba(0,0,0,0.05)",
+                      border: favorite()
+                        ? "1px solid rgba(251,191,36,0.4)"
+                        : `1px solid ${
+                            isDark()
+                              ? "rgba(255,255,255,0.12)"
+                              : "rgba(0,0,0,0.1)"
+                          }`,
+                      color: favorite()
+                        ? "#fbbf24"
+                        : isDark()
+                          ? "#cbd5e1"
+                          : "#334155",
+                    }}
+                  >
+                    {favorite() ? "★ 已收藏" : "☆ 收藏"}
+                  </button>
+                </div>
 
                 {/* 元信息行 */}
                 <div
@@ -1087,6 +1250,7 @@ const VideoLibrary = () => {
         fallback={
           <MediaBrowser
             mediaType="video"
+            enableFavorites
             onItemClick={(item) => setSelectedId(String(item.id))}
             renderCard={(item) => <VideoCard item={item} />}
             renderListRow={(item) => {
@@ -1101,18 +1265,22 @@ const VideoLibrary = () => {
                     <img
                       src={resolveMediaCover(item.cover)}
                       style={{
-                        width: "32px",
-                        height: "48px",
+                        width: "40px",
+                        height: "58px",
                         "object-fit": "cover",
                         "border-radius": "4px",
+                        "flex-shrink": "0",
                       }}
                     />
                   </Show>
-                  <div style={{ flex: "1" }}>
+                  <div style={{ flex: "1", "min-width": "0" }}>
                     <div
                       style={{
                         color: dark() ? "#e2e8f0" : "#1e293b",
                         "font-size": "14px",
+                        overflow: "hidden",
+                        "text-overflow": "ellipsis",
+                        "white-space": "nowrap",
                       }}
                     >
                       {getMediaName(item)}
@@ -1121,14 +1289,45 @@ const VideoLibrary = () => {
                       style={{
                         color: dark() ? "#475569" : "#94a3b8",
                         "font-size": "12px",
+                        overflow: "hidden",
+                        "text-overflow": "ellipsis",
+                        "white-space": "nowrap",
                       }}
                     >
-                      {item.release_date?.slice(0, 4)}{" "}
-                      {item.genre?.split(",")[0]}
+                      {[
+                        item.release_date?.slice(0, 4),
+                        item.genre?.split(",").slice(0, 2).join("/"),
+                        item.duration
+                          ? `${Math.floor(item.duration / 60)} 分钟`
+                          : "",
+                        formatMediaSize(item.file_size),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </div>
+                    <Show when={parseAuthors(item.authors).length > 0}>
+                      <div
+                        style={{
+                          color: dark() ? "#334155" : "#94a3b8",
+                          "font-size": "11px",
+                          overflow: "hidden",
+                          "text-overflow": "ellipsis",
+                          "white-space": "nowrap",
+                        }}
+                      >
+                        演员：
+                        {parseAuthors(item.authors).slice(0, 4).join(" / ")}
+                      </div>
+                    </Show>
                   </div>
                   <Show when={item.rating > 0}>
-                    <span style={{ color: "#fbbf24", "font-size": "13px" }}>
+                    <span
+                      style={{
+                        color: "#fbbf24",
+                        "font-size": "13px",
+                        "flex-shrink": "0",
+                      }}
+                    >
                       ⭐ {item.rating.toFixed(1)}
                     </span>
                   </Show>

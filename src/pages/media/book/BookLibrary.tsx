@@ -13,7 +13,7 @@ import {
 import { useColorMode } from "@hope-ui/solid"
 import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
-import { mediaBackBtn, mediaPrimaryBtn } from "../ui"
+import { formatMediaSize, mediaBackBtn, mediaPrimaryBtn } from "../ui"
 import { getMediaItem } from "~/utils/media_api"
 import type { MediaItem, EpisodeInfo } from "~/types"
 import { getMediaName, parseAuthors, parseEpisodes } from "~/types"
@@ -691,6 +691,8 @@ const BookCard = (props: { item: MediaItem }) => {
   const subColor = createMemo(() => (isDark() ? "#64748b" : "#94a3b8"))
   const badgeColor = createMemo(() => (isDark() ? "#94a3b8" : "#64748b"))
   const name = () => getMediaName(props.item)
+  const [hover, setHover] = createSignal(false)
+  const authors = () => parseAuthors(props.item.authors)
   return (
     <div
       style={{
@@ -701,12 +703,14 @@ const BookCard = (props: { item: MediaItem }) => {
         transition: "transform 0.2s, box-shadow 0.2s",
       }}
       onMouseEnter={(e) => {
+        setHover(true)
         e.currentTarget.style.transform = "translateY(-4px)"
         e.currentTarget.style.boxShadow = isDark()
           ? "0 12px 32px rgba(0,0,0,0.4)"
           : "0 12px 32px rgba(0,0,0,0.15)"
       }}
       onMouseLeave={(e) => {
+        setHover(false)
         e.currentTarget.style.transform = "translateY(0)"
         e.currentTarget.style.boxShadow = "none"
       }}
@@ -781,6 +785,54 @@ const BookCard = (props: { item: MediaItem }) => {
         >
           {props.item.file_name?.split(".").pop()}
         </div>
+        {/* 悬浮详情 */}
+        <Show when={hover()}>
+          <div
+            style={{
+              position: "absolute",
+              inset: "0",
+              display: "flex",
+              "flex-direction": "column",
+              "justify-content": "flex-end",
+              gap: "5px",
+              padding: "12px",
+              background:
+                "linear-gradient(to top, rgba(0,0,0,0.94), rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.1))",
+              color: "#e2e8f0",
+              "font-size": "11px",
+              "line-height": "1.5",
+              "pointer-events": "none",
+            }}
+          >
+            <Show when={authors().length > 0}>
+              <div>作者：{authors().slice(0, 3).join(" / ")}</div>
+            </Show>
+            <Show when={props.item.description || props.item.plot}>
+              <div
+                style={{
+                  display: "-webkit-box",
+                  "-webkit-line-clamp": "4",
+                  "-webkit-box-orient": "vertical",
+                  overflow: "hidden",
+                  color: "rgba(226,232,240,0.8)",
+                }}
+              >
+                {props.item.description || props.item.plot}
+              </div>
+            </Show>
+            <div
+              style={{ color: "rgba(148,163,184,0.9)", "font-size": "10px" }}
+            >
+              {[
+                props.item.publisher,
+                props.item.release_date?.slice(0, 4),
+                formatMediaSize(props.item.file_size),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </div>
+          </div>
+        </Show>
       </div>
       {/* 信息 */}
       <div style={{ padding: "10px 12px" }}>
@@ -798,11 +850,30 @@ const BookCard = (props: { item: MediaItem }) => {
         >
           {name()}
         </div>
-        <Show when={parseAuthors(props.item.authors).length > 0}>
-          <div style={{ color: subColor(), "font-size": "11px" }}>
-            {parseAuthors(props.item.authors)[0]}
-          </div>
-        </Show>
+        <div
+          style={{
+            color: subColor(),
+            "font-size": "11px",
+            overflow: "hidden",
+            "text-overflow": "ellipsis",
+            "white-space": "nowrap",
+          }}
+          title={[
+            authors()[0],
+            props.item.release_date?.slice(0, 4),
+            formatMediaSize(props.item.file_size),
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        >
+          {[
+            authors()[0],
+            props.item.release_date?.slice(0, 4),
+            formatMediaSize(props.item.file_size),
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </div>
       </div>
     </div>
   )
@@ -1156,11 +1227,14 @@ const BookLibrary = () => {
                       }}
                     />
                   </Show>
-                  <div style={{ flex: "1" }}>
+                  <div style={{ flex: "1", "min-width": "0" }}>
                     <div
                       style={{
                         color: dark() ? "#e2e8f0" : "#1e293b",
                         "font-size": "14px",
+                        overflow: "hidden",
+                        "text-overflow": "ellipsis",
+                        "white-space": "nowrap",
                       }}
                     >
                       {getMediaName(item)}
@@ -1169,11 +1243,31 @@ const BookLibrary = () => {
                       style={{
                         color: dark() ? "#475569" : "#94a3b8",
                         "font-size": "12px",
+                        overflow: "hidden",
+                        "text-overflow": "ellipsis",
+                        "white-space": "nowrap",
                       }}
                     >
-                      {parseAuthors(item.authors)[0]} ·{" "}
-                      {item.file_name?.split(".").pop()?.toUpperCase()}
+                      {[
+                        parseAuthors(item.authors).slice(0, 2).join(" / "),
+                        item.publisher,
+                        item.release_date?.slice(0, 4),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ") || item.file_name}
                     </div>
+                  </div>
+                  <div
+                    style={{
+                      color: dark() ? "#475569" : "#94a3b8",
+                      "font-size": "12px",
+                      "text-align": "right",
+                      "flex-shrink": "0",
+                      "line-height": "1.5",
+                    }}
+                  >
+                    <div>{formatMediaSize(item.file_size)}</div>
+                    <div>{item.file_name?.split(".").pop()?.toUpperCase()}</div>
                   </div>
                 </>
               )

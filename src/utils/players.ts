@@ -1,7 +1,10 @@
 /**
- * 本地播放器清单。
- * 模板变量：$durl = 带签名的下载直链；$edurl = URL 编码后的直链；$name = 文件名。
- * scheme 参考各播放器官方/社区协议（PotPlayer、VLC、IINA、Infuse、MX Player 等）。
+ * 外部播放器清单。
+ * 模板变量：
+ *   $durl   = 带签名的下载直链
+ *   $edurl  = URL 编码后的直链
+ *   $b64url = Base64 编码后的直链（iPlay 使用）
+ *   $name   = 文件名（已编码）
  */
 export interface ExternalPlayer {
   id: string
@@ -9,6 +12,8 @@ export interface ExternalPlayer {
   name: string
   scheme: string
   platforms: string[]
+  /** 需要条目 id（例如 Emby 深链），由 MediaPlayButton 单独处理 */
+  requiresItem?: boolean
 }
 
 export const externalPlayers: ExternalPlayer[] = [
@@ -41,6 +46,27 @@ export const externalPlayers: ExternalPlayer[] = [
     platforms: ["MacOS"],
   },
   {
+    id: "figplayer",
+    icon: "figplayer",
+    name: "Fig Player",
+    scheme: "figplayer://weblink?url=$edurl",
+    platforms: ["MacOS", "iOS"],
+  },
+  {
+    id: "omniplayer",
+    icon: "omniplayer",
+    name: "OmniPlayer",
+    scheme: "omniplayer://weblink?url=$edurl",
+    platforms: ["MacOS", "iOS"],
+  },
+  {
+    id: "vivid",
+    icon: "vivid",
+    name: "Vivid Player",
+    scheme: "vividplayer://play?url=$edurl",
+    platforms: ["Windows"],
+  },
+  {
     id: "infuse",
     icon: "infuse",
     name: "Infuse",
@@ -51,7 +77,7 @@ export const externalPlayers: ExternalPlayer[] = [
     id: "nplayer",
     icon: "nplayer",
     name: "nPlayer",
-    scheme: "nplayer://$durl",
+    scheme: "nplayer-$durl",
     platforms: ["Android", "iOS"],
   },
   {
@@ -60,6 +86,13 @@ export const externalPlayers: ExternalPlayer[] = [
     name: "Fileball",
     scheme: "filebox://play?url=$edurl",
     platforms: ["MacOS", "iOS"],
+  },
+  {
+    id: "iplay",
+    icon: "iplay",
+    name: "iPlay",
+    scheme: "iplay://play/any?type=url&url=$b64url",
+    platforms: ["Windows", "MacOS", "Android", "iOS"],
   },
   {
     id: "mxplayer",
@@ -78,11 +111,20 @@ export const externalPlayers: ExternalPlayer[] = [
     platforms: ["Android"],
   },
   {
-    id: "stellar",
-    icon: "stellar",
-    name: "恒星播放器",
-    scheme: "stellar://play/$edurl",
-    platforms: ["Windows", "MacOS", "Android"],
+    id: "android",
+    icon: "android",
+    name: "安卓系统播放器",
+    scheme:
+      "intent:$edurl#Intent;action=android.intent.action.VIEW;type=video/*;end",
+    platforms: ["Android"],
+  },
+  {
+    id: "emby",
+    icon: "emby",
+    name: "Emby",
+    scheme: "emby://items?serverId=$serverId&itemId=mv-$itemId",
+    platforms: ["Windows", "MacOS", "Linux", "Android", "iOS"],
+    requiresItem: true,
   },
 ]
 
@@ -90,14 +132,30 @@ export const externalPlayers: ExternalPlayer[] = [
 export const playersForPlatform = (platform: string) =>
   externalPlayers.filter((p) => p.platforms.includes(platform))
 
+const toBase64 = (value: string) => {
+  try {
+    return btoa(String.fromCharCode(...new TextEncoder().encode(value)))
+  } catch {
+    return btoa(value)
+  }
+}
+
 /** 渲染播放器 scheme 模板 */
 export const renderPlayerScheme = (
   scheme: string,
-  vars: { durl: string; name: string },
+  vars: {
+    durl: string
+    name: string
+    serverId?: string
+    itemId?: string | number
+  },
 ) => {
   const edurl = encodeURIComponent(vars.durl)
   return scheme
+    .replace(/\$b64url/g, toBase64(vars.durl))
     .replace(/\$edurl/g, edurl)
     .replace(/\$durl/g, vars.durl)
+    .replace(/\$serverId/g, vars.serverId ?? "")
+    .replace(/\$itemId/g, String(vars.itemId ?? ""))
     .replace(/\$name/g, encodeURIComponent(vars.name))
 }

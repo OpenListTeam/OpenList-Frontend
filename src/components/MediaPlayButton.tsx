@@ -16,9 +16,10 @@ import {
   TbDeviceTv,
   TbPlayerPlay,
 } from "solid-icons/tb"
-import { getPlatform, notify } from "~/utils"
+import { api, getPlatform, notify } from "~/utils"
 import { getMediaStreamUrl } from "~/utils/media_api"
 import { mediaPrimaryBtn } from "~/pages/media/ui"
+import { accentGradient } from "~/utils/accent"
 import { playersForPlatform, renderPlayerScheme } from "~/utils/players"
 
 const TARGET_KEY = "media-play-target"
@@ -47,7 +48,7 @@ const iconOf = (id: string) => {
 
 /**
  * 播放主按钮 + 播放器下拉二合一。
- * 默认「浏览器播放」，切换为 VLC / PotPlayer 等后，主按钮直接唤起对应播放器。
+ * 默认「浏览器播放」；切换为外部播放器后，文本固定为「播放器播放」。
  */
 export const MediaPlayButton = (props: MediaPlayButtonProps) => {
   const { colorMode } = useColorMode()
@@ -70,14 +71,12 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
   )
   const [open, setOpen] = createSignal(false)
   const [directURL, setDirectURL] = createSignal<string | null>(null)
-  let prefetching: Promise<string | null> | null = null
+  const [embyServerId, setEmbyServerId] = createSignal<string | null>(null)
+  let prefetching: Promise<unknown> | null = null
   let rootRef: HTMLDivElement | undefined
 
   const current = () => players().find((p) => p.id === target())
-  const label = () =>
-    target() === "browser"
-      ? "浏览器播放"
-      : `${current()?.name ?? "播放器"} 播放`
+  const label = () => (target() === "browser" ? "浏览器播放" : "播放器播放")
 
   const resolveURL = async (): Promise<string | null> => {
     if (props.path) {
@@ -103,22 +102,49 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
     return resp.data.url
   }
 
-  const prefetch = () => {
-    if (target() === "browser" || directURL() || prefetching) return
-    prefetching = resolveURL()
-      .then((url) => {
-        if (url) setDirectURL(url)
-        return url
-      })
-      .finally(() => {
-        prefetching = null
-      })
+  const resolveEmbyServer = async (): Promise<string | null> => {
+    if (embyServerId()) return embyServerId()
+    try {
+      const resp = await fetch(`${api}/@emby/System/Info/Public`)
+      const data = await resp.json()
+      if (data?.Id) {
+        setEmbyServerId(String(data.Id))
+        return String(data.Id)
+      }
+    } catch {
+      /* ignore */
+    }
+    return null
   }
 
-  const launch = (scheme: string, url: string) => {
+  const prefetch = () => {
+    if (target() === "browser" || prefetching) return
+    prefetching =
+      target() === "emby"
+        ? resolveEmbyServer().finally(() => {
+            prefetching = null
+          })
+        : resolveURL()
+            .then((url) => {
+              if (url) setDirectURL(url)
+              return url
+            })
+            .finally(() => {
+              prefetching = null
+            })
+  }
+
+  const launch = (
+    scheme: string,
+    url: string,
+    serverId?: string,
+    itemId?: number,
+  ) => {
     window.location.href = renderPlayerScheme(scheme, {
       durl: url,
       name: props.name ?? "media",
+      serverId,
+      itemId,
     })
   }
 
@@ -132,6 +158,27 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
       props.onBrowserPlay()
       return
     }
+
+    // Emby 走自身深链（服务器 ID + 条目 ID），不播放直链
+    if (player.id === "emby") {
+      if (!props.itemId) {
+        notify.error("缺少媒体信息")
+        return
+      }
+      const serverId = embyServerId()
+      if (serverId) {
+        launch(player.scheme, "", serverId, props.itemId)
+        return
+      }
+      const sid = await resolveEmbyServer()
+      if (!sid) {
+        notify.error("无法获取 Emby 服务器 ID")
+        return
+      }
+      launch(player.scheme, "", sid, props.itemId)
+      return
+    }
+
     const cached = directURL()
     if (cached) {
       launch(player.scheme, cached)
@@ -164,35 +211,50 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
 
   return (
     <div ref={rootRef} style={{ position: "relative", display: "inline-flex" }}>
-      <button
-        onClick={play}
-        onMouseEnter={prefetch}
-        onFocus={prefetch}
+      {/* 主按钮与下拉箭头共用一层渐变背景，视觉上是一个整体 */}
+      <div
         style={{
-          ...mediaPrimaryBtn,
-          "border-radius": "10px 0 0 10px",
-          "padding-right": "16px",
+          display: "inline-flex",
+          "border-radius": "10px",
+          overflow: "hidden",
+          background: accentGradient(),
+          "box-shadow": "0 4px 16px rgba(0,0,0,0.18)",
         }}
       >
-        <Dynamic component={iconOf(target())} size={17} />
-        {label()}
-      </button>
-      <button
-        aria-label="选择播放器"
-        title="选择播放器"
-        onClick={(e) => {
-          e.stopPropagation()
-          setOpen(!open())
-        }}
-        style={{
-          ...mediaPrimaryBtn,
-          "border-radius": "0 10px 10px 0",
-          padding: "10px 9px",
-          "border-left": "1px solid rgba(255,255,255,0.28)",
-        }}
-      >
-        <TbChevronDown size={16} />
-      </button>
+        <button
+          onClick={play}
+          onMouseEnter={prefetch}
+          onFocus={prefetch}
+          style={{
+            ...mediaPrimaryBtn,
+            background: "transparent",
+            "border-radius": "0",
+            "box-shadow": "none",
+            "padding-right": "16px",
+          }}
+        >
+          <Dynamic component={iconOf(target())} size={17} />
+          {label()}
+        </button>
+        <button
+          aria-label="选择播放器"
+          title="选择播放器"
+          onClick={(e) => {
+            e.stopPropagation()
+            setOpen(!open())
+          }}
+          style={{
+            ...mediaPrimaryBtn,
+            background: "transparent",
+            "border-radius": "0",
+            "box-shadow": "none",
+            padding: "10px 9px",
+            "border-left": "1px solid rgba(255,255,255,0.28)",
+          }}
+        >
+          <TbChevronDown size={16} />
+        </button>
+      </div>
 
       <Show when={open()}>
         <div
@@ -201,11 +263,15 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
             top: "calc(100% + 6px)",
             left: "0",
             "z-index": "1200",
-            "min-width": "190px",
+            "min-width": "200px",
+            "max-height": "340px",
+            "overflow-y": "auto",
             padding: "5px",
             "border-radius": "10px",
             background: isDark() ? "rgba(20,26,40,0.98)" : "#fff",
-            border: `1px solid ${isDark() ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"}`,
+            border: `1px solid ${
+              isDark() ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"
+            }`,
             "box-shadow": "0 12px 32px rgba(0,0,0,0.35)",
           }}
         >

@@ -188,16 +188,20 @@ export const MediaSidebar = () => {
         <Box flex="1" />
         <Divider />
         <VStack px="$2" py="$1" spacing="$1" alignItems="stretch">
-          <HStack justifyContent="space-between" alignItems="center">
+          <HStack justifyContent="space-between" alignItems="center" h="$7">
             <Text fontSize="$xs" fontWeight="$semibold" color="$neutral11">
               OpenList
             </Text>
-            <HStack spacing="$1" alignItems="center">
+            <HStack spacing="$1" alignItems="center" justifyContent="flex-end">
               <Tooltip label="GitHub Repository">
                 <Anchor
                   href="https://github.com/OpenListTeam/OpenList"
                   external
-                  display="inline-flex"
+                  w="$6"
+                  h="$6"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
                   color="$neutral11"
                   _hover={{ color: "$accent9" }}
                 >
@@ -208,7 +212,11 @@ export const MediaSidebar = () => {
                 <Anchor
                   href="https://doc.oplist.org"
                   external
-                  display="inline-flex"
+                  w="$6"
+                  h="$6"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
                   color="$neutral11"
                   _hover={{ color: "$accent9" }}
                 >
@@ -220,8 +228,10 @@ export const MediaSidebar = () => {
                   size="xs"
                   variant="ghost"
                   colorScheme="neutral"
-                  minW="0"
-                  px="$1"
+                  w="$6"
+                  h="$6"
+                  minW="$6"
+                  p="0"
                   aria-label="theme color"
                   onClick={() => setShowPalette(!showPalette())}
                 >
@@ -230,11 +240,11 @@ export const MediaSidebar = () => {
               </Tooltip>
             </HStack>
           </HStack>
-          <HStack justifyContent="space-between" alignItems="center">
+          <HStack justifyContent="space-between" alignItems="center" h="$7">
             <Text fontSize="$xs" color="$neutral11">
               v{mediaStatus().version || "dev"}
             </Text>
-            <HStack spacing="$1" alignItems="center">
+            <HStack spacing="$1" alignItems="center" justifyContent="flex-end">
               <Tooltip
                 label={colorMode() === "dark" ? "Light mode" : "Dark mode"}
               >
@@ -242,8 +252,10 @@ export const MediaSidebar = () => {
                   size="xs"
                   variant="ghost"
                   colorScheme="neutral"
-                  minW="0"
-                  px="$1"
+                  w="$6"
+                  h="$6"
+                  minW="$6"
+                  p="0"
                   aria-label="toggle color mode"
                   onClick={toggleColorMode}
                 >
@@ -262,8 +274,10 @@ export const MediaSidebar = () => {
                         variant={manageActive() ? "subtle" : "ghost"}
                         colorScheme={manageActive() ? "accent" : "neutral"}
                         size="xs"
-                        minW="0"
-                        px="$1"
+                        w="$6"
+                        h="$6"
+                        minW="$6"
+                        p="0"
                         aria-label="设置"
                         onClick={() => to("/@manage/media/settings")}
                       >
@@ -275,8 +289,10 @@ export const MediaSidebar = () => {
                         size="xs"
                         variant="ghost"
                         colorScheme="neutral"
-                        minW="0"
-                        px="$1"
+                        w="$6"
+                        h="$6"
+                        minW="$6"
+                        p="0"
                         loading={loggingOut()}
                         aria-label="退出登录"
                         onClick={logout}

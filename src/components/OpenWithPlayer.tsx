@@ -37,7 +37,9 @@ export const OpenWithPlayer = (props: OpenWithPlayerProps) => {
   // 否则 Chrome 会拦截「用户手势已丢失」的自定义 scheme 跳转。
   const [directURL, setDirectURL] = createSignal<string | null>(null)
   let prefetching: Promise<string | null> | null = null
-  const players = () => playersForPlatform(getPlatform())
+  // Emby 深链需要服务器 ID，只在主播放按钮里处理
+  const players = () =>
+    playersForPlatform(getPlatform()).filter((p) => !p.requiresItem)
 
   const resolveURL = async (): Promise<string | null> => {
     if (props.path) {

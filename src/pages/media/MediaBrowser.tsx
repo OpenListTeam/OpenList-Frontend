@@ -11,6 +11,7 @@ import {
 import { useColorMode } from "@hope-ui/solid"
 import { useSearchParams } from "@solidjs/router"
 import {
+  getMediaFavorites,
   getMediaList,
   getMediaFolders,
   getMediaScanPaths,
@@ -28,10 +29,12 @@ interface MediaBrowserProps {
   onItemsChange?: (items: MediaItem[]) => void
   renderCard: (item: MediaItem) => any
   renderListRow?: (item: MediaItem) => any
+  /** 是否显示收藏入口（星标 / 收藏 Tab） */
+  enableFavorites?: boolean
 }
 
 type ViewMode = "waterfall" | "list"
-type BrowseMode = "all" | "folder"
+type BrowseMode = "all" | "folder" | "favorites"
 type OrderBy = "name" | "date" | "size"
 type OrderDir = "asc" | "desc"
 
@@ -105,7 +108,25 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
   // URL 查询参数（持久化页码、便于浏览器前进/后退恢复浏览状态）
   const [searchParams, setSearchParams] = useSearchParams<{ page?: string }>()
 
-  const [viewMode, setViewMode] = createSignal<ViewMode>("waterfall")
+  // 视图模式按媒体类型持久化，切回页面时保持上次选择
+  const viewStorageKey = `media-view-mode-${props.mediaType}`
+  const storedView = (() => {
+    try {
+      const v = localStorage.getItem(viewStorageKey)
+      return v === "list" || v === "waterfall" ? v : "waterfall"
+    } catch {
+      return "waterfall"
+    }
+  })()
+  const [viewMode, setViewMode] = createSignal<ViewMode>(storedView)
+  const changeViewMode = (mode: ViewMode) => {
+    setViewMode(mode)
+    try {
+      localStorage.setItem(viewStorageKey, mode)
+    } catch {
+      /* ignore */
+    }
+  }
   // 列表视图右侧详情面板
   const [selected, setSelected] = createSignal<MediaItem | null>(null)
   const [favorites, setFavorites] = createSignal<Record<number, boolean>>({})
@@ -181,9 +202,10 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
     return Array.from(tags)
   })
 
-  // 加载媒体列表
-  const [mediaData] = createResource(
+  // 加载媒体列表（收藏 Tab 走收藏接口）
+  const [mediaData, { refetch: refetchMedia }] = createResource(
     () => ({
+      favorites: browseMode() === "favorites",
       media_type: props.mediaType,
       page: page(),
       page_size: pageSize,
@@ -196,7 +218,17 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
       content_tag: selectedContentTag() || undefined,
     }),
     async (params) => {
-      const resp = await getMediaList(params)
+      if (params.favorites) {
+        const resp = await getMediaFavorites(
+          props.mediaType,
+          params.page,
+          params.page_size,
+        )
+        if (resp.code === 200) return resp.data
+        return { content: [], total: 0 }
+      }
+      const { favorites: _favorites, ...query } = params
+      const resp = await getMediaList(query)
       if (resp.code === 200) return resp.data
       return { content: [], total: 0 }
     },
@@ -267,6 +299,11 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
     if (resp.code !== 200) {
       setFavorites((prev) => ({ ...prev, [item.id]: !favorite }))
       notify.error("收藏失败: " + resp.message)
+      return
+    }
+    // 在收藏 Tab 取消收藏后，立即从当前列表移除
+    if (!favorite && browseMode() === "favorites") {
+      refetchMedia()
     }
   }
 
@@ -322,13 +359,22 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
           border: `1px solid ${toolbarBorder()}`,
         }}
       >
-        {/* 浏览模式 */}
+        {/* 浏览模式：全部 / 目录 / 收藏 */}
         <div style={{ display: "flex", gap: "6px" }}>
-          {(["all", "folder"] as BrowseMode[]).map((mode) => (
+          {(
+            [
+              { mode: "all", label: "全部" },
+              { mode: "folder", label: "目录" },
+              ...(props.enableFavorites
+                ? [{ mode: "favorites", label: "收藏" }]
+                : []),
+            ] as { mode: BrowseMode; label: string }[]
+          ).map(({ mode, label }) => (
             <button
               onClick={() => {
                 setBrowseMode(mode)
                 setPage(1)
+                setSelected(null)
               }}
               style={{
                 background:
@@ -345,7 +391,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
                 cursor: "pointer",
               }}
             >
-              {mode === "all" ? "全部" : "目录"}
+              {label}
             </button>
           ))}
         </div>
@@ -470,7 +516,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
         <div style={{ display: "flex", gap: "4px" }}>
           {(["waterfall", "list"] as ViewMode[]).map((mode) => (
             <button
-              onClick={() => setViewMode(mode)}
+              onClick={() => changeViewMode(mode)}
               title={mode === "waterfall" ? "瀑布流" : "列表"}
               style={{
                 background: viewMode() === mode ? btnActiveBg : btnInactiveBg(),
@@ -601,6 +647,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
                   {(item) => (
                     <div
                       style={{
+                        position: "relative",
                         "break-inside": "avoid",
                         "margin-bottom": "16px",
                         cursor: "pointer",
@@ -608,6 +655,37 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
                       onClick={() => props.onItemClick(item)}
                     >
                       {props.renderCard(item)}
+                      <Show when={props.enableFavorites}>
+                        <button
+                          title={favorites()[item.id] ? "取消收藏" : "收藏"}
+                          aria-label={
+                            favorites()[item.id] ? "取消收藏" : "收藏"
+                          }
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleFavorite(item, !favorites()[item.id])
+                          }}
+                          style={{
+                            position: "absolute",
+                            top: "8px",
+                            right: "8px",
+                            width: "30px",
+                            height: "30px",
+                            "border-radius": "50%",
+                            border: "1px solid rgba(255,255,255,0.25)",
+                            background: "rgba(0,0,0,0.45)",
+                            color: favorites()[item.id] ? "#fbbf24" : "#e2e8f0",
+                            cursor: "pointer",
+                            display: "flex",
+                            "align-items": "center",
+                            "justify-content": "center",
+                            "font-size": "16px",
+                            "z-index": "2",
+                          }}
+                        >
+                          {favorites()[item.id] ? "★" : "☆"}
+                        </button>
+                      </Show>
                     </div>
                   )}
                 </For>
@@ -677,6 +755,33 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
                             </span>
                           </>
                         )}
+                        <Show when={props.enableFavorites}>
+                          <button
+                            title={favorites()[item.id] ? "取消收藏" : "收藏"}
+                            aria-label={
+                              favorites()[item.id] ? "取消收藏" : "收藏"
+                            }
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleFavorite(item, !favorites()[item.id])
+                            }}
+                            style={{
+                              width: "30px",
+                              height: "30px",
+                              "border-radius": "50%",
+                              border: "none",
+                              background: "transparent",
+                              color: favorites()[item.id]
+                                ? "#fbbf24"
+                                : btnInactiveColor(),
+                              cursor: "pointer",
+                              "font-size": "16px",
+                              "flex-shrink": "0",
+                            }}
+                          >
+                            {favorites()[item.id] ? "★" : "☆"}
+                          </button>
+                        </Show>
                       </div>
                     )}
                   </For>

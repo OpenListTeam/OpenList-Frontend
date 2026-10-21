@@ -1373,8 +1373,13 @@ const AlbumCard = (props: { album: AlbumInfo }) => {
             "margin-top": "2px",
           }}
         >
-          {props.album.album_artist || "未知艺术家"} · {props.album.track_count}{" "}
-          首
+          {[
+            props.album.album_artist || "未知艺术家",
+            props.album.release_date?.slice(0, 4),
+            `${props.album.track_count} 首`,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </div>
       </div>
     </div>
@@ -1655,8 +1660,25 @@ const MusicLibrary = () => {
   )
 
   const [selectedAlbum, setSelectedAlbum] = createSignal<AlbumInfo | null>(null)
-  // 卡片（专辑）/ 列表（歌曲）视图
-  const [viewMode, setViewMode] = createSignal<"card" | "list">("card")
+  // 卡片（专辑）/ 列表（歌曲）视图，持久化到浏览器
+  const MUSIC_VIEW_KEY = "media-view-mode-music"
+  const storedMusicView = (() => {
+    try {
+      const v = localStorage.getItem(MUSIC_VIEW_KEY)
+      return v === "list" || v === "card" ? v : "card"
+    } catch {
+      return "card"
+    }
+  })()
+  const [viewMode, setViewMode] = createSignal<"card" | "list">(storedMusicView)
+  const changeViewMode = (mode: "card" | "list") => {
+    setViewMode(mode)
+    try {
+      localStorage.setItem(MUSIC_VIEW_KEY, mode)
+    } catch {
+      /* ignore */
+    }
+  }
   const [selectedTrack, setSelectedTrack] = createSignal<MediaItem | null>(null)
   const [favorites, setFavorites] = createSignal<Record<number, boolean>>({})
   const [page, setPage] = createSignal(1)
@@ -1902,7 +1924,7 @@ const MusicLibrary = () => {
                 {(["card", "list"] as const).map((mode) => (
                   <button
                     onClick={() => {
-                      setViewMode(mode)
+                      changeViewMode(mode)
                       setPage(1)
                     }}
                     title={mode === "card" ? "卡片（专辑）" : "列表（歌曲）"}

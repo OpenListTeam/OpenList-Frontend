@@ -52,3 +52,16 @@ export const mediaMetaText = (isDark: boolean) => ({
   color: isDark ? "#64748b" : "#94a3b8",
   "font-size": "14px",
 })
+
+/** 媒体文件大小格式化（B/KB/MB/GB/TB） */
+export const formatMediaSize = (bytes: number) => {
+  if (!bytes) return ""
+  const units = ["B", "KB", "MB", "GB", "TB"]
+  let value = bytes
+  let i = 0
+  while (value >= 1024 && i < units.length - 1) {
+    value /= 1024
+    i++
+  }
+  return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`
+}

@@ -5,6 +5,7 @@ import { MediaBrowser } from "../MediaBrowser"
 import type { MediaItem } from "~/types"
 import { getMediaName } from "~/types"
 import { api } from "~/utils"
+import { formatMediaSize } from "../ui"
 
 // ==================== 图片预览器 ====================
 const ImageViewer = (props: {
@@ -296,9 +297,11 @@ const ImageCard = (props: { item: MediaItem }) => {
     const folder = props.item.folder_path?.replace(/\/$/, "") ?? ""
     return `${api}/p${folder}/${props.item.file_name}?force`
   }
+  const [hover, setHover] = createSignal(false)
   return (
     <div
       style={{
+        position: "relative",
         "border-radius": "8px",
         overflow: "hidden",
         border: "1px solid rgba(255,255,255,0.06)",
@@ -306,10 +309,12 @@ const ImageCard = (props: { item: MediaItem }) => {
         background: "#1e293b",
       }}
       onMouseEnter={(e) => {
+        setHover(true)
         e.currentTarget.style.transform = "scale(1.02)"
         e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.4)"
       }}
       onMouseLeave={(e) => {
+        setHover(false)
         e.currentTarget.style.transform = "scale(1)"
         e.currentTarget.style.boxShadow = "none"
       }}
@@ -324,6 +329,49 @@ const ImageCard = (props: { item: MediaItem }) => {
         }}
         loading="lazy"
       />
+      <Show when={hover()}>
+        <div
+          style={{
+            position: "absolute",
+            inset: "auto 0 0 0",
+            padding: "10px 12px",
+            background:
+              "linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0.4), transparent)",
+            color: "#e2e8f0",
+            "pointer-events": "none",
+          }}
+        >
+          <div
+            style={{
+              "font-size": "12px",
+              "font-weight": "500",
+              overflow: "hidden",
+              "text-overflow": "ellipsis",
+              "white-space": "nowrap",
+              "margin-bottom": "3px",
+            }}
+          >
+            {getMediaName(props.item)}
+          </div>
+          <div
+            style={{
+              "font-size": "10px",
+              color: "rgba(148,163,184,0.9)",
+              overflow: "hidden",
+              "text-overflow": "ellipsis",
+              "white-space": "nowrap",
+            }}
+          >
+            {[
+              props.item.release_date?.slice(0, 10),
+              formatMediaSize(props.item.file_size),
+              props.item.description,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </div>
+        </div>
+      </Show>
     </div>
   )
 }
@@ -369,16 +417,47 @@ const ImageLibrary = () => {
                 height: "48px",
                 "object-fit": "cover",
                 "border-radius": "4px",
+                "flex-shrink": "0",
               }}
               loading="lazy"
             />
-            <div style={{ flex: "1" }}>
-              <div style={{ color: "#e2e8f0", "font-size": "14px" }}>
+            <div style={{ flex: "1", "min-width": "0" }}>
+              <div
+                style={{
+                  color: "#e2e8f0",
+                  "font-size": "14px",
+                  overflow: "hidden",
+                  "text-overflow": "ellipsis",
+                  "white-space": "nowrap",
+                }}
+              >
                 {getMediaName(item)}
               </div>
-              <div style={{ color: "#475569", "font-size": "12px" }}>
-                {item.file_name}
+              <div
+                style={{
+                  color: "#64748b",
+                  "font-size": "12px",
+                  overflow: "hidden",
+                  "text-overflow": "ellipsis",
+                  "white-space": "nowrap",
+                }}
+              >
+                {[item.description, item.folder_path]
+                  .filter(Boolean)
+                  .join(" · ") || item.file_name}
               </div>
+            </div>
+            <div
+              style={{
+                color: "#475569",
+                "font-size": "12px",
+                "text-align": "right",
+                "flex-shrink": "0",
+                "line-height": "1.5",
+              }}
+            >
+              <div>{item.release_date?.slice(0, 10)}</div>
+              <div>{formatMediaSize(item.file_size)}</div>
             </div>
           </>
         )}
