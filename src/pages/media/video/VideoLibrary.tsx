@@ -721,6 +721,8 @@ const VideoPlayer = (props: {
         "flex-direction": "column",
       }}
     >
+      {/* Artplayer 自带加载层在自动播放被拦截时会一直转圈，直接隐藏 */}
+      <style>{`.art-loading { display: none !important; }`}</style>
       {/* 顶部栏 */}
       <div
         style={{
