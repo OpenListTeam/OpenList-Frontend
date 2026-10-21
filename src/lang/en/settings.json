@@ -100,6 +100,28 @@
     "meilisearch": "Meilisearch",
     "none": "None"
   },
+  "seed_auto_generate_policy": "Auto-generate seeds on upload",
+  "seed_auto_generate_policy-tips": "Global upload sidecar policy; storage-specific inheritance can be layered without changing the safe default",
+  "seed_auto_generate_policys": {
+    "off": "Off",
+    "on": "On"
+  },
+  "seed_cas_direct_access": "CAS direct access",
+  "seed_cas_direct_access-tips": "When opening a single-file CAS seed, immediately rapid-upload it into the same folder and preview the restored file",
+  "seed_default_format": "Default seed format",
+  "seed_default_formats": {
+    "cas": "CAS",
+    "oss": "OSS",
+    "torrent": "Torrent"
+  },
+  "seed_default_matrix": "Default hash matrix",
+  "seed_default_matrix-tips": "Default right-click hash matrix for transfer seed generation",
+  "seed_default_trackers": "Seed default trackers",
+  "seed_default_trackers-tips": "Default tracker list offered when generating torrent seeds (one tracker per line)",
+  "seed_format_policies": "Seed format policies",
+  "seed_single_direct_preview": "Single-file seed direct preview",
+  "seed_site_url": "Seed site URL",
+  "seed_site_url-tips": "Public base URL embedded in generated transfer seed sources when configured",
   "settings_layout": "Settings layout",
   "settings_layouts": {
     "list": "List",
@@ -138,6 +160,7 @@
   },
   "sso_oidc_username_key": "SSO oidc username key",
   "sso_organization_name": "SSO organization name",
+  "sso_postmessage_origin": "Sso postmessage origin",
   "text_types": "Text types",
   "token": "Token",
   "transmission_seedtime": "Transmission seedtime",
@@ -146,21 +169,5 @@
   "version": "Version",
   "video_autoplay": "Video autoplay",
   "video_types": "Video types",
-  "webauthn_login_enabled": "WebAuthn login enabled",
-  "seed_site_url": "Seed site URL",
-  "seed_default_matrix": "Default hash matrix",
-  "seed_format_policies": "Seed format policies",
-  "seed_default_format": "Default seed format",
-  "seed_default_formats": {
-    "oss": "OSS",
-    "torrent": "Torrent",
-    "cas": "CAS"
-  },
-  "seed_auto_generate_policy": "Auto-generate seeds on upload",
-  "seed_auto_generate_policys": {
-    "off": "Off",
-    "on": "On"
-  },
-  "seed_single_direct_preview": "Single-file seed direct preview",
-  "seed_cas_direct_access": "CAS direct access"
+  "webauthn_login_enabled": "WebAuthn login enabled"
 }
