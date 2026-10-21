@@ -266,8 +266,8 @@ export const side_menu_items: SideMenuItem[] = [
       {
         title: "manage.sidemenu.media_settings",
         icon: BsGearFill,
-        to: "/@manage/media/settings",
-        component: () => <CommonSettings group={Group.MEDIA} />,
+        // 统一跳转到媒体库设置页（媒体类型、扫描路径、STRM、协议与应用密钥）
+        to: "/@media/settings",
       },
     ],
   },
