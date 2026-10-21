@@ -27,8 +27,10 @@ import {
   TbCheck,
   TbChevronLeft,
   TbFolder,
+  TbLogin,
   TbLogout,
   TbMoon,
+  TbSettings,
   TbMovie,
   TbMusic,
   TbPalette,
@@ -43,7 +45,6 @@ import {
   resetAccentColor,
   setAccentColor,
 } from "~/store/accent"
-import { AiOutlineCloudServer } from "solid-icons/ai"
 import { Component } from "solid-js"
 
 interface NavEntry {
@@ -252,50 +253,71 @@ export const MediaSidebar = () => {
                   />
                 </Button>
               </Tooltip>
-              <Show when={UserMethods.is_admin(me())}>
-                <Tooltip label={t("home.media.nav_manage")}>
-                  <Button
-                    variant={manageActive() ? "subtle" : "ghost"}
-                    colorScheme={manageActive() ? "accent" : "neutral"}
-                    size="xs"
-                    minW="0"
-                    px="$1"
-                    aria-label={t("home.media.nav_manage")}
-                    onClick={() => to("/@manage/media")}
-                  >
-                    <Icon as={AiOutlineCloudServer} boxSize="$4" />
-                  </Button>
-                </Tooltip>
-              </Show>
-              <Show when={!UserMethods.is_guest(me())}>
-                <Tooltip label="Sign out">
+              <Show
+                when={UserMethods.is_guest(me())}
+                fallback={
+                  <>
+                    <Tooltip label="设置">
+                      <Button
+                        variant={manageActive() ? "subtle" : "ghost"}
+                        colorScheme={manageActive() ? "accent" : "neutral"}
+                        size="xs"
+                        minW="0"
+                        px="$1"
+                        aria-label="设置"
+                        onClick={() => to("/@manage/media/settings")}
+                      >
+                        <Icon as={TbSettings} boxSize="$4" />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip label="退出登录">
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        colorScheme="neutral"
+                        minW="0"
+                        px="$1"
+                        loading={loggingOut()}
+                        aria-label="退出登录"
+                        onClick={logout}
+                      >
+                        <Icon as={TbLogout} boxSize="$4" />
+                      </Button>
+                    </Tooltip>
+                  </>
+                }
+              >
+                <Tooltip label="登录">
                   <Button
                     size="xs"
                     variant="ghost"
                     colorScheme="neutral"
                     minW="0"
                     px="$1"
-                    loading={loggingOut()}
-                    aria-label="Sign out"
-                    onClick={logout}
+                    aria-label="登录"
+                    onClick={() =>
+                      to(
+                        `/@login?redirect=${encodeURIComponent(location.pathname)}`,
+                      )
+                    }
                   >
-                    <Icon as={TbLogout} boxSize="$4" />
+                    <Icon as={TbLogin} boxSize="$4" />
+                  </Button>
+                </Tooltip>
+                <Tooltip label="设置">
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    colorScheme="neutral"
+                    minW="0"
+                    px="$1"
+                    aria-label="设置"
+                    onClick={() => to("/@manage/media/settings")}
+                  >
+                    <Icon as={TbSettings} boxSize="$4" />
                   </Button>
                 </Tooltip>
               </Show>
-              <Tooltip label="Collapse sidebar">
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  colorScheme="neutral"
-                  minW="0"
-                  px="$1"
-                  aria-label="collapse media sidebar"
-                  onClick={() => setMediaSidebarOpen(false)}
-                >
-                  <Icon as={TbChevronLeft} boxSize="$4" />
-                </Button>
-              </Tooltip>
             </HStack>
           </HStack>
         </VStack>

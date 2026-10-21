@@ -8,6 +8,7 @@ import {
   For,
   onCleanup,
   createEffect,
+  onMount,
 } from "solid-js"
 import { useColorMode } from "@hope-ui/solid"
 import { Dynamic } from "solid-js/web"
@@ -44,6 +45,7 @@ import type { MediaItem, AlbumInfo } from "~/types"
 import { getMediaName, parseAuthors, formatDuration } from "~/types"
 import { api, notify } from "~/utils"
 import { OpenWithPlayer } from "~/components/OpenWithPlayer"
+import { mediaEnabled, mediaSidebarOpen } from "~/store/media"
 
 type BrowseMode = "all" | "folder"
 type OrderBy = "name" | "date" | "size"
@@ -824,6 +826,18 @@ export const MusicPlayer = () => {
     return s.playlist[s.currentIndex]
   }
 
+  // 底部播放器只占右侧内容区：桌面端且侧栏展开时让出 216px
+  const [isDesktop, setIsDesktop] = createSignal(true)
+  onMount(() => {
+    const mq = window.matchMedia("(min-width: 768px)")
+    const update = () => setIsDesktop(mq.matches)
+    update()
+    mq.addEventListener("change", update)
+    onCleanup(() => mq.removeEventListener("change", update))
+  })
+  const barLeft = () =>
+    mediaEnabled() && mediaSidebarOpen() && isDesktop() ? "216px" : "0"
+
   // ===== 底栏滚动歌词：复用 parseLRC，外部 .lrc 优先于内嵌歌词 =====
   // 仅在歌词文本变化时才重新解析（依赖 currentIndex / externalLyrics / 当前 item.lyrics）
   const miniLyricLines = createMemo(() => {
@@ -896,7 +910,7 @@ export const MusicPlayer = () => {
           style={{
             position: "fixed",
             bottom: "0",
-            left: "0",
+            left: barLeft(),
             right: "0",
             "z-index": "150",
             background: "rgba(10,14,26,0.96)",

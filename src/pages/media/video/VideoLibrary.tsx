@@ -12,12 +12,7 @@ import {
 import { useColorMode } from "@hope-ui/solid"
 import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
-import {
-  mediaBackBtn,
-  mediaChip,
-  mediaPrimaryBtn,
-  mediaSecondaryBtn,
-} from "../ui"
+import { mediaBackBtn, mediaChip, mediaSecondaryBtn } from "../ui"
 import {
   downloadMediaStrm,
   getMediaItem,
@@ -29,6 +24,7 @@ import type { MediaItem, EpisodeInfo } from "~/types"
 import { getMediaName, parseAuthors, parseEpisodes } from "~/types"
 import { api, base_path, ext, notify } from "~/utils"
 import { OpenWithPlayer } from "~/components/OpenWithPlayer"
+import { MediaPlayButton } from "~/components/MediaPlayButton"
 import Artplayer from "artplayer"
 import artplayerProxyMediabunny from "~/components/artplayer-proxy-mediabunny"
 import { attachMediabunnyAudio } from "~/components/artplayer-proxy-mediabunny/AudioPatch"
@@ -944,18 +940,13 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                       "margin-bottom": "24px",
                     }}
                   >
-                    <button
-                      onClick={() => {
+                    <MediaPlayButton
+                      itemId={data().id}
+                      name={data().file_name}
+                      onBrowserPlay={() => {
                         setCurrentEpisode(null)
                         setShowPlayer(true)
                       }}
-                      style={mediaPrimaryBtn}
-                    >
-                      ▶ 立即播放
-                    </button>
-                    <OpenWithPlayer
-                      itemId={data().id}
-                      name={data().file_name}
                     />
                     <button
                       onClick={() => downloadStrm(data())}
