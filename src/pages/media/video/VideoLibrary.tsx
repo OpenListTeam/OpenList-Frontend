@@ -82,6 +82,12 @@ const VideoCard = (props: { item: MediaItem }) => {
   const name = () => getMediaName(props.item)
   const [hover, setHover] = createSignal(false)
   const authors = () => parseAuthors(props.item.authors)
+  // 目录聚合条目没有有意义的单文件大小，改为显示集数
+  const episodeCount = () => parseEpisodes(props.item.episodes).length
+  const sizeText = () =>
+    episodeCount() > 0
+      ? `${episodeCount()} 集`
+      : formatMediaSize(props.item.file_size)
   return (
     <div
       style={{
@@ -213,7 +219,7 @@ const VideoCard = (props: { item: MediaItem }) => {
               {[
                 props.item.release_date?.slice(0, 4),
                 props.item.genre,
-                formatMediaSize(props.item.file_size),
+                sizeText(),
               ]
                 .filter(Boolean)
                 .join(" · ")}
@@ -248,7 +254,7 @@ const VideoCard = (props: { item: MediaItem }) => {
           title={[
             props.item.release_date?.slice(0, 4),
             props.item.genre,
-            formatMediaSize(props.item.file_size),
+            sizeText(),
           ]
             .filter(Boolean)
             .join(" · ")}
@@ -256,7 +262,7 @@ const VideoCard = (props: { item: MediaItem }) => {
           {[
             props.item.release_date?.slice(0, 4),
             props.item.genre?.split(",")[0],
-            formatMediaSize(props.item.file_size),
+            sizeText(),
           ]
             .filter(Boolean)
             .join(" · ")}
@@ -1302,7 +1308,9 @@ const VideoLibrary = () => {
                         item.duration
                           ? `${Math.floor(item.duration / 60)} 分钟`
                           : "",
-                        formatMediaSize(item.file_size),
+                        parseEpisodes(item.episodes).length > 0
+                          ? `${parseEpisodes(item.episodes).length} 集`
+                          : formatMediaSize(item.file_size),
                       ]
                         .filter(Boolean)
                         .join(" · ")}
