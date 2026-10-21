@@ -5,6 +5,7 @@
   HStack,
   Icon,
   Text,
+  Tooltip,
   VStack,
 } from "@hope-ui/solid"
 import { For, Show, createMemo } from "solid-js"
@@ -84,16 +85,10 @@ export const MediaSidebar = () => {
         match: (p) => p.startsWith("/@media/books"),
       })
     }
-    if (UserMethods.is_admin(me())) {
-      list.push({
-        label: t("home.media.nav_manage"),
-        path: "/@manage/media",
-        icon: AiOutlineCloudServer,
-        match: (p) => p.startsWith("/@manage/media"),
-      })
-    }
     return list
   })
+  // 管理入口固定在侧栏底部（仅管理员可见）
+  const manageActive = createMemo(() => pathname().startsWith("/@manage/media"))
 
   return (
     <Box
@@ -110,46 +105,63 @@ export const MediaSidebar = () => {
       py="$3"
       px="$2"
     >
-      <HStack
-        px="$2"
-        pb="$2"
-        justifyContent="space-between"
-        alignItems="center"
-      >
-        <Text fontWeight="$semibold" fontSize="$sm" color="$neutral11">
-          {t("home.media.title")}
-        </Text>
-        <Button
-          size="xs"
-          variant="ghost"
-          colorScheme="neutral"
-          px="$1"
-          minW="0"
-          aria-label="collapse media sidebar"
-          onClick={() => setMediaSidebarOpen(false)}
+      <VStack h="$full" spacing="$2" alignItems="stretch">
+        <HStack
+          px="$2"
+          pb="$2"
+          justifyContent="space-between"
+          alignItems="center"
         >
-          <Icon as={TbChevronLeft} boxSize="$4" />
-        </Button>
-      </HStack>
-      <Divider mb="$2" />
-      <VStack spacing="$1" alignItems="stretch">
-        <For each={items()}>
-          {(item) => {
-            const active = createMemo(() => item.match(pathname()))
-            return (
-              <Button
-                variant={active() ? "subtle" : "ghost"}
-                colorScheme={active() ? "accent" : "neutral"}
-                justifyContent="flex-start"
-                size="sm"
-                leftIcon={<Icon as={item.icon} boxSize="$5" />}
-                onClick={() => to(item.path)}
-              >
-                {item.label}
-              </Button>
-            )
-          }}
-        </For>
+          <Text fontWeight="$semibold" fontSize="$sm" color="$neutral11">
+            {t("home.media.title")}
+          </Text>
+          <Button
+            size="xs"
+            variant="ghost"
+            colorScheme="neutral"
+            px="$1"
+            minW="0"
+            aria-label="collapse media sidebar"
+            onClick={() => setMediaSidebarOpen(false)}
+          >
+            <Icon as={TbChevronLeft} boxSize="$4" />
+          </Button>
+        </HStack>
+        <Divider />
+        <VStack spacing="$1" alignItems="stretch">
+          <For each={items()}>
+            {(item) => {
+              const active = createMemo(() => item.match(pathname()))
+              return (
+                <Button
+                  variant={active() ? "subtle" : "ghost"}
+                  colorScheme={active() ? "accent" : "neutral"}
+                  justifyContent="flex-start"
+                  size="sm"
+                  leftIcon={<Icon as={item.icon} boxSize="$5" />}
+                  onClick={() => to(item.path)}
+                >
+                  {item.label}
+                </Button>
+              )
+            }}
+          </For>
+        </VStack>
+        <Box flex="1" />
+        <Show when={UserMethods.is_admin(me())}>
+          <Divider />
+          <Tooltip label={t("home.media.nav_manage")} placement="right">
+            <Button
+              variant={manageActive() ? "subtle" : "ghost"}
+              colorScheme={manageActive() ? "accent" : "neutral"}
+              size="sm"
+              aria-label={t("home.media.nav_manage")}
+              onClick={() => to("/@manage/media")}
+            >
+              <Icon as={AiOutlineCloudServer} boxSize="$5" />
+            </Button>
+          </Tooltip>
+        </Show>
       </VStack>
     </Box>
   )
