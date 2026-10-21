@@ -1,4 +1,10 @@
-import { Box, HStack, Progress, ProgressIndicator } from "@hope-ui/solid"
+import {
+  Box,
+  HStack,
+  Progress,
+  ProgressIndicator,
+  useColorMode,
+} from "@hope-ui/solid"
 import { Route, Routes, useIsRouting } from "@solidjs/router"
 import {
   Component,
@@ -53,7 +59,8 @@ const ImageLibrary = lazy(() => import("~/pages/media/image/ImageLibrary"))
 const BookLibrary = lazy(() => import("~/pages/media/book/BookLibrary"))
 
 const App: Component = () => {
-  initAccent()
+  const { colorMode } = useColorMode()
+  initAccent(colorMode() === "dark")
   const t = useT()
   globalStyles()
   initPluginEngine()
@@ -141,11 +148,13 @@ const App: Component = () => {
   })
 
   // 登录 / 初始化页使用系统默认配色，不跟随媒体主题色
+  // 明暗模式各有一套色阶，切换配色模式时重新写入
   createEffect(() => {
+    const dark = colorMode() === "dark"
     if (pathname().startsWith("/@login") || pathname().startsWith("/@init")) {
       clearAccentPalette()
     } else {
-      applyAccentPalette(accent())
+      applyAccentPalette(accent(), dark)
     }
   })
 

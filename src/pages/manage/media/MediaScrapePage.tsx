@@ -9,6 +9,7 @@ const SCRAPE_KEYS = [
   "media_tmdb_api_url",
   "media_discogs_token",
   "media_discogs_api_url",
+  "media_scrape_language",
   "media_book_source",
   "media_google_books_key",
   "media_download_cover",

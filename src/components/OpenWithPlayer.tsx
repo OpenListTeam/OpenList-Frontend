@@ -33,6 +33,10 @@ interface OpenWithPlayerProps {
  */
 export const OpenWithPlayer = (props: OpenWithPlayerProps) => {
   const [loading, setLoading] = createSignal(false)
+  // 提前换取直链：外部协议必须在用户手势内同步触发，
+  // 否则 Chrome 会拦截「用户手势已丢失」的自定义 scheme 跳转。
+  const [directURL, setDirectURL] = createSignal<string | null>(null)
+  let prefetching: Promise<string | null> | null = null
   const players = () => playersForPlatform(getPlatform())
 
   const resolveURL = async (): Promise<string | null> => {
@@ -59,15 +63,39 @@ export const OpenWithPlayer = (props: OpenWithPlayerProps) => {
     return resp.data.url
   }
 
+  // 悬浮 / 点击触发器时预取直链，保证真正选择播放器时能同步跳转
+  const prefetch = () => {
+    if (directURL() || prefetching) return
+    prefetching = resolveURL()
+      .then((url) => {
+        if (url) setDirectURL(url)
+        return url
+      })
+      .finally(() => {
+        prefetching = null
+      })
+  }
+
+  const launch = (scheme: string, url: string) => {
+    window.location.href = renderPlayerScheme(scheme, {
+      durl: url,
+      name: props.name ?? "media",
+    })
+  }
+
   const open = async (scheme: string) => {
+    const cached = directURL()
+    if (cached) {
+      // 手势仍在：同步触发外部协议
+      launch(scheme, cached)
+      return
+    }
     setLoading(true)
     try {
       const url = await resolveURL()
       if (!url) return
-      window.location.href = renderPlayerScheme(scheme, {
-        durl: url,
-        name: props.name ?? "media",
-      })
+      setDirectURL(url)
+      launch(scheme, url)
     } finally {
       setLoading(false)
     }
@@ -95,6 +123,9 @@ export const OpenWithPlayer = (props: OpenWithPlayerProps) => {
         variant={props.variant ?? "subtle"}
         colorScheme="neutral"
         loading={loading()}
+        onMouseEnter={prefetch}
+        onFocus={prefetch}
+        onClick={prefetch}
         rightIcon={<Icon as={FaSolidAngleDown} />}
         style={
           props.dark

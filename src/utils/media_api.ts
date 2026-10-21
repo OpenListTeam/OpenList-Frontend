@@ -251,6 +251,13 @@ export const saveMediaProgress = (payload: {
   played?: boolean
 }) => r.post("/fs/media/progress", payload) as Promise<Resp<MediaUserData>>
 
+/** 下载条目的 .strm 文件（走鉴权请求，避免 <a> 直链丢掉 Authorization 头） */
+export const downloadMediaStrm = (itemId: number, episode = 0) =>
+  r.get("/fs/media/strm", {
+    params: { id: itemId, episode },
+    responseType: "blob",
+  }) as Promise<Blob>
+
 export const setMediaFavorite = (
   itemId: number,
   favorite: boolean,

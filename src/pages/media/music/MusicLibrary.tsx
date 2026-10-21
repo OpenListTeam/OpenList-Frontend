@@ -27,17 +27,22 @@ import {
   TbX,
 } from "solid-icons/tb"
 import { MediaLayout } from "../MediaLayout"
+import { MediaItemDetail } from "../MediaItemDetail"
+import { mediaBackBtn, mediaPrimaryBtn } from "../ui"
 import {
   getAlbumList,
   getAlbumTracks,
   getMediaItem,
   getMediaFolders,
+  getMediaList,
   getMediaProgress,
+  getMediaUserData,
   saveMediaProgress,
+  setMediaFavorite,
 } from "~/utils/media_api"
 import type { MediaItem, AlbumInfo } from "~/types"
 import { getMediaName, parseAuthors, formatDuration } from "~/types"
-import { api } from "~/utils"
+import { api, notify } from "~/utils"
 import { OpenWithPlayer } from "~/components/OpenWithPlayer"
 
 type BrowseMode = "all" | "folder"
@@ -256,6 +261,48 @@ const LyricsPage = () => {
   }
 
   let lyricsContainerRef: HTMLDivElement | undefined
+  // 歌词自由滚动：手动滚动后暂停自动跟随，8 秒后或点击按钮恢复
+  const [autoScroll, setAutoScroll] = createSignal(true)
+  const lineRefs: HTMLDivElement[] = []
+  let resumeTimer: ReturnType<typeof setTimeout> | undefined
+
+  const resumeAutoScroll = () => {
+    setAutoScroll(true)
+    if (resumeTimer) {
+      clearTimeout(resumeTimer)
+      resumeTimer = undefined
+    }
+  }
+
+  const pauseAutoScroll = () => {
+    setAutoScroll(false)
+    if (resumeTimer) clearTimeout(resumeTimer)
+    resumeTimer = setTimeout(() => setAutoScroll(true), 8000)
+  }
+
+  // 仅在「当前行」真正变化时才滚动，避免 timeupdate 触发重复滚动
+  const activeLyricIndex = createMemo(() => currentLyricIndex())
+
+  createEffect(() => {
+    const idx = activeLyricIndex()
+    const container = lyricsContainerRef
+    if (!autoScroll() || !container) return
+    const el = lineRefs[idx]
+    if (!el) return
+    const containerRect = container.getBoundingClientRect()
+    const elRect = el.getBoundingClientRect()
+    const top =
+      elRect.top -
+      containerRect.top +
+      container.scrollTop -
+      container.clientHeight / 2 +
+      elRect.height / 2
+    container.scrollTo({ top, behavior: "smooth" })
+  })
+
+  onCleanup(() => {
+    if (resumeTimer) clearTimeout(resumeTimer)
+  })
 
   const loopIcon = () => {
     switch (playerState().loopMode) {
@@ -627,114 +674,122 @@ const LyricsPage = () => {
               </div>
             }
           >
-            <div
-              ref={lyricsContainerRef}
-              style={{
-                flex: "1",
-                overflow: "hidden",
-                position: "relative",
-              }}
-            >
-              {/* 顶部渐变遮罩 */}
+            <div style={{ position: "relative", flex: "1", "min-height": "0" }}>
               <div
+                ref={lyricsContainerRef}
+                onWheel={pauseAutoScroll}
+                onTouchMove={pauseAutoScroll}
                 style={{
-                  position: "absolute",
-                  top: "0",
-                  left: "0",
-                  right: "0",
-                  height: "80px",
-                  background:
-                    "linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)",
-                  "z-index": "2",
-                  "pointer-events": "none",
-                }}
-              />
-              {/* 底部渐变遮罩 */}
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "0",
-                  left: "0",
-                  right: "0",
-                  height: "120px",
-                  background:
-                    "linear-gradient(to top, rgba(0,0,0,0.6), transparent)",
-                  "z-index": "2",
-                  "pointer-events": "none",
-                }}
-              />
-              <div
-                style={{
-                  transition:
-                    "transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-                  transform: `translateY(calc(38vh - ${currentLyricIndex() * 52 + 26}px))`,
-                  "padding-top": "20px",
-                  display: "flex",
-                  "flex-direction": "column",
-                  "align-items": "center",
-                  width: "100%",
+                  height: "100%",
+                  "overflow-y": "auto",
+                  "overflow-x": "hidden",
+                  "scroll-behavior": "smooth",
+                  "padding-top": "36vh",
+                  "padding-bottom": "40vh",
+                  "scrollbar-width": "none",
                 }}
               >
-                <For each={lyrics()}>
-                  {(line, i) => (
-                    <div
-                      onClick={() => seekTo(line.time)}
-                      title="点击跳转到此处"
-                      style={{
-                        height: "52px",
-                        display: "flex",
-                        "align-items": "center",
-                        gap: "12px",
-                        cursor: "pointer",
-                        "max-width": "100%",
-                        "padding-left": "8px",
-                        "font-size":
-                          i() === currentLyricIndex() ? "22px" : "16px",
-                        "font-weight":
-                          i() === currentLyricIndex() ? "700" : "400",
-                        color:
-                          i() === currentLyricIndex()
-                            ? "white"
-                            : Math.abs(i() - currentLyricIndex()) === 1
-                              ? "rgba(255,255,255,0.45)"
-                              : Math.abs(i() - currentLyricIndex()) === 2
-                                ? "rgba(255,255,255,0.25)"
-                                : "rgba(255,255,255,0.12)",
-                        transition:
-                          "all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-                        "letter-spacing":
-                          i() === currentLyricIndex() ? "0.02em" : "0",
-                        "text-shadow":
-                          i() === currentLyricIndex()
-                            ? "0 0 30px rgba(24,144,255,0.6)"
-                            : "none",
-                      }}
-                    >
-                      <span>{line.text}</span>
-                      <Show when={i() === currentLyricIndex()}>
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            "align-items": "center",
-                            gap: "4px",
-                            padding: "2px 10px",
-                            "border-radius": "999px",
-                            border: "1px solid rgba(255,255,255,0.45)",
-                            color: "rgba(255,255,255,0.85)",
-                            "font-size": "11px",
-                            "font-weight": "500",
-                            "flex-shrink": "0",
-                            "font-variant-numeric": "tabular-nums",
-                          }}
-                        >
-                          <TbPlayerPlayFilled size={9} />
-                          {formatDuration(Math.floor(line.time))}
-                        </span>
-                      </Show>
-                    </div>
-                  )}
-                </For>
+                <div
+                  style={{
+                    display: "flex",
+                    "flex-direction": "column",
+                    "align-items": "center",
+                    width: "100%",
+                  }}
+                >
+                  <For each={lyrics()}>
+                    {(line, i) => (
+                      <div
+                        ref={(el: HTMLDivElement) => {
+                          lineRefs[i()] = el
+                        }}
+                        onClick={() => {
+                          seekTo(line.time)
+                          resumeAutoScroll()
+                        }}
+                        title="点击跳转到此处"
+                        style={{
+                          "min-height": "52px",
+                          display: "flex",
+                          "align-items": "center",
+                          "justify-content": "center",
+                          gap: "12px",
+                          cursor: "pointer",
+                          "max-width": "100%",
+                          padding: "4px 8px",
+                          "text-align": "center",
+                          "font-size":
+                            i() === currentLyricIndex() ? "22px" : "16px",
+                          "font-weight":
+                            i() === currentLyricIndex() ? "700" : "400",
+                          color:
+                            i() === currentLyricIndex()
+                              ? "white"
+                              : Math.abs(i() - currentLyricIndex()) === 1
+                                ? "rgba(255,255,255,0.45)"
+                                : Math.abs(i() - currentLyricIndex()) === 2
+                                  ? "rgba(255,255,255,0.25)"
+                                  : "rgba(255,255,255,0.12)",
+                          transition:
+                            "all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                          "letter-spacing":
+                            i() === currentLyricIndex() ? "0.02em" : "0",
+                          "text-shadow":
+                            i() === currentLyricIndex()
+                              ? "0 0 30px rgba(24,144,255,0.6)"
+                              : "none",
+                        }}
+                      >
+                        <span>{line.text}</span>
+                        <Show when={i() === currentLyricIndex()}>
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              "align-items": "center",
+                              gap: "4px",
+                              padding: "2px 10px",
+                              "border-radius": "999px",
+                              border: "1px solid rgba(255,255,255,0.45)",
+                              color: "rgba(255,255,255,0.85)",
+                              "font-size": "11px",
+                              "font-weight": "500",
+                              "flex-shrink": "0",
+                              "font-variant-numeric": "tabular-nums",
+                            }}
+                          >
+                            <TbPlayerPlayFilled size={9} />
+                            {formatDuration(Math.floor(line.time))}
+                          </span>
+                        </Show>
+                      </div>
+                    )}
+                  </For>
+                </div>
               </div>
+
+              {/* 手动滚动时暂停自动跟随，可一键回到当前行 */}
+              <Show when={!autoScroll()}>
+                <button
+                  onClick={resumeAutoScroll}
+                  style={{
+                    position: "absolute",
+                    bottom: "12px",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    background: "rgba(255,255,255,0.14)",
+                    border: "1px solid rgba(255,255,255,0.25)",
+                    color: "white",
+                    "border-radius": "999px",
+                    padding: "6px 16px",
+                    "font-size": "12px",
+                    cursor: "pointer",
+                    "backdrop-filter": "blur(10px)",
+                    "z-index": "3",
+                  }}
+                >
+                  回到当前歌词
+                </button>
+              </Show>
             </div>
           </Show>
         </div>
@@ -1316,13 +1371,6 @@ const AlbumCard = (props: { album: AlbumInfo }) => {
 const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
   const { colorMode } = useColorMode()
   const isDark = createMemo(() => colorMode() === "dark")
-  const backBtnBg = createMemo(() =>
-    isDark() ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
-  )
-  const backBtnBorder = createMemo(() =>
-    isDark() ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.12)",
-  )
-  const backBtnColor = createMemo(() => (isDark() ? "#94a3b8" : "#64748b"))
   const labelColor = createMemo(() => (isDark() ? "#64748b" : "#94a3b8"))
   const titleColor = createMemo(() => (isDark() ? "#f1f5f9" : "#0f172a"))
   const artistColor = createMemo(() => (isDark() ? "#94a3b8" : "#475569"))
@@ -1353,19 +1401,7 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
 
   return (
     <div>
-      <button
-        onClick={props.onBack}
-        style={{
-          background: backBtnBg(),
-          border: `1px solid ${backBtnBorder()}`,
-          "border-radius": "8px",
-          color: backBtnColor(),
-          padding: "8px 16px",
-          cursor: "pointer",
-          "font-size": "13px",
-          "margin-bottom": "24px",
-        }}
-      >
+      <button onClick={props.onBack} style={mediaBackBtn(isDark())}>
         ← 返回
       </button>
 
@@ -1452,19 +1488,7 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
               const t = tracks()
               if (t && t.length > 0) playPlaylist(t, 0)
             }}
-            style={{
-              background: accentGradient(),
-              border: "none",
-              "border-radius": "10px",
-              color: "white",
-              padding: "10px 24px",
-              "font-size": "14px",
-              "font-weight": "600",
-              cursor: "pointer",
-              display: "flex",
-              "align-items": "center",
-              gap: "8px",
-            }}
+            style={mediaPrimaryBtn}
           >
             <TbPlayerPlayFilled size={14} />
             播放全部
@@ -1617,6 +1641,10 @@ const MusicLibrary = () => {
   )
 
   const [selectedAlbum, setSelectedAlbum] = createSignal<AlbumInfo | null>(null)
+  // 卡片（专辑）/ 列表（歌曲）视图
+  const [viewMode, setViewMode] = createSignal<"card" | "list">("card")
+  const [selectedTrack, setSelectedTrack] = createSignal<MediaItem | null>(null)
+  const [favorites, setFavorites] = createSignal<Record<number, boolean>>({})
   const [page, setPage] = createSignal(1)
   const [keyword, setKeyword] = createSignal("")
   const [browseMode, setBrowseMode] = createSignal<BrowseMode>("all")
@@ -1652,9 +1680,79 @@ const MusicLibrary = () => {
     },
   )
 
+  // 列表视图：直接拉取歌曲条目，展示专辑 / 作者 / 类型 / 年代
+  const [trackData] = createResource(
+    () =>
+      viewMode() === "list"
+        ? {
+            page: page(),
+            page_size: pageSize,
+            keyword: keyword() || undefined,
+            order_by: orderBy(),
+            order_dir: orderDir(),
+            folder_path:
+              browseMode() === "folder" ? selectedFolder() : undefined,
+          }
+        : null,
+    async (params) => {
+      if (!params) return { content: [], total: 0 }
+      const resp = await getMediaList({ media_type: "music", ...params })
+      if (resp.code === 200) return resp.data
+      return { content: [], total: 0 }
+    },
+  )
+
   const albums = () => (albumData()?.content as AlbumInfo[]) ?? []
-  const total = () => albumData()?.total ?? 0
+  const tracks = () => (trackData()?.content as MediaItem[]) ?? []
+  const total = () =>
+    (viewMode() === "list" ? trackData()?.total : albumData()?.total) ?? 0
   const totalPages = () => Math.ceil(total() / pageSize)
+
+  // 批量拉取收藏状态
+  createEffect(() => {
+    const list = tracks()
+    const ids = list.map((item) => item.id)
+    if (ids.length === 0) {
+      setFavorites({})
+      return
+    }
+    getMediaUserData(ids)
+      .then((resp) => {
+        if (resp.code !== 200 || !resp.data) return
+        const map: Record<number, boolean> = {}
+        resp.data.forEach((row) => {
+          map[row.item_id] = row.is_favorite
+        })
+        setFavorites(map)
+      })
+      .catch(() => {
+        /* 忽略访客场景 */
+      })
+  })
+
+  // 列表视图保持有选中项
+  createEffect(() => {
+    const list = tracks()
+    const current = selectedTrack()
+    if (viewMode() !== "list" || list.length === 0) {
+      if (current && !list.some((item) => item.id === current.id)) {
+        setSelectedTrack(null)
+      }
+      return
+    }
+    if (!current || !list.some((item) => item.id === current.id)) {
+      setSelectedTrack(list[0])
+    }
+  })
+
+  const toggleFavorite = async (item: MediaItem, favorite: boolean) => {
+    setFavorites((prev) => ({ ...prev, [item.id]: favorite }))
+    const resp = await setMediaFavorite(item.id, favorite)
+    if (resp.code !== 200) {
+      setFavorites((prev) => ({ ...prev, [item.id]: !favorite }))
+      notify.error("收藏失败: " + resp.message)
+    }
+  }
 
   const toggleOrder = (col: OrderBy) => {
     if (orderBy() === col) {
@@ -1784,6 +1882,37 @@ const MusicLibrary = () => {
                   width: "180px",
                 }}
               />
+
+              {/* 视图切换：卡片（专辑）/ 列表（歌曲） */}
+              <div style={{ display: "flex", gap: "4px" }}>
+                {(["card", "list"] as const).map((mode) => (
+                  <button
+                    onClick={() => {
+                      setViewMode(mode)
+                      setPage(1)
+                    }}
+                    title={mode === "card" ? "卡片（专辑）" : "列表（歌曲）"}
+                    style={{
+                      background:
+                        viewMode() === mode ? btnActiveBg : "transparent",
+                      border:
+                        viewMode() === mode
+                          ? `1px solid ${btnActiveBorder}`
+                          : `1px solid ${btnInactiveBorder()}`,
+                      "border-radius": "6px",
+                      color:
+                        viewMode() === mode
+                          ? btnActiveColor
+                          : btnInactiveColor(),
+                      padding: "5px 8px",
+                      "font-size": "14px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {mode === "card" ? "⊞" : "☰"}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* 目录浏览模式 - 文件夹列表 */}
@@ -1852,26 +1981,10 @@ const MusicLibrary = () => {
               </div>
             </Show>
 
-            {/* 专辑瀑布流 */}
-            <Show
-              when={!albumData.loading}
-              fallback={
-                <div
-                  style={{
-                    "text-align": "center",
-                    padding: "60px",
-                    color: emptyColor(),
-                  }}
-                >
-                  <div style={{ "font-size": "32px", "margin-bottom": "12px" }}>
-                    ⏳
-                  </div>
-                  <div>加载中...</div>
-                </div>
-              }
-            >
+            {/* 卡片视图：专辑 */}
+            <Show when={viewMode() === "card"}>
               <Show
-                when={albums().length > 0}
+                when={!albumData.loading}
                 fallback={
                   <div
                     style={{
@@ -1880,29 +1993,245 @@ const MusicLibrary = () => {
                       color: emptyColor(),
                     }}
                   >
-                    <div style={{ "margin-bottom": "12px" }}>
-                      <TbMusic size={48} style={{ opacity: 0.5 }} />
+                    <div
+                      style={{ "font-size": "32px", "margin-bottom": "12px" }}
+                    >
+                      ⏳
                     </div>
-                    <div>暂无音乐</div>
+                    <div>加载中...</div>
                   </div>
                 }
               >
-                <div style={{ columns: "5 160px", "column-gap": "16px" }}>
-                  <For each={albums()}>
-                    {(album) => (
-                      <div
-                        style={{
-                          "break-inside": "avoid",
-                          "margin-bottom": "16px",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => setSelectedAlbum(album)}
-                      >
-                        <AlbumCard album={album} />
+                <Show
+                  when={albums().length > 0}
+                  fallback={
+                    <div
+                      style={{
+                        "text-align": "center",
+                        padding: "60px",
+                        color: emptyColor(),
+                      }}
+                    >
+                      <div style={{ "margin-bottom": "12px" }}>
+                        <TbMusic size={48} style={{ opacity: 0.5 }} />
                       </div>
-                    )}
-                  </For>
-                </div>
+                      <div>暂无音乐</div>
+                    </div>
+                  }
+                >
+                  <div style={{ columns: "5 160px", "column-gap": "16px" }}>
+                    <For each={albums()}>
+                      {(album) => (
+                        <div
+                          style={{
+                            "break-inside": "avoid",
+                            "margin-bottom": "16px",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => setSelectedAlbum(album)}
+                        >
+                          <AlbumCard album={album} />
+                        </div>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+              </Show>
+            </Show>
+
+            {/* 列表视图：歌曲 + 右侧详情 */}
+            <Show when={viewMode() === "list"}>
+              <style>{`
+                .music-list-layout {
+                  display: grid;
+                  grid-template-columns: minmax(0, 1fr) 320px;
+                  gap: 16px;
+                  align-items: start;
+                }
+                @media (max-width: 1100px) {
+                  .music-list-layout { grid-template-columns: minmax(0, 1fr); }
+                  .music-list-detail { display: none; }
+                }
+              `}</style>
+              <Show
+                when={!trackData.loading}
+                fallback={
+                  <div
+                    style={{
+                      "text-align": "center",
+                      padding: "60px",
+                      color: emptyColor(),
+                    }}
+                  >
+                    <div
+                      style={{ "font-size": "32px", "margin-bottom": "12px" }}
+                    >
+                      ⏳
+                    </div>
+                    <div>加载中...</div>
+                  </div>
+                }
+              >
+                <Show
+                  when={tracks().length > 0}
+                  fallback={
+                    <div
+                      style={{
+                        "text-align": "center",
+                        padding: "60px",
+                        color: emptyColor(),
+                      }}
+                    >
+                      <div style={{ "margin-bottom": "12px" }}>
+                        <TbMusic size={48} style={{ opacity: 0.5 }} />
+                      </div>
+                      <div>暂无音乐</div>
+                    </div>
+                  }
+                >
+                  <div class="music-list-layout">
+                    <div
+                      style={{
+                        display: "flex",
+                        "flex-direction": "column",
+                        gap: "4px",
+                      }}
+                    >
+                      <For each={tracks()}>
+                        {(track) => (
+                          <div
+                            onClick={() => setSelectedTrack(track)}
+                            onDblClick={() => playTrack(track)}
+                            title="单击查看详情，双击播放"
+                            style={{
+                              display: "flex",
+                              "align-items": "center",
+                              gap: "12px",
+                              padding: "8px 12px",
+                              "border-radius": "8px",
+                              cursor: "pointer",
+                              background:
+                                selectedTrack()?.id === track.id
+                                  ? isDark()
+                                    ? "rgba(24,144,255,0.16)"
+                                    : "rgba(24,144,255,0.08)"
+                                  : isDark()
+                                    ? "rgba(255,255,255,0.03)"
+                                    : "rgba(0,0,0,0.02)",
+                              border:
+                                selectedTrack()?.id === track.id
+                                  ? `1px solid ${btnActiveBorder}`
+                                  : `1px solid ${
+                                      isDark()
+                                        ? "rgba(255,255,255,0.05)"
+                                        : "rgba(0,0,0,0.06)"
+                                    }`,
+                            }}
+                          >
+                            <Show
+                              when={track.cover}
+                              fallback={
+                                <div
+                                  style={{
+                                    width: "40px",
+                                    height: "40px",
+                                    "border-radius": "6px",
+                                    background: accentGradient(),
+                                    display: "flex",
+                                    "align-items": "center",
+                                    "justify-content": "center",
+                                    "flex-shrink": "0",
+                                    color: "white",
+                                  }}
+                                >
+                                  <TbMusic size={18} />
+                                </div>
+                              }
+                            >
+                              <img
+                                src={resolveMediaCover(track.cover)}
+                                alt={getMediaName(track)}
+                                loading="lazy"
+                                style={{
+                                  width: "40px",
+                                  height: "40px",
+                                  "border-radius": "6px",
+                                  "object-fit": "cover",
+                                  "flex-shrink": "0",
+                                }}
+                              />
+                            </Show>
+                            <div style={{ flex: "1", "min-width": "0" }}>
+                              <div
+                                style={{
+                                  color: isDark() ? "#e2e8f0" : "#1e293b",
+                                  "font-size": "14px",
+                                  overflow: "hidden",
+                                  "text-overflow": "ellipsis",
+                                  "white-space": "nowrap",
+                                }}
+                              >
+                                {getMediaName(track)}
+                              </div>
+                              <div
+                                style={{
+                                  color: isDark() ? "#64748b" : "#94a3b8",
+                                  "font-size": "12px",
+                                  overflow: "hidden",
+                                  "text-overflow": "ellipsis",
+                                  "white-space": "nowrap",
+                                }}
+                              >
+                                {[track.album_name, track.album_artist]
+                                  .filter(Boolean)
+                                  .join(" · ") || "未知专辑"}
+                              </div>
+                            </div>
+                            <div
+                              style={{
+                                color: isDark() ? "#64748b" : "#94a3b8",
+                                "font-size": "12px",
+                                "text-align": "right",
+                                "flex-shrink": "0",
+                              }}
+                            >
+                              <div>
+                                {[track.genre, track.release_date?.slice(0, 4)]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </div>
+                              <div>{formatDuration(track.duration)}</div>
+                            </div>
+                            <Show when={favorites()[track.id]}>
+                              <span
+                                style={{
+                                  color: "#fbbf24",
+                                  "font-size": "13px",
+                                  "flex-shrink": "0",
+                                }}
+                              >
+                                ★
+                              </span>
+                            </Show>
+                          </div>
+                        )}
+                      </For>
+                    </div>
+                    <Show when={selectedTrack()}>
+                      {(track) => (
+                        <div class="music-list-detail">
+                          <MediaItemDetail
+                            item={track()}
+                            favorite={!!favorites()[track().id]}
+                            onToggleFavorite={toggleFavorite}
+                            onOpen={(item) => playTrack(item)}
+                            openLabel="播放"
+                          />
+                        </div>
+                      )}
+                    </Show>
+                  </div>
+                </Show>
               </Show>
             </Show>
 

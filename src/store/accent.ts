@@ -114,46 +114,65 @@ export const shiftLightness = (hex: string, delta: number): string => {
  * Build a 12-step palette around the base color using HSL lightness steps,
  * so hover/active/subtle states stay clean instead of turning muddy.
  */
-const buildPalette = (base: string): Record<string, string> => {
+/**
+ * 按明暗模式生成 12 级色板。
+ * hope-ui 的暗色变量挂在 body.hope-ui-dark 上，会覆盖 html 上的内联变量，
+ * 因此暗色模式需要单独生成一套方向相反（深→亮）的色阶，否则配色看起来「没生效」。
+ */
+const buildPalette = (base: string, dark: boolean): Record<string, string> => {
   const [h, s, l] = hexToHsl(base)
   const sat = Math.max(s, 0.55)
   const baseL = clamp(l, 0.38, 0.56)
-  const step = (lightness: number, satMul = 1) =>
-    hslToHex(h, clamp(sat * satMul, 0.2, 1), lightness)
+  const entries: Record<string, string> = {}
+  const put = (index: number, color: string) => {
+    entries[`accent${index}`] = color
+    entries[`info${index}`] = color
+  }
 
-  // Steps 1-8: soft tints that descend into the solid color smoothly.
+  if (dark) {
+    // 暗色：1-8 由近黑逐级提亮（背景/边框），9 实心，10 hover，11 文本，12 高对比文本
+    const lows = [0.12, 0.15, 0.19, 0.23, 0.27, 0.31, 0.36, 0.42]
+    lows.forEach((lightness, i) => {
+      const saturation = clamp(sat * (0.4 + 0.06 * i), 0.15, 1)
+      put(i + 1, hslToHex(h, saturation, lightness))
+    })
+    const solid = hslToHex(h, sat, clamp(baseL, 0.45, 0.58))
+    const hover = hslToHex(h, sat, clamp(baseL + 0.05))
+    const text = hslToHex(h, Math.min(sat, 0.9), 0.72)
+    const contrast = hslToHex(h, Math.min(sat, 0.75), 0.92)
+    ;[solid, hover, text, contrast].forEach((color, i) => put(i + 9, color))
+    return entries
+  }
+
+  // 亮色：1-8 由近白逐级加深（背景/边框），9 实心，10 hover，11 文本，12 高对比文本
   const top = 0.965
   const bottom = Math.min(0.72, Math.max(0.5, baseL + 0.07))
-  const scale = Array.from({ length: 8 }, (_, i) => {
+  Array.from({ length: 8 }, (_, i) => {
     const lightness = top - ((top - bottom) * i) / 7
-    const saturation = 0.78 + 0.03 * i
-    return step(lightness, saturation)
+    const saturation = clamp(sat * (0.78 + 0.03 * i), 0.2, 1)
+    put(i + 1, hslToHex(h, saturation, lightness))
   })
   const solid = hslToHex(h, sat, baseL)
   const hover = hslToHex(h, sat, clamp(baseL - 0.04))
-  const active = hslToHex(h, sat, clamp(baseL - 0.08))
-  const emphasis = hslToHex(h, sat, clamp(baseL - 0.14))
-
-  const entries: Record<string, string> = {}
-  scale.forEach((color, i) => {
-    entries[`accent${i + 1}`] = color
-    entries[`info${i + 1}`] = color
-  })
-  const rest = [solid, hover, active, emphasis]
-  rest.forEach((color, i) => {
-    entries[`accent${i + 9}`] = color
-    entries[`info${i + 9}`] = color
-  })
+  const text = hslToHex(h, sat, clamp(baseL - 0.18))
+  const contrast = hslToHex(h, sat, clamp(baseL - 0.26))
+  ;[solid, hover, text, contrast].forEach((color, i) => put(i + 9, color))
   return entries
 }
 
+const isDarkMode = () =>
+  typeof document !== "undefined" &&
+  document.body.classList.contains("hope-ui-dark")
+
 /** Write the palette to CSS variables so hope-ui components update live. */
-export const applyAccentPalette = (color: string) => {
+export const applyAccentPalette = (color: string, dark = isDarkMode()) => {
   if (typeof document === "undefined") return
-  const palette = buildPalette(color)
-  const root = document.documentElement
-  Object.entries(palette).forEach(([key, value]) => {
-    root.style.setProperty(`--hope-colors-${key}`, value)
+  const palette = buildPalette(color, dark)
+  // 同时写入 html 与 body：body 上的内联变量优先级高于 .hope-ui-dark 的暗色变量
+  ;[document.documentElement, document.body].forEach((el) => {
+    Object.entries(palette).forEach(([key, value]) => {
+      el.style.setProperty(`--hope-colors-${key}`, value)
+    })
   })
 }
 
@@ -165,10 +184,11 @@ const PALETTE_KEYS = [
 /** Remove inline overrides so the original theme palette (e.g. login page) is used. */
 export const clearAccentPalette = () => {
   if (typeof document === "undefined") return
-  const root = document.documentElement
-  PALETTE_KEYS.forEach((key) =>
-    root.style.removeProperty(`--hope-colors-${key}`),
-  )
+  ;[document.documentElement, document.body].forEach((el) => {
+    PALETTE_KEYS.forEach((key) =>
+      el.style.removeProperty(`--hope-colors-${key}`),
+    )
+  })
 }
 
 /** Set and persist the accent color. */
@@ -194,6 +214,6 @@ export const resetAccentColor = () => {
 }
 
 /** Apply the saved accent on startup. */
-export const initAccent = () => {
-  applyAccentPalette(stored || getMainColor())
+export const initAccent = (dark = isDarkMode()) => {
+  applyAccentPalette(stored || getMainColor(), dark)
 }

@@ -14,9 +14,13 @@ import {
   getMediaList,
   getMediaFolders,
   getMediaScanPaths,
+  getMediaUserData,
+  setMediaFavorite,
 } from "~/utils/media_api"
+import { notify } from "~/utils"
 import type { MediaItem, MediaType, MediaScanPath } from "~/types"
 import { getMediaName } from "~/types"
+import { MediaItemDetail } from "./MediaItemDetail"
 
 interface MediaBrowserProps {
   mediaType: MediaType
@@ -102,6 +106,9 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
   const [searchParams, setSearchParams] = useSearchParams<{ page?: string }>()
 
   const [viewMode, setViewMode] = createSignal<ViewMode>("waterfall")
+  // 列表视图右侧详情面板
+  const [selected, setSelected] = createSignal<MediaItem | null>(null)
+  const [favorites, setFavorites] = createSignal<Record<number, boolean>>({})
   const [browseMode, setBrowseMode] = createSignal<BrowseMode>("all")
   const [orderBy, setOrderBy] = createSignal<OrderBy>("name")
   const [orderDir, setOrderDir] = createSignal<OrderDir>("asc")
@@ -215,6 +222,53 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
     const list = items()
     if (list.length > 0) props.onItemsChange?.(list)
   })
+
+  // 批量拉取当前页条目的收藏状态
+  createEffect(() => {
+    const list = items()
+    const ids = list.map((item) => item.id)
+    if (ids.length === 0) {
+      setFavorites({})
+      return
+    }
+    getMediaUserData(ids)
+      .then((resp) => {
+        if (resp.code !== 200 || !resp.data) return
+        const map: Record<number, boolean> = {}
+        resp.data.forEach((row) => {
+          map[row.item_id] = row.is_favorite
+        })
+        setFavorites(map)
+      })
+      .catch(() => {
+        /* 访客或未登录时忽略 */
+      })
+  })
+
+  // 列表视图下保持有选中项，并跟随分页 / 筛选更新
+  createEffect(() => {
+    const list = items()
+    const current = selected()
+    if (viewMode() !== "list" || list.length === 0) {
+      if (current && !list.some((item) => item.id === current.id)) {
+        setSelected(null)
+      }
+      return
+    }
+    if (!current || !list.some((item) => item.id === current.id)) {
+      setSelected(list[0])
+    }
+  })
+
+  const toggleFavorite = async (item: MediaItem, favorite: boolean) => {
+    // 乐观更新，失败时回滚
+    setFavorites((prev) => ({ ...prev, [item.id]: favorite }))
+    const resp = await setMediaFavorite(item.id, favorite)
+    if (resp.code !== 200) {
+      setFavorites((prev) => ({ ...prev, [item.id]: !favorite }))
+      notify.error("收藏失败: " + resp.message)
+    }
+  }
 
   const toggleOrder = (col: OrderBy) => {
     if (orderBy() === col) {
@@ -560,49 +614,85 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
               </div>
             </Match>
 
-            {/* 列表视图 */}
+            {/* 列表视图：左侧列表 + 右侧详情 */}
             <Match when={viewMode() === "list"}>
-              <div
-                style={{
-                  display: "flex",
-                  "flex-direction": "column",
-                  gap: "4px",
-                }}
-              >
-                <For each={items()}>
+              <style>{`
+                .media-list-layout {
+                  display: grid;
+                  grid-template-columns: minmax(0, 1fr) 320px;
+                  gap: 16px;
+                  align-items: start;
+                }
+                @media (max-width: 1100px) {
+                  .media-list-layout { grid-template-columns: minmax(0, 1fr); }
+                  .media-list-detail { display: none; }
+                }
+              `}</style>
+              <div class="media-list-layout">
+                <div
+                  style={{
+                    display: "flex",
+                    "flex-direction": "column",
+                    gap: "4px",
+                  }}
+                >
+                  <For each={items()}>
+                    {(item) => (
+                      <div
+                        onClick={() => setSelected(item)}
+                        onDblClick={() => props.onItemClick(item)}
+                        title="单击查看详情，双击打开"
+                        style={{
+                          display: "flex",
+                          "align-items": "center",
+                          gap: "12px",
+                          padding: "10px 16px",
+                          background:
+                            selected()?.id === item.id
+                              ? isDark()
+                                ? "rgba(99,102,241,0.16)"
+                                : "rgba(99,102,241,0.08)"
+                              : listItemBg(),
+                          "border-radius": "8px",
+                          border:
+                            selected()?.id === item.id
+                              ? `1px solid ${btnActiveBorder}`
+                              : `1px solid ${listItemBorder()}`,
+                          cursor: "pointer",
+                          transition: "background 0.15s",
+                        }}
+                      >
+                        {props.renderListRow ? (
+                          props.renderListRow(item)
+                        ) : (
+                          <>
+                            <span style={{ "font-size": "20px" }}>🎬</span>
+                            <span
+                              style={{
+                                color: listItemTextColor(),
+                                "font-size": "14px",
+                              }}
+                            >
+                              {getMediaName(item)}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </For>
+                </div>
+                <Show when={selected()}>
                   {(item) => (
-                    <div
-                      onClick={() => props.onItemClick(item)}
-                      style={{
-                        display: "flex",
-                        "align-items": "center",
-                        gap: "12px",
-                        padding: "10px 16px",
-                        background: listItemBg(),
-                        "border-radius": "8px",
-                        border: `1px solid ${listItemBorder()}`,
-                        cursor: "pointer",
-                        transition: "background 0.15s",
-                      }}
-                    >
-                      {props.renderListRow ? (
-                        props.renderListRow(item)
-                      ) : (
-                        <>
-                          <span style={{ "font-size": "20px" }}>🎬</span>
-                          <span
-                            style={{
-                              color: listItemTextColor(),
-                              "font-size": "14px",
-                            }}
-                          >
-                            {getMediaName(item)}
-                          </span>
-                        </>
-                      )}
+                    <div class="media-list-detail">
+                      <MediaItemDetail
+                        item={item()}
+                        favorite={!!favorites()[item().id]}
+                        onToggleFavorite={toggleFavorite}
+                        onOpen={props.onItemClick}
+                      />
                     </div>
                   )}
-                </For>
+                </Show>
               </div>
             </Match>
           </Switch>

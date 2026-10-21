@@ -13,6 +13,13 @@ import { useColorMode } from "@hope-ui/solid"
 import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
 import {
+  mediaBackBtn,
+  mediaChip,
+  mediaPrimaryBtn,
+  mediaSecondaryBtn,
+} from "../ui"
+import {
+  downloadMediaStrm,
   getMediaItem,
   getMediaProgress,
   requestTranscodePlay,
@@ -20,7 +27,7 @@ import {
 } from "~/utils/media_api"
 import type { MediaItem, EpisodeInfo } from "~/types"
 import { getMediaName, parseAuthors, parseEpisodes } from "~/types"
-import { api, base_path, ext } from "~/utils"
+import { api, base_path, ext, notify } from "~/utils"
 import { OpenWithPlayer } from "~/components/OpenWithPlayer"
 import Artplayer from "artplayer"
 import artplayerProxyMediabunny from "~/components/artplayer-proxy-mediabunny"
@@ -697,19 +704,29 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
     null,
   )
 
-  const backBtnBg = createMemo(() =>
-    isDark() ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
-  )
-  const backBtnBorder = createMemo(() =>
-    isDark() ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.12)",
-  )
-  const backBtnColor = createMemo(() => (isDark() ? "#94a3b8" : "#64748b"))
+  // 下载 .strm：必须带鉴权头，因此走 axios 再触发本地保存
+  const downloadStrm = async (item: MediaItem) => {
+    const episode = currentEpisode()?.index ?? 0
+    const blob = await downloadMediaStrm(item.id, episode)
+    if (!(blob instanceof Blob)) {
+      notify.error("下载 STRM 失败")
+      return
+    }
+    const suffix = episode
+      ? ` S${String(item.season || 1).padStart(2, "0")}E${String(episode).padStart(2, "0")}`
+      : ""
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `${getMediaName(item)}${suffix}.strm`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }
+
   const titleColor = createMemo(() => (isDark() ? "#f1f5f9" : "#0f172a"))
   const metaColor = createMemo(() => (isDark() ? "#64748b" : "#94a3b8"))
-  const genreBg = createMemo(() =>
-    isDark() ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
-  )
-  const genreColor = createMemo(() => (isDark() ? "#94a3b8" : "#64748b"))
   const authorColor = createMemo(() => (isDark() ? "#94a3b8" : "#475569"))
   const authorLabelColor = createMemo(() => (isDark() ? "#64748b" : "#94a3b8"))
   const plotTitleColor = createMemo(() => (isDark() ? "#94a3b8" : "#64748b"))
@@ -741,22 +758,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
         return (
           <div>
             {/* 返回按鈕 */}
-            <button
-              onClick={props.onBack}
-              style={{
-                background: backBtnBg(),
-                border: `1px solid ${backBtnBorder()}`,
-                "border-radius": "8px",
-                color: backBtnColor(),
-                padding: "8px 16px",
-                cursor: "pointer",
-                "font-size": "13px",
-                "margin-bottom": "24px",
-                display: "flex",
-                "align-items": "center",
-                gap: "6px",
-              }}
-            >
+            <button onClick={props.onBack} style={mediaBackBtn(isDark())}>
               ← 返回
             </button>
 
@@ -891,19 +893,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                     }}
                   >
                     <For each={genres()}>
-                      {(g) => (
-                        <span
-                          style={{
-                            background: genreBg(),
-                            "border-radius": "6px",
-                            padding: "3px 10px",
-                            color: genreColor(),
-                            "font-size": "12px",
-                          }}
-                        >
-                          {g}
-                        </span>
-                      )}
+                      {(g) => <span style={mediaChip(isDark())}>{g}</span>}
                     </For>
                   </div>
                 </Show>
@@ -959,20 +949,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                         setCurrentEpisode(null)
                         setShowPlayer(true)
                       }}
-                      style={{
-                        background: accentGradient(),
-                        border: "none",
-                        "border-radius": "10px",
-                        color: "white",
-                        padding: "12px 28px",
-                        "font-size": "15px",
-                        "font-weight": "600",
-                        cursor: "pointer",
-                        display: "flex",
-                        "align-items": "center",
-                        gap: "8px",
-                        "box-shadow": "0 4px 16px rgba(24,144,255,0.4)",
-                      }}
+                      style={mediaPrimaryBtn}
                     >
                       ▶ 立即播放
                     </button>
@@ -980,17 +957,12 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                       itemId={data().id}
                       name={data().file_name}
                     />
-                    <a
-                      href={`${api}/fs/media/strm?id=${data().id}`}
-                      style={{
-                        color: "inherit",
-                        opacity: 0.75,
-                        "font-size": "13px",
-                        "text-decoration": "underline",
-                      }}
+                    <button
+                      onClick={() => downloadStrm(data())}
+                      style={mediaSecondaryBtn(isDark())}
                     >
                       下载 STRM
-                    </a>
+                    </button>
                   </div>
                 </Show>
 

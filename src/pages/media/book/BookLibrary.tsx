@@ -13,6 +13,7 @@ import {
 import { useColorMode } from "@hope-ui/solid"
 import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
+import { mediaBackBtn, mediaPrimaryBtn } from "../ui"
 import { getMediaItem } from "~/utils/media_api"
 import type { MediaItem, EpisodeInfo } from "~/types"
 import { getMediaName, parseAuthors, parseEpisodes } from "~/types"
@@ -649,16 +650,7 @@ const BookReader = (props: {
             <a
               href={downloadUrl()}
               download={fileNameForExt()}
-              style={{
-                background: accentGradient(),
-                border: "none",
-                "border-radius": "10px",
-                color: "white",
-                padding: "10px 24px",
-                "font-size": "14px",
-                "text-decoration": "none",
-                cursor: "pointer",
-              }}
+              style={{ ...mediaPrimaryBtn, "text-decoration": "none" }}
             >
               ⬇ 下载文件
             </a>
@@ -820,13 +812,6 @@ const BookCard = (props: { item: MediaItem }) => {
 const BookDetail = (props: { id: string; onBack: () => void }) => {
   const { colorMode } = useColorMode()
   const isDark = createMemo(() => colorMode() === "dark")
-  const backBtnBg = createMemo(() =>
-    isDark() ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
-  )
-  const backBtnBorder = createMemo(() =>
-    isDark() ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.12)",
-  )
-  const backBtnColor = createMemo(() => (isDark() ? "#94a3b8" : "#64748b"))
   const titleColor = createMemo(() => (isDark() ? "#f1f5f9" : "#0f172a"))
   const metaColor = createMemo(() => (isDark() ? "#94a3b8" : "#475569"))
   const subMetaColor = createMemo(() => (isDark() ? "#64748b" : "#94a3b8"))
@@ -888,19 +873,7 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
             />
           </Show>
 
-          <button
-            onClick={props.onBack}
-            style={{
-              background: backBtnBg(),
-              border: `1px solid ${backBtnBorder()}`,
-              "border-radius": "8px",
-              color: backBtnColor(),
-              padding: "8px 16px",
-              cursor: "pointer",
-              "font-size": "13px",
-              "margin-bottom": "24px",
-            }}
-          >
+          <button onClick={props.onBack} style={mediaBackBtn(isDark())}>
             ← 返回
           </button>
 
