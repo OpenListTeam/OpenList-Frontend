@@ -148,6 +148,14 @@
   "video_types": "Video types",
   "media_tmdb_key": "TMDB API Key",
   "media_discogs_token": "Discogs Token",
+  "media_book_source": "Book metadata source",
+  "media_book_sources": {
+    "douban": "Douban",
+    "google": "Google Books",
+    "openlibrary": "OpenLibrary"
+  },
+  "media_google_books_key": "Google Books API Key",
+  "media_download_cover": "Download remote covers to local storage",
   "media_store_thumbnail": "Store thumbnail",
   "media_thumbnail_mode": "Thumbnail storage mode",
   "media_thumbnail_modes": {

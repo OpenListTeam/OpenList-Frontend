@@ -9,6 +9,20 @@ import {
   createEffect,
 } from "solid-js"
 import { useColorMode } from "@hope-ui/solid"
+import { Dynamic } from "solid-js/web"
+import {
+  TbArrowRight,
+  TbArrowsShuffle,
+  TbMusic,
+  TbPlayerPauseFilled,
+  TbPlayerPlayFilled,
+  TbPlayerSkipBackFilled,
+  TbPlayerSkipForwardFilled,
+  TbRepeat,
+  TbRepeatOnce,
+  TbVolume,
+  TbVolumeOff,
+} from "solid-icons/tb"
 import { MediaLayout } from "../MediaLayout"
 import {
   getAlbumList,
@@ -42,7 +56,7 @@ export const [playerState, setPlayerState] = createSignal<{
   playing: false,
   currentTime: 0,
   duration: 0,
-  volume: 0.8,
+  volume: 0.2,
   loopMode: "all",
   showLyrics: false,
   externalLyrics: "",
@@ -184,6 +198,26 @@ const LyricsPage = () => {
 
   let lyricsContainerRef: HTMLDivElement | undefined
 
+  const loopIcon = () => {
+    switch (playerState().loopMode) {
+      case "all":
+        return TbRepeat
+      case "one":
+        return TbRepeatOnce
+      case "shuffle":
+        return TbArrowsShuffle
+      default:
+        return TbArrowRight
+    }
+  }
+
+  // 点击歌词跳转到对应时间
+  const seekTo = (time: number) => {
+    const audio = initAudio()
+    audio.currentTime = time
+    setPlayerState((s) => ({ ...s, currentTime: time }))
+  }
+
   return (
     <div
       style={{
@@ -324,10 +358,9 @@ const LyricsPage = () => {
                       display: "flex",
                       "align-items": "center",
                       "justify-content": "center",
-                      "font-size": "72px",
                     }}
                   >
-                    🎵
+                    <TbMusic size={72} style={{ opacity: 0.85 }} />
                   </div>
                 }
               >
@@ -451,17 +484,10 @@ const LyricsPage = () => {
               style={lyricsCtrlBtn}
               title="切换循环模式"
             >
-              {
-                (
-                  { none: "➡️", all: "🔁", one: "🔂", shuffle: "🔀" } as Record<
-                    string,
-                    string
-                  >
-                )[playerState().loopMode]
-              }
+              <Dynamic component={loopIcon()} size={18} />
             </button>
-            <button onClick={playPrev} style={lyricsCtrlBtn}>
-              ⏮
+            <button onClick={playPrev} style={lyricsCtrlBtn} title="上一首">
+              <TbPlayerSkipBackFilled size={18} />
             </button>
             <button
               onClick={togglePlay}
@@ -481,10 +507,17 @@ const LyricsPage = () => {
                 transition: "transform 0.15s, box-shadow 0.15s",
               }}
             >
-              {playerState().playing ? "⏸" : "▶"}
+              <Dynamic
+                component={
+                  playerState().playing
+                    ? TbPlayerPauseFilled
+                    : TbPlayerPlayFilled
+                }
+                size={22}
+              />
             </button>
-            <button onClick={playNext} style={lyricsCtrlBtn}>
-              ⏭
+            <button onClick={playNext} style={lyricsCtrlBtn} title="下一首">
+              <TbPlayerSkipForwardFilled size={18} />
             </button>
             <div style={{ width: "32px" }} />
           </div>
@@ -515,7 +548,7 @@ const LyricsPage = () => {
                   gap: "12px",
                 }}
               >
-                <span style={{ "font-size": "40px" }}>🎵</span>
+                <TbMusic size={40} style={{ opacity: 0.6 }} />
                 <span>暂无歌词</span>
               </div>
             }
@@ -567,10 +600,14 @@ const LyricsPage = () => {
                 <For each={lyrics()}>
                   {(line, i) => (
                     <div
+                      onClick={() => seekTo(line.time)}
+                      title="点击跳转到此处"
                       style={{
                         height: "52px",
                         display: "flex",
                         "align-items": "center",
+                        gap: "12px",
+                        cursor: "pointer",
                         "padding-left": "8px",
                         "font-size":
                           i() === currentLyricIndex() ? "22px" : "16px",
@@ -594,7 +631,27 @@ const LyricsPage = () => {
                             : "none",
                       }}
                     >
-                      {line.text}
+                      <span>{line.text}</span>
+                      <Show when={i() === currentLyricIndex()}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            "align-items": "center",
+                            gap: "4px",
+                            padding: "2px 10px",
+                            "border-radius": "999px",
+                            border: "1px solid rgba(255,255,255,0.45)",
+                            color: "rgba(255,255,255,0.85)",
+                            "font-size": "11px",
+                            "font-weight": "500",
+                            "flex-shrink": "0",
+                            "font-variant-numeric": "tabular-nums",
+                          }}
+                        >
+                          <TbPlayerPlayFilled size={9} />
+                          {formatDuration(Math.floor(line.time))}
+                        </span>
+                      </Show>
                     </div>
                   )}
                 </For>
@@ -681,13 +738,18 @@ export const MusicPlayer = () => {
     setPlayerState((s) => ({ ...s, loopMode: modes[(cur + 1) % modes.length] }))
   }
 
-  const loopLabel = () =>
-    (
-      ({ none: "➡️", all: "🔁", one: "🔂", shuffle: "🔀" }) as Record<
-        string,
-        string
-      >
-    )[playerState().loopMode]
+  const loopIcon = () => {
+    switch (playerState().loopMode) {
+      case "all":
+        return TbRepeat
+      case "one":
+        return TbRepeatOnce
+      case "shuffle":
+        return TbArrowsShuffle
+      default:
+        return TbArrowRight
+    }
+  }
 
   return (
     <>
@@ -775,7 +837,10 @@ export const MusicPlayer = () => {
                   "box-shadow": "0 2px 12px rgba(99,102,241,0.3)",
                 }}
               >
-                <Show when={currentItem()?.cover} fallback={<span>🎵</span>}>
+                <Show
+                  when={currentItem()?.cover}
+                  fallback={<TbMusic size={22} style={{ opacity: 0.8 }} />}
+                >
                   <img
                     src={resolveMediaCover(currentItem()?.cover)}
                     style={{
@@ -850,7 +915,14 @@ export const MusicPlayer = () => {
                       "text-overflow": "ellipsis",
                     }}
                   >
-                    🎵 暂无歌词
+                    <TbMusic
+                      size={13}
+                      style={{
+                        "vertical-align": "-2px",
+                        "margin-right": "4px",
+                      }}
+                    />
+                    暂无歌词
                   </div>
                 }
               >
@@ -899,7 +971,7 @@ export const MusicPlayer = () => {
               }}
             >
               <button onClick={playPrev} style={ctrlBtnStyle} title="上一首">
-                ⏮
+                <TbPlayerSkipBackFilled size={16} />
               </button>
               <button
                 onClick={togglePlay}
@@ -921,10 +993,17 @@ export const MusicPlayer = () => {
                 }}
                 title={playerState().playing ? "暂停" : "播放"}
               >
-                {playerState().playing ? "⏸" : "▶"}
+                <Dynamic
+                  component={
+                    playerState().playing
+                      ? TbPlayerPauseFilled
+                      : TbPlayerPlayFilled
+                  }
+                  size={18}
+                />
               </button>
               <button onClick={playNext} style={ctrlBtnStyle} title="下一首">
-                ⏭
+                <TbPlayerSkipForwardFilled size={16} />
               </button>
               <Show when={currentItem()}>
                 {(cur) => (
@@ -970,7 +1049,7 @@ export const MusicPlayer = () => {
                 style={ctrlBtnStyle}
                 title="切换循环模式"
               >
-                {loopLabel()}
+                <Dynamic component={loopIcon()} size={16} />
               </button>
 
               {/* 音量 */}
@@ -984,7 +1063,12 @@ export const MusicPlayer = () => {
                     "flex-shrink": "0",
                   }}
                 >
-                  🔊
+                  <Dynamic
+                    component={
+                      playerState().volume <= 0 ? TbVolumeOff : TbVolume
+                    }
+                    size={16}
+                  />
                 </span>
                 <div
                   style={{
@@ -1087,11 +1171,10 @@ const AlbumCard = (props: { album: AlbumInfo }) => {
                 display: "flex",
                 "align-items": "center",
                 "justify-content": "center",
-                "font-size": "48px",
                 background: coverFallbackBg(),
               }}
             >
-              🎵
+              <TbMusic size={48} style={{ opacity: 0.55 }} />
             </div>
           }
         >
@@ -1215,11 +1298,10 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
                 display: "flex",
                 "align-items": "center",
                 "justify-content": "center",
-                "font-size": "64px",
                 "flex-shrink": "0",
               }}
             >
-              🎵
+              <TbMusic size={64} style={{ opacity: 0.85 }} />
             </div>
           }
         >
@@ -1292,7 +1374,8 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
               gap: "8px",
             }}
           >
-            ▶ 播放全部
+            <TbPlayerPlayFilled size={14} />
+            播放全部
           </button>
         </div>
       </div>
@@ -1705,10 +1788,8 @@ const MusicLibrary = () => {
                       color: emptyColor(),
                     }}
                   >
-                    <div
-                      style={{ "font-size": "48px", "margin-bottom": "12px" }}
-                    >
-                      🎵
+                    <div style={{ "margin-bottom": "12px" }}>
+                      <TbMusic size={48} style={{ opacity: 0.5 }} />
                     </div>
                     <div>暂无音乐</div>
                   </div>
