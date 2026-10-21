@@ -10,6 +10,7 @@ export interface MediaStatus {
   subsonic_base_url: string
   strm_path: string
   strm_on_scan: boolean
+  thumb_path: string
 }
 
 const emptyStatus: MediaStatus = {
@@ -21,6 +22,7 @@ const emptyStatus: MediaStatus = {
   subsonic_base_url: "",
   strm_path: "",
   strm_on_scan: false,
+  thumb_path: "/imgs",
 }
 
 const [mediaStatus, setMediaStatusRaw] = createSignal<MediaStatus>(emptyStatus)
@@ -50,8 +52,9 @@ const stored =
   typeof localStorage !== "undefined"
     ? localStorage.getItem("media-sidebar-open")
     : null
+// 默认展开：媒体库启用后侧边栏直接可见，用户手动收起后记住选择
 const [mediaSidebarOpen, setMediaSidebarOpenRaw] = createSignal(
-  stored === "true",
+  stored === null ? true : stored === "true",
 )
 
 export const setMediaSidebarOpen = (open: boolean) => {

@@ -1,4 +1,4 @@
-import { Progress, ProgressIndicator } from "@hope-ui/solid"
+import { Box, HStack, Progress, ProgressIndicator } from "@hope-ui/solid"
 import { Route, Routes, useIsRouting } from "@solidjs/router"
 import {
   Component,
@@ -7,6 +7,7 @@ import {
   lazy,
   Match,
   onCleanup,
+  Show,
   Switch,
 } from "solid-js"
 import { Portal } from "solid-js/web"
@@ -28,7 +29,11 @@ import "./index.css"
 import { globalStyles } from "./theme"
 import { MusicPlayer } from "~/pages/media/music/MusicLibrary"
 import { MediaShell } from "./MediaShell"
-import { mediaEnabled, setMediaStatus } from "~/store/media"
+import {
+  MediaSidebar,
+  MediaSidebarFloatingTrigger,
+} from "~/components/MediaSidebar"
+import { mediaEnabled, mediaSidebarOpen, setMediaStatus } from "~/store/media"
 import type { MediaStatus } from "~/store/media"
 
 const Home = lazy(() => import("~/pages/home/Layout"))
@@ -40,7 +45,6 @@ const VideoLibrary = lazy(() => import("~/pages/media/video/VideoLibrary"))
 const MusicLibrary = lazy(() => import("~/pages/media/music/MusicLibrary"))
 const ImageLibrary = lazy(() => import("~/pages/media/image/ImageLibrary"))
 const BookLibrary = lazy(() => import("~/pages/media/book/BookLibrary"))
-const MediaSettings = lazy(() => import("~/pages/media/MediaSettings"))
 
 const App: Component = () => {
   const t = useT()
@@ -122,15 +126,9 @@ const App: Component = () => {
     }
   })
 
-  // 媒体库关闭时，除设置页外的 /@media/* 等同于不存在
-  // 设置页必须保留：它是打开总开关的唯一入口
+  // 媒体库关闭时，/@media/* 等同于不存在（设置入口在后台管理内）
   createEffect(() => {
-    if (
-      !loading() &&
-      !mediaEnabled() &&
-      pathname().startsWith("/@media") &&
-      !pathname().startsWith("/@media/settings")
-    ) {
+    if (!loading() && !mediaEnabled() && pathname().startsWith("/@media")) {
       to("/", true)
     }
   })
@@ -150,109 +148,107 @@ const App: Component = () => {
           <ProgressIndicator />
         </Progress>
       </Portal>
-      <Switch
-        fallback={
-          <Routes base={base_path}>
-            <Route path="/@test" component={Test} />
-            <Route path="/@login" component={Login} />
-            <Route path="/@init" component={Init} />
-            <Route
-              path="/@manage/*"
-              element={
-                <MustUser>
-                  <Manage />
-                </MustUser>
-              }
-            />
-            {/* 媒体库页面：顶栏复用 main 的 Header，侧栏为可收起抽屉 */}
-            <Route
-              path="/@media/video/*"
-              element={
-                <MustUser>
-                  <MediaShell>
-                    <MusicPlayer />
-                    <VideoLibrary />
-                  </MediaShell>
-                </MustUser>
-              }
-            />
-            <Route
-              path="/@media/music/*"
-              element={
-                <MustUser>
-                  <MediaShell>
-                    <MusicPlayer />
-                    <MusicLibrary />
-                  </MediaShell>
-                </MustUser>
-              }
-            />
-            <Route
-              path="/@media/image/*"
-              element={
-                <MustUser>
-                  <MediaShell>
-                    <MusicPlayer />
-                    <ImageLibrary />
-                  </MediaShell>
-                </MustUser>
-              }
-            />
-            <Route
-              path="/@media/books/*"
-              element={
-                <MustUser>
-                  <MediaShell>
-                    <MusicPlayer />
-                    <BookLibrary />
-                  </MediaShell>
-                </MustUser>
-              }
-            />
-            <Route
-              path="/@media/settings/*"
-              element={
-                <MustUser>
-                  <MediaShell>
-                    <MediaSettings />
-                  </MediaShell>
-                </MustUser>
-              }
-            />
-            <Route
-              path={["/@s/*", "/%40s/*"]}
-              element={
-                <UserOrGuest>
-                  <Home />
-                </UserOrGuest>
-              }
-            />
-            <Route
-              path="*"
-              element={
-                <MustUser>
-                  <Home />
-                </MustUser>
-              }
-            />
-          </Routes>
-        }
-      >
-        <Match when={err().length > 0}>
-          <Error
-            h="100vh"
-            msg={
-              t("home.fetching_settings_failed") +
-              err()
-                .map((e) => t("home." + e))
-                .join(", ")
+      <HStack alignItems="stretch" spacing="$0" w="$full" minH="100vh">
+        <Show when={mediaEnabled() && mediaSidebarOpen()}>
+          <MediaSidebar />
+        </Show>
+        <MediaSidebarFloatingTrigger />
+        <Box flex="1" minW="0">
+          <Switch
+            fallback={
+              <Routes base={base_path}>
+                <Route path="/@test" component={Test} />
+                <Route path="/@login" component={Login} />
+                <Route path="/@init" component={Init} />
+                <Route
+                  path="/@manage/*"
+                  element={
+                    <MustUser>
+                      <Manage />
+                    </MustUser>
+                  }
+                />
+                {/* 媒体库页面：顶栏复用 main 的 Header，侧栏为可收起抽屉 */}
+                <Route
+                  path="/@media/video/*"
+                  element={
+                    <MustUser>
+                      <MediaShell>
+                        <MusicPlayer />
+                        <VideoLibrary />
+                      </MediaShell>
+                    </MustUser>
+                  }
+                />
+                <Route
+                  path="/@media/music/*"
+                  element={
+                    <MustUser>
+                      <MediaShell>
+                        <MusicPlayer />
+                        <MusicLibrary />
+                      </MediaShell>
+                    </MustUser>
+                  }
+                />
+                <Route
+                  path="/@media/image/*"
+                  element={
+                    <MustUser>
+                      <MediaShell>
+                        <MusicPlayer />
+                        <ImageLibrary />
+                      </MediaShell>
+                    </MustUser>
+                  }
+                />
+                <Route
+                  path="/@media/books/*"
+                  element={
+                    <MustUser>
+                      <MediaShell>
+                        <MusicPlayer />
+                        <BookLibrary />
+                      </MediaShell>
+                    </MustUser>
+                  }
+                />
+                <Route
+                  path={["/@s/*", "/%40s/*"]}
+                  element={
+                    <UserOrGuest>
+                      <Home />
+                    </UserOrGuest>
+                  }
+                />
+                <Route
+                  path="*"
+                  element={
+                    <MustUser>
+                      <Home />
+                    </MustUser>
+                  }
+                />
+              </Routes>
             }
-          />
-        </Match>
-        <Match when={loading()}>
-          <FullScreenLoading />
-        </Match>
-      </Switch>
+          >
+            <Match when={err().length > 0}>
+              <Error
+                h="100vh"
+                msg={
+                  t("home.fetching_settings_failed") +
+                  err()
+                    .map((e) => t("home." + e))
+                    .join(", ")
+                }
+              />
+            </Match>
+            <Match when={loading()}>
+              <FullScreenLoading />
+            </Match>
+          </Switch>
+        </Box>
+      </HStack>
     </>
   )
 }

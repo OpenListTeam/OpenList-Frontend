@@ -75,6 +75,8 @@ export interface MediaConfig {
   enabled: boolean
   last_scan_at: string | null
   last_scrape_at: string | null
+  /** 该类型独立的刮削配置 JSON：store_thumbnail / thumbnail_mode / thumbnail_path */
+  scraper_config?: string
 }
 
 // 扫描路径配置

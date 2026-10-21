@@ -1,3 +1,4 @@
+﻿import { resolveMediaCover } from "~/utils/media_cover"
 import {
   createSignal,
   createResource,
@@ -759,7 +760,7 @@ const BookCard = (props: { item: MediaItem }) => {
           }
         >
           <img
-            src={props.item.cover}
+            src={resolveMediaCover(props.item.cover)}
             alt={name()}
             style={{
               position: "absolute",
@@ -925,7 +926,7 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
                 }
               >
                 <img
-                  src={data().cover}
+                  src={resolveMediaCover(data().cover)}
                   style={{
                     width: "180px",
                     height: "252px",
@@ -1172,7 +1173,7 @@ const BookLibrary = () => {
                     fallback={<span style={{ "font-size": "20px" }}>📚</span>}
                   >
                     <img
-                      src={item.cover}
+                      src={resolveMediaCover(item.cover)}
                       style={{
                         width: "32px",
                         height: "44px",

@@ -1,3 +1,4 @@
+﻿import { resolveMediaCover } from "~/utils/media_cover"
 import {
   createSignal,
   createResource,
@@ -200,7 +201,7 @@ const LyricsPage = () => {
           position: "absolute",
           inset: "0",
           background: currentItem()?.cover
-            ? `url(${currentItem()?.cover}) center/cover no-repeat`
+            ? `url(${resolveMediaCover(currentItem()?.cover)}) center/cover no-repeat`
             : "linear-gradient(135deg, #0f0c29, #302b63, #24243e)",
           filter: "blur(80px) brightness(0.25) saturate(2)",
           transform: "scale(1.3)",
@@ -331,7 +332,7 @@ const LyricsPage = () => {
                 }
               >
                 <img
-                  src={currentItem()?.cover}
+                  src={resolveMediaCover(currentItem()?.cover)}
                   style={{
                     width: "100%",
                     height: "100%",
@@ -776,7 +777,7 @@ export const MusicPlayer = () => {
               >
                 <Show when={currentItem()?.cover} fallback={<span>🎵</span>}>
                   <img
-                    src={currentItem()?.cover}
+                    src={resolveMediaCover(currentItem()?.cover)}
                     style={{
                       width: "100%",
                       height: "100%",
@@ -1095,7 +1096,7 @@ const AlbumCard = (props: { album: AlbumInfo }) => {
           }
         >
           <img
-            src={props.album.cover}
+            src={resolveMediaCover(props.album.cover)}
             alt={props.album.album_name}
             style={{
               position: "absolute",
@@ -1223,7 +1224,7 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
           }
         >
           <img
-            src={props.album.cover}
+            src={resolveMediaCover(props.album.cover)}
             style={{
               width: "180px",
               height: "180px",

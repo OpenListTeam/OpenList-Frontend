@@ -1,3 +1,4 @@
+﻿import { resolveMediaCover } from "~/utils/media_cover"
 import {
   createSignal,
   createResource,
@@ -109,7 +110,7 @@ const VideoCard = (props: { item: MediaItem }) => {
           }
         >
           <img
-            src={props.item.cover}
+            src={resolveMediaCover(props.item.cover)}
             alt={name()}
             style={{
               position: "absolute",
@@ -656,7 +657,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                 style={{
                   position: "fixed",
                   inset: "0",
-                  "background-image": `url(${data().cover})`,
+                  "background-image": `url(${resolveMediaCover(data().cover)})`,
                   "background-size": "cover",
                   "background-position": "center",
                   filter: "blur(40px) brightness(0.2)",
@@ -697,7 +698,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                   }
                 >
                   <img
-                    src={data().cover}
+                    src={resolveMediaCover(data().cover)}
                     alt={getMediaName(data())}
                     style={{
                       width: "220px",
@@ -1025,7 +1026,7 @@ const VideoLibrary = () => {
                     fallback={<span style={{ "font-size": "20px" }}>🎬</span>}
                   >
                     <img
-                      src={item.cover}
+                      src={resolveMediaCover(item.cover)}
                       style={{
                         width: "32px",
                         height: "48px",

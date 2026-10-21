@@ -230,6 +230,30 @@ export const side_menu_items: SideMenuItem[] = [
     to: "/@manage/media",
     children: [
       {
+        title: "manage.sidemenu.media_settings",
+        icon: BsGearFill,
+        to: "/@manage/media/settings",
+        component: lazy(() => import("./media/MediaSettingsPage")),
+      },
+      {
+        title: "manage.sidemenu.media_scrape",
+        icon: BsGearFill,
+        to: "/@manage/media/scrape",
+        component: lazy(() => import("./media/MediaScrapePage")),
+      },
+      {
+        title: "manage.sidemenu.media_strm",
+        icon: BsGearFill,
+        to: "/@manage/media/strm",
+        component: lazy(() => import("./media/MediaStrmPage")),
+      },
+      {
+        title: "manage.sidemenu.media_transcode",
+        icon: BsGearFill,
+        to: "/@manage/media/transcode",
+        component: () => <CommonSettings group={Group.TRANSCODE} />,
+      },
+      {
         title: "manage.sidemenu.media_video",
         icon: BsCameraFill,
         to: "/@manage/media/video",
@@ -268,12 +292,6 @@ export const side_menu_items: SideMenuItem[] = [
             default: m.BookManage,
           })),
         ),
-      },
-      {
-        title: "manage.sidemenu.media_settings",
-        icon: BsGearFill,
-        // 统一跳转到媒体库设置页（媒体类型、扫描路径、STRM、协议与应用密钥）
-        to: "/@media/settings",
       },
     ],
   },

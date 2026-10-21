@@ -10,7 +10,6 @@ import { Link } from "@solidjs/router"
 import { hoverColor, joinBase } from "~/utils"
 import { BackendKind, getBackendKind } from "~/utils/backend"
 import { IconTypes } from "solid-icons"
-import { mediaEnabled } from "~/store/media"
 
 export interface SideMenuItemProps {
   title: string
@@ -27,13 +26,6 @@ export interface SideMenuItemProps {
 const SideMenuItem = (props: SideMenuItemProps) => {
   const ifShow = createMemo(() => {
     if (props.backend && !props.backend.includes(getBackendKind())) return false
-    // 媒体库关闭时隐藏各类型管理页，但保留「媒体库」分组以便进入设置页开启开关
-    if (
-      !mediaEnabled() &&
-      props.to.startsWith("/@manage/media/") &&
-      props.to !== "/@media/settings"
-    )
-      return false
     if (!UserMethods.is_admin(me())) {
       if (props.role === undefined) return false
       else if (props.role === UserRole.GENERAL && !UserMethods.is_general(me()))

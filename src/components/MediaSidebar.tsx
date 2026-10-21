@@ -2,12 +2,6 @@
   Box,
   Button,
   Divider,
-  Drawer,
-  DrawerBody,
-  DrawerCloseButton,
-  DrawerContent,
-  DrawerHeader,
-  DrawerOverlay,
   HStack,
   Icon,
   Text,
@@ -25,11 +19,11 @@ import { me } from "~/store"
 import { UserMethods } from "~/types"
 import {
   TbBook,
+  TbChevronLeft,
   TbFolder,
   TbMovie,
   TbMusic,
   TbPhoto,
-  TbSettings,
 } from "solid-icons/tb"
 import { AiOutlineCloudServer } from "solid-icons/ai"
 import { Component } from "solid-js"
@@ -41,6 +35,10 @@ interface NavEntry {
   match: (p: string) => boolean
 }
 
+/**
+ * 全站统一的媒体库侧边栏（桌面端常驻、可收起）。
+ * 媒体库关闭时由 App 直接不渲染，页面与未安装媒体库时一致。
+ */
 export const MediaSidebar = () => {
   const t = useT()
   const { pathname, to } = useRouter()
@@ -86,12 +84,6 @@ export const MediaSidebar = () => {
         match: (p) => p.startsWith("/@media/books"),
       })
     }
-    list.push({
-      label: t("home.media.nav_settings"),
-      path: "/@media/settings",
-      icon: TbSettings,
-      match: (p) => p.startsWith("/@media/settings"),
-    })
     if (UserMethods.is_admin(me())) {
       list.push({
         label: t("home.media.nav_manage"),
@@ -104,47 +96,88 @@ export const MediaSidebar = () => {
   })
 
   return (
-    <Show when={mediaEnabled()}>
-      <Drawer
-        opened={mediaSidebarOpen()}
-        onClose={() => setMediaSidebarOpen(false)}
-        placement="left"
-        size="xs"
+    <Box
+      as="aside"
+      w="216px"
+      flexShrink={0}
+      h="100vh"
+      position="sticky"
+      top="0"
+      overflowY="auto"
+      bgColor="$neutral1"
+      borderRight="1px solid $neutral4"
+      display={{ "@initial": "none", "@md": "block" }}
+      py="$3"
+      px="$2"
+    >
+      <HStack
+        px="$2"
+        pb="$2"
+        justifyContent="space-between"
+        alignItems="center"
       >
-        <DrawerOverlay />
-        <DrawerContent>
-          <DrawerHeader>
-            <HStack justifyContent="space-between" alignItems="center">
-              <Text fontWeight="$semibold">{t("home.media.title")}</Text>
-              <DrawerCloseButton />
-            </HStack>
-          </DrawerHeader>
-          <Divider />
-          <DrawerBody py="$4">
-            <VStack spacing="$1" alignItems="stretch">
-              <For each={items()}>
-                {(item) => {
-                  const active = createMemo(() => item.match(pathname()))
-                  return (
-                    <Button
-                      variant={active() ? "subtle" : "ghost"}
-                      colorScheme={active() ? "accent" : "neutral"}
-                      justifyContent="flex-start"
-                      leftIcon={<Icon as={item.icon} boxSize="$5" />}
-                      onClick={() => {
-                        to(item.path)
-                        setMediaSidebarOpen(false)
-                      }}
-                    >
-                      {item.label}
-                    </Button>
-                  )
-                }}
-              </For>
-            </VStack>
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
+        <Text fontWeight="$semibold" fontSize="$sm" color="$neutral11">
+          {t("home.media.title")}
+        </Text>
+        <Button
+          size="xs"
+          variant="ghost"
+          colorScheme="neutral"
+          px="$1"
+          minW="0"
+          aria-label="collapse media sidebar"
+          onClick={() => setMediaSidebarOpen(false)}
+        >
+          <Icon as={TbChevronLeft} boxSize="$4" />
+        </Button>
+      </HStack>
+      <Divider mb="$2" />
+      <VStack spacing="$1" alignItems="stretch">
+        <For each={items()}>
+          {(item) => {
+            const active = createMemo(() => item.match(pathname()))
+            return (
+              <Button
+                variant={active() ? "subtle" : "ghost"}
+                colorScheme={active() ? "accent" : "neutral"}
+                justifyContent="flex-start"
+                size="sm"
+                leftIcon={<Icon as={item.icon} boxSize="$5" />}
+                onClick={() => to(item.path)}
+              >
+                {item.label}
+              </Button>
+            )
+          }}
+        </For>
+      </VStack>
+    </Box>
+  )
+}
+
+/**
+ * 侧边栏收起后的浮动开关。
+ * 管理后台等页面没有 Home 的顶栏，需要这个入口才能重新展开。
+ */
+export const MediaSidebarFloatingTrigger = () => {
+  return (
+    <Show when={mediaEnabled() && !mediaSidebarOpen()}>
+      <Button
+        position="fixed"
+        left="$3"
+        bottom="$4"
+        zIndex="$docked"
+        size="sm"
+        variant="solid"
+        colorScheme="accent"
+        rounded="$full"
+        shadow="$md"
+        px="$3"
+        onClick={() => setMediaSidebarOpen(true)}
+        aria-label="expand media sidebar"
+      >
+        <Text fontSize="$md">»</Text>
+      </Button>
     </Show>
   )
 }
