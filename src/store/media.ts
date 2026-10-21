@@ -23,7 +23,20 @@ const emptyStatus: MediaStatus = {
   strm_on_scan: false,
 }
 
-const [mediaStatus, setMediaStatus] = createSignal<MediaStatus>(emptyStatus)
+const [mediaStatus, setMediaStatusRaw] = createSignal<MediaStatus>(emptyStatus)
+
+/** 后端可能返回 types: null（旧版本/未启用），统一归一化，避免 .includes 崩溃 */
+export const setMediaStatus = (status?: Partial<MediaStatus> | null) => {
+  if (!status) {
+    setMediaStatusRaw(emptyStatus)
+    return
+  }
+  setMediaStatusRaw({
+    ...emptyStatus,
+    ...status,
+    types: Array.isArray(status.types) ? status.types : [],
+  })
+}
 
 /** 媒体库总开关（关闭时前端不渲染任何媒体库入口） */
 export const mediaEnabled = () => mediaStatus().enabled
@@ -50,4 +63,4 @@ export const setMediaSidebarOpen = (open: boolean) => {
   }
 }
 
-export { mediaSidebarOpen, mediaStatus, setMediaStatus }
+export { mediaSidebarOpen, mediaStatus }

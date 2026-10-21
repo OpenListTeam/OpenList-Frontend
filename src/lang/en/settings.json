@@ -146,7 +146,6 @@
   "version": "Version",
   "video_autoplay": "Video autoplay",
   "video_types": "Video types",
-  "webauthn_login_enabled": "Webauthn login enabled",
   "media_tmdb_key": "TMDB API Key",
   "media_discogs_token": "Discogs Token",
   "media_store_thumbnail": "Store thumbnail",
@@ -180,5 +179,72 @@
     "on": "On"
   },
   "seed_single_direct_preview": "Single-file seed direct preview",
-  "seed_cas_direct_access": "CAS direct access"
+  "seed_cas_direct_access": "CAS direct access",
+  "media_tmdb_api_url": "TMDB API URL",
+  "media_discogs_api_url": "Discogs API URL",
+  "media_scrape_concurrency": "Scrape concurrency",
+  "transcode_enabled": "Enable transcoding",
+  "transcode_run_mode": "Transcode run mode",
+  "transcode_run_modes": {
+    "local": "Local only",
+    "remote": "Remote workers only",
+    "hybrid": "Local first, remote overflow"
+  },
+  "transcode_min_size_gb": "Minimum file size (GB)",
+  "transcode_min_bitrate_mbps": "Minimum bitrate (Mbps)",
+  "transcode_source_codecs": "Source codecs to transcode",
+  "transcode_source_extensions": "Source extensions to transcode",
+  "transcode_output_format": "Output container",
+  "transcode_output_formats": {
+    "hls": "HLS",
+    "dash": "DASH",
+    "mp4": "MP4"
+  },
+  "transcode_output_codec": "Output video codec",
+  "transcode_output_codecs": {
+    "h264": "H.264",
+    "hevc": "HEVC",
+    "av1": "AV1"
+  },
+  "transcode_output_bitrate": "Output video bitrate",
+  "transcode_output_audio_codec": "Output audio codec",
+  "transcode_output_audio_codecs": {
+    "aac": "AAC",
+    "mp3": "MP3",
+    "opus": "Opus",
+    "copy": "Copy source"
+  },
+  "transcode_output_audio_bitrate": "Output audio bitrate",
+  "transcode_output_resolution": "Output resolution limit",
+  "transcode_output_resolutions": {
+    "source": "Keep source",
+    "3840x2160": "4K (3840x2160)",
+    "2560x1440": "2K (2560x1440)",
+    "1920x1080": "1080p (1920x1080)",
+    "1280x720": "720p (1280x720)",
+    "854x480": "480p (854x480)"
+  },
+  "transcode_segment_duration": "Segment duration (seconds)",
+  "transcode_hwaccel": "Hardware acceleration",
+  "transcode_hwaccels": {
+    "none": "None (CPU)",
+    "auto": "Auto detect",
+    "nvenc": "NVIDIA NVENC",
+    "qsv": "Intel QuickSync",
+    "vaapi": "VA-API",
+    "amf": "AMD AMF",
+    "videotoolbox": "Apple VideoToolbox"
+  },
+  "transcode_ffmpeg_path": "FFmpeg path",
+  "transcode_ffprobe_path": "FFprobe path",
+  "transcode_worker_secret": "Remote worker secret",
+  "transcode_cache_path": "Segment cache directory",
+  "transcode_cache_max_gb": "Segment cache limit (GB)",
+  "transcode_job_timeout_min": "Job timeout (minutes)",
+  "transcode_local_concurrency": "Local worker concurrency",
+  "transcode_idle_timeout_sec": "Idle stop timeout (seconds)",
+  "transcode_chunk_duration_sec": "Chunk duration (seconds)",
+  "transcode_max_chunk_concurrency": "Max concurrent chunks",
+  "transcode_chunk_idle_sec": "Chunk idle timeout (seconds)",
+  "transcode_chunk_prefetch": "Prefetch next chunk"
 }

@@ -47,6 +47,7 @@ import type {
   MediaConfig,
   MediaScanPath,
   MediaType,
+  Resp,
   SettingItem,
 } from "~/types"
 import { useTitle } from "~/hooks"
@@ -87,6 +88,12 @@ const MediaSettings = () => {
   const [newKeyName, setNewKeyName] = createSignal("")
   const [plainKey, setPlainKey] = createSignal("")
   const [strmGenerating, setStrmGenerating] = createSignal(false)
+  const [loadError, setLoadError] = createSignal("")
+
+  const asResp = <T,>(resp: any): Resp<T> | null =>
+    resp && typeof resp === "object" && typeof resp.code === "number"
+      ? (resp as Resp<T>)
+      : null
 
   // 新增扫描路径
   const [pathModalOpen, setPathModalOpen] = createSignal(false)
@@ -109,17 +116,53 @@ const MediaSettings = () => {
 
   const refresh = async () => {
     setLoading(true)
-    const [settingsResp, configResp, pathResp, keyResp] = await Promise.all([
-      r.get(`/admin/setting/list?groups=${MEDIA_GROUP},${TRANSCODE_GROUP}`),
-      adminGetMediaConfigs(),
-      adminListMediaScanPaths(),
-      adminListAppKeys(),
-    ])
-    handleResp(settingsResp as any, (data: SettingItem[]) => setSettings(data))
-    handleResp(configResp, (data: MediaConfig[]) => setConfigs(data))
-    handleResp(pathResp, (data: MediaScanPath[]) => setPaths(data))
-    handleResp(keyResp, (data: MediaAppKey[]) => setAppKeys(data))
-    setLoading(false)
+    setLoadError("")
+    try {
+      // 一次性取全部设置再按 group 过滤：兼容不支持 groups 参数的后端版本
+      const [settingsResp, configResp, pathResp, keyResp] =
+        await Promise.allSettled([
+          r.get("/admin/setting/list"),
+          adminGetMediaConfigs(),
+          adminListMediaScanPaths(),
+          adminListAppKeys(),
+        ])
+
+      const settingsData =
+        settingsResp.status === "fulfilled"
+          ? asResp<SettingItem[]>(settingsResp.value)
+          : null
+      if (settingsData?.code === 200 && Array.isArray(settingsData.data)) {
+        setSettings(
+          settingsData.data.filter(
+            (s) => s.group === MEDIA_GROUP || s.group === TRANSCODE_GROUP,
+          ),
+        )
+      } else {
+        setLoadError(
+          `读取设置项失败（/api/admin/setting/list）。请确认后端已更新并重启；若后端仍在运行旧版本，媒体库设置项不会存在。`,
+        )
+      }
+
+      if (configResp.status === "fulfilled") {
+        const resp = asResp<MediaConfig[]>(configResp.value)
+        if (resp?.code === 200) setConfigs(resp.data ?? [])
+      }
+      if (pathResp.status === "fulfilled") {
+        const resp = asResp<MediaScanPath[]>(pathResp.value)
+        if (resp?.code === 200) setPaths(resp.data ?? [])
+      }
+      if (keyResp.status === "fulfilled") {
+        const resp = asResp<MediaAppKey[]>(keyResp.value)
+        if (resp?.code === 200) setAppKeys(resp.data ?? [])
+      }
+
+      // 协议地址等信息随设置变化，进入页面时同步一次
+      const statusResp = await getMediaStatus()
+      if (asResp(statusResp)?.code === 200)
+        setMediaStatus((statusResp as any).data)
+    } finally {
+      setLoading(false)
+    }
   }
   onMount(refresh)
 
@@ -248,6 +291,30 @@ const MediaSettings = () => {
         </HStack>
       </Show>
 
+      {/* 设置项为空时给出明确诊断，而不是渲染一堆空区块 */}
+      <Show
+        when={
+          !loading() && (loadError() !== "" || mediaSettings().length === 0)
+        }
+      >
+        <Alert status="warning" variant="subtle">
+          <AlertIcon />
+          <AlertDescription>
+            <VStack alignItems="flex-start" spacing="$2">
+              <Text fontWeight="$medium">
+                {loadError() || "没有读取到媒体库设置项"}
+              </Text>
+              <Text fontSize="$sm">
+                媒体库设置项会在后端启动时写入数据库。如果你刚更新了代码，请重新编译并重启后端服务；仍在运行旧版本时，此页面会是空的。
+              </Text>
+              <Button size="xs" onClick={refresh}>
+                重试
+              </Button>
+            </VStack>
+          </AlertDescription>
+        </Alert>
+      </Show>
+
       {/* 通用设置：直接复用后台的 SettingItem 渲染器 */}
       <VStack
         alignItems="stretch"
@@ -320,6 +387,11 @@ const MediaSettings = () => {
         <Text fontSize="$sm" color="$neutral11">
           只有启用的类型会出现在前端导航与 Emby / Subsonic 视图中。
         </Text>
+        <Show when={!loading() && configs.length === 0}>
+          <Text fontSize="$sm" color="$warning11">
+            未读取到媒体类型配置（/api/admin/media/config/list），请确认后端已重启。
+          </Text>
+        </Show>
         <For each={configs}>
           {(cfg) => (
             <HStack justifyContent="space-between" alignItems="center" py="$2">
