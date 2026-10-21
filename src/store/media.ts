@@ -10,7 +10,10 @@ export interface MediaStatus {
   subsonic_base_url: string
   strm_path: string
   strm_on_scan: boolean
+  strm_same_dir: boolean
   thumb_path: string
+  version: string
+  proxy_cover: boolean
 }
 
 const emptyStatus: MediaStatus = {
@@ -22,7 +25,10 @@ const emptyStatus: MediaStatus = {
   subsonic_base_url: "",
   strm_path: "",
   strm_on_scan: false,
+  strm_same_dir: true,
   thumb_path: "/imgs",
+  version: "",
+  proxy_cover: false,
 }
 
 const [mediaStatus, setMediaStatusRaw] = createSignal<MediaStatus>(emptyStatus)

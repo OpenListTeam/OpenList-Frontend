@@ -388,10 +388,10 @@
   },
   "media": {
     "title": "Media Library",
-    "nav_files": "Files",
+    "nav_files": "Files List",
     "nav_video": "Movies & TV",
     "nav_music": "Music & Sound",
-    "nav_image": "Photos & Pic",
+    "nav_image": "Photos & Picture",
     "nav_book": "Books & Magazine",
     "nav_settings": "Media Settings",
     "nav_manage": "Media Manage",

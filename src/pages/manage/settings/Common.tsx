@@ -39,11 +39,14 @@ const CommonSettings = (props: CommonSettingsProps) => {
     r.post(`/admin/setting/default?group=${props.group}`),
   )
   const [loading, setLoading] = createSignal(false)
-  const visible = createMemo(() =>
-    props.keys?.length
-      ? settings.filter((item) => props.keys!.includes(item.key))
-      : settings,
-  )
+  const visible = createMemo(() => {
+    if (!props.keys?.length) return settings
+    // 按调用方给定的顺序输出，保证设置项可以自由排序
+    const map = new Map(settings.map((item) => [item.key, item]))
+    return props.keys
+      .map((key) => map.get(key))
+      .filter((item): item is SettingItem => !!item)
+  })
   return (
     <VStack w="$full" alignItems="start" spacing="$2">
       <ResponsiveGrid>

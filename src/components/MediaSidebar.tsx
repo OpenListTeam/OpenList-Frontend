@@ -1,4 +1,5 @@
 ﻿import {
+  Anchor,
   Box,
   Button,
   Divider,
@@ -6,6 +7,7 @@
   Icon,
   Text,
   Tooltip,
+  useColorMode,
   VStack,
 } from "@hope-ui/solid"
 import { For, Show, createMemo } from "solid-js"
@@ -20,11 +22,15 @@ import { me } from "~/store"
 import { UserMethods } from "~/types"
 import {
   TbBook,
+  TbBook2,
+  TbBrandGithub,
   TbChevronLeft,
   TbFolder,
+  TbMoon,
   TbMovie,
   TbMusic,
   TbPhoto,
+  TbSun,
 } from "solid-icons/tb"
 import { AiOutlineCloudServer } from "solid-icons/ai"
 import { Component } from "solid-js"
@@ -42,6 +48,7 @@ interface NavEntry {
  */
 export const MediaSidebar = () => {
   const t = useT()
+  const { colorMode, toggleColorMode } = useColorMode()
   const { pathname, to } = useRouter()
   const items = createMemo<NavEntry[]>(() => {
     const list: NavEntry[] = [
@@ -148,20 +155,74 @@ export const MediaSidebar = () => {
           </For>
         </VStack>
         <Box flex="1" />
-        <Show when={UserMethods.is_admin(me())}>
-          <Divider />
-          <Tooltip label={t("home.media.nav_manage")} placement="right">
-            <Button
-              variant={manageActive() ? "subtle" : "ghost"}
-              colorScheme={manageActive() ? "accent" : "neutral"}
-              size="sm"
-              aria-label={t("home.media.nav_manage")}
-              onClick={() => to("/@manage/media")}
+        <Divider />
+        <HStack
+          px="$2"
+          py="$1"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <Text fontSize="$xs" color="$neutral11">
+            v{mediaStatus().version || "dev"}
+          </Text>
+          <HStack spacing="$1" alignItems="center">
+            <Tooltip label="GitHub Repository">
+              <Anchor
+                href="https://github.com/OpenListTeam/OpenList"
+                external
+                display="inline-flex"
+                color="$neutral11"
+                _hover={{ color: "$accent9" }}
+              >
+                <Icon as={TbBrandGithub} boxSize="$4" />
+              </Anchor>
+            </Tooltip>
+            <Tooltip label="Documentation">
+              <Anchor
+                href="https://doc.oplist.org"
+                external
+                display="inline-flex"
+                color="$neutral11"
+                _hover={{ color: "$accent9" }}
+              >
+                <Icon as={TbBook2} boxSize="$4" />
+              </Anchor>
+            </Tooltip>
+            <Tooltip
+              label={colorMode() === "dark" ? "Light mode" : "Dark mode"}
             >
-              <Icon as={AiOutlineCloudServer} boxSize="$5" />
-            </Button>
-          </Tooltip>
-        </Show>
+              <Button
+                size="xs"
+                variant="ghost"
+                colorScheme="neutral"
+                minW="0"
+                px="$1"
+                aria-label="toggle color mode"
+                onClick={toggleColorMode}
+              >
+                <Icon
+                  as={colorMode() === "dark" ? TbSun : TbMoon}
+                  boxSize="$4"
+                />
+              </Button>
+            </Tooltip>
+            <Show when={UserMethods.is_admin(me())}>
+              <Tooltip label={t("home.media.nav_manage")}>
+                <Button
+                  variant={manageActive() ? "subtle" : "ghost"}
+                  colorScheme={manageActive() ? "accent" : "neutral"}
+                  size="xs"
+                  minW="0"
+                  px="$1"
+                  aria-label={t("home.media.nav_manage")}
+                  onClick={() => to("/@manage/media")}
+                >
+                  <Icon as={AiOutlineCloudServer} boxSize="$4" />
+                </Button>
+              </Tooltip>
+            </Show>
+          </HStack>
+        </HStack>
       </VStack>
     </Box>
   )

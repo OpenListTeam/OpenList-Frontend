@@ -50,7 +50,9 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
   const [saving, setSaving] = createSignal(false)
   const [cfg, setCfg] = createSignal<MediaConfig | null>(null)
   const [storeThumbnail, setStoreThumbnail] = createSignal(false)
-  const [mode, setMode] = createSignal<"base64" | "local">("base64")
+  const [mode, setMode] = createSignal<"base64" | "runtime" | "local">(
+    "runtime",
+  )
   const [path, setPath] = createSignal("/imgs")
 
   const parse = (raw?: string): ScraperConfig => {
@@ -74,7 +76,11 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
         setCfg(found)
         const sc = parse(found.scraper_config)
         setStoreThumbnail(sc.store_thumbnail === "true")
-        setMode(sc.thumbnail_mode === "local" ? "local" : "base64")
+        setMode(
+          sc.thumbnail_mode === "local" || sc.thumbnail_mode === "base64"
+            ? sc.thumbnail_mode
+            : "runtime",
+        )
         setPath(sc.thumbnail_path || "/imgs")
       }
     }
@@ -169,8 +175,16 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
                     <SelectOptionText>Base64（存入数据库）</SelectOptionText>
                     <SelectOptionIndicator />
                   </SelectOption>
+                  <SelectOption value="runtime">
+                    <SelectOptionText>
+                      运行目录（默认，data/imgs）
+                    </SelectOptionText>
+                    <SelectOptionIndicator />
+                  </SelectOption>
                   <SelectOption value="local">
-                    <SelectOptionText>本地文件</SelectOptionText>
+                    <SelectOptionText>
+                      本地文件（挂载目录 VFS）
+                    </SelectOptionText>
                     <SelectOptionIndicator />
                   </SelectOption>
                 </SelectListbox>
@@ -179,7 +193,9 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
             <FormHelperText>
               {mode() === "base64"
                 ? "缩略图以 base64 编码存入数据库，无需额外文件存储，但会增大数据库体积"
-                : "缩略图保存为本地文件，数据库只存路径，节省数据库空间"}
+                : mode() === "runtime"
+                  ? "缩略图保存到程序数据目录 data 下，默认 data/imgs，无需挂载存储"
+                  : "缩略图写入挂载目录下的 VFS 路径，需该路径可写（如 /imgs）"}
             </FormHelperText>
           </FormControl>
 
@@ -192,7 +208,9 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
                 onInput={(e) => setPath(e.currentTarget.value)}
               />
               <FormHelperText>
-                VFS 路径，需位于可写存储中，例如 /imgs 或 /.thumbnail
+                {mode() === "runtime"
+                  ? "相对程序数据目录 data 的路径，默认 imgs，即 data/imgs"
+                  : "VFS 路径，相对挂载根 /，例如 /imgs 或 /.thumbnail"}
               </FormHelperText>
             </FormControl>
           </Show>

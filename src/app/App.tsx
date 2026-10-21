@@ -132,6 +132,12 @@ const App: Component = () => {
       to("/", true)
     }
   })
+
+  // 后台管理、登录与初始化页面不显示媒体库侧栏
+  const hideMediaSidebarPath = () =>
+    ["/@manage", "/@login", "/@init"].some((p) => pathname().startsWith(p))
+  const mediaSidebarVisible = () =>
+    mediaEnabled() && mediaSidebarOpen() && !hideMediaSidebarPath()
   return (
     <>
       <Portal>
@@ -149,10 +155,12 @@ const App: Component = () => {
         </Progress>
       </Portal>
       <HStack alignItems="stretch" spacing="$0" w="$full" minH="100vh">
-        <Show when={mediaEnabled() && mediaSidebarOpen()}>
+        <Show when={mediaSidebarVisible()}>
           <MediaSidebar />
         </Show>
-        <MediaSidebarFloatingTrigger />
+        <Show when={!hideMediaSidebarPath()}>
+          <MediaSidebarFloatingTrigger />
+        </Show>
         <Box flex="1" minW="0">
           <Switch
             fallback={
@@ -172,45 +180,45 @@ const App: Component = () => {
                 <Route
                   path="/@media/video/*"
                   element={
-                    <MustUser>
+                    <UserOrGuest>
                       <MediaShell>
                         <MusicPlayer />
                         <VideoLibrary />
                       </MediaShell>
-                    </MustUser>
+                    </UserOrGuest>
                   }
                 />
                 <Route
                   path="/@media/music/*"
                   element={
-                    <MustUser>
+                    <UserOrGuest>
                       <MediaShell>
                         <MusicPlayer />
                         <MusicLibrary />
                       </MediaShell>
-                    </MustUser>
+                    </UserOrGuest>
                   }
                 />
                 <Route
                   path="/@media/image/*"
                   element={
-                    <MustUser>
+                    <UserOrGuest>
                       <MediaShell>
                         <MusicPlayer />
                         <ImageLibrary />
                       </MediaShell>
-                    </MustUser>
+                    </UserOrGuest>
                   }
                 />
                 <Route
                   path="/@media/books/*"
                   element={
-                    <MustUser>
+                    <UserOrGuest>
                       <MediaShell>
                         <MusicPlayer />
                         <BookLibrary />
                       </MediaShell>
-                    </MustUser>
+                    </UserOrGuest>
                   }
                 />
                 <Route

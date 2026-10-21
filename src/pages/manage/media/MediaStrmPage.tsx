@@ -9,8 +9,9 @@ import { mediaStatus, setMediaStatus } from "~/store/media"
 /** STRM 相关设置项 */
 const STRM_KEYS = [
   "media_strm_on_scan",
-  "media_strm_path",
   "media_strm_overwrite",
+  "media_strm_same_dir",
+  "media_strm_path",
   "media_strm_template",
 ]
 
@@ -53,7 +54,7 @@ const MediaStrmPage = () => {
       maxW="1300px"
     >
       <VStack alignItems="flex-start" spacing="2px">
-        <Heading size="lg">STRM 设置</Heading>
+        <Heading size="lg">STRM设置</Heading>
         <Text fontSize="$sm" color="$neutral11">
           扫描时自动生成 STRM，或在此手动批量生成
         </Text>
@@ -67,8 +68,10 @@ const MediaStrmPage = () => {
         </HStack>
         <VStack spacing="$3" alignItems="stretch" p="$4">
           <Text fontSize="$sm" color="$neutral11">
-            输出目录：
-            {mediaStatus().strm_path || "未配置（请先在上方保存 STRM 目录）"}
+            输出位置：
+            {mediaStatus().strm_same_dir
+              ? "与媒体文件同目录（同名 .strm）"
+              : mediaStatus().strm_path || "未配置（请先在上方保存 STRM 目录）"}
           </Text>
           <HStack spacing="$2" flexWrap="wrap">
             {GENERATE_TYPES.map((item) => (

@@ -38,6 +38,7 @@ const BASE_KEYS = [
   "media_emby_enabled",
   "media_subsonic_enabled",
   "media_subsonic_proxy_stream",
+  "media_proxy_cover",
 ]
 
 /**

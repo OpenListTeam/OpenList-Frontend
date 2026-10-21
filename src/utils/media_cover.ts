@@ -3,27 +3,23 @@ import { mediaStatus } from "~/store/media"
 
 /**
  * 媒体封面地址解析：
- * - data:/blob: 直接使用（刮削时写入的 base64 缩略图）
- * - http(s) 外链走服务端代理（TMDB / 豆瓣 / Discogs 在部分网络下不可直连）
- * - /d/imgs/... 是刮削器写入本地磁盘的缩略图，改用本地缩略图接口读取
- * - 其它 VFS 路径补上站点地址，避免相对路径落到前端路由上
+ * - data:/blob: 直接使用（base64 模式）
+ * - thumb:/imgs/x.jpg 运行目录模式，走本地缩略图接口
+ * - /d/... 挂载目录（VFS）模式，补全站点地址后由 /d 直链返回
+ * - http(s) 外链，按设置决定是否走服务端代理
  */
-export const resolveMediaCover = (
-  cover?: string,
-  thumbBase?: string,
-): string => {
+export const resolveMediaCover = (cover?: string): string => {
   if (!cover) return ""
-  thumbBase = thumbBase || mediaStatus().thumb_path || "/imgs"
   if (cover.startsWith("data:") || cover.startsWith("blob:")) return cover
+  if (cover.startsWith("thumb:")) {
+    return `${api}/api/public/media/thumb?path=${encodeURIComponent(cover.slice(6))}`
+  }
   if (/^https?:\/\//i.test(cover)) {
-    return `${api}/api/public/media/proxy?url=${encodeURIComponent(cover)}`
+    // 是否走服务端代理由设置决定，默认直接使用原始地址
+    return mediaStatus().proxy_cover
+      ? `${api}/api/public/media/proxy?url=${encodeURIComponent(cover)}`
+      : cover
   }
-  let p = cover
-  if (p.startsWith("/d/")) p = p.slice(2)
-  const base = thumbBase.replace(/\/+$/, "")
-  if (base && (p === base || p.startsWith(base + "/"))) {
-    return `${api}/api/public/media/thumb?path=${encodeURIComponent(p)}`
-  }
-  if (p.startsWith("/")) return `${api}/d${p}`
-  return p
+  if (cover.startsWith("/")) return `${api}${cover}`
+  return cover
 }
