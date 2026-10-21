@@ -18,6 +18,7 @@ import {
 import type { MediaItem, AlbumInfo } from "~/types"
 import { getMediaName, parseAuthors, formatDuration } from "~/types"
 import { api } from "~/utils"
+import { OpenWithPlayer } from "~/components/OpenWithPlayer"
 
 type BrowseMode = "all" | "folder"
 type OrderBy = "name" | "date" | "size"
@@ -924,6 +925,19 @@ export const MusicPlayer = () => {
               <button onClick={playNext} style={ctrlBtnStyle} title="下一首">
                 ⏭
               </button>
+              <Show when={currentItem()}>
+                {(cur) => (
+                  <div
+                    style={{
+                      transform: "scale(0.85)",
+                      "transform-origin": "left center",
+                      "margin-left": "4px",
+                    }}
+                  >
+                    <OpenWithPlayer itemId={cur().id} name={cur().file_name} />
+                  </div>
+                )}
+              </Show>
             </div>
 
             {/* 右：时间 + 循环 + 音量 */}

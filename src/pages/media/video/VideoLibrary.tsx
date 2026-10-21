@@ -14,6 +14,7 @@ import { getMediaItem, requestTranscodePlay } from "~/utils/media_api"
 import type { MediaItem, EpisodeInfo } from "~/types"
 import { getMediaName, parseAuthors, parseEpisodes } from "~/types"
 import { api, base_path, ext } from "~/utils"
+import { OpenWithPlayer } from "~/components/OpenWithPlayer"
 import Artplayer from "artplayer"
 import artplayerProxyMediabunny from "~/components/artplayer-proxy-mediabunny"
 import { attachMediabunnyAudio } from "~/components/artplayer-proxy-mediabunny/AudioPatch"
@@ -175,7 +176,7 @@ const VideoPlayer = (props: {
 }) => {
   let playerContainer: HTMLDivElement | undefined
   let player: Artplayer | undefined
-  let hlsPlayer: Hls | undefined
+  let hlsPlayer: Hls | null | undefined
   let flvPlayer: mpegts.Player | undefined
 
   // 优先使用传入的 filePath，否则拼接 folder_path + "/" + file_name
@@ -550,6 +551,13 @@ const VideoPlayer = (props: {
         >
           {videoTitle()}
         </span>
+        <div style={{ "margin-left": "auto" }}>
+          <OpenWithPlayer
+            itemId={props.item.id}
+            path={props.filePath}
+            name={props.title ?? props.item.file_name}
+          />
+        </div>
       </div>
 
       {/* 播放区域 */}
@@ -826,29 +834,53 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
 
                 {/* 无选集：直接显示播放按钮 */}
                 <Show when={parseEpisodes(data().episodes).length === 0}>
-                  <button
-                    onClick={() => {
-                      setCurrentEpisode(null)
-                      setShowPlayer(true)
-                    }}
+                  <div
                     style={{
-                      background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                      border: "none",
-                      "border-radius": "10px",
-                      color: "white",
-                      padding: "12px 28px",
-                      "font-size": "15px",
-                      "font-weight": "600",
-                      cursor: "pointer",
                       display: "flex",
                       "align-items": "center",
-                      gap: "8px",
-                      "box-shadow": "0 4px 16px rgba(99,102,241,0.4)",
+                      gap: "12px",
+                      "flex-wrap": "wrap",
                       "margin-bottom": "24px",
                     }}
                   >
-                    ▶ 立即播放
-                  </button>
+                    <button
+                      onClick={() => {
+                        setCurrentEpisode(null)
+                        setShowPlayer(true)
+                      }}
+                      style={{
+                        background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                        border: "none",
+                        "border-radius": "10px",
+                        color: "white",
+                        padding: "12px 28px",
+                        "font-size": "15px",
+                        "font-weight": "600",
+                        cursor: "pointer",
+                        display: "flex",
+                        "align-items": "center",
+                        gap: "8px",
+                        "box-shadow": "0 4px 16px rgba(99,102,241,0.4)",
+                      }}
+                    >
+                      ▶ 立即播放
+                    </button>
+                    <OpenWithPlayer
+                      itemId={data().id}
+                      name={data().file_name}
+                    />
+                    <a
+                      href={`${api}/fs/media/strm?id=${data().id}`}
+                      style={{
+                        color: "inherit",
+                        opacity: 0.75,
+                        "font-size": "13px",
+                        "text-decoration": "underline",
+                      }}
+                    >
+                      下载 STRM
+                    </a>
+                  </div>
                 </Show>
 
                 {/* 选集列表（路径合并模式下有选集时显示） */}

@@ -1,646 +1,670 @@
-import { createSignal, createResource, Show, createEffect } from "solid-js"
-import { useColorMode } from "@hope-ui/solid"
-import { createMemo } from "solid-js"
-import { MediaLayout } from "./MediaLayout"
-import { adminGetMediaConfigs, adminSaveMediaConfig } from "~/utils/media_api"
-import type { MediaConfig } from "~/types"
+﻿import {
+  Alert,
+  AlertDescription,
+  AlertIcon,
+  Button,
+  Divider,
+  FormControl,
+  FormHelperText,
+  FormLabel,
+  Heading,
+  HStack,
+  Icon,
+  IconButton,
+  Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Select,
+  SelectContent,
+  SelectIcon,
+  SelectListbox,
+  SelectOption,
+  SelectOptionIndicator,
+  SelectOptionText,
+  SelectTrigger,
+  SelectValue,
+  SimpleGrid,
+  Spinner,
+  Switch,
+  Table,
+  Tbody,
+  Td,
+  Text,
+  Th,
+  Thead,
+  Tr,
+  VStack,
+} from "@hope-ui/solid"
+import { For, Show, createMemo, createSignal, onMount } from "solid-js"
+import { createStore } from "solid-js/store"
+import { Item } from "~/pages/manage/settings/SettingItem"
+import type {
+  MediaConfig,
+  MediaScanPath,
+  MediaType,
+  SettingItem,
+} from "~/types"
+import { useTitle } from "~/hooks"
+import { notify, r, handleResp, getTarget } from "~/utils"
+import {
+  adminCreateAppKey,
+  adminDeleteAppKey,
+  adminDeleteMediaScanPath,
+  adminGenerateStrm,
+  adminGetMediaConfigs,
+  adminListAppKeys,
+  adminListMediaScanPaths,
+  adminCreateMediaScanPath,
+  adminSaveMediaConfig,
+  getMediaStatus,
+  type MediaAppKey,
+} from "~/utils/media_api"
+import { mediaStatus, setMediaStatus } from "~/store/media"
 
-// ==================== 媒体库设置页 ====================
+const MEDIA_GROUP = 12
+const TRANSCODE_GROUP = 13
+
+const mediaTypeOptions: { value: MediaType; label: string }[] = [
+  { value: "video", label: "视频" },
+  { value: "music", label: "音乐" },
+  { value: "image", label: "图片" },
+  { value: "book", label: "书籍" },
+]
+
 const MediaSettings = () => {
-  const { colorMode } = useColorMode()
-  const isDark = createMemo(() => colorMode() === "dark")
-
-  // 主题色
-  const cardBg = createMemo(() =>
-    isDark() ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)",
-  )
-  const cardBorder = createMemo(() =>
-    isDark() ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
-  )
-  const titleColor = createMemo(() => (isDark() ? "#f1f5f9" : "#0f172a"))
-  const labelColor = createMemo(() => (isDark() ? "#94a3b8" : "#374151"))
-  const subColor = createMemo(() => (isDark() ? "#64748b" : "#94a3b8"))
-  const inputBg = createMemo(() =>
-    isDark() ? "rgba(255,255,255,0.06)" : "white",
-  )
-  const inputBorder = createMemo(() =>
-    isDark() ? "rgba(255,255,255,0.12)" : "#d1d5db",
-  )
-  const inputColor = createMemo(() => (isDark() ? "#e2e8f0" : "#1e293b"))
-  const sectionBg = createMemo(() =>
-    isDark() ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)",
-  )
-  const sectionBorder = createMemo(() =>
-    isDark() ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
-  )
-
-  // 图片配置
-  const [imageThumbnailMode, setImageThumbnailMode] = createSignal<
-    "base64" | "local"
-  >("base64")
-  const [imageThumbnailPath, setImageThumbnailPath] = createSignal("/imgs")
-  const [imageStoreThumbnail, setImageStoreThumbnail] = createSignal(false)
-
-  // 图书配置
-  const [bookThumbnailMode, setBookThumbnailMode] = createSignal<
-    "base64" | "local"
-  >("base64")
-  const [bookThumbnailPath, setBookThumbnailPath] = createSignal("/imgs")
-
+  useTitle("媒体库设置")
+  const [loading, setLoading] = createSignal(true)
   const [saving, setSaving] = createSignal(false)
-  const [saveMsg, setSaveMsg] = createSignal("")
+  const [settings, setSettings] = createStore<SettingItem[]>([])
+  const [configs, setConfigs] = createStore<MediaConfig[]>([])
+  const [paths, setPaths] = createStore<MediaScanPath[]>([])
+  const [appKeys, setAppKeys] = createStore<MediaAppKey[]>([])
+  const [newKeyName, setNewKeyName] = createSignal("")
+  const [plainKey, setPlainKey] = createSignal("")
+  const [strmGenerating, setStrmGenerating] = createSignal(false)
 
-  // 加载配置
-  const [configData] = createResource(async () => {
-    const resp = await adminGetMediaConfigs()
-    if (resp.code === 200) return resp.data as MediaConfig[]
-    return []
-  })
+  // 新增扫描路径
+  const [pathModalOpen, setPathModalOpen] = createSignal(false)
+  const [newPath, setNewPath] = createSignal<{
+    name: string
+    path: string
+    media_type: MediaType
+    path_merge: boolean
+  }>({ name: "", path: "", media_type: "video", path_merge: false })
 
-  // 配置加载后初始化状态
-  createEffect(() => {
-    const configs = configData()
-    if (!configs) return
-    const imageConfig = configs.find((c) => c.media_type === "image")
-    const bookConfig = configs.find((c) => c.media_type === "book")
+  const mediaSettings = createMemo(() =>
+    settings.filter((s) => s.group === MEDIA_GROUP),
+  )
+  const transcodeSettings = createMemo(() =>
+    settings.filter((s) => s.group === TRANSCODE_GROUP),
+  )
 
-    if (imageConfig) {
-      try {
-        const sc = JSON.parse(imageConfig.scraper_config || "{}")
-        setImageStoreThumbnail(sc.store_thumbnail === "true")
-        setImageThumbnailMode(
-          (sc.thumbnail_mode as "base64" | "local") || "base64",
-        )
-        setImageThumbnailPath(sc.thumbnail_path || "/imgs")
-      } catch {}
-    }
-    if (bookConfig) {
-      try {
-        const sc = JSON.parse(bookConfig.scraper_config || "{}")
-        setBookThumbnailMode(
-          (sc.thumbnail_mode as "base64" | "local") || "base64",
-        )
-        setBookThumbnailPath(sc.thumbnail_path || "/imgs")
-      } catch {}
-    }
-  })
+  const refresh = async () => {
+    setLoading(true)
+    const [settingsResp, configResp, pathResp, keyResp] = await Promise.all([
+      r.get(`/admin/setting/list?groups=${MEDIA_GROUP},${TRANSCODE_GROUP}`),
+      adminGetMediaConfigs(),
+      adminListMediaScanPaths(),
+      adminListAppKeys(),
+    ])
+    handleResp(settingsResp as any, (data: SettingItem[]) => setSettings(data))
+    handleResp(configResp, (data: MediaConfig[]) => setConfigs(data))
+    handleResp(pathResp, (data: MediaScanPath[]) => setPaths(data))
+    handleResp(keyResp, (data: MediaAppKey[]) => setAppKeys(data))
+    setLoading(false)
+  }
+  onMount(refresh)
 
-  const handleSave = async () => {
+  const save = async () => {
     setSaving(true)
-    setSaveMsg("")
-    const configs = configData()
-    if (!configs) {
-      setSaving(false)
+    const resp = (await r.post(
+      "/admin/setting/save",
+      getTarget(settings),
+    )) as any
+    setSaving(false)
+    handleResp(resp, async () => {
+      notify.success("保存成功")
+      const statusResp = await getMediaStatus()
+      handleResp(statusResp, setMediaStatus)
+    })
+  }
+
+  const toggleType = async (cfg: MediaConfig, enabled: boolean) => {
+    const resp = await adminSaveMediaConfig({ ...cfg, enabled })
+    handleResp(resp, () => {
+      const idx = configs.findIndex((c) => c.media_type === cfg.media_type)
+      if (idx >= 0) setConfigs(idx, "enabled", enabled)
+      notify.success(`${cfg.media_type} 已${enabled ? "启用" : "关闭"}`)
+      getMediaStatus().then((res) => handleResp(res, setMediaStatus))
+    })
+  }
+
+  const generateStrm = async (mediaType?: MediaType) => {
+    setStrmGenerating(true)
+    const resp = await adminGenerateStrm(mediaType)
+    setStrmGenerating(false)
+    handleResp(resp, (data) => {
+      notify.success(`已生成 ${data.written} 个 .strm 文件到 ${data.path}`)
+    })
+  }
+
+  const createPath = async () => {
+    const p = newPath()
+    if (!p.name || !p.path) {
+      notify.warning("名称和路径不能为空")
       return
     }
+    const resp = await adminCreateMediaScanPath(p)
+    handleResp(resp, () => {
+      notify.success("已添加扫描路径")
+      setPathModalOpen(false)
+      setNewPath({ name: "", path: "", media_type: "video", path_merge: false })
+      adminListMediaScanPaths().then((res) =>
+        handleResp(res, (data: MediaScanPath[]) => setPaths(data)),
+      )
+    })
+  }
 
+  const removePath = async (sp: MediaScanPath) => {
+    const resp = await adminDeleteMediaScanPath(sp.id!)
+    handleResp(resp, () => {
+      notify.success("已删除")
+      setPaths((list) => list.filter((p) => p.id !== sp.id))
+    })
+  }
+
+  const createKey = async () => {
+    const name = newKeyName().trim() || "Media Key"
+    const resp = await adminCreateAppKey(name)
+    handleResp(resp, (data) => {
+      setPlainKey(data.key)
+      setNewKeyName("")
+      notify.success("密钥已创建，请立即复制")
+      adminListAppKeys().then((res) =>
+        handleResp(res, (list: MediaAppKey[]) => setAppKeys(list)),
+      )
+    })
+  }
+
+  const removeKey = async (key: MediaAppKey) => {
+    const resp = await adminDeleteAppKey(key.id)
+    handleResp(resp, () => {
+      notify.success("已删除")
+      setAppKeys((list) => list.filter((k) => k.id !== key.id))
+    })
+  }
+
+  const copy = async (text: string) => {
     try {
-      // 保存图片配置
-      const imageConfig = configs.find((c) => c.media_type === "image")
-      if (imageConfig) {
-        let sc: Record<string, string> = {}
-        try {
-          sc = JSON.parse(imageConfig.scraper_config || "{}")
-        } catch {}
-        sc.store_thumbnail = imageStoreThumbnail() ? "true" : "false"
-        sc.thumbnail_mode = imageThumbnailMode()
-        sc.thumbnail_path = imageThumbnailPath()
-        await adminSaveMediaConfig({
-          ...imageConfig,
-          scraper_config: JSON.stringify(sc),
-        })
-      }
-
-      // 保存图书配置
-      const bookConfig = configs.find((c) => c.media_type === "book")
-      if (bookConfig) {
-        let sc: Record<string, string> = {}
-        try {
-          sc = JSON.parse(bookConfig.scraper_config || "{}")
-        } catch {}
-        sc.thumbnail_mode = bookThumbnailMode()
-        sc.thumbnail_path = bookThumbnailPath()
-        await adminSaveMediaConfig({
-          ...bookConfig,
-          scraper_config: JSON.stringify(sc),
-        })
-      }
-
-      setSaveMsg("✅ 保存成功")
-    } catch (e) {
-      setSaveMsg("❌ 保存失败")
-    } finally {
-      setSaving(false)
-      setTimeout(() => setSaveMsg(""), 3000)
+      await navigator.clipboard.writeText(text)
+      notify.success("已复制")
+    } catch {
+      notify.error("复制失败")
     }
   }
 
-  const ToggleSwitch = (p: {
-    value: boolean
-    onChange: (v: boolean) => void
-    label: string
-  }) => (
-    <label
-      style={{
-        display: "flex",
-        "align-items": "center",
-        gap: "10px",
-        cursor: "pointer",
-      }}
-    >
-      <div
-        onClick={() => p.onChange(!p.value)}
-        style={{
-          width: "44px",
-          height: "24px",
-          "border-radius": "12px",
-          background: p.value
-            ? "#6366f1"
-            : isDark()
-              ? "rgba(255,255,255,0.15)"
-              : "#d1d5db",
-          position: "relative",
-          cursor: "pointer",
-          transition: "background 0.2s",
-          "flex-shrink": "0",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            top: "2px",
-            left: p.value ? "22px" : "2px",
-            width: "20px",
-            height: "20px",
-            "border-radius": "50%",
-            background: "white",
-            transition: "left 0.2s",
-            "box-shadow": "0 1px 3px rgba(0,0,0,0.2)",
-          }}
-        />
-      </div>
-      <span style={{ "font-size": "14px", color: labelColor() }}>
-        {p.label}
-      </span>
-    </label>
-  )
-
-  const ModeSelector = (p: {
-    value: "base64" | "local"
-    onChange: (v: "base64" | "local") => void
-  }) => (
-    <div style={{ display: "flex", gap: "6px" }}>
-      {(["base64", "local"] as const).map((mode) => (
-        <button
-          onClick={() => p.onChange(mode)}
-          style={{
-            background:
-              p.value === mode
-                ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
-                : isDark()
-                  ? "rgba(255,255,255,0.06)"
-                  : "rgba(0,0,0,0.05)",
-            border:
-              p.value === mode
-                ? "1px solid rgba(99,102,241,0.5)"
-                : `1px solid ${isDark() ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.12)"}`,
-            "border-radius": "8px",
-            color: p.value === mode ? "white" : labelColor(),
-            padding: "6px 16px",
-            "font-size": "13px",
-            cursor: "pointer",
-            transition: "all 0.2s",
-            "font-weight": p.value === mode ? "500" : "400",
-          }}
-        >
-          {mode === "base64" ? "🗄️ BASE64（数据库）" : "📁 本地文件"}
-        </button>
-      ))}
-    </div>
-  )
+  const status = createMemo(() => mediaStatus())
 
   return (
-    <MediaLayout title="⚙️ 媒体库设置">
-      <Show
-        when={!configData.loading}
-        fallback={
-          <div
-            style={{
-              "text-align": "center",
-              padding: "60px",
-              color: subColor(),
-            }}
-          >
-            加载中...
-          </div>
-        }
+    <VStack
+      w="$full"
+      alignItems="stretch"
+      spacing="$5"
+      p={{ "@initial": "$3", "@md": "$6" }}
+    >
+      <HStack
+        justifyContent="space-between"
+        alignItems="center"
+        flexWrap="wrap"
+        gap="$2"
       >
-        <div style={{ "max-width": "720px" }}>
-          <h2
-            style={{
-              margin: "0 0 6px",
-              "font-size": "22px",
-              "font-weight": "700",
-              color: titleColor(),
-            }}
-          >
-            ⚙️ 媒体库设置
-          </h2>
-          <p
-            style={{
-              margin: "0 0 28px",
-              "font-size": "14px",
-              color: subColor(),
-            }}
-          >
-            配置缩略图/封面的存储方式，影响图片和图书的刮削行为。修改后需重新刮削才能生效。
-          </p>
+        <VStack alignItems="flex-start" spacing="$1">
+          <Heading size="lg">媒体库设置</Heading>
+          <Text color="$neutral11" fontSize="$sm">
+            媒体库关闭时，相关页面、接口与协议端点均不可用。
+          </Text>
+        </VStack>
+        <HStack spacing="$2">
+          <Button variant="ghost" onClick={refresh} loading={loading()}>
+            刷新
+          </Button>
+          <Button colorScheme="accent" onClick={save} loading={saving()}>
+            保存设置
+          </Button>
+        </HStack>
+      </HStack>
 
-          {/* ── 图片设置 ── */}
-          <div
-            style={{
-              background: cardBg(),
-              "border-radius": "14px",
-              border: `1px solid ${cardBorder()}`,
-              padding: "24px",
-              "margin-bottom": "20px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                "align-items": "center",
-                gap: "10px",
-                "margin-bottom": "20px",
-              }}
-            >
-              <span style={{ "font-size": "22px" }}>🖼️</span>
-              <h3
-                style={{
-                  margin: "0",
-                  "font-size": "16px",
-                  "font-weight": "600",
-                  color: titleColor(),
-                }}
-              >
-                图片库设置
-              </h3>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                "flex-direction": "column",
-                gap: "20px",
-              }}
-            >
-              {/* 存储缩略图开关 */}
-              <div
-                style={{
-                  background: sectionBg(),
-                  "border-radius": "10px",
-                  border: `1px solid ${sectionBorder()}`,
-                  padding: "16px",
-                }}
-              >
-                <ToggleSwitch
-                  value={imageStoreThumbnail()}
-                  onChange={setImageStoreThumbnail}
-                  label="存储缩略图"
-                />
-                <p
-                  style={{
-                    margin: "8px 0 0 54px",
-                    "font-size": "12px",
-                    color: subColor(),
-                  }}
-                >
-                  开启后刮削时生成缩略图并存储；关闭则直接用原图路径作为封面
-                </p>
-              </div>
-
-              {/* 存储方式（仅在开启时显示） */}
-              <Show when={imageStoreThumbnail()}>
-                <div
-                  style={{
-                    background: sectionBg(),
-                    "border-radius": "10px",
-                    border: `1px solid ${sectionBorder()}`,
-                    padding: "16px",
-                  }}
-                >
-                  <div style={{ "margin-bottom": "12px" }}>
-                    <div
-                      style={{
-                        "font-size": "14px",
-                        "font-weight": "500",
-                        color: labelColor(),
-                        "margin-bottom": "10px",
-                      }}
-                    >
-                      缩略图存储方式
-                    </div>
-                    <ModeSelector
-                      value={imageThumbnailMode()}
-                      onChange={setImageThumbnailMode}
-                    />
-                    <p
-                      style={{
-                        margin: "8px 0 0",
-                        "font-size": "12px",
-                        color: subColor(),
-                      }}
-                    >
-                      {imageThumbnailMode() === "base64"
-                        ? "缩略图以 base64 编码存入数据库，无需额外文件存储，但会增大数据库体积"
-                        : "缩略图保存为本地文件，数据库仅存储文件路径，节省数据库空间"}
-                    </p>
-                  </div>
-
-                  {/* 本地存储路径 */}
-                  <Show when={imageThumbnailMode() === "local"}>
-                    <div
-                      style={{
-                        "border-top": `1px solid ${sectionBorder()}`,
-                        "padding-top": "14px",
-                        "margin-top": "4px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          "font-size": "14px",
-                          "font-weight": "500",
-                          color: labelColor(),
-                          "margin-bottom": "8px",
-                        }}
-                      >
-                        缩略图存储路径
-                      </div>
-                      <input
-                        type="text"
-                        value={imageThumbnailPath()}
-                        onInput={(e) =>
-                          setImageThumbnailPath(e.currentTarget.value)
-                        }
-                        placeholder="/imgs"
-                        style={{
-                          background: inputBg(),
-                          border: `1px solid ${inputBorder()}`,
-                          "border-radius": "8px",
-                          color: inputColor(),
-                          padding: "8px 12px",
-                          "font-size": "13px",
-                          outline: "none",
-                          width: "280px",
-                          "font-family": "monospace",
-                        }}
-                      />
-                      <p
-                        style={{
-                          margin: "6px 0 0",
-                          "font-size": "12px",
-                          color: subColor(),
-                        }}
-                      >
-                        缩略图文件将保存到此 VFS 路径下，默认为{" "}
-                        <code
-                          style={{
-                            "font-family": "monospace",
-                            background: isDark()
-                              ? "rgba(255,255,255,0.08)"
-                              : "rgba(0,0,0,0.06)",
-                            padding: "1px 4px",
-                            "border-radius": "3px",
-                          }}
-                        >
-                          /imgs
-                        </code>
-                      </p>
-                    </div>
-                  </Show>
-                </div>
-              </Show>
-            </div>
-          </div>
-
-          {/* ── 图书设置 ── */}
-          <div
-            style={{
-              background: cardBg(),
-              "border-radius": "14px",
-              border: `1px solid ${cardBorder()}`,
-              padding: "24px",
-              "margin-bottom": "28px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                "align-items": "center",
-                gap: "10px",
-                "margin-bottom": "20px",
-              }}
-            >
-              <span style={{ "font-size": "22px" }}>📚</span>
-              <h3
-                style={{
-                  margin: "0",
-                  "font-size": "16px",
-                  "font-weight": "600",
-                  color: titleColor(),
-                }}
-              >
-                图书库设置
-              </h3>
-            </div>
-
-            <div
-              style={{
-                background: sectionBg(),
-                "border-radius": "10px",
-                border: `1px solid ${sectionBorder()}`,
-                padding: "16px",
-              }}
-            >
-              <div style={{ "margin-bottom": "12px" }}>
-                <div
-                  style={{
-                    "font-size": "14px",
-                    "font-weight": "500",
-                    color: labelColor(),
-                    "margin-bottom": "10px",
-                  }}
-                >
-                  封面存储方式
-                </div>
-                <ModeSelector
-                  value={bookThumbnailMode()}
-                  onChange={setBookThumbnailMode}
-                />
-                <p
-                  style={{
-                    margin: "8px 0 0",
-                    "font-size": "12px",
-                    color: subColor(),
-                  }}
-                >
-                  {bookThumbnailMode() === "base64"
-                    ? "封面以 base64 编码存入数据库（默认），无需额外文件存储，但会增大数据库体积"
-                    : "封面保存为本地文件，数据库仅存储文件路径，节省数据库空间"}
-                </p>
-              </div>
-
-              {/* 本地存储路径 */}
-              <Show when={bookThumbnailMode() === "local"}>
-                <div
-                  style={{
-                    "border-top": `1px solid ${sectionBorder()}`,
-                    "padding-top": "14px",
-                    "margin-top": "4px",
-                  }}
-                >
-                  <div
-                    style={{
-                      "font-size": "14px",
-                      "font-weight": "500",
-                      color: labelColor(),
-                      "margin-bottom": "8px",
-                    }}
-                  >
-                    封面存储路径
-                  </div>
-                  <input
-                    type="text"
-                    value={bookThumbnailPath()}
-                    onInput={(e) => setBookThumbnailPath(e.currentTarget.value)}
-                    placeholder="/imgs"
-                    style={{
-                      background: inputBg(),
-                      border: `1px solid ${inputBorder()}`,
-                      "border-radius": "8px",
-                      color: inputColor(),
-                      padding: "8px 12px",
-                      "font-size": "13px",
-                      outline: "none",
-                      width: "280px",
-                      "font-family": "monospace",
-                    }}
-                  />
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      "font-size": "12px",
-                      color: subColor(),
-                    }}
-                  >
-                    封面文件将保存到此 VFS 路径下，默认为{" "}
-                    <code
-                      style={{
-                        "font-family": "monospace",
-                        background: isDark()
-                          ? "rgba(255,255,255,0.08)"
-                          : "rgba(0,0,0,0.06)",
-                        padding: "1px 4px",
-                        "border-radius": "3px",
-                      }}
-                    >
-                      /imgs
-                    </code>
-                  </p>
-                </div>
-              </Show>
-            </div>
-          </div>
-
-          {/* 保存按钮 */}
-          <div
-            style={{ display: "flex", "align-items": "center", gap: "14px" }}
-          >
-            <button
-              onClick={handleSave}
-              disabled={saving()}
-              style={{
-                background: saving()
-                  ? isDark()
-                    ? "rgba(99,102,241,0.4)"
-                    : "#a5b4fc"
-                  : "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                border: "none",
-                "border-radius": "10px",
-                color: "white",
-                padding: "10px 28px",
-                "font-size": "14px",
-                "font-weight": "600",
-                cursor: saving() ? "not-allowed" : "pointer",
-                transition: "all 0.2s",
-                "box-shadow": saving()
-                  ? "none"
-                  : "0 4px 14px rgba(99,102,241,0.4)",
-              }}
-            >
-              {saving() ? "保存中..." : "💾 保存设置"}
-            </button>
-            <Show when={saveMsg()}>
-              <span
-                style={{
-                  "font-size": "14px",
-                  color: saveMsg().startsWith("✅") ? "#10b981" : "#ef4444",
-                }}
-              >
-                {saveMsg()}
-              </span>
-            </Show>
-          </div>
-
-          {/* 说明 */}
-          <div
-            style={{
-              "margin-top": "24px",
-              padding: "14px 16px",
-              background: isDark()
-                ? "rgba(99,102,241,0.08)"
-                : "rgba(99,102,241,0.05)",
-              "border-radius": "10px",
-              border: `1px solid ${isDark() ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.15)"}`,
-            }}
-          >
-            <div
-              style={{
-                "font-size": "13px",
-                "font-weight": "600",
-                color: isDark() ? "#a5b4fc" : "#6366f1",
-                "margin-bottom": "6px",
-              }}
-            >
-              💡 说明
-            </div>
-            <ul
-              style={{
-                margin: "0",
-                padding: "0 0 0 16px",
-                "font-size": "13px",
-                color: subColor(),
-                "line-height": "1.8",
-              }}
-            >
-              <li>修改存储方式后，需要重新刮削才能对已有数据生效</li>
-              <li>
-                BASE64
-                模式：缩略图/封面直接存入数据库，访问速度快，但数据库体积较大
-              </li>
-              <li>
-                本地文件模式：缩略图/封面保存为文件，数据库仅存路径，适合大量媒体文件
-              </li>
-              <li>
-                本地存储路径支持 VFS 路径（如{" "}
-                <code style={{ "font-family": "monospace" }}>/imgs</code>
-                ），需确保对应存储有写入权限
-              </li>
-            </ul>
-          </div>
-        </div>
+      <Show when={loading()} fallback={null}>
+        <HStack justifyContent="center" py="$6">
+          <Spinner />
+        </HStack>
       </Show>
-    </MediaLayout>
+
+      {/* 通用设置：直接复用后台的 SettingItem 渲染器 */}
+      <VStack
+        alignItems="stretch"
+        spacing="$3"
+        p="$4"
+        bgColor="$neutral1"
+        rounded="$lg"
+      >
+        <Heading size="sm">通用</Heading>
+        <Text fontSize="$sm" color="$neutral11">
+          总开关、抓取源、缩略图与刷新策略均来自服务端设置项。
+        </Text>
+        <SimpleGrid columns={{ "@initial": 1, "@md": 2 }} gap="$4">
+          <For each={mediaSettings()}>
+            {(item) => (
+              <Item
+                {...item}
+                onChange={(val) =>
+                  setSettings((s) => s.key === item.key, "value", val)
+                }
+              />
+            )}
+          </For>
+        </SimpleGrid>
+      </VStack>
+
+      {/* 媒体类型 */}
+      <VStack
+        alignItems="stretch"
+        spacing="$3"
+        p="$4"
+        bgColor="$neutral1"
+        rounded="$lg"
+      >
+        <Heading size="sm">媒体类型</Heading>
+        <Text fontSize="$sm" color="$neutral11">
+          只有启用的类型会出现在前端导航与 Emby / Subsonic 视图中。
+        </Text>
+        <For each={configs}>
+          {(cfg) => (
+            <HStack justifyContent="space-between" alignItems="center" py="$2">
+              <VStack alignItems="flex-start" spacing="2px">
+                <Text fontWeight="$medium">
+                  {mediaTypeOptions.find((o) => o.value === cfg.media_type)
+                    ?.label ?? cfg.media_type}
+                </Text>
+                <Text fontSize="$xs" color="$neutral11">
+                  {cfg.enabled ? "已启用" : "未启用"}
+                  {cfg.last_scan_at ? ` · 上次扫描 ${cfg.last_scan_at}` : ""}
+                </Text>
+              </VStack>
+              <Switch
+                checked={cfg.enabled}
+                onChange={(e) => toggleType(cfg, e.currentTarget.checked)}
+              />
+            </HStack>
+          )}
+        </For>
+      </VStack>
+
+      {/* 扫描路径 */}
+      <VStack
+        alignItems="stretch"
+        spacing="$3"
+        p="$4"
+        bgColor="$neutral1"
+        rounded="$lg"
+      >
+        <HStack justifyContent="space-between" alignItems="center">
+          <Heading size="sm">扫描路径</Heading>
+          <Button
+            size="sm"
+            colorScheme="accent"
+            onClick={() => setPathModalOpen(true)}
+          >
+            添加路径
+          </Button>
+        </HStack>
+        <Table>
+          <Thead>
+            <Tr>
+              <Th>名称</Th>
+              <Th>路径</Th>
+              <Th>类型</Th>
+              <Th>合并</Th>
+              <Th />
+            </Tr>
+          </Thead>
+          <Tbody>
+            <For
+              each={paths}
+              fallback={
+                <Tr>
+                  <Td colSpan={5}>
+                    <Text color="$neutral11">尚未配置扫描路径</Text>
+                  </Td>
+                </Tr>
+              }
+            >
+              {(sp) => (
+                <Tr>
+                  <Td>{sp.name}</Td>
+                  <Td>
+                    <Text fontSize="$sm" css={{ wordBreak: "break-all" }}>
+                      {sp.path}
+                    </Text>
+                  </Td>
+                  <Td>{sp.media_type}</Td>
+                  <Td>{sp.path_merge ? "是" : "否"}</Td>
+                  <Td>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorScheme="danger"
+                      onClick={() => removePath(sp)}
+                    >
+                      删除
+                    </Button>
+                  </Td>
+                </Tr>
+              )}
+            </For>
+          </Tbody>
+        </Table>
+      </VStack>
+
+      {/* STRM */}
+      <VStack
+        alignItems="stretch"
+        spacing="$3"
+        p="$4"
+        bgColor="$neutral1"
+        rounded="$lg"
+      >
+        <Heading size="sm">STRM</Heading>
+        <Text fontSize="$sm" color="$neutral11">
+          扫描时可自动写入 STRM（见上方
+          media_strm_on_scan），也可以在这里手动生成。STRM 内容使用
+          当前站点地址与签名直链。
+        </Text>
+        <HStack spacing="$2" flexWrap="wrap">
+          <Button
+            size="sm"
+            onClick={() => generateStrm("video")}
+            loading={strmGenerating()}
+          >
+            生成视频 STRM
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => generateStrm("music")}
+            loading={strmGenerating()}
+          >
+            生成音乐 STRM
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => generateStrm()}
+            loading={strmGenerating()}
+          >
+            生成全部
+          </Button>
+        </HStack>
+        <Text fontSize="$xs" color="$neutral11">
+          输出目录：{status().strm_path || "未配置"}
+        </Text>
+      </VStack>
+
+      {/* 协议 */}
+      <VStack
+        alignItems="stretch"
+        spacing="$3"
+        p="$4"
+        bgColor="$neutral1"
+        rounded="$lg"
+      >
+        <Heading size="sm">协议接入</Heading>
+        <Text fontSize="$sm" color="$neutral11">
+          使用下方“应用密钥”作为客户端凭据；开启对应开关后即可在第三方客户端中填写地址。
+        </Text>
+        <VStack alignItems="stretch" spacing="$2">
+          <HStack justifyContent="space-between" alignItems="center">
+            <VStack alignItems="flex-start" spacing="2px">
+              <Text fontWeight="$medium">Emby</Text>
+              <Text fontSize="$xs" color="$neutral11">
+                {status().emby_enabled ? status().emby_base_url : "未启用"}
+              </Text>
+            </VStack>
+            <Show when={status().emby_enabled}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => copy(status().emby_base_url)}
+              >
+                复制地址
+              </Button>
+            </Show>
+          </HStack>
+          <Divider />
+          <HStack justifyContent="space-between" alignItems="center">
+            <VStack alignItems="flex-start" spacing="2px">
+              <Text fontWeight="$medium">OpenSubsonic</Text>
+              <Text fontSize="$xs" color="$neutral11">
+                {status().subsonic_enabled
+                  ? status().subsonic_base_url
+                  : "未启用"}
+              </Text>
+            </VStack>
+            <Show when={status().subsonic_enabled}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => copy(status().subsonic_base_url)}
+              >
+                复制地址
+              </Button>
+            </Show>
+          </HStack>
+        </VStack>
+      </VStack>
+
+      {/* 应用密钥 */}
+      <VStack
+        alignItems="stretch"
+        spacing="$3"
+        p="$4"
+        bgColor="$neutral1"
+        rounded="$lg"
+      >
+        <Heading size="sm">应用密钥</Heading>
+        <Text fontSize="$sm" color="$neutral11">
+          用于 Subsonic 的 token 认证、Emby 的 api_key 以及 MoviePilot
+          等无交互客户端。密钥只显示一次。
+        </Text>
+        <HStack spacing="$2">
+          <Input
+            placeholder="密钥备注，例如 Symfonium"
+            value={newKeyName()}
+            onInput={(e) => setNewKeyName(e.currentTarget.value)}
+            w={{ "@initial": "$full", "@md": "320px" }}
+          />
+          <Button colorScheme="accent" onClick={createKey}>
+            创建
+          </Button>
+        </HStack>
+        <Show when={plainKey()}>
+          <Alert status="warning" variant="subtle">
+            <AlertIcon />
+            <AlertDescription>
+              <VStack alignItems="flex-start" spacing="$1">
+                <Text fontWeight="$medium">
+                  请立即复制，关闭后无法再次查看：
+                </Text>
+                <Text
+                  fontFamily="$mono"
+                  fontSize="$sm"
+                  css={{ wordBreak: "break-all" }}
+                >
+                  {plainKey()}
+                </Text>
+                <Button size="xs" onClick={() => copy(plainKey())}>
+                  复制密钥
+                </Button>
+              </VStack>
+            </AlertDescription>
+          </Alert>
+        </Show>
+        <Table>
+          <Thead>
+            <Tr>
+              <Th>备注</Th>
+              <Th>前缀</Th>
+              <Th>最近使用</Th>
+              <Th />
+            </Tr>
+          </Thead>
+          <Tbody>
+            <For
+              each={appKeys}
+              fallback={
+                <Tr>
+                  <Td colSpan={4}>
+                    <Text color="$neutral11">还没有应用密钥</Text>
+                  </Td>
+                </Tr>
+              }
+            >
+              {(key) => (
+                <Tr>
+                  <Td>{key.name}</Td>
+                  <Td>
+                    <Text css={{ fontFamily: "$mono" }}>{key.prefix}…</Text>
+                  </Td>
+                  <Td>{key.last_used_at || "从未"}</Td>
+                  <Td>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorScheme="danger"
+                      onClick={() => removeKey(key)}
+                    >
+                      删除
+                    </Button>
+                  </Td>
+                </Tr>
+              )}
+            </For>
+          </Tbody>
+        </Table>
+      </VStack>
+
+      {/* 转码 */}
+      <VStack
+        alignItems="stretch"
+        spacing="$3"
+        p="$4"
+        bgColor="$neutral1"
+        rounded="$lg"
+      >
+        <Heading size="sm">转码</Heading>
+        <Text fontSize="$sm" color="$neutral11">
+          转码默认关闭；开启后按阈值决定是否转为 HLS 再播放。
+        </Text>
+        <SimpleGrid columns={{ "@initial": 1, "@md": 2 }} gap="$4">
+          <For each={transcodeSettings()}>
+            {(item) => (
+              <Item
+                {...item}
+                onChange={(val) =>
+                  setSettings((s) => s.key === item.key, "value", val)
+                }
+              />
+            )}
+          </For>
+        </SimpleGrid>
+      </VStack>
+
+      <Modal opened={pathModalOpen()} onClose={() => setPathModalOpen(false)}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>添加扫描路径</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing="$4" alignItems="stretch">
+              <FormControl>
+                <FormLabel>名称</FormLabel>
+                <Input
+                  value={newPath().name}
+                  onInput={(e) =>
+                    setNewPath((p) => ({ ...p, name: e.currentTarget.value }))
+                  }
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel>路径</FormLabel>
+                <Input
+                  placeholder="/movies"
+                  value={newPath().path}
+                  onInput={(e) =>
+                    setNewPath((p) => ({ ...p, path: e.currentTarget.value }))
+                  }
+                />
+                <FormHelperText>OpenList 中的虚拟路径</FormHelperText>
+              </FormControl>
+              <FormControl>
+                <FormLabel>媒体类型</FormLabel>
+                <Select
+                  value={newPath().media_type}
+                  onChange={(v) =>
+                    setNewPath((p) => ({ ...p, media_type: v as MediaType }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                    <SelectIcon />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectListbox>
+                      <For each={mediaTypeOptions}>
+                        {(opt) => (
+                          <SelectOption value={opt.value}>
+                            <SelectOptionText>{opt.label}</SelectOptionText>
+                            <SelectOptionIndicator />
+                          </SelectOption>
+                        )}
+                      </For>
+                    </SelectListbox>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormControl>
+                <HStack justifyContent="space-between">
+                  <FormLabel>子文件夹合并为一个条目</FormLabel>
+                  <Switch
+                    checked={newPath().path_merge}
+                    onChange={(e) =>
+                      setNewPath((p) => ({
+                        ...p,
+                        path_merge: e.currentTarget.checked,
+                      }))
+                    }
+                  />
+                </HStack>
+              </FormControl>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <HStack spacing="$2">
+              <Button variant="ghost" onClick={() => setPathModalOpen(false)}>
+                取消
+              </Button>
+              <Button colorScheme="accent" onClick={createPath}>
+                添加
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </VStack>
   )
 }
 

@@ -27,7 +27,9 @@ import { MustUser, UserOrGuest } from "./MustUser"
 import "./index.css"
 import { globalStyles } from "./theme"
 import { MusicPlayer } from "~/pages/media/music/MusicLibrary"
-import { RootLayout } from "./RootLayout"
+import { MediaShell } from "./MediaShell"
+import { mediaEnabled, setMediaStatus } from "~/store/media"
+import type { MediaStatus } from "~/store/media"
 
 const Home = lazy(() => import("~/pages/home/Layout"))
 const Manage = lazy(() => import("~/pages/manage"))
@@ -38,6 +40,7 @@ const VideoLibrary = lazy(() => import("~/pages/media/video/VideoLibrary"))
 const MusicLibrary = lazy(() => import("~/pages/media/music/MusicLibrary"))
 const ImageLibrary = lazy(() => import("~/pages/media/image/ImageLibrary"))
 const BookLibrary = lazy(() => import("~/pages/media/book/BookLibrary"))
+const MediaSettings = lazy(() => import("~/pages/media/MediaSettings"))
 
 const App: Component = () => {
   const t = useT()
@@ -101,6 +104,13 @@ const App: Component = () => {
           // (e) => setErr(err().concat(e)),
         )
       })(),
+      (async () => {
+        handleRespWithoutAuthAndNotify(
+          (await r.get("/public/media_status")) as Resp<MediaStatus>,
+          setMediaStatus,
+          // 媒体库未启用时该接口也返回 200，不会走到这里
+        )
+      })(),
     ]),
   )
   data()
@@ -109,6 +119,13 @@ const App: Component = () => {
   createEffect(() => {
     if (initialized() === false && !pathname().startsWith("/@init")) {
       to("/@init", true)
+    }
+  })
+
+  // 媒体库关闭时，/@media/* 等同于不存在
+  createEffect(() => {
+    if (!loading() && !mediaEnabled() && pathname().startsWith("/@media")) {
+      to("/", true)
     }
   })
   return (
@@ -141,15 +158,15 @@ const App: Component = () => {
                 </MustUser>
               }
             />
-            {/* 带侧边栏的路由：媒体库各页面 */}
+            {/* 媒体库页面：顶栏复用 main 的 Header，侧栏为可收起抽屉 */}
             <Route
               path="/@media/video/*"
               element={
                 <MustUser>
-                  <RootLayout>
+                  <MediaShell>
                     <MusicPlayer />
                     <VideoLibrary />
-                  </RootLayout>
+                  </MediaShell>
                 </MustUser>
               }
             />
@@ -157,10 +174,10 @@ const App: Component = () => {
               path="/@media/music/*"
               element={
                 <MustUser>
-                  <RootLayout>
+                  <MediaShell>
                     <MusicPlayer />
                     <MusicLibrary />
-                  </RootLayout>
+                  </MediaShell>
                 </MustUser>
               }
             />
@@ -168,10 +185,10 @@ const App: Component = () => {
               path="/@media/image/*"
               element={
                 <MustUser>
-                  <RootLayout>
+                  <MediaShell>
                     <MusicPlayer />
                     <ImageLibrary />
-                  </RootLayout>
+                  </MediaShell>
                 </MustUser>
               }
             />
@@ -179,10 +196,20 @@ const App: Component = () => {
               path="/@media/books/*"
               element={
                 <MustUser>
-                  <RootLayout>
+                  <MediaShell>
                     <MusicPlayer />
                     <BookLibrary />
-                  </RootLayout>
+                  </MediaShell>
+                </MustUser>
+              }
+            />
+            <Route
+              path="/@media/settings/*"
+              element={
+                <MustUser>
+                  <MediaShell>
+                    <MediaSettings />
+                  </MediaShell>
                 </MustUser>
               }
             />
@@ -190,9 +217,7 @@ const App: Component = () => {
               path={["/@s/*", "/%40s/*"]}
               element={
                 <UserOrGuest>
-                  <RootLayout>
-                    <Home />
-                  </RootLayout>
+                  <Home />
                 </UserOrGuest>
               }
             />
@@ -200,9 +225,7 @@ const App: Component = () => {
               path="*"
               element={
                 <MustUser>
-                  <RootLayout>
-                    <Home />
-                  </RootLayout>
+                  <Home />
                 </MustUser>
               }
             />

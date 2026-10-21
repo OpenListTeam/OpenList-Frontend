@@ -10,6 +10,8 @@ import {
 import { changeColor } from "seemly"
 import { Show, createMemo } from "solid-js"
 import { getMainColor, getSetting, local, objStore, State } from "~/store"
+import { mediaEnabled } from "~/store/media"
+import { MediaSidebarTrigger } from "~/components/MediaSidebar"
 import { BsSearch } from "solid-icons/bs"
 import { CenterLoading } from "~/components"
 import { Container } from "../Container"
@@ -45,7 +47,10 @@ export const Header = () => {
           w="$full"
           justifyContent="space-between"
         >
-          <HStack class="header-left" h="44px">
+          <HStack class="header-left" h="44px" spacing="$2">
+            <Show when={mediaEnabled()}>
+              <MediaSidebarTrigger />
+            </Show>
             <Image
               src={logo()!}
               h="$full"

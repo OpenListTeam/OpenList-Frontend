@@ -51,6 +51,12 @@ export const getMediaScanPaths = (mediaType?: MediaType) =>
     params: mediaType ? { media_type: mediaType } : {},
   }) as Promise<Resp<MediaScanPath[]>>
 
+/** 媒体库状态（是否启用、已启用类型、协议地址） */
+export const getMediaStatus = () =>
+  r.get("/public/media_status") as Promise<
+    Resp<import("~/store/media").MediaStatus>
+  >
+
 // ==================== 管理API ====================
 
 /** 获取所有媒体库配置 */
@@ -198,6 +204,45 @@ export const adminImportMediaDB = (file: File, scanPathId?: number) => {
     }>
   >
 }
+
+/** 获取条目（或某一集）的签名直链，供本地播放器使用 */
+export const getMediaStreamUrl = (params: {
+  id?: number
+  episode?: number
+  path?: string
+}) =>
+  r.get("/fs/media/stream_url", { params }) as Promise<
+    Resp<{ url: string; path: string; name: string; proxied: string }>
+  >
+
+/** 批量生成 STRM */
+export const adminGenerateStrm = (mediaType?: MediaType, scanPathId?: number) =>
+  r.post("/admin/media/strm/generate", {
+    media_type: mediaType ?? "",
+    scan_path_id: scanPathId ?? 0,
+  }) as Promise<Resp<{ written: number; path: string }>>
+
+/** 媒体应用密钥 */
+export interface MediaAppKey {
+  id: number
+  name: string
+  prefix: string
+  last_used_at: string | null
+  created_at: string
+}
+
+export const adminListAppKeys = () =>
+  r.get("/admin/media/appkey/list") as Promise<Resp<MediaAppKey[]>>
+
+export const adminCreateAppKey = (name: string) =>
+  r.post("/admin/media/appkey/create", { name }) as Promise<
+    Resp<{ id: number; name: string; prefix: string; key: string }>
+  >
+
+export const adminDeleteAppKey = (id: number) =>
+  r.post("/admin/media/appkey/delete", null, { params: { id } }) as Promise<
+    Resp<null>
+  >
 
 // ==================== 转码 API ====================
 

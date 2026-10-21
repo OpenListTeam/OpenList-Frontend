@@ -155,5 +155,13 @@
     "base64": "Base64 (Database)",
     "local": "Local file"
   },
-  "media_thumbnail_path": "Thumbnail storage path"
+  "media_thumbnail_path": "Thumbnail storage path",
+  "media_enabled": "Enable media library",
+  "media_emby_enabled": "Enable Emby compatible API",
+  "media_subsonic_enabled": "Enable OpenSubsonic API",
+  "media_subsonic_proxy_stream": "Proxy Subsonic streams",
+  "media_strm_on_scan": "Generate STRM after scan",
+  "media_strm_path": "STRM output directory",
+  "media_strm_overwrite": "Overwrite existing STRM files",
+  "media_strm_template": "STRM content template"
 }
