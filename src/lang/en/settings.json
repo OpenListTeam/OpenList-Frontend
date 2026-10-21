@@ -164,6 +164,7 @@
   "media_strm_path": "STRM output directory",
   "media_strm_overwrite": "Overwrite existing STRM files",
   "media_strm_template": "STRM content template",
+  "webauthn_login_enabled": "WebAuthn login enabled",
   "seed_site_url": "Seed site URL",
   "seed_default_matrix": "Default hash matrix",
   "seed_format_policies": "Seed format policies",
