@@ -14,11 +14,14 @@ export interface AccentPreset {
 export const ACCENT_PRESETS: AccentPreset[] = [
   { name: "Blue", color: "#2563eb" },
   { name: "Indigo", color: "#4f46e5" },
-  { name: "Emerald", color: "#10b981" },
+  { name: "Sky", color: "#0284c7" },
   { name: "Teal", color: "#0d9488" },
+  { name: "Emerald", color: "#059669" },
+  { name: "Olive", color: "#65a30d" },
+  { name: "Amber", color: "#b45309" },
+  { name: "Rose", color: "#be123c" },
   { name: "Violet", color: "#7c3aed" },
-  { name: "Amber", color: "#d97706" },
-  { name: "Rose", color: "#e11d48" },
+  { name: "Slate", color: "#475569" },
 ]
 
 const STORAGE_KEY = "openlist-accent-color"

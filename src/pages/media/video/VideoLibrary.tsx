@@ -562,6 +562,41 @@ const VideoPlayer = (props: {
     if (!useTranscode && getMediaBunnyMode() === "audio_only") {
       attachMediabunnyAudio(player, videoUrl())
     }
+
+    // 默认禁用 MediaBunny 时，仍自动检测浏览器不支持的音频（AC3/EAC3/DTS 等）：
+    // 播放几秒后音频解码字节数仍为 0，或浏览器明确报告无音频轨，则自动挂载 MediaBunny 音轨。
+    if (!useTranscode && getMediaBunnyMode() === "disabled") {
+      let audioPatched = false
+      const patchAudio = () => {
+        if (audioPatched || !player) return
+        audioPatched = true
+        attachMediabunnyAudio(player, videoUrl())
+        player.notice.show = "不支持的音频编码，已自动切换 MediaBunny 音频解码"
+      }
+      const detectUnsupportedAudio = () => {
+        if (audioPatched || !player) return
+        const video = player.video as HTMLVideoElement & {
+          mozHasAudio?: boolean
+          webkitAudioDecodedByteCount?: number
+        }
+        if (!video) return
+        // Firefox 会明确告知是否存在音频轨
+        if (video.mozHasAudio === false) {
+          patchAudio()
+          return
+        }
+        // Chromium：播放数秒后音频解码字节数仍为 0，说明浏览器丢弃了音轨
+        const decoded = video.webkitAudioDecodedByteCount
+        if (
+          typeof decoded === "number" &&
+          video.currentTime > 3 &&
+          decoded === 0
+        ) {
+          patchAudio()
+        }
+      }
+      player.on("video:timeupdate", detectUnsupportedAudio)
+    }
   })
 
   onCleanup(() => {
