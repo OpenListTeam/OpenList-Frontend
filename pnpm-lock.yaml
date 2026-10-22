@@ -93,7 +93,7 @@ importers:
         specifier: ^7.0.0
         version: 7.0.0
       katex:
-        specifier: ^0.18.1
+        specifier: ^0.18.2
         version: 0.18.2
       libheif-js:
         specifier: ^1.23.2
