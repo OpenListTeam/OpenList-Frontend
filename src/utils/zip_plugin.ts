@@ -1,5 +1,6 @@
 import { PluginItem, PluginType } from "~/types"
 import { loadScriptIIFE } from "./load_external"
+import { extractZipNative } from "./zip_read"
 
 export interface ExtractedPluginPackage {
   manifest: Partial<PluginItem>
@@ -165,89 +166,6 @@ async function extractZipEntries(
     // Fallback to fflate via CDN if native decompression encounters an edge case
     return await extractZipFallback(buffer)
   }
-}
-
-async function extractZipNative(
-  buffer: ArrayBuffer,
-): Promise<Record<string, Uint8Array>> {
-  const view = new DataView(buffer)
-  const length = buffer.byteLength
-  const files: Record<string, Uint8Array> = {}
-
-  // 1. Locate End of Central Directory record (EOCD)
-  let eocdOffset = -1
-  for (let i = length - 22; i >= Math.max(0, length - 65557); i--) {
-    if (view.getUint32(i, true) === 0x06054b50) {
-      eocdOffset = i
-      break
-    }
-  }
-  if (eocdOffset === -1) {
-    throw new Error(
-      "Invalid ZIP file: End of Central Directory signature not found",
-    )
-  }
-
-  const cdCount = view.getUint16(eocdOffset + 10, true)
-  const cdOffset = view.getUint32(eocdOffset + 16, true)
-
-  let currentCdOffset = cdOffset
-  for (let i = 0; i < cdCount; i++) {
-    if (view.getUint32(currentCdOffset, true) !== 0x02014b50) {
-      break
-    }
-    const compressionMethod = view.getUint16(currentCdOffset + 10, true)
-    const compressedSize = view.getUint32(currentCdOffset + 20, true)
-    const uncompressedSize = view.getUint32(currentCdOffset + 24, true)
-    const fileNameLength = view.getUint16(currentCdOffset + 28, true)
-    const extraFieldLength = view.getUint16(currentCdOffset + 30, true)
-    const fileCommentLength = view.getUint16(currentCdOffset + 32, true)
-    const localHeaderOffset = view.getUint32(currentCdOffset + 42, true)
-
-    const fileNameBytes = new Uint8Array(
-      buffer,
-      currentCdOffset + 46,
-      fileNameLength,
-    )
-    const fileName = new TextDecoder("utf-8").decode(fileNameBytes)
-
-    currentCdOffset +=
-      46 + fileNameLength + extraFieldLength + fileCommentLength
-
-    // Skip directories
-    if (fileName.endsWith("/")) continue
-
-    // Read local header to find data offset
-    if (view.getUint32(localHeaderOffset, true) !== 0x04034b50) {
-      continue
-    }
-    const localFileNameLen = view.getUint16(localHeaderOffset + 26, true)
-    const localExtraLen = view.getUint16(localHeaderOffset + 28, true)
-    const dataOffset = localHeaderOffset + 30 + localFileNameLen + localExtraLen
-
-    const compressedData = new Uint8Array(buffer, dataOffset, compressedSize)
-
-    if (compressionMethod === 0) {
-      // Stored / Uncompressed
-      files[fileName] = new Uint8Array(compressedData)
-    } else if (compressionMethod === 8) {
-      // Deflate
-      if (typeof DecompressionStream !== "undefined") {
-        const ds = new DecompressionStream("deflate-raw")
-        const writer = ds.writable.getWriter()
-        writer.write(compressedData)
-        writer.close()
-        const decompressedStream = await new Response(ds.readable).arrayBuffer()
-        files[fileName] = new Uint8Array(decompressedStream)
-      } else {
-        throw new Error(
-          "DecompressionStream is not supported in this environment",
-        )
-      }
-    }
-  }
-
-  return files
 }
 
 async function extractZipFallback(

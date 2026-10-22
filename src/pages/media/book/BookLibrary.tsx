@@ -1,19 +1,14 @@
-﻿import { resolveMediaCover } from "~/utils/media_cover"
+import { resolveMediaCover } from "~/utils/media_cover"
 import { accentGradient } from "~/utils/accent"
-import {
-  createSignal,
-  createResource,
-  createMemo,
-  Show,
-  For,
-  onMount,
-  onCleanup,
-  createEffect,
-} from "solid-js"
+import { createSignal, createResource, createMemo, Show, For } from "solid-js"
 import { useColorMode } from "@hope-ui/solid"
+import { useT } from "~/hooks"
 import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
 import { formatMediaSize, mediaBackBtn, mediaPrimaryBtn } from "../ui"
+import { PdfReader } from "./PdfReader"
+import { EpubReader } from "./EpubReader"
+import { readerBtnStyle } from "./reader_style"
 import {
   createSignedProxyUrl,
   getMediaItem,
@@ -24,538 +19,6 @@ import { getMediaName, parseAuthors, parseEpisodes } from "~/types"
 import { api } from "~/utils"
 import { encodePath } from "~/utils/path"
 
-// ==================== PDF阅读器 ====================
-const PDFReader = (props: { url: string; title: string }) => {
-  const [currentPage, setCurrentPage] = createSignal(1)
-  const [totalPages, setTotalPages] = createSignal(0)
-  const [jumpInput, setJumpInput] = createSignal("")
-  const [scale, setScale] = createSignal(1.2)
-  const [toc, setToc] = createSignal<Array<{ title: string; page: number }>>([])
-  const [showToc, setShowToc] = createSignal(false)
-  const [loading, setLoading] = createSignal(true)
-  const [error, setError] = createSignal("")
-
-  let canvasRef: HTMLCanvasElement | undefined
-  let pdfDoc: any = null
-
-  const renderPage = async (num: number) => {
-    if (!pdfDoc || !canvasRef) return
-    setLoading(true)
-    try {
-      const page = await pdfDoc.getPage(num)
-      const viewport = page.getViewport({ scale: scale() })
-      const ctx = canvasRef.getContext("2d")!
-      canvasRef.width = viewport.width
-      canvasRef.height = viewport.height
-      await page.render({ canvasContext: ctx, viewport }).promise
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  onMount(async () => {
-    // 动态加载 pdf.js CDN
-    const pdfjsLib = (window as any).pdfjsLib
-    if (!pdfjsLib) {
-      const script = document.createElement("script")
-      script.src =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
-      script.onload = () => initPDF()
-      document.head.appendChild(script)
-    } else {
-      initPDF()
-    }
-  })
-
-  const initPDF = async () => {
-    try {
-      const pdfjsLib = (window as any).pdfjsLib
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
-      pdfDoc = await pdfjsLib.getDocument(props.url).promise
-      setTotalPages(pdfDoc.numPages)
-
-      // 提取目录
-      const outline = await pdfDoc.getOutline()
-      if (outline) {
-        const items: Array<{ title: string; page: number }> = []
-        for (const item of outline.slice(0, 50)) {
-          try {
-            const dest = await pdfDoc.getDestination(item.dest)
-            if (dest) {
-              const ref = dest[0]
-              const pageIdx = await pdfDoc.getPageIndex(ref)
-              items.push({ title: item.title, page: pageIdx + 1 })
-            }
-          } catch {}
-        }
-        setToc(items)
-      }
-
-      await renderPage(1)
-    } catch (e: any) {
-      setError("PDF加载失败：" + (e?.message ?? String(e)))
-      setLoading(false)
-    }
-  }
-
-  createEffect(() => {
-    const p = currentPage()
-    const s = scale()
-    if (pdfDoc) renderPage(p)
-  })
-
-  const goPage = (p: number) => {
-    const total = totalPages()
-    if (p >= 1 && p <= total) setCurrentPage(p)
-  }
-
-  const handleJump = () => {
-    const p = parseInt(jumpInput())
-    if (!isNaN(p)) goPage(p)
-    setJumpInput("")
-  }
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        "flex-direction": "column",
-        height: "100%",
-        overflow: "hidden",
-      }}
-    >
-      {/* 工具栏 */}
-      <div
-        style={{
-          display: "flex",
-          "align-items": "center",
-          gap: "8px",
-          padding: "8px 16px",
-          background: "rgba(0,0,0,0.5)",
-          "border-bottom": "1px solid rgba(255,255,255,0.08)",
-          "flex-shrink": "0",
-        }}
-      >
-        <button
-          onClick={() => setShowToc(!showToc())}
-          style={readerBtnStyle}
-          title="目录"
-        >
-          ☰ 目录
-        </button>
-        <div style={{ flex: "1" }} />
-        {/* 缩放 */}
-        <button
-          onClick={() => setScale((s) => Math.max(0.5, s - 0.2))}
-          style={readerBtnStyle}
-        >
-          －
-        </button>
-        <span
-          style={{
-            color: "#94a3b8",
-            "font-size": "12px",
-            "min-width": "40px",
-            "text-align": "center",
-          }}
-        >
-          {Math.round(scale() * 100)}%
-        </span>
-        <button
-          onClick={() => setScale((s) => Math.min(3, s + 0.2))}
-          style={readerBtnStyle}
-        >
-          ＋
-        </button>
-        <div
-          style={{
-            width: "1px",
-            height: "20px",
-            background: "rgba(255,255,255,0.1)",
-            margin: "0 4px",
-          }}
-        />
-        {/* 翻页 */}
-        <button
-          disabled={currentPage() <= 1}
-          onClick={() => goPage(currentPage() - 1)}
-          style={{
-            ...readerBtnStyle,
-            opacity: currentPage() <= 1 ? "0.4" : "1",
-          }}
-        >
-          ← 上一页
-        </button>
-        <div style={{ display: "flex", "align-items": "center", gap: "4px" }}>
-          <input
-            type="number"
-            value={jumpInput() || currentPage()}
-            onInput={(e) => setJumpInput(e.currentTarget.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleJump()}
-            style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.15)",
-              "border-radius": "5px",
-              color: "#e2e8f0",
-              padding: "3px 6px",
-              "font-size": "12px",
-              width: "52px",
-              outline: "none",
-              "text-align": "center",
-            }}
-          />
-          <span style={{ color: "#475569", "font-size": "12px" }}>
-            / {totalPages()}
-          </span>
-          <button onClick={handleJump} style={readerBtnStyle}>
-            跳转
-          </button>
-        </div>
-        <button
-          disabled={currentPage() >= totalPages()}
-          onClick={() => goPage(currentPage() + 1)}
-          style={{
-            ...readerBtnStyle,
-            opacity: currentPage() >= totalPages() ? "0.4" : "1",
-          }}
-        >
-          下一页 →
-        </button>
-      </div>
-
-      {/* 主体 */}
-      <div style={{ flex: "1", display: "flex", overflow: "hidden" }}>
-        {/* 目录侧边栏 */}
-        <Show when={showToc()}>
-          <div
-            style={{
-              width: "220px",
-              "flex-shrink": "0",
-              background: "rgba(0,0,0,0.35)",
-              "border-right": "1px solid rgba(255,255,255,0.08)",
-              "overflow-y": "auto",
-              padding: "12px",
-            }}
-          >
-            <div
-              style={{
-                color: "#64748b",
-                "font-size": "11px",
-                "font-weight": "700",
-                "text-transform": "uppercase",
-                "letter-spacing": "0.08em",
-                "margin-bottom": "10px",
-              }}
-            >
-              目录
-            </div>
-            <Show
-              when={toc().length > 0}
-              fallback={
-                <div style={{ color: "#475569", "font-size": "13px" }}>
-                  暂无目录
-                </div>
-              }
-            >
-              <For each={toc()}>
-                {(item) => (
-                  <div
-                    onClick={() => goPage(item.page)}
-                    style={{
-                      padding: "6px 8px",
-                      "border-radius": "6px",
-                      cursor: "pointer",
-                      color:
-                        currentPage() === item.page ? "#a5b4fc" : "#94a3b8",
-                      background:
-                        currentPage() === item.page
-                          ? "rgba(24,144,255,0.15)"
-                          : "transparent",
-                      "font-size": "13px",
-                      "margin-bottom": "2px",
-                      overflow: "hidden",
-                      "text-overflow": "ellipsis",
-                      "white-space": "nowrap",
-                      transition: "background 0.15s",
-                    }}
-                    title={`${item.title} (第${item.page}页)`}
-                  >
-                    {item.title}
-                  </div>
-                )}
-              </For>
-            </Show>
-          </div>
-        </Show>
-
-        {/* Canvas渲染区 */}
-        <div
-          style={{
-            flex: "1",
-            overflow: "auto",
-            display: "flex",
-            "justify-content": "center",
-            background: "#2a2a3e",
-            padding: "20px",
-          }}
-        >
-          <Show when={error()}>
-            <div
-              style={{
-                color: "#f87171",
-                "font-size": "14px",
-                "padding-top": "60px",
-              }}
-            >
-              {error()}
-            </div>
-          </Show>
-          <Show when={!error()}>
-            <div style={{ position: "relative" }}>
-              <Show when={loading()}>
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: "0",
-                    display: "flex",
-                    "align-items": "center",
-                    "justify-content": "center",
-                    background: "rgba(0,0,0,0.4)",
-                    "z-index": "1",
-                    color: "#94a3b8",
-                    "font-size": "14px",
-                  }}
-                >
-                  加载中...
-                </div>
-              </Show>
-              <canvas
-                ref={canvasRef}
-                style={{
-                  display: "block",
-                  "box-shadow": "0 4px 24px rgba(0,0,0,0.5)",
-                }}
-              />
-            </div>
-          </Show>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ==================== EPUB阅读器 ====================
-const EPUBReader = (props: { url: string; title: string }) => {
-  const [toc, setToc] = createSignal<Array<{ label: string; href: string }>>([])
-  const [showToc, setShowToc] = createSignal(false)
-  const [loading, setLoading] = createSignal(true)
-  const [error, setError] = createSignal("")
-  let viewerRef: HTMLDivElement | undefined
-  let book: any = null
-  let rendition: any = null
-
-  onMount(() => {
-    const epubjs = (window as any).ePub
-    if (!epubjs) {
-      const script = document.createElement("script")
-      script.src =
-        "https://cdnjs.cloudflare.com/ajax/libs/epub.js/0.3.93/epub.min.js"
-      script.onload = () => initEpub()
-      document.head.appendChild(script)
-    } else {
-      initEpub()
-    }
-  })
-
-  const initEpub = () => {
-    try {
-      const ePub = (window as any).ePub
-      book = ePub(props.url)
-      rendition = book.renderTo(viewerRef!, {
-        width: "100%",
-        height: "100%",
-        spread: "none",
-      })
-      rendition.display()
-      rendition.themes.default({
-        body: {
-          background: "#1e1e2e !important",
-          color: "#e2e8f0 !important",
-          "font-family": "'Georgia', serif !important",
-          "line-height": "1.8 !important",
-          padding: "20px 40px !important",
-        },
-        a: { color: "#a5b4fc !important" },
-      })
-      book.ready.then(() => {
-        setLoading(false)
-        book.navigation.toc.forEach((item: any) => {
-          setToc((prev) => [...prev, { label: item.label, href: item.href }])
-        })
-      })
-    } catch (e: any) {
-      setError("EPUB加载失败：" + (e?.message ?? String(e)))
-      setLoading(false)
-    }
-  }
-
-  onCleanup(() => {
-    rendition?.destroy()
-    book?.destroy()
-  })
-
-  const goToc = (href: string) => {
-    rendition?.display(href)
-    setShowToc(false)
-  }
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        "flex-direction": "column",
-        height: "100%",
-        overflow: "hidden",
-      }}
-    >
-      {/* 工具栏 */}
-      <div
-        style={{
-          display: "flex",
-          "align-items": "center",
-          gap: "8px",
-          padding: "8px 16px",
-          background: "rgba(0,0,0,0.5)",
-          "border-bottom": "1px solid rgba(255,255,255,0.08)",
-          "flex-shrink": "0",
-        }}
-      >
-        <button
-          onClick={() => setShowToc(!showToc())}
-          style={readerBtnStyle}
-          title="目录"
-        >
-          ☰ 目录
-        </button>
-        <div style={{ flex: "1" }} />
-        <button onClick={() => rendition?.prev()} style={readerBtnStyle}>
-          ← 上一页
-        </button>
-        <button onClick={() => rendition?.next()} style={readerBtnStyle}>
-          下一页 →
-        </button>
-      </div>
-
-      {/* 主体 */}
-      <div style={{ flex: "1", display: "flex", overflow: "hidden" }}>
-        {/* 目录侧边栏 */}
-        <Show when={showToc()}>
-          <div
-            style={{
-              width: "220px",
-              "flex-shrink": "0",
-              background: "rgba(0,0,0,0.35)",
-              "border-right": "1px solid rgba(255,255,255,0.08)",
-              "overflow-y": "auto",
-              padding: "12px",
-            }}
-          >
-            <div
-              style={{
-                color: "#64748b",
-                "font-size": "11px",
-                "font-weight": "700",
-                "text-transform": "uppercase",
-                "letter-spacing": "0.08em",
-                "margin-bottom": "10px",
-              }}
-            >
-              目录
-            </div>
-            <Show
-              when={toc().length > 0}
-              fallback={
-                <div style={{ color: "#475569", "font-size": "13px" }}>
-                  加载中...
-                </div>
-              }
-            >
-              <For each={toc()}>
-                {(item) => (
-                  <div
-                    onClick={() => goToc(item.href)}
-                    style={{
-                      padding: "6px 8px",
-                      "border-radius": "6px",
-                      cursor: "pointer",
-                      color: "#94a3b8",
-                      "font-size": "13px",
-                      "margin-bottom": "2px",
-                      overflow: "hidden",
-                      "text-overflow": "ellipsis",
-                      "white-space": "nowrap",
-                      transition: "background 0.15s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background =
-                        "rgba(24,144,255,0.15)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = "transparent")
-                    }
-                  >
-                    {item.label}
-                  </div>
-                )}
-              </For>
-            </Show>
-          </div>
-        </Show>
-
-        {/* EPUB渲染区 */}
-        <div
-          style={{
-            flex: "1",
-            overflow: "hidden",
-            background: "#1e1e2e",
-            position: "relative",
-          }}
-        >
-          <Show when={loading()}>
-            <div
-              style={{
-                position: "absolute",
-                inset: "0",
-                display: "flex",
-                "align-items": "center",
-                "justify-content": "center",
-                color: "#94a3b8",
-                "font-size": "14px",
-                "z-index": "1",
-              }}
-            >
-              加载中...
-            </div>
-          </Show>
-          <Show when={error()}>
-            <div
-              style={{
-                color: "#f87171",
-                "font-size": "14px",
-                padding: "60px 20px",
-              }}
-            >
-              {error()}
-            </div>
-          </Show>
-          <div ref={viewerRef} style={{ width: "100%", height: "100%" }} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ==================== 书籍阅读器（外层容器） ====================
 const BookReader = (props: {
   item: MediaItem
@@ -564,6 +27,7 @@ const BookReader = (props: {
   title?: string
   onClose: () => void
 }) => {
+  const t = useT()
   // 优先使用传入的 filePath，否则拼接 folder_path + "/" + file_name
   const resolvedPath = () => {
     if (props.filePath) return props.filePath
@@ -622,19 +86,19 @@ const BookReader = (props: {
         <button
           onClick={props.onClose}
           style={{ ...readerBtnStyle, color: "#f87171" }}
-          title="关闭"
+          title={t("global.close")}
         >
-          ✕ 关闭
+          ✕ {t("global.close")}
         </button>
       </div>
 
       {/* 阅读器主体 */}
       <div style={{ flex: "1", overflow: "hidden" }}>
         <Show when={isPDF() && fileUrl()}>
-          <PDFReader url={fileUrl()} title={getMediaName(props.item)} />
+          <PdfReader url={fileUrl()} title={getMediaName(props.item)} />
         </Show>
         <Show when={isEpub() && fileUrl()}>
-          <EPUBReader url={fileUrl()} title={getMediaName(props.item)} />
+          <EpubReader url={fileUrl()} title={getMediaName(props.item)} />
         </Show>
         <Show when={!isPDF() && !isEpub()}>
           <div
@@ -651,7 +115,9 @@ const BookReader = (props: {
           >
             <div style={{ "font-size": "64px" }}>📄</div>
             <div style={{ "font-size": "16px" }}>
-              暂不支持在线阅读此格式（{ext().toUpperCase()}）
+              {t("media.book.unsupported_format", {
+                ext: ext().toUpperCase(),
+              })}
             </div>
             <a
               href="#"
@@ -667,7 +133,7 @@ const BookReader = (props: {
               }}
               style={{ ...mediaPrimaryBtn, "text-decoration": "none" }}
             >
-              ⬇ 下载文件
+              ⬇ {t("media.book.download_file")}
             </a>
           </div>
         </Show>
@@ -676,18 +142,9 @@ const BookReader = (props: {
   )
 }
 
-const readerBtnStyle = {
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  "border-radius": "6px",
-  color: "#94a3b8",
-  padding: "5px 10px",
-  "font-size": "13px",
-  cursor: "pointer",
-}
-
 // ==================== 书籍卡片 ====================
 const BookCard = (props: { item: MediaItem }) => {
+  const t = useT()
   const { colorMode } = useColorMode()
   const isDark = createMemo(() => colorMode() === "dark")
   const cardBg = createMemo(() =>
@@ -820,7 +277,9 @@ const BookCard = (props: { item: MediaItem }) => {
             }}
           >
             <Show when={authors().length > 0}>
-              <div>作者：{authors().slice(0, 3).join(" / ")}</div>
+              <div>
+                {t("media.book.author")}: {authors().slice(0, 3).join(" / ")}
+              </div>
             </Show>
             <Show when={props.item.description || props.item.plot}>
               <div
@@ -896,6 +355,7 @@ const BookCard = (props: { item: MediaItem }) => {
 
 // ==================== 书籍详情 ====================
 const BookDetail = (props: { id: string; onBack: () => void }) => {
+  const t = useT()
   const { colorMode } = useColorMode()
   const isDark = createMemo(() => colorMode() === "dark")
   const titleColor = createMemo(() => (isDark() ? "#f1f5f9" : "#0f172a"))
@@ -934,7 +394,7 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
             color: subMetaColor(),
           }}
         >
-          {item.loading ? "加载中..." : "资源不存在"}
+          {item.loading ? t("media.book.loading") : t("media.book.not_found")}
         </div>
       }
     >
@@ -951,7 +411,10 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
               title={
                 currentEpisode()
                   ? currentEpisode()!.index > 0
-                    ? `第${currentEpisode()!.index}册 ${currentEpisode()!.title}`
+                    ? t("media.book.volume", {
+                        index: currentEpisode()!.index,
+                        title: currentEpisode()!.title ?? "",
+                      }).trim()
                     : currentEpisode()!.title
                   : undefined
               }
@@ -960,7 +423,7 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
           </Show>
 
           <button onClick={props.onBack} style={mediaBackBtn(isDark())}>
-            ← 返回
+            ← {t("media.book.back")}
           </button>
 
           <div style={{ display: "flex", gap: "28px", "flex-wrap": "wrap" }}>
@@ -1017,7 +480,8 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
                     "margin-bottom": "8px",
                   }}
                 >
-                  作者：{parseAuthors(data().authors).join(" / ")}
+                  {t("media.book.author")}:{" "}
+                  {parseAuthors(data().authors).join(" / ")}
                 </div>
               </Show>
               <Show when={data().publisher}>
@@ -1028,7 +492,7 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
                     "margin-bottom": "4px",
                   }}
                 >
-                  出版社：{data().publisher}
+                  {t("media.book.publisher")}: {data().publisher}
                 </div>
               </Show>
               <Show when={data().release_date}>
@@ -1039,7 +503,8 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
                     "margin-bottom": "4px",
                   }}
                 >
-                  出版年：{data().release_date?.slice(0, 4)}
+                  {t("media.book.publish_year")}:{" "}
+                  {data().release_date?.slice(0, 4)}
                 </div>
               </Show>
               <Show when={data().isbn}>
@@ -1084,7 +549,7 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
                     "margin-bottom": "20px",
                   }}
                 >
-                  📖 阅读
+                  📖 {t("media.book.read")}
                 </button>
               </Show>
 
@@ -1104,7 +569,9 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
                           "margin-bottom": "10px",
                         }}
                       >
-                        选集（共 {episodes.length} 册）
+                        {t("media.book.episode_count", {
+                          count: episodes.length,
+                        })}
                       </h3>
                       <div
                         style={{
@@ -1123,7 +590,10 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
                               currentEpisode()?.file_name === ep.file_name
                             const label =
                               ep.index > 0
-                                ? `第${ep.index}册${ep.title ? " " + ep.title : ""}`
+                                ? t("media.book.volume", {
+                                    index: ep.index,
+                                    title: ep.title ?? "",
+                                  }).trim()
                                 : ep.title || ep.file_name
                             return (
                               <button
@@ -1188,7 +658,7 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
                       "margin-bottom": "8px",
                     }}
                   >
-                    内容简介
+                    {t("media.book.summary")}
                   </h3>
                   <p
                     style={{
@@ -1212,10 +682,11 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
 
 // ==================== 书籍库主页 ====================
 const BookLibrary = () => {
+  const t = useT()
   const [selectedId, setSelectedId] = createSignal<string | null>(null)
 
   return (
-    <MediaLayout title="📚 书籍库">
+    <MediaLayout title={t("media.book.title")}>
       <Show
         when={selectedId()}
         fallback={
