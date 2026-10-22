@@ -118,6 +118,9 @@ fallback_git_tag() {
     git_version=$(git describe --abbrev=0 --tags 2>/dev/null || echo "v0.0.0")
     git_version_clean=${git_version#v}
     git_version_clean=${git_version_clean%%-*}
+    if [[ ! "$git_version_clean" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        git_version_clean=$(grep '"version":' package.json | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+    fi
 }
 
 # Update package.json version
