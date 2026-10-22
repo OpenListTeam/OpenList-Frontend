@@ -78,7 +78,7 @@ importers:
         specifier: ^0.4.1
         version: 0.4.1
       handlebars:
-        specifier: ^4.7.9
+        specifier: ^4.7.10
         version: 4.7.10
       hash-wasm:
         specifier: ^4.12.0
