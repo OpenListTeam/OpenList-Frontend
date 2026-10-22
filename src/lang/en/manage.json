@@ -28,7 +28,8 @@
     "s3": "S3",
     "ftp": "FTP",
     "traffic": "Traffic",
-    "plugins": "Plugins"
+    "plugins": "Plugins",
+    "seed": "Seed"
   },
   "title": "OpenList Management",
   "not_admin": "You are not an admin user, please login with an admin account.",

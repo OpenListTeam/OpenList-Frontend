@@ -40,6 +40,7 @@ export interface Storage {
   web_proxy: boolean
   webdav_policy: WebdavPolicy
   disabled: boolean
+  seed_policy: "inherit" | "on" | "off"
   mount_details?: MountDetails
 }
 
