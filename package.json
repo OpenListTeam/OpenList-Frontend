@@ -90,7 +90,7 @@
     "ini": "^7.0.0",
     "katex": "^0.18.2",
     "libheif-js": "^1.23.5",
-    "lightgallery": "^2.9.0",
+    "lightgallery": "^3.0.0",
     "mark.js": "^8.11.1",
     "mitt": "^3.0.1",
     "monaco-editor": "0.57.0",
