@@ -30,6 +30,7 @@
     "build": "vite build",
     "build:lite": "cross-env VITE_LITE=true vite build",
     "serve": "vite preview",
+    "test": "node --test src/components/artplayer-proxy-mediabunny/EventTarget.test.js src/components/artplayer-proxy-mediabunny/Prefetcher.test.js src/components/artplayer-proxy-mediabunny/pitchPreservingTimeStretch.test.js",
     "prepare": "husky",
     "lint": "tsc -p tsconfig.json --noEmit",
     "format": "prettier --ignore-path .gitignore -w \"src/**/*.{js,ts,json,css,tsx,jsx}\""
@@ -96,7 +97,7 @@
     "mediabunny": "^1.40.1",
     "mitt": "^3.0.1",
     "monaco-editor": "0.57.0",
-    "mpegts.js": "^1.8.1",
+    "mpegts.js": "^1.8.2",
     "qrcode": "^1.5.4",
     "rehype-katex": "7.0.1",
     "rehype-raw": "^7.0.0",

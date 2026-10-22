@@ -117,8 +117,8 @@ importers:
         specifier: 0.57.0
         version: 0.57.0
       mpegts.js:
-        specifier: ^1.8.1
-        version: 1.8.1
+        specifier: ^1.8.2
+        version: 1.8.2
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
@@ -2864,8 +2864,8 @@ packages:
   monaco-editor@0.57.0:
     resolution: {integrity: sha512-5BkI9KGoqrNvBGUe15/QlZq3OooZ8WLg1AxTpaqHRCP3HNpzPPZKE2EDz8M7c+VRmCeUw1Brp4cx/PWm3kI/5A==}
 
-  mpegts.js@1.8.1:
-    resolution: {integrity: sha512-mQ2daxqBaS+QmBYTmJMDUGwAOw08534b08KSyqUGkjkhuBODNod15j8pnRfVEIQVWulKNe201/6UqILe4m4YRQ==}
+  mpegts.js@1.8.2:
+    resolution: {integrity: sha512-cZYMa5muASH55wrS6JK5IGkUqnCA96c0f+WdnW91jIK9s/N6NzjmTQDJNYg9A5u/G2Q5nj2b3w1Zwzze/9guxA==}
     engines: {node: '>=20.9.0'}
 
   ms@2.1.3:
@@ -6546,7 +6546,7 @@ snapshots:
       dompurify: 3.4.15
       marked: 14.0.0
 
-  mpegts.js@1.8.1:
+  mpegts.js@1.8.2:
     dependencies:
       es6-promise: 4.2.8
       events: 3.3.0

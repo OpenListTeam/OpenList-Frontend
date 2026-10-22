@@ -87,7 +87,10 @@ export function prefetchVideoChunks(url, opts = {}) {
   _inflight.set(url, p)
   // 60 秒后清掉缓存项（避免长时间累积）
   p.finally(() => {
-    setTimeout(() => _inflight.delete(url), 60_000)
+    const timer = setTimeout(() => _inflight.delete(url), 60_000)
+    // Node（单元测试）下 unref，避免这个纯粹的清理定时器把进程挂住 60 秒；
+    // 浏览器里 setTimeout 返回 number，没有 unref 方法，跳过即可。
+    if (typeof timer?.unref === "function") timer.unref()
   })
 
   return p
