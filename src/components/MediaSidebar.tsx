@@ -10,7 +10,7 @@
   useColorMode,
   VStack,
 } from "@hope-ui/solid"
-import { For, Show, createMemo, createSignal, onMount } from "solid-js"
+import { For, Show, createMemo, createSignal } from "solid-js"
 import { useRouter, useT } from "~/hooks"
 import {
   mediaEnabled,
@@ -40,10 +40,13 @@ import {
 import { changeToken, handleResp, notify, r } from "~/utils"
 import {
   ACCENT_PRESETS,
+  accent,
   accentColor,
-  initAccent,
+  accentPaletteStyleVars,
+  mediaAccentEnabled,
   resetAccentColor,
   setAccentColor,
+  setMediaAccentEnabled,
 } from "~/store/accent"
 import { Component } from "solid-js"
 
@@ -64,7 +67,6 @@ export const MediaSidebar = () => {
   const { pathname, to } = useRouter()
   const [showPalette, setShowPalette] = createSignal(false)
   const [loggingOut, setLoggingOut] = createSignal(false)
-  onMount(initAccent)
 
   const logout = async () => {
     setLoggingOut(true)
@@ -128,9 +130,17 @@ export const MediaSidebar = () => {
   // 管理入口固定在侧栏底部（仅管理员可见）
   const manageActive = createMemo(() => pathname().startsWith("/@manage/media"))
 
+  // 主题色只作用在侧栏自身：其它页面复用站点默认色板，避免全局 CSS 变量污染
+  const paletteVars = createMemo<Record<string, string>>(() =>
+    mediaAccentEnabled()
+      ? accentPaletteStyleVars(accent(), colorMode() === "dark")
+      : {},
+  )
+
   return (
     <Box
       as="aside"
+      style={paletteVars()}
       w="216px"
       flexShrink={0}
       h="100vh"
@@ -396,6 +406,16 @@ export const MediaSidebar = () => {
                 }}
               >
                 Follow site default
+              </Button>
+              <Button
+                size="xs"
+                variant="ghost"
+                colorScheme={mediaAccentEnabled() ? "accent" : "neutral"}
+                onClick={() => setMediaAccentEnabled(!mediaAccentEnabled())}
+              >
+                {mediaAccentEnabled()
+                  ? "Theme color: media only (on)"
+                  : "Theme color: off"}
               </Button>
             </VStack>
           </Box>

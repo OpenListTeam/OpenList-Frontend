@@ -14,6 +14,7 @@ import {
   Match,
   onCleanup,
   Show,
+  Suspense,
   Switch,
 } from "solid-js"
 import { Portal } from "solid-js/web"
@@ -33,7 +34,6 @@ import { applyCustomize } from "~/utils/customize"
 import { MustUser, UserOrGuest } from "./MustUser"
 import "./index.css"
 import { globalStyles } from "./theme"
-import { MusicPlayer } from "~/pages/media/music/player"
 import { MediaShell } from "./MediaShell"
 import {
   MediaSidebar,
@@ -45,7 +45,7 @@ import {
   accent,
   applyAccentPalette,
   clearAccentPalette,
-  initAccent,
+  mediaAccentEnabled,
 } from "~/store/accent"
 
 const Home = lazy(() => import("~/pages/home/Layout"))
@@ -57,10 +57,16 @@ const VideoLibrary = lazy(() => import("~/pages/media/video/VideoLibrary"))
 const MusicLibrary = lazy(() => import("~/pages/media/music/MusicLibrary"))
 const ImageLibrary = lazy(() => import("~/pages/media/image/ImageLibrary"))
 const BookLibrary = lazy(() => import("~/pages/media/book/BookLibrary"))
+// 播放器常驻在各个媒体页之上，但只有进入媒体库才需要：
+// 改为懒加载，避免把播放器模块塞进入口 chunk（媒体库关闭时白付流量）
+const MusicPlayer = lazy(() =>
+  import("~/pages/media/music/player").then((m) => ({
+    default: m.MusicPlayer,
+  })),
+)
 
 const App: Component = () => {
   const { colorMode } = useColorMode()
-  initAccent(colorMode() === "dark")
   const t = useT()
   globalStyles()
   initPluginEngine()
@@ -147,11 +153,13 @@ const App: Component = () => {
     }
   })
 
-  // 登录 / 初始化页使用系统默认配色，不跟随媒体主题色
-  // 明暗模式各有一套色阶，切换配色模式时重新写入
+  // 媒体主题色只在媒体库页面生效：文件页 / 管理页 / 设置页一律使用站点默认色板，
+  // 避免 --hope-colors-* 的全局覆盖污染整站配色（登录、初始化页同理）。
+  // 明暗模式各有一套色阶，切换配色模式时重新写入。
   createEffect(() => {
     const dark = colorMode() === "dark"
-    if (pathname().startsWith("/@login") || pathname().startsWith("/@init")) {
+    const onMediaPage = pathname().startsWith("/@media")
+    if (!mediaEnabled() || !mediaAccentEnabled() || !onMediaPage) {
       clearAccentPalette()
     } else {
       applyAccentPalette(accent(), dark)
@@ -207,7 +215,9 @@ const App: Component = () => {
                   element={
                     <UserOrGuest>
                       <MediaShell>
-                        <MusicPlayer />
+                        <Suspense fallback={null}>
+                          <MusicPlayer />
+                        </Suspense>
                         <VideoLibrary />
                       </MediaShell>
                     </UserOrGuest>
@@ -218,7 +228,9 @@ const App: Component = () => {
                   element={
                     <UserOrGuest>
                       <MediaShell>
-                        <MusicPlayer />
+                        <Suspense fallback={null}>
+                          <MusicPlayer />
+                        </Suspense>
                         <MusicLibrary />
                       </MediaShell>
                     </UserOrGuest>
@@ -229,7 +241,9 @@ const App: Component = () => {
                   element={
                     <UserOrGuest>
                       <MediaShell>
-                        <MusicPlayer />
+                        <Suspense fallback={null}>
+                          <MusicPlayer />
+                        </Suspense>
                         <ImageLibrary />
                       </MediaShell>
                     </UserOrGuest>
@@ -240,7 +254,9 @@ const App: Component = () => {
                   element={
                     <UserOrGuest>
                       <MediaShell>
-                        <MusicPlayer />
+                        <Suspense fallback={null}>
+                          <MusicPlayer />
+                        </Suspense>
                         <BookLibrary />
                       </MediaShell>
                     </UserOrGuest>

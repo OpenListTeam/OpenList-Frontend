@@ -25,13 +25,34 @@ export const ACCENT_PRESETS: AccentPreset[] = [
 ]
 
 const STORAGE_KEY = "openlist-accent-color"
+// 是否允许媒体主题色覆盖 hope-ui 的全局色板（默认开启，但只在媒体库页面生效）
+const ENABLED_KEY = "openlist-media-accent-enabled"
 
 const stored =
   typeof localStorage !== "undefined"
     ? (localStorage.getItem(STORAGE_KEY) ?? "")
     : ""
 
+const storedEnabled =
+  typeof localStorage !== "undefined" ? localStorage.getItem(ENABLED_KEY) : null
+
 const [accentColor, setAccentColorRaw] = createSignal(stored)
+
+const [mediaAccentEnabledRaw, setMediaAccentEnabledRaw] = createSignal(
+  storedEnabled === null ? true : storedEnabled === "true",
+)
+
+/** 媒体主题色是否启用（关闭后媒体页同样使用站点默认色板） */
+export const mediaAccentEnabled = mediaAccentEnabledRaw
+
+export const setMediaAccentEnabled = (enabled: boolean) => {
+  setMediaAccentEnabledRaw(enabled)
+  try {
+    localStorage.setItem(ENABLED_KEY, String(enabled))
+  } catch {
+    /* ignore */
+  }
+}
 
 /** Current accent: user selection first, otherwise the site main color. */
 export const accent = () => accentColor() || getMainColor()
@@ -164,14 +185,30 @@ const isDarkMode = () =>
   typeof document !== "undefined" &&
   document.body.classList.contains("hope-ui-dark")
 
+/**
+ * 把色板转换成 CSS 变量表，便于只作用在指定容器上。
+ * 作用域化写入（而不是写 html/body）可以避免媒体主题色污染文件页、管理页等其它页面。
+ */
+export const accentPaletteStyleVars = (
+  color: string,
+  dark = isDarkMode(),
+): Record<string, string> => {
+  const palette = buildPalette(color, dark)
+  const vars: Record<string, string> = {}
+  Object.entries(palette).forEach(([key, value]) => {
+    vars[`--hope-colors-${key}`] = value
+  })
+  return vars
+}
+
 /** Write the palette to CSS variables so hope-ui components update live. */
 export const applyAccentPalette = (color: string, dark = isDarkMode()) => {
   if (typeof document === "undefined") return
-  const palette = buildPalette(color, dark)
+  const vars = accentPaletteStyleVars(color, dark)
   // 同时写入 html 与 body：body 上的内联变量优先级高于 .hope-ui-dark 的暗色变量
   ;[document.documentElement, document.body].forEach((el) => {
-    Object.entries(palette).forEach(([key, value]) => {
-      el.style.setProperty(`--hope-colors-${key}`, value)
+    Object.entries(vars).forEach(([key, value]) => {
+      el.style.setProperty(key, value)
     })
   })
 }
@@ -191,7 +228,11 @@ export const clearAccentPalette = () => {
   })
 }
 
-/** Set and persist the accent color. */
+/**
+ * Set and persist the accent color.
+ * 这里不直接写全局 CSS 变量：由 App 的 effect 根据当前路由决定是否生效，
+ * 避免在文件页/管理页选色时污染整站配色。
+ */
 export const setAccentColor = (color: string) => {
   setAccentColorRaw(color)
   try {
@@ -199,7 +240,6 @@ export const setAccentColor = (color: string) => {
   } catch {
     /* ignore */
   }
-  applyAccentPalette(color)
 }
 
 /** Restore the site default color. */
@@ -210,10 +250,4 @@ export const resetAccentColor = () => {
   } catch {
     /* ignore */
   }
-  applyAccentPalette(getMainColor())
-}
-
-/** Apply the saved accent on startup. */
-export const initAccent = (dark = isDarkMode()) => {
-  applyAccentPalette(stored || getMainColor(), dark)
 }
