@@ -9,6 +9,7 @@ import {
   TbBook,
   TbMusic,
 } from "solid-icons/tb"
+import { useT } from "~/hooks"
 import { resolveMediaCover } from "~/utils/media_cover"
 import { accentGradient } from "~/utils/accent"
 import {
@@ -43,6 +44,7 @@ const formatSize = (bytes: number) => {
  * 按媒体类型展示刮削字段，并支持收藏 / 取消收藏。
  */
 export const MediaItemDetail = (props: MediaItemDetailProps) => {
+  const t = useT()
   const { colorMode } = useColorMode()
   const isDark = createMemo(() => colorMode() === "dark")
 
@@ -74,41 +76,61 @@ export const MediaItemDetail = (props: MediaItemDetailProps) => {
 
     switch (item.media_type) {
       case "video":
-        push("上映", year)
-        push("类型", item.genre?.split(",").filter(Boolean).join(" / "))
-        push("评分", item.rating > 0 ? item.rating.toFixed(1) : "")
-        push("演员", cast.slice(0, 8).join(" / "))
+        push(t("media.detail.release"), year)
         push(
-          "季集",
+          t("media.detail.genre"),
+          item.genre?.split(",").filter(Boolean).join(" / "),
+        )
+        push(
+          t("media.detail.rating"),
+          item.rating > 0 ? item.rating.toFixed(1) : "",
+        )
+        push(t("media.detail.cast"), cast.slice(0, 8).join(" / "))
+        push(
+          t("media.detail.season_episode"),
           item.season || item.episode
             ? `S${item.season || 1}E${item.episode || 1}`
             : "",
         )
-        push("时长", item.duration ? formatDuration(item.duration) : "")
+        push(
+          t("media.detail.duration"),
+          item.duration ? formatDuration(item.duration) : "",
+        )
         break
       case "music":
-        push("专辑", item.album_name)
-        push("艺术家", item.album_artist || cast.join(" / "))
-        push("类型", item.genre)
-        push("年代", year)
-        push("音轨", item.track_number ? `第 ${item.track_number} 首` : "")
-        push("时长", item.duration ? formatDuration(item.duration) : "")
+        push(t("media.detail.album"), item.album_name)
+        push(t("media.detail.artist"), item.album_artist || cast.join(" / "))
+        push(t("media.detail.genre"), item.genre)
+        push(t("media.detail.year"), year)
+        push(
+          t("media.detail.track"),
+          item.track_number
+            ? t("media.detail.track_no", { index: item.track_number })
+            : "",
+        )
+        push(
+          t("media.detail.duration"),
+          item.duration ? formatDuration(item.duration) : "",
+        )
         break
       case "book":
-        push("作者", cast.join(" / "))
-        push("出版社", item.publisher)
+        push(t("media.detail.author"), cast.join(" / "))
+        push(t("media.detail.publisher"), item.publisher)
         push("ISBN", item.isbn)
-        push("类型", item.genre)
-        push("出版年", year)
-        push("评分", item.rating > 0 ? item.rating.toFixed(1) : "")
+        push(t("media.detail.genre"), item.genre)
+        push(t("media.detail.publish_year"), year)
+        push(
+          t("media.detail.rating"),
+          item.rating > 0 ? item.rating.toFixed(1) : "",
+        )
         break
       case "image":
-        push("地点", cast.join(" / "))
-        push("类型", item.genre)
-        push("拍摄时间", year)
+        push(t("media.detail.location"), cast.join(" / "))
+        push(t("media.detail.genre"), item.genre)
+        push(t("media.detail.shoot_date"), year)
         break
     }
-    push("大小", formatSize(item.file_size))
+    push(t("media.detail.size"), formatSize(item.file_size))
     return list
   })
 
@@ -190,8 +212,16 @@ export const MediaItemDetail = (props: MediaItemDetailProps) => {
         </Show>
         <Show when={props.onToggleFavorite}>
           <button
-            title={props.favorite ? "取消收藏" : "收藏"}
-            aria-label={props.favorite ? "取消收藏" : "收藏"}
+            title={
+              props.favorite
+                ? t("media.detail.unfavorite")
+                : t("media.detail.favorite")
+            }
+            aria-label={
+              props.favorite
+                ? t("media.detail.unfavorite")
+                : t("media.detail.favorite")
+            }
             onClick={(e) => {
               e.stopPropagation()
               props.onToggleFavorite?.(props.item, !props.favorite)
@@ -279,7 +309,7 @@ export const MediaItemDetail = (props: MediaItemDetailProps) => {
               "margin-bottom": "6px",
             }}
           >
-            简介
+            {t("media.detail.description")}
           </div>
           <div
             style={{
@@ -320,7 +350,7 @@ export const MediaItemDetail = (props: MediaItemDetailProps) => {
           }}
         >
           <TbArrowUpRight size={15} />
-          {props.openLabel || "打开详情"}
+          {props.openLabel || t("media.detail.open")}
         </button>
       </Show>
     </div>

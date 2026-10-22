@@ -19,6 +19,7 @@ import {
   setMediaFavorite,
 } from "~/utils/media_api"
 import { notify } from "~/utils"
+import { useT } from "~/hooks"
 import type { MediaItem, MediaType, MediaScanPath } from "~/types"
 import { getMediaName } from "~/types"
 import { MediaItemDetail } from "./MediaItemDetail"
@@ -39,6 +40,7 @@ type OrderBy = "name" | "date" | "size"
 type OrderDir = "asc" | "desc"
 
 export const MediaBrowser = (props: MediaBrowserProps) => {
+  const t = useT()
   const { colorMode } = useColorMode()
   const isDark = createMemo(() => colorMode() === "dark")
 
@@ -298,7 +300,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
     const resp = await setMediaFavorite(item.id, favorite)
     if (resp.code !== 200) {
       setFavorites((prev) => ({ ...prev, [item.id]: !favorite }))
-      notify.error("收藏失败: " + resp.message)
+      notify.error(t("media.browser.favorite_failed") + ": " + resp.message)
       return
     }
     // 在收藏 Tab 取消收藏后，立即从当前列表移除
@@ -363,10 +365,10 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
         <div style={{ display: "flex", gap: "6px" }}>
           {(
             [
-              { mode: "all", label: "全部" },
-              { mode: "folder", label: "目录" },
+              { mode: "all", label: t("media.browser.all") },
+              { mode: "folder", label: t("media.browser.folders") },
               ...(props.enableFavorites
-                ? [{ mode: "favorites", label: "收藏" }]
+                ? [{ mode: "favorites", label: t("media.browser.favorites") }]
                 : []),
             ] as { mode: BrowseMode; label: string }[]
           ).map(({ mode, label }) => (
@@ -418,7 +420,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
               outline: "none",
             }}
           >
-            <option value="0">全部路径</option>
+            <option value="0">{t("media.browser.all_paths")}</option>
             <For each={scanPathsData() ?? []}>
               {(sp) => <option value={sp.id}>{sp.name || sp.path}</option>}
             </For>
@@ -443,7 +445,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
               outline: "none",
             }}
           >
-            <option value="">全部类型</option>
+            <option value="">{t("media.browser.all_types")}</option>
             <For each={allTypeTags()}>
               {(tag) => <option value={tag}>{tag}</option>}
             </For>
@@ -468,7 +470,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
               outline: "none",
             }}
           >
-            <option value="">全部标签</option>
+            <option value="">{t("media.browser.all_tags")}</option>
             <For each={allContentTags()}>
               {(tag) => <option value={tag}>{tag}</option>}
             </For>
@@ -482,11 +484,11 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
         {/* 排序 */}
         <div style={{ display: "flex", gap: "6px", "align-items": "center" }}>
           <span style={{ color: sortLabelColor(), "font-size": "12px" }}>
-            排序:
+            {t("media.browser.sort")}:
           </span>
-          <OrderBtn col="name" label="名称" />
-          <OrderBtn col="date" label="日期" />
-          <OrderBtn col="size" label="大小" />
+          <OrderBtn col="name" label={t("media.browser.name")} />
+          <OrderBtn col="date" label={t("media.browser.date")} />
+          <OrderBtn col="size" label={t("media.browser.size")} />
         </div>
 
         <div style={{ flex: "1" }} />
@@ -494,7 +496,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
         {/* 搜索 */}
         <input
           type="text"
-          placeholder="搜索..."
+          placeholder={t("media.browser.search_placeholder")}
           value={keyword()}
           onInput={(e) => {
             setKeyword(e.currentTarget.value)
@@ -517,7 +519,11 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
           {(["waterfall", "list"] as ViewMode[]).map((mode) => (
             <button
               onClick={() => changeViewMode(mode)}
-              title={mode === "waterfall" ? "瀑布流" : "列表"}
+              title={
+                mode === "waterfall"
+                  ? t("media.browser.waterfall")
+                  : t("media.browser.list")
+              }
               style={{
                 background: viewMode() === mode ? btnActiveBg : btnInactiveBg(),
                 border:
@@ -561,7 +567,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
               cursor: "pointer",
             }}
           >
-            📂 全部目录
+            📂 {t("media.browser.all_folders")}
           </button>
           <For each={foldersData() ?? []}>
             {(folder) => (
@@ -613,7 +619,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
             <div style={{ "font-size": "32px", "margin-bottom": "12px" }}>
               ⏳
             </div>
-            <div>加载中...</div>
+            <div>{t("media.browser.loading")}</div>
           </div>
         }
       >
@@ -630,7 +636,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
               <div style={{ "font-size": "48px", "margin-bottom": "12px" }}>
                 📭
               </div>
-              <div>暂无内容</div>
+              <div>{t("media.browser.empty")}</div>
             </div>
           }
         >
@@ -657,9 +663,15 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
                       {props.renderCard(item)}
                       <Show when={props.enableFavorites}>
                         <button
-                          title={favorites()[item.id] ? "取消收藏" : "收藏"}
+                          title={
+                            favorites()[item.id]
+                              ? t("media.detail.unfavorite")
+                              : t("media.detail.favorite")
+                          }
                           aria-label={
-                            favorites()[item.id] ? "取消收藏" : "收藏"
+                            favorites()[item.id]
+                              ? t("media.detail.unfavorite")
+                              : t("media.detail.favorite")
                           }
                           onClick={(e) => {
                             e.stopPropagation()
@@ -719,7 +731,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
                       <div
                         onClick={() => setSelected(item)}
                         onDblClick={() => props.onItemClick(item)}
-                        title="单击查看详情，双击打开"
+                        title={t("media.browser.list_item_tip")}
                         style={{
                           display: "flex",
                           "align-items": "center",
@@ -757,9 +769,15 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
                         )}
                         <Show when={props.enableFavorites}>
                           <button
-                            title={favorites()[item.id] ? "取消收藏" : "收藏"}
+                            title={
+                              favorites()[item.id]
+                                ? t("media.detail.unfavorite")
+                                : t("media.detail.favorite")
+                            }
                             aria-label={
-                              favorites()[item.id] ? "取消收藏" : "收藏"
+                              favorites()[item.id]
+                                ? t("media.detail.unfavorite")
+                                : t("media.detail.favorite")
                             }
                             onClick={(e) => {
                               e.stopPropagation()
@@ -830,7 +848,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
               "font-size": "13px",
             }}
           >
-            « 首页
+            « {t("media.browser.first_page")}
           </button>
           <button
             disabled={page() <= 1}
@@ -846,10 +864,14 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
               "font-size": "13px",
             }}
           >
-            ← 上一页
+            ← {t("media.browser.prev_page")}
           </button>
           <span style={{ color: paginationInfoColor(), "font-size": "13px" }}>
-            {page()} / {totalPages()} 页（共 {total()} 项）
+            {t("media.browser.page_info", {
+              page: page(),
+              totalPages: totalPages(),
+              total: total(),
+            })}
           </span>
           <button
             disabled={page() >= totalPages()}
@@ -867,7 +889,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
               "font-size": "13px",
             }}
           >
-            下一页 →
+            {t("media.browser.next_page")} →
           </button>
           <button
             disabled={page() >= totalPages()}
@@ -885,11 +907,11 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
               "font-size": "13px",
             }}
           >
-            尾页 »
+            {t("media.browser.last_page")} »
           </button>
           {/* 跳转输入框 */}
           <span style={{ color: paginationInfoColor(), "font-size": "13px" }}>
-            跳至
+            {t("media.browser.jump_to")}
           </span>
           <input
             type="number"
@@ -944,7 +966,7 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
               "font-size": "13px",
             }}
           >
-            跳转
+            {t("media.browser.jump")}
           </button>
         </div>
       </Show>

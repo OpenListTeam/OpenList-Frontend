@@ -24,6 +24,7 @@ import {
 import type { MediaItem, AlbumInfo } from "~/types"
 import { getMediaName, formatDuration } from "~/types"
 import { notify } from "~/utils"
+import { useT } from "~/hooks"
 import { playPlaylist, playTrack } from "./player"
 
 type BrowseMode = "all" | "folder"
@@ -45,6 +46,7 @@ export {
 
 // ==================== 专辑卡片 ====================
 const AlbumCard = (props: { album: AlbumInfo }) => {
+  const t = useT()
   const { colorMode } = useColorMode()
   const isDark = createMemo(() => colorMode() === "dark")
   const cardBg = createMemo(() =>
@@ -131,7 +133,7 @@ const AlbumCard = (props: { album: AlbumInfo }) => {
             "white-space": "nowrap",
           }}
         >
-          {props.album.album_name || "未知专辑"}
+          {props.album.album_name || t("media.music.unknown_album")}
         </div>
         <div
           style={{
@@ -141,9 +143,9 @@ const AlbumCard = (props: { album: AlbumInfo }) => {
           }}
         >
           {[
-            props.album.album_artist || "未知艺术家",
+            props.album.album_artist || t("media.music.unknown_artist"),
             props.album.release_date?.slice(0, 4),
-            `${props.album.track_count} 首`,
+            t("media.music.track_count", { count: props.album.track_count }),
           ]
             .filter(Boolean)
             .join(" · ")}
@@ -155,6 +157,7 @@ const AlbumCard = (props: { album: AlbumInfo }) => {
 
 // ==================== 专辑详情 ====================
 const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
+  const t = useT()
   const { colorMode } = useColorMode()
   const isDark = createMemo(() => colorMode() === "dark")
   const labelColor = createMemo(() => (isDark() ? "#64748b" : "#94a3b8"))
@@ -188,7 +191,7 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
   return (
     <div>
       <button onClick={props.onBack} style={mediaBackBtn(isDark())}>
-        ← 返回
+        ← {t("media.music.back")}
       </button>
 
       {/* 专辑头部 */}
@@ -239,7 +242,7 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
               "margin-bottom": "6px",
             }}
           >
-            专辑
+            {t("media.music.album")}
           </div>
           <h2
             style={{
@@ -248,7 +251,7 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
               color: titleColor(),
             }}
           >
-            {props.album.album_name || "未知专辑"}
+            {props.album.album_name || t("media.music.unknown_album")}
           </h2>
           <div
             style={{
@@ -266,18 +269,18 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
               "margin-bottom": "16px",
             }}
           >
-            {props.album.release_date?.slice(0, 4)} · {props.album.track_count}{" "}
-            首歌曲
+            {props.album.release_date?.slice(0, 4)} ·{" "}
+            {t("media.music.song_count", { count: props.album.track_count })}
           </div>
           <button
             onClick={() => {
-              const t = tracks()
-              if (t && t.length > 0) playPlaylist(t, 0)
+              const list = tracks()
+              if (list && list.length > 0) playPlaylist(list, 0)
             }}
             style={mediaPrimaryBtn}
           >
             <TbPlayerPlayFilled size={14} />
-            播放全部
+            {t("media.music.play_all")}
           </button>
         </div>
       </div>
@@ -294,11 +297,13 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
             "margin-bottom": "12px",
           }}
         >
-          曲目列表
+          {t("media.music.track_list")}
         </h3>
         <Show
           when={!tracks.loading}
-          fallback={<div style={{ color: metaColor() }}>加载中...</div>}
+          fallback={
+            <div style={{ color: metaColor() }}>{t("media.music.loading")}</div>
+          }
         >
           <Show
             when={(tracks()?.length ?? 0) > 0}
@@ -310,7 +315,7 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
                   "text-align": "center",
                 }}
               >
-                暂无曲目
+                {t("media.music.no_tracks")}
               </div>
             }
           >
@@ -370,6 +375,7 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
 
 // ==================== 音乐库主页 ====================
 const MusicLibrary = () => {
+  const t = useT()
   const { colorMode } = useColorMode()
   const isDark = createMemo(() => colorMode() === "dark")
   // 主题色 tokens
@@ -553,7 +559,7 @@ const MusicLibrary = () => {
     const resp = await setMediaFavorite(item.id, favorite)
     if (resp.code !== 200) {
       setFavorites((prev) => ({ ...prev, [item.id]: !favorite }))
-      notify.error("收藏失败: " + resp.message)
+      notify.error(t("media.browser.favorite_failed") + ": " + resp.message)
     }
   }
 
@@ -594,7 +600,7 @@ const MusicLibrary = () => {
   )
 
   return (
-    <MediaLayout title="🎵 音乐资源库">
+    <MediaLayout title={t("media.music.title")}>
       <Show
         when={selectedAlbum()}
         fallback={
@@ -638,7 +644,9 @@ const MusicLibrary = () => {
                       cursor: "pointer",
                     }}
                   >
-                    {mode === "all" ? "全部" : "目录"}
+                    {mode === "all"
+                      ? t("media.browser.all")
+                      : t("media.browser.folders")}
                   </button>
                 ))}
               </div>
@@ -656,11 +664,11 @@ const MusicLibrary = () => {
                 style={{ display: "flex", gap: "6px", "align-items": "center" }}
               >
                 <span style={{ color: sortLabelColor(), "font-size": "12px" }}>
-                  排序:
+                  {t("media.browser.sort")}:
                 </span>
-                <OrderBtn col="name" label="名称" />
-                <OrderBtn col="date" label="日期" />
-                <OrderBtn col="size" label="大小" />
+                <OrderBtn col="name" label={t("media.browser.name")} />
+                <OrderBtn col="date" label={t("media.browser.date")} />
+                <OrderBtn col="size" label={t("media.browser.size")} />
               </div>
 
               <div style={{ flex: "1" }} />
@@ -668,7 +676,7 @@ const MusicLibrary = () => {
               {/* 搜索 */}
               <input
                 type="text"
-                placeholder="搜索专辑或艺术家..."
+                placeholder={t("media.music.search_placeholder")}
                 value={keyword()}
                 onInput={(e) => {
                   setKeyword(e.currentTarget.value)
@@ -694,7 +702,11 @@ const MusicLibrary = () => {
                       changeViewMode(mode)
                       setPage(1)
                     }}
-                    title={mode === "card" ? "卡片（专辑）" : "列表（歌曲）"}
+                    title={
+                      mode === "card"
+                        ? t("media.music.view_card")
+                        : t("media.music.view_list")
+                    }
                     style={{
                       background:
                         viewMode() === mode ? btnActiveBg : "transparent",
@@ -744,7 +756,7 @@ const MusicLibrary = () => {
                     cursor: "pointer",
                   }}
                 >
-                  📂 全部目录
+                  📂 {t("media.browser.all_folders")}
                 </button>
                 <For each={foldersData() ?? []}>
                   {(folder) => (
@@ -801,7 +813,7 @@ const MusicLibrary = () => {
                     >
                       ⏳
                     </div>
-                    <div>加载中...</div>
+                    <div>{t("media.music.loading")}</div>
                   </div>
                 }
               >
@@ -818,7 +830,7 @@ const MusicLibrary = () => {
                       <div style={{ "margin-bottom": "12px" }}>
                         <TbMusic size={48} style={{ opacity: 0.5 }} />
                       </div>
-                      <div>暂无音乐</div>
+                      <div>{t("media.music.no_albums")}</div>
                     </div>
                   }
                 >
@@ -871,7 +883,7 @@ const MusicLibrary = () => {
                     >
                       ⏳
                     </div>
-                    <div>加载中...</div>
+                    <div>{t("media.music.loading")}</div>
                   </div>
                 }
               >
@@ -888,7 +900,7 @@ const MusicLibrary = () => {
                       <div style={{ "margin-bottom": "12px" }}>
                         <TbMusic size={48} style={{ opacity: 0.5 }} />
                       </div>
-                      <div>暂无音乐</div>
+                      <div>{t("media.music.no_albums")}</div>
                     </div>
                   }
                 >
@@ -905,7 +917,7 @@ const MusicLibrary = () => {
                           <div
                             onClick={() => setSelectedTrack(track)}
                             onDblClick={() => playTrack(track)}
-                            title="单击查看详情，双击播放"
+                            title={t("media.music.track_item_tip")}
                             style={{
                               display: "flex",
                               "align-items": "center",
@@ -987,7 +999,8 @@ const MusicLibrary = () => {
                               >
                                 {[track.album_name, track.album_artist]
                                   .filter(Boolean)
-                                  .join(" · ") || "未知专辑"}
+                                  .join(" · ") ||
+                                  t("media.music.unknown_album")}
                               </div>
                             </div>
                             <div
@@ -1028,7 +1041,7 @@ const MusicLibrary = () => {
                             favorite={!!favorites()[track().id]}
                             onToggleFavorite={toggleFavorite}
                             onOpen={(item) => playTrack(item)}
-                            openLabel="播放"
+                            openLabel={t("media.music.play")}
                           />
                         </div>
                       )}
@@ -1065,12 +1078,16 @@ const MusicLibrary = () => {
                     "font-size": "13px",
                   }}
                 >
-                  ← 上一页
+                  ← {t("media.browser.prev_page")}
                 </button>
                 <span
                   style={{ color: paginationInfoColor(), "font-size": "13px" }}
                 >
-                  {page()} / {totalPages()} 页（共 {total()} 项）
+                  {t("media.browser.page_info", {
+                    page: page(),
+                    totalPages: totalPages(),
+                    total: total(),
+                  })}
                 </span>
                 <button
                   disabled={page() >= totalPages()}
@@ -1088,7 +1105,7 @@ const MusicLibrary = () => {
                     "font-size": "13px",
                   }}
                 >
-                  下一页 →
+                  {t("media.browser.next_page")} →
                 </button>
               </div>
             </Show>

@@ -33,6 +33,7 @@ import {
 import type { MediaItem, EpisodeInfo } from "~/types"
 import { getMediaName, parseAuthors, parseEpisodes } from "~/types"
 import { base_path, ext, notify } from "~/utils"
+import { useT } from "~/hooks"
 import { OpenWithPlayer } from "~/components/OpenWithPlayer"
 import { MediaPlayButton } from "~/components/MediaPlayButton"
 import Artplayer from "artplayer"
@@ -61,8 +62,12 @@ function setMediaBunnyMode(mode: MediaBunnyMode) {
 function isMediaBunnyEnabled(): boolean {
   return getMediaBunnyMode() !== "disabled"
 }
-const mediabunnyModeLabel = (m: MediaBunnyMode) =>
-  m === "disabled" ? "禁用" : m === "audio_only" ? "仅音频" : "全部解码"
+const mediabunnyModeKey = (m: MediaBunnyMode) =>
+  m === "disabled"
+    ? "media.video.decode_disabled"
+    : m === "audio_only"
+      ? "media.video.decode_audio_only"
+      : "media.video.decode_all"
 // 仅在启用 MediaBunny 时注册 AC3 解码器
 if (isMediaBunnyEnabled()) {
   registerAc3Decoder()
@@ -283,6 +288,7 @@ const VideoPlayer = (props: {
   episodeIndex?: number
   onClose: () => void
 }) => {
+  const t = useT()
   let playerContainer: HTMLDivElement | undefined
   let player: Artplayer | undefined
   let hlsPlayer: Hls | null | undefined
@@ -498,7 +504,7 @@ const VideoPlayer = (props: {
               video.play = origPlay
               // 提示用户
               try {
-                art.notice.show = "播放失败：转码切片格式异常，请检查后端日志"
+                art.notice.show = t("media.video.hls_broken")
               } catch {
                 // ignore
               }
@@ -584,13 +590,13 @@ const VideoPlayer = (props: {
       settings: [
         {
           id: "setting_mediabunny",
-          html: "MediaBunny 播放器",
-          tooltip: mediabunnyModeLabel(getMediaBunnyMode()),
+          html: t("media.video.mediabunny_player"),
+          tooltip: t(mediabunnyModeKey(getMediaBunnyMode())),
           icon: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
           selector: (
             ["disabled", "audio_only", "full"] as MediaBunnyMode[]
           ).map((m) => ({
-            html: mediabunnyModeLabel(m),
+            html: t(mediabunnyModeKey(m)),
             name: m,
             default: getMediaBunnyMode() === m,
           })),
@@ -598,13 +604,11 @@ const VideoPlayer = (props: {
             const newMode = item.name as MediaBunnyMode
             setMediaBunnyMode(newMode)
             setTimeout(() => {
-              if (
-                confirm("切换播放器模式需要刷新页面才能生效，是否立即刷新？")
-              ) {
+              if (confirm(t("media.video.mode_reload_confirm"))) {
                 location.reload()
               }
             }, 100)
-            return mediabunnyModeLabel(newMode)
+            return t(mediabunnyModeKey(newMode))
           },
         },
       ],
@@ -678,7 +682,7 @@ const VideoPlayer = (props: {
         if (audioPatched || !player) return
         audioPatched = true
         attachMediabunnyAudio(player, videoUrl())
-        player.notice.show = "不支持的音频编码，已自动切换 MediaBunny 音频解码"
+        player.notice.show = t("media.video.audio_fallback")
       }
       const detectUnsupportedAudio = () => {
         if (audioPatched || !player) return
@@ -790,6 +794,7 @@ const VideoPlayer = (props: {
 
 // ==================== 视频详情页 ====================
 const VideoDetail = (props: { id: string; onBack: () => void }) => {
+  const t = useT()
   const { colorMode } = useColorMode()
   const isDark = createMemo(() => colorMode() === "dark")
   const [item] = createResource(
@@ -831,7 +836,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
     const resp = await setMediaFavorite(it.id, next)
     if (resp.code !== 200) {
       setFavorite(!next)
-      notify.error("收藏失败: " + resp.message)
+      notify.error(t("media.browser.favorite_failed") + ": " + resp.message)
     }
   }
 
@@ -840,7 +845,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
     const episode = currentEpisode()?.index ?? 0
     const blob = await downloadMediaStrm(item.id, episode)
     if (!(blob instanceof Blob)) {
-      notify.error("下载 STRM 失败")
+      notify.error(t("media.video.strm_failed"))
       return
     }
     const suffix = episode
@@ -878,7 +883,9 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
             color: metaColor(),
           }}
         >
-          {item.loading ? "加载中..." : "资源不存在"}
+          {item.loading
+            ? t("media.common.loading")
+            : t("media.common.not_found")}
         </div>
       }
     >
@@ -977,8 +984,16 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                   </h1>
                   <button
                     onClick={toggleFavorite}
-                    title={favorite() ? "取消收藏" : "收藏"}
-                    aria-label={favorite() ? "取消收藏" : "收藏"}
+                    title={
+                      favorite()
+                        ? t("media.detail.unfavorite")
+                        : t("media.detail.favorite")
+                    }
+                    aria-label={
+                      favorite()
+                        ? t("media.detail.unfavorite")
+                        : t("media.detail.favorite")
+                    }
                     style={{
                       display: "inline-flex",
                       "align-items": "center",
@@ -1007,7 +1022,9 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                           : "#334155",
                     }}
                   >
-                    {favorite() ? "★ 已收藏" : "☆ 收藏"}
+                    {favorite()
+                      ? t("media.video.favorited")
+                      : t("media.video.favorite")}
                   </button>
                 </div>
 
@@ -1052,7 +1069,9 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                         "font-size": "12px",
                       }}
                     >
-                      {data().video_type === "movie" ? "电影" : "电视剧"}
+                      {data().video_type === "movie"
+                        ? t("media.video.movie")
+                        : t("media.video.tv")}
                     </span>
                   </Show>
                 </div>
@@ -1257,10 +1276,11 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
 
 // ==================== 视频库主页 ====================
 const VideoLibrary = () => {
+  const t = useT()
   const [selectedId, setSelectedId] = createSignal<string | null>(null)
 
   return (
-    <MediaLayout title="🎬 影视资源库">
+    <MediaLayout title={t("media.video.title")}>
       <Show
         when={selectedId()}
         fallback={

@@ -33,6 +33,7 @@ import { formatDuration, getMediaName } from "~/types"
 import { accentBar, accentGradient } from "~/utils/accent"
 import { resolveMediaCover } from "~/utils/media_cover"
 import { OpenWithPlayer } from "~/components/OpenWithPlayer"
+import { useT } from "~/hooks"
 import { mediaEnabled, mediaSidebarOpen } from "~/store/media"
 
 /**
@@ -245,6 +246,7 @@ const parseLRC = (lrc: string): LyricLine[] => {
 
 // ==================== 全屏歌词页 ====================
 const LyricsPage = () => {
+  const t = useT()
   // 使用函数形式访问 signal，保持响应式
   const currentItem = () => {
     const s = playerState()
@@ -377,7 +379,7 @@ const LyricsPage = () => {
       >
         <button
           onClick={() => setPlayerState((s) => ({ ...s, showLyrics: false }))}
-          title="收起歌词页"
+          title={t("media.player.collapse_lyrics")}
           style={{
             background: "rgba(255,255,255,0.1)",
             border: "1px solid rgba(255,255,255,0.15)",
@@ -393,7 +395,7 @@ const LyricsPage = () => {
           }}
         >
           <TbChevronDown size={16} />
-          收起
+          {t("media.player.collapse")}
         </button>
         <div
           style={{
@@ -404,7 +406,7 @@ const LyricsPage = () => {
             "font-size": "13px",
           }}
         >
-          正在播放
+          {t("media.player.now_playing")}
         </div>
         <div style={{ width: "80px" }} />
       </div>
@@ -537,7 +539,7 @@ const LyricsPage = () => {
             <div
               style={{ color: "rgba(255,255,255,0.55)", "font-size": "14px" }}
             >
-              {currentItem()?.album_artist || "未知艺术家"}
+              {currentItem()?.album_artist || t("media.music.unknown_artist")}
             </div>
           </div>
 
@@ -608,11 +610,15 @@ const LyricsPage = () => {
                 }))
               }}
               style={lyricsCtrlBtn}
-              title="切换循环模式"
+              title={t("media.player.loop_mode")}
             >
               <Dynamic component={loopIcon()} size={18} />
             </button>
-            <button onClick={playPrev} style={lyricsCtrlBtn} title="上一首">
+            <button
+              onClick={playPrev}
+              style={lyricsCtrlBtn}
+              title={t("media.player.prev")}
+            >
               <TbPlayerSkipBackFilled size={18} />
             </button>
             <button
@@ -642,7 +648,11 @@ const LyricsPage = () => {
                 size={22}
               />
             </button>
-            <button onClick={playNext} style={lyricsCtrlBtn} title="下一首">
+            <button
+              onClick={playNext}
+              style={lyricsCtrlBtn}
+              title={t("media.player.next")}
+            >
               <TbPlayerSkipForwardFilled size={18} />
             </button>
             <div style={{ width: "32px" }} />
@@ -677,7 +687,7 @@ const LyricsPage = () => {
                 }}
               >
                 <TbMusic size={40} style={{ opacity: 0.6 }} />
-                <span>暂无歌词</span>
+                <span>{t("media.player.no_lyrics")}</span>
               </div>
             }
           >
@@ -714,7 +724,7 @@ const LyricsPage = () => {
                           seekTo(line.time)
                           resumeAutoScroll()
                         }}
-                        title="点击跳转到此处"
+                        title={t("media.player.jump_to_line")}
                         style={{
                           "min-height": "52px",
                           display: "flex",
@@ -794,7 +804,7 @@ const LyricsPage = () => {
                     "z-index": "3",
                   }}
                 >
-                  回到当前歌词
+                  {t("media.player.back_to_current")}
                 </button>
               </Show>
             </div>
@@ -825,6 +835,7 @@ const lyricsCtrlBtn = {
 
 // ==================== 底部播放器 ====================
 export const MusicPlayer = () => {
+  const t = useT()
   // 所有状态通过 playerState() 函数调用获取，保持响应式
   const currentItem = () => {
     const s = playerState()
@@ -1028,7 +1039,8 @@ export const MusicPlayer = () => {
                     "white-space": "nowrap",
                   }}
                 >
-                  {currentItem()?.album_artist || "未知艺术家"}
+                  {currentItem()?.album_artist ||
+                    t("media.music.unknown_artist")}
                 </div>
               </div>
             </div>
@@ -1042,7 +1054,7 @@ export const MusicPlayer = () => {
               onClick={() =>
                 setPlayerState((s) => ({ ...s, showLyrics: true }))
               }
-              title="点击查看完整歌词"
+              title={t("media.player.view_full_lyrics")}
               style={{
                 flex: "1",
                 "min-width": "0",
@@ -1075,7 +1087,7 @@ export const MusicPlayer = () => {
                         "margin-right": "4px",
                       }}
                     />
-                    暂无歌词
+                    {t("media.player.no_lyrics")}
                   </div>
                 }
               >
@@ -1123,7 +1135,11 @@ export const MusicPlayer = () => {
                 "flex-shrink": "0",
               }}
             >
-              <button onClick={playPrev} style={ctrlBtnStyle} title="上一首">
+              <button
+                onClick={playPrev}
+                style={ctrlBtnStyle}
+                title={t("media.player.prev")}
+              >
                 <TbPlayerSkipBackFilled size={16} />
               </button>
               <button
@@ -1144,7 +1160,11 @@ export const MusicPlayer = () => {
                   transition: "transform 0.15s, box-shadow 0.15s",
                   "flex-shrink": "0",
                 }}
-                title={playerState().playing ? "暂停" : "播放"}
+                title={
+                  playerState().playing
+                    ? t("media.player.pause")
+                    : t("media.player.play")
+                }
               >
                 <Dynamic
                   component={
@@ -1155,7 +1175,11 @@ export const MusicPlayer = () => {
                   size={18}
                 />
               </button>
-              <button onClick={playNext} style={ctrlBtnStyle} title="下一首">
+              <button
+                onClick={playNext}
+                style={ctrlBtnStyle}
+                title={t("media.player.next")}
+              >
                 <TbPlayerSkipForwardFilled size={16} />
               </button>
               <Show when={currentItem()}>
@@ -1204,7 +1228,7 @@ export const MusicPlayer = () => {
               <button
                 onClick={cycleLoop}
                 style={ctrlBtnStyle}
-                title="切换循环模式"
+                title={t("media.player.loop_mode")}
               >
                 <Dynamic component={loopIcon()} size={16} />
               </button>
@@ -1254,7 +1278,7 @@ export const MusicPlayer = () => {
               <button
                 onClick={closePlayer}
                 style={ctrlBtnStyle}
-                title="关闭播放器"
+                title={t("media.player.close")}
               >
                 <TbX size={16} />
               </button>

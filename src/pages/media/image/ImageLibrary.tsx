@@ -5,6 +5,7 @@ import { MediaBrowser } from "../MediaBrowser"
 import type { MediaItem } from "~/types"
 import { getMediaName } from "~/types"
 import { createSignedProxyUrl, mediaItemPath } from "~/utils/media_api"
+import { useT } from "~/hooks"
 import { formatMediaSize } from "../ui"
 
 // ==================== 图片预览器 ====================
@@ -13,6 +14,7 @@ const ImageViewer = (props: {
   initialIndex: number
   onClose: () => void
 }) => {
+  const t = useT()
   const [currentIndex, setCurrentIndex] = createSignal(props.initialIndex)
   const [isFullscreen, setIsFullscreen] = createSignal(false)
   const [scale, setScale] = createSignal(1)
@@ -104,28 +106,28 @@ const ImageViewer = (props: {
           <button
             onClick={toggleFullscreen}
             style={viewerBtnStyle}
-            title="全屏 (F)"
+            title={t("media.image.fullscreen")}
           >
             {isFullscreen() ? "⊡" : "⊞"}
           </button>
           <button
             onClick={() => setScale((s) => Math.min(s + 0.25, 4))}
             style={viewerBtnStyle}
-            title="放大"
+            title={t("media.image.zoom_in")}
           >
             +
           </button>
           <button
             onClick={() => setScale((s) => Math.max(s - 0.25, 0.25))}
             style={viewerBtnStyle}
-            title="缩小"
+            title={t("media.image.zoom_out")}
           >
             −
           </button>
           <button
             onClick={() => setScale(1)}
             style={viewerBtnStyle}
-            title="重置"
+            title={t("media.image.reset")}
           >
             ↺
           </button>
@@ -136,7 +138,7 @@ const ImageViewer = (props: {
               background: "rgba(239,68,68,0.2)",
               color: "#f87171",
             }}
-            title="关闭 (Esc)"
+            title={t("media.image.close")}
           >
             ✕
           </button>
@@ -371,6 +373,7 @@ const ImageCard = (props: { item: MediaItem }) => {
 
 // ==================== 图片库主页 ====================
 const ImageLibrary = () => {
+  const t = useT()
   const [viewerItems, setViewerItems] = createSignal<MediaItem[]>([])
   const [viewerIndex, setViewerIndex] = createSignal(0)
   const [showViewer, setShowViewer] = createSignal(false)
@@ -387,7 +390,7 @@ const ImageLibrary = () => {
   }
 
   return (
-    <MediaLayout title="🖼️ 图片图库">
+    <MediaLayout title={t("media.image.title")}>
       <Show when={showViewer()}>
         <ImageViewer
           items={viewerItems()}
