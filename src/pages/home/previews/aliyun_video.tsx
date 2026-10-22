@@ -9,7 +9,15 @@ import {
   setShouldKeepState,
 } from "~/store"
 import { ObjType, PResp } from "~/types"
-import { ext, handleResp, notify, r, pathDir, pathJoin } from "~/utils"
+import {
+  ext,
+  handleResp,
+  notify,
+  r,
+  pathDir,
+  pathJoin,
+  safeJsonParse,
+} from "~/utils"
 import Artplayer from "artplayer"
 import { type Option } from "artplayer"
 import { type Setting } from "artplayer"
@@ -300,7 +308,10 @@ const Preview = () => {
         synchronousPlayback: false,
         theme: "dark",
         heatmap: true,
-        ...JSON.parse(localStorage.getItem("danmuku_config") || "{}"),
+        // 配置来自 localStorage，解析失败时忽略，避免整个预览页白屏
+        ...safeJsonParse<Partial<DanmukuOption>>(
+          localStorage.getItem("danmuku_config"),
+        ),
         emitter: false,
         danmuku: proxyLink(danmu, true),
       }),
@@ -334,15 +345,8 @@ const Preview = () => {
         }
       })
       player = new Artplayer(option)
-      let auto_fullscreen: boolean
-      switch (searchParams["auto_fullscreen"]) {
-        case "true":
-          auto_fullscreen = true
-        case "false":
-          auto_fullscreen = false
-        default:
-          auto_fullscreen = false
-      }
+      // 每个分支都必须 break：旧写法 true 会穿透到 false，导致自动全屏永远失效
+      const auto_fullscreen = searchParams["auto_fullscreen"] === "true"
       player.on("ready", () => {
         player.fullscreen = auto_fullscreen
       })

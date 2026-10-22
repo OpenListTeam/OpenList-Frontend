@@ -3,7 +3,7 @@ import { createMemo, createSignal, onCleanup, onMount } from "solid-js"
 import { useRouter, useLink } from "~/hooks"
 import { getMainColor, getSettingBool, objStore } from "~/store"
 import { ObjType } from "~/types"
-import { ext, pathDir, pathJoin } from "~/utils"
+import { ext, pathDir, pathJoin, safeJsonParse } from "~/utils"
 import Artplayer from "artplayer"
 import { type Option } from "artplayer/types/option"
 import { type Setting } from "artplayer/types/setting"
@@ -332,7 +332,10 @@ const Preview = () => {
         synchronousPlayback: false,
         theme: "dark",
         heatmap: true,
-        ...JSON.parse(localStorage.getItem("danmuku_config") || "{}"),
+        // 配置来自 localStorage，可能被旧版本或用户改坏，解析失败时忽略即可
+        ...safeJsonParse<Partial<DanmukuOption>>(
+          localStorage.getItem("danmuku_config"),
+        ),
         emitter: false,
         danmuku: proxyLink(danmu, true),
       }),
@@ -411,15 +414,8 @@ const Preview = () => {
     ) {
       attachMediabunnyAudio(player, objStore.raw_url)
     }
-    let auto_fullscreen: boolean
-    switch (searchParams["auto_fullscreen"]) {
-      case "true":
-        auto_fullscreen = true
-      case "false":
-        auto_fullscreen = false
-      default:
-        auto_fullscreen = false
-    }
+    // 注意每个分支都要 break：旧代码缺少 break 导致 true 一路穿透并被重置为 false
+    const auto_fullscreen = searchParams["auto_fullscreen"] === "true"
     player.on("ready", () => {
       player.fullscreen = auto_fullscreen
     })

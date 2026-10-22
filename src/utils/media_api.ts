@@ -164,7 +164,7 @@ export const adminClearMediaScrape = (mediaType?: MediaType) =>
 export const adminDeleteInvalidMedia = (mediaType?: MediaType) =>
   r.post("/admin/media/delete_invalid", null, {
     params: mediaType ? { media_type: mediaType } : {},
-  }) as Promise<Resp<{ checked: number; deleted: number }>>
+  }) as Promise<Resp<{ checked: number; deleted: number; skipped?: number }>>
 
 /** 导出媒体数据
  *  - mediaType 为空 + scanPathId 为空 => 全部导出

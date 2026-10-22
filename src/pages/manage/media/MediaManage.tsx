@@ -162,6 +162,14 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
 
   // 搜索防抖
   let searchTimer: ReturnType<typeof setTimeout> | undefined
+  // 扫描进度轮询定时器：必须在组件 Owner 作用域内创建，否则 onCleanup 不会生效
+  let scanTimer: ReturnType<typeof setInterval> | undefined
+  const stopScanPolling = () => {
+    if (scanTimer) {
+      clearInterval(scanTimer)
+      scanTimer = undefined
+    }
+  }
   const handleSearchInput = (value: string) => {
     setSearchInput(value)
     if (searchTimer) clearTimeout(searchTimer)
@@ -172,6 +180,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
   }
   onCleanup(() => {
     if (searchTimer) clearTimeout(searchTimer)
+    stopScanPolling()
   })
 
   // 加载配置
@@ -339,7 +348,9 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
 
   // ============== 扫描 ==============
   const pollScanProgress = () => {
-    const timer = setInterval(async () => {
+    // 先停掉旧的轮询，避免重复点击叠出多个定时器
+    stopScanPolling()
+    scanTimer = setInterval(async () => {
       const resp = await adminGetMediaScanProgress(props.mediaType)
       if (resp.code === 200 && resp.data) {
         const d = resp.data
@@ -349,37 +360,42 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
           total: d.total,
         })
         if (!d.running) {
-          clearInterval(timer)
+          stopScanPolling()
           setScanning(false)
           refetchItems()
           notify.success("扫描完成")
         }
       }
     }, 1000)
-    onCleanup(() => clearInterval(timer))
   }
 
-  const handleScanPath = async (sp: MediaScanPath) => {
+  /** 启动扫描：失败（如 403 未授权/未启用）时必须复位 scanning，否则按钮永久转圈 */
+  const startScan = async (scanPathId?: number) => {
     if (!config().enabled) {
       notify.warning("请先启用该媒体库")
       return
     }
     setScanning(true)
     setProgress({ status: "扫描中...", current: 0, total: 0 })
-    await adminStartMediaScan(props.mediaType, sp.id)
-    pollScanProgress()
+    try {
+      const resp = await adminStartMediaScan(props.mediaType, scanPathId)
+      if (resp.code !== 200) {
+        setScanning(false)
+        setProgress(null)
+        notify.error("启动扫描失败: " + (resp.message || `HTTP ${resp.code}`))
+        return
+      }
+      pollScanProgress()
+    } catch (e: any) {
+      setScanning(false)
+      setProgress(null)
+      notify.error("启动扫描失败: " + (e?.message ?? String(e)))
+    }
   }
 
-  const handleScanAll = async () => {
-    if (!config().enabled) {
-      notify.warning("请先启用该媒体库")
-      return
-    }
-    setScanning(true)
-    setProgress({ status: "扫描中...", current: 0, total: 0 })
-    await adminStartMediaScan(props.mediaType)
-    pollScanProgress()
-  }
+  const handleScanPath = (sp: MediaScanPath) => startScan(sp.id)
+
+  const handleScanAll = () => startScan()
 
   const handleScrape = async () => {
     setScraping(true)
@@ -441,7 +457,11 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
         if (resp.code === 200) {
           const checked = resp.data?.checked ?? 0
           const deleted = resp.data?.deleted ?? 0
-          notify.success(`检测 ${checked} 条，删除 ${deleted} 条已失效条目`)
+          const skipped = resp.data?.skipped ?? 0
+          notify.success(
+            `检测 ${checked} 条，删除 ${deleted} 条已失效条目` +
+              (skipped > 0 ? `，${skipped} 条状态未知已跳过` : ""),
+          )
           refetchItems()
         } else {
           notify.error("删除失败: " + resp.message)
