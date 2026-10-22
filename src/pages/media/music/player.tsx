@@ -23,8 +23,11 @@ import {
   TbVolumeOff,
   TbX,
 } from "solid-icons/tb"
-import { api } from "~/utils"
-import { getMediaProgress, saveMediaProgress } from "~/utils/media_api"
+import {
+  getMediaProgress,
+  getSignedProxyUrl,
+  saveMediaProgress,
+} from "~/utils/media_api"
 import type { MediaItem } from "~/types"
 import { formatDuration, getMediaName } from "~/types"
 import { accentBar, accentGradient } from "~/utils/accent"
@@ -104,11 +107,17 @@ export const initAudio = () => {
   return audioEl
 }
 
-export const playTrack = (item: MediaItem) => {
+// 连续切歌时，只有最后一次请求允许写入 audio.src，避免慢响应覆盖新歌
+let trackRequestId = 0
+
+export const playTrack = async (item: MediaItem) => {
   const audio = initAudio()
+  const reqId = ++trackRequestId
   // 每首歌都是独立文件记录，播放路径 = folder_path + "/" + file_name
   const folder = item.folder_path?.replace(/\/$/, "") ?? ""
-  const url = `${api}/p${folder}/${item.file_name}?force`
+  // 使用签名 + 已编码的代理地址（开启签名后裸 /p 路径会 401，文件名含 # ? 也会失效）
+  const url = await getSignedProxyUrl(`${folder}/${item.file_name}`)
+  if (reqId !== trackRequestId) return
   audio.src = url
   // 续播：读取上次进度，metadata 就绪后跳转
   getMediaProgress(item.id)
@@ -132,16 +141,19 @@ export const playTrack = (item: MediaItem) => {
   })
   setPlayerState((s) => ({ ...s, playing: true, externalLyrics: "" }))
   const baseName = item.file_name?.replace(/\.[^.]+$/, "") ?? ""
-  const lrcUrl = `${api}/p${folder}/${baseName}.lrc?force`
-  fetch(lrcUrl)
+  const lrcPath = `${folder}/${baseName}.lrc`
+  getSignedProxyUrl(lrcPath)
+    .then((lrcUrl) => fetch(lrcUrl))
     .then((res) => {
       if (res.ok) return res.text()
       return ""
     })
     .then((text) => {
+      if (reqId !== trackRequestId) return
       setPlayerState((s) => ({ ...s, externalLyrics: text ?? "" }))
     })
     .catch(() => {
+      if (reqId !== trackRequestId) return
       setPlayerState((s) => ({ ...s, externalLyrics: "" }))
     })
 }

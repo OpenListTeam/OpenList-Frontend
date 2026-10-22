@@ -4,7 +4,7 @@ import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
 import type { MediaItem } from "~/types"
 import { getMediaName } from "~/types"
-import { api } from "~/utils"
+import { createSignedProxyUrl, mediaItemPath } from "~/utils/media_api"
 import { formatMediaSize } from "../ui"
 
 // ==================== 图片预览器 ====================
@@ -18,13 +18,9 @@ const ImageViewer = (props: {
   const [scale, setScale] = createSignal(1)
 
   const current = () => props.items[currentIndex()]
-  // 使用 /p/ 代理路径 + ?force 参数，避免 302 重定向到外部存储时的 CORS 跨域问题
-  // 路径 = folder_path + "/" + file_name
-  const imageUrl = () => {
-    const item = current()
-    const folder = item.folder_path?.replace(/\/$/, "") ?? ""
-    return `${api}/p${folder}/${item.file_name}?force`
-  }
+  // 使用签名后的 /p 代理地址（带 force 避免 302 到外部存储的 CORS 问题），路径已做 URL 编码
+  const signedImageUrl = createSignedProxyUrl(() => mediaItemPath(current()))
+  const imageUrl = () => signedImageUrl()
 
   const prev = () => {
     setCurrentIndex((i) => (i - 1 + props.items.length) % props.items.length)
@@ -244,9 +240,10 @@ const ImageViewer = (props: {
         >
           {(item, i) => {
             const realIndex = Math.max(0, currentIndex() - 5) + i()
+            const thumbUrl = createSignedProxyUrl(() => mediaItemPath(item))
             return (
               <img
-                src={`${api}/p${item.folder_path?.replace(/\/$/, "")}/${item.file_name}?force`}
+                src={thumbUrl()}
                 onClick={() => {
                   setCurrentIndex(realIndex)
                   setScale(1)
@@ -291,12 +288,8 @@ const viewerBtnStyle = {
 
 // ==================== 图片卡片 ====================
 const ImageCard = (props: { item: MediaItem }) => {
-  // 使用 /p/ 代理路径 + ?force 参数，避免 302 重定向到外部存储时的 CORS 跨域问题
-  // 路径 = folder_path + "/" + file_name
-  const imageUrl = () => {
-    const folder = props.item.folder_path?.replace(/\/$/, "") ?? ""
-    return `${api}/p${folder}/${props.item.file_name}?force`
-  }
+  // 签名 + 编码后的 /p 代理地址，见 createSignedProxyUrl
+  const imageUrl = createSignedProxyUrl(() => mediaItemPath(props.item))
   const [hover, setHover] = createSignal(false)
   return (
     <div
@@ -408,59 +401,62 @@ const ImageLibrary = () => {
         onItemsChange={(items) => setCurrentPageItems(items)}
         onItemClick={(item) => handleItemClick(item)}
         renderCard={(item) => <ImageCard item={item} />}
-        renderListRow={(item) => (
-          <>
-            <img
-              src={`${api}/p${item.folder_path?.replace(/\/$/, "")}/${item.file_name}?force`}
-              style={{
-                width: "48px",
-                height: "48px",
-                "object-fit": "cover",
-                "border-radius": "4px",
-                "flex-shrink": "0",
-              }}
-              loading="lazy"
-            />
-            <div style={{ flex: "1", "min-width": "0" }}>
-              <div
+        renderListRow={(item) => {
+          const rowUrl = createSignedProxyUrl(() => mediaItemPath(item))
+          return (
+            <>
+              <img
+                src={rowUrl()}
                 style={{
-                  color: "#e2e8f0",
-                  "font-size": "14px",
-                  overflow: "hidden",
-                  "text-overflow": "ellipsis",
-                  "white-space": "nowrap",
+                  width: "48px",
+                  height: "48px",
+                  "object-fit": "cover",
+                  "border-radius": "4px",
+                  "flex-shrink": "0",
                 }}
-              >
-                {getMediaName(item)}
+                loading="lazy"
+              />
+              <div style={{ flex: "1", "min-width": "0" }}>
+                <div
+                  style={{
+                    color: "#e2e8f0",
+                    "font-size": "14px",
+                    overflow: "hidden",
+                    "text-overflow": "ellipsis",
+                    "white-space": "nowrap",
+                  }}
+                >
+                  {getMediaName(item)}
+                </div>
+                <div
+                  style={{
+                    color: "#64748b",
+                    "font-size": "12px",
+                    overflow: "hidden",
+                    "text-overflow": "ellipsis",
+                    "white-space": "nowrap",
+                  }}
+                >
+                  {[item.description, item.folder_path]
+                    .filter(Boolean)
+                    .join(" · ") || item.file_name}
+                </div>
               </div>
               <div
                 style={{
-                  color: "#64748b",
+                  color: "#475569",
                   "font-size": "12px",
-                  overflow: "hidden",
-                  "text-overflow": "ellipsis",
-                  "white-space": "nowrap",
+                  "text-align": "right",
+                  "flex-shrink": "0",
+                  "line-height": "1.5",
                 }}
               >
-                {[item.description, item.folder_path]
-                  .filter(Boolean)
-                  .join(" · ") || item.file_name}
+                <div>{item.release_date?.slice(0, 10)}</div>
+                <div>{formatMediaSize(item.file_size)}</div>
               </div>
-            </div>
-            <div
-              style={{
-                color: "#475569",
-                "font-size": "12px",
-                "text-align": "right",
-                "flex-shrink": "0",
-                "line-height": "1.5",
-              }}
-            >
-              <div>{item.release_date?.slice(0, 10)}</div>
-              <div>{formatMediaSize(item.file_size)}</div>
-            </div>
-          </>
-        )}
+            </>
+          )
+        }}
       />
     </MediaLayout>
   )

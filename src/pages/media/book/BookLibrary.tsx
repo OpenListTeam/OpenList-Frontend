@@ -14,10 +14,15 @@ import { useColorMode } from "@hope-ui/solid"
 import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
 import { formatMediaSize, mediaBackBtn, mediaPrimaryBtn } from "../ui"
-import { getMediaItem } from "~/utils/media_api"
+import {
+  createSignedProxyUrl,
+  getMediaItem,
+  getMediaStreamUrl,
+} from "~/utils/media_api"
 import type { MediaItem, EpisodeInfo } from "~/types"
 import { getMediaName, parseAuthors, parseEpisodes } from "~/types"
 import { api } from "~/utils"
+import { encodePath } from "~/utils/path"
 
 // ==================== PDF阅读器 ====================
 const PDFReader = (props: { url: string; title: string }) => {
@@ -565,8 +570,9 @@ const BookReader = (props: {
     const folder = props.item.folder_path?.replace(/\/$/, "") ?? ""
     return `${folder}/${props.item.file_name}`
   }
-  const fileUrl = () => `${api}/p${resolvedPath()}?force`
-  const downloadUrl = () => `${api}/d${resolvedPath()}`
+  // 签名 + 编码后的代理地址；就绪前为 undefined，避免先发出必然 401 的请求
+  const signedFileUrl = createSignedProxyUrl(resolvedPath)
+  const fileUrl = () => signedFileUrl() ?? ""
   const readerTitle = () => props.title ?? getMediaName(props.item)
   const fileNameForExt = () => {
     const path = props.filePath ?? props.item.file_name ?? ""
@@ -624,10 +630,10 @@ const BookReader = (props: {
 
       {/* 阅读器主体 */}
       <div style={{ flex: "1", overflow: "hidden" }}>
-        <Show when={isPDF()}>
+        <Show when={isPDF() && fileUrl()}>
           <PDFReader url={fileUrl()} title={getMediaName(props.item)} />
         </Show>
-        <Show when={isEpub()}>
+        <Show when={isEpub() && fileUrl()}>
           <EPUBReader url={fileUrl()} title={getMediaName(props.item)} />
         </Show>
         <Show when={!isPDF() && !isEpub()}>
@@ -648,8 +654,17 @@ const BookReader = (props: {
               暂不支持在线阅读此格式（{ext().toUpperCase()}）
             </div>
             <a
-              href={downloadUrl()}
-              download={fileNameForExt()}
+              href="#"
+              onClick={async (e) => {
+                e.preventDefault()
+                // /d 同样受签名保护：点击时取后端签名直链再下载
+                const resp = await getMediaStreamUrl({ path: resolvedPath() })
+                const url =
+                  resp.code === 200 && resp.data?.url
+                    ? resp.data.url
+                    : `${api}/d${encodePath(resolvedPath())}`
+                window.open(url, "_blank")
+              }}
               style={{ ...mediaPrimaryBtn, "text-decoration": "none" }}
             >
               ⬇ 下载文件

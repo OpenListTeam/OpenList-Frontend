@@ -75,6 +75,8 @@ const Preview = () => {
       )
     }
   }
+  // 组件卸载标记：onMount 里的异步操作结束后据此决定是否继续初始化播放器
+  let disposed = false
   let player: Artplayer
   let flvPlayer: mpegts.Player
   let hlsPlayer: Hls
@@ -377,6 +379,9 @@ const Preview = () => {
         useTranscode = true
         option.url = tcResp.data.master_url
         option.type = "m3u8"
+        // MediaBunny full 模式会用 canvas proxy 接管 video 元素，HLS.js 将无法挂载。
+        // 转码走 HLS，必须移除该 proxy（与媒体库播放器保持一致）。
+        delete (option as { proxy?: unknown }).proxy
         console.log(
           `[transcode] 使用云端转码播放: job=${tcResp.data.job_id}, profile=${tcResp.data.profile}`,
         )
@@ -385,6 +390,10 @@ const Preview = () => {
       // 转码接口失败（可能未开启），静默降级到直链播放
       console.debug("[transcode] 转码接口不可用，使用直链播放", e)
     }
+
+    // 等待转码响应期间用户可能已离开页面：onCleanup 早已执行，
+    // 此时再创建实例就没有人会销毁它，必须放弃初始化。
+    if (disposed) return
 
     // 预下载视频文件的前几个区块（仅直链模式，转码模式由 HLS.js 管理）
     if (!useTranscode && objStore.raw_url) {
@@ -459,6 +468,7 @@ const Preview = () => {
     })
   })
   onCleanup(() => {
+    disposed = true
     if (player && player.video) player.video.src = ""
     player?.destroy()
     flvPlayer?.destroy()

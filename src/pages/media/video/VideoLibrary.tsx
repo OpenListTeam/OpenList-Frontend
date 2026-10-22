@@ -24,13 +24,15 @@ import {
   getMediaItem,
   getMediaProgress,
   getMediaUserData,
+  getSignedProxyUrl,
+  mediaItemPath,
   requestTranscodePlay,
   saveMediaProgress,
   setMediaFavorite,
 } from "~/utils/media_api"
 import type { MediaItem, EpisodeInfo } from "~/types"
 import { getMediaName, parseAuthors, parseEpisodes } from "~/types"
-import { api, base_path, ext, notify } from "~/utils"
+import { base_path, ext, notify } from "~/utils"
 import { OpenWithPlayer } from "~/components/OpenWithPlayer"
 import { MediaPlayButton } from "~/components/MediaPlayButton"
 import Artplayer from "artplayer"
@@ -285,18 +287,22 @@ const VideoPlayer = (props: {
   let player: Artplayer | undefined
   let hlsPlayer: Hls | null | undefined
   let flvPlayer: mpegts.Player | undefined
+  // 卸载标记：onMount 中有多处 await，期间用户可能已离开，
+  // 此时 onCleanup 已执行，之后创建的实例不会再被销毁。
+  let disposed = false
 
-  // 优先使用传入的 filePath，否则拼接 folder_path + "/" + file_name
-  const videoUrl = () => {
-    if (props.filePath) return `${api}/p${props.filePath}?force`
-    const folder = props.item.folder_path?.replace(/\/$/, "") ?? ""
-    return `${api}/p${folder}/${props.item.file_name}?force`
-  }
+  // 播放文件的 VFS 路径：优先使用传入的 filePath，否则 folder_path + "/" + file_name
+  const videoPath = () => props.filePath ?? mediaItemPath(props.item)
+  // 签名 + 编码后的代理地址，在 onMount 里异步取得
+  let directUrl = ""
+  const videoUrl = () => directUrl
   const videoTitle = () => props.title ?? getMediaName(props.item)
 
   onMount(async () => {
     if (!playerContainer) return
     let fileExt = ext(props.item.file_name)
+    directUrl = await getSignedProxyUrl(videoPath())
+    if (disposed || !playerContainer) return
 
     // 读取上次播放进度，用于续播
     let resumeSeconds = 0
@@ -311,15 +317,14 @@ const VideoPlayer = (props: {
     } catch {
       // 忽略进度读取失败
     }
+    if (disposed) return
 
     // ---- 云端转码判断 ----
     // 播放前先调用后端转码决策接口，如果需要转码则使用 HLS master_url 播放
     let useTranscode = false
     let actualUrl = videoUrl()
     try {
-      const filePath =
-        props.filePath ??
-        `${props.item.folder_path?.replace(/\/$/, "") ?? ""}/${props.item.file_name}`
+      const filePath = videoPath()
       const tcResp = await requestTranscodePlay(filePath)
       if (
         tcResp.code === 200 &&
@@ -337,6 +342,8 @@ const VideoPlayer = (props: {
       // 转码接口失败（可能未开启），静默降级到直链播放
       console.debug("[transcode] 转码接口不可用，使用直链播放", e)
     }
+    // 等待转码响应期间若已卸载，放弃初始化，避免产生无人销毁的播放器实例
+    if (disposed) return
 
     // 【预加载策略】
     // 1. 不在创建播放器时主动预取，避免点击视频立即触发数据加载；
@@ -700,6 +707,7 @@ const VideoPlayer = (props: {
   })
 
   onCleanup(() => {
+    disposed = true
     // 先销毁 HLS/FLV 播放器，再销毁 Artplayer
     // 避免 Artplayer destroy 时触发 video.src 变更导致多余的 load 事件
     if (hlsPlayer) {

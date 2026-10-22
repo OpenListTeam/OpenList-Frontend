@@ -1,4 +1,6 @@
-import { r } from "~/utils"
+import { createResource } from "solid-js"
+import { api, r } from "~/utils"
+import { encodePath } from "~/utils/path"
 import type {
   MediaItem,
   AlbumInfo,
@@ -214,6 +216,56 @@ export const getMediaStreamUrl = (params: {
   r.get("/fs/media/stream_url", { params }) as Promise<
     Resp<{ url: string; path: string; name: string; proxied: string }>
   >
+
+// ==================== 签名代理 URL ====================
+// 直接拼接 `/p${path}?force` 有两个问题：
+//  1. 开启全局/存储签名后请求会 401；
+//  2. 文件名里的 `#`、`?`、`%` 会破坏 URL。
+// 统一通过后端 stream_url 取得带签名的 /p 地址，并补上 force（强制代理，避免 302 跨域）。
+
+const signedProxyCache = new Map<string, { url: string; at: number }>()
+const SIGNED_PROXY_TTL = 5 * 60 * 1000
+
+/** 未签名但已正确编码的 /p 地址，仅作为取签名失败时的降级方案 */
+export const unsignedProxyUrl = (path: string) =>
+  `${api}/p${encodePath(path)}?force`
+
+const withForce = (url: string) =>
+  /[?&]force(=|&|$)/.test(url)
+    ? url
+    : `${url}${url.includes("?") ? "&" : "?"}force`
+
+/** 获取指定路径的签名代理地址（带短期缓存）；失败时降级为编码后的未签名地址 */
+export const getSignedProxyUrl = async (path: string): Promise<string> => {
+  const hit = signedProxyCache.get(path)
+  if (hit && Date.now() - hit.at < SIGNED_PROXY_TTL) return hit.url
+  try {
+    const resp = await getMediaStreamUrl({ path })
+    if (resp.code === 200 && resp.data?.proxied) {
+      const url = withForce(resp.data.proxied)
+      signedProxyCache.set(path, { url, at: Date.now() })
+      return url
+    }
+  } catch {
+    // 降级处理见下
+  }
+  return unsignedProxyUrl(path)
+}
+
+/** 条目 folder_path + file_name 拼出的 VFS 路径 */
+export const mediaItemPath = (item: {
+  folder_path?: string
+  file_name: string
+}) => `${item.folder_path?.replace(/\/$/, "") ?? ""}/${item.file_name}`
+
+/**
+ * 响应式签名地址：路径变化时重新获取；未就绪时返回 undefined，
+ * 避免先发出一次必然 401 的未签名请求。
+ */
+export const createSignedProxyUrl = (path: () => string | undefined) => {
+  const [url] = createResource(path, (p) => getSignedProxyUrl(p))
+  return url
+}
 
 /** 批量生成 STRM */
 export const adminGenerateStrm = (mediaType?: MediaType, scanPathId?: number) =>
