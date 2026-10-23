@@ -225,6 +225,20 @@ export const getMediaStreamUrl = (params: {
 
 const signedProxyCache = new Map<string, { url: string; at: number }>()
 const SIGNED_PROXY_TTL = 5 * 60 * 1000
+// 上限兜底：媒体库翻页会不断产生新路径，长会话下必须有容量上限
+const SIGNED_PROXY_MAX = 300
+
+const trimSignedProxyCache = () => {
+  const now = Date.now()
+  for (const [key, value] of signedProxyCache) {
+    if (now - value.at >= SIGNED_PROXY_TTL) signedProxyCache.delete(key)
+  }
+  while (signedProxyCache.size > SIGNED_PROXY_MAX) {
+    const oldest = signedProxyCache.keys().next().value
+    if (oldest === undefined) break
+    signedProxyCache.delete(oldest)
+  }
+}
 
 /** 未签名但已正确编码的 /p 地址，仅作为取签名失败时的降级方案 */
 export const unsignedProxyUrl = (path: string) =>
@@ -238,12 +252,18 @@ const withForce = (url: string) =>
 /** 获取指定路径的签名代理地址（带短期缓存）；失败时降级为编码后的未签名地址 */
 export const getSignedProxyUrl = async (path: string): Promise<string> => {
   const hit = signedProxyCache.get(path)
-  if (hit && Date.now() - hit.at < SIGNED_PROXY_TTL) return hit.url
+  if (hit && Date.now() - hit.at < SIGNED_PROXY_TTL) {
+    // 命中后提升为最近使用，避免被容量上限优先淘汰
+    signedProxyCache.delete(path)
+    signedProxyCache.set(path, hit)
+    return hit.url
+  }
   try {
     const resp = await getMediaStreamUrl({ path })
     if (resp.code === 200 && resp.data?.proxied) {
       const url = withForce(resp.data.proxied)
       signedProxyCache.set(path, { url, at: Date.now() })
+      trimSignedProxyCache()
       return url
     }
   } catch {
