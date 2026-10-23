@@ -154,12 +154,12 @@ export default class MediaBunnyEngine {
       this.events.emit("canplaythrough")
       this.events.emit("progress")
     } catch (err) {
+      // 已被新的 load() 取代：按正常结束处理，不报错也不改状态
       if (id !== this.loadSeq) return
-
-      this.error = { code: 4, message: err.message }
-      this.networkState = 3
-      this.events.emit("error")
-      console.error("MediaBunny load error:", err)
+      // 必须继续向上抛：外层用 Promise.race 判定加载成败，
+      // 在这里吞掉异常会被当成「加载成功」，随后错误地设置 HAVE_ENOUGH_DATA
+      // 并发出 canplay / canplaythrough。错误状态由 load() 的 catch 统一处理。
+      throw err
     }
   }
 

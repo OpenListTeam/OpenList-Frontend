@@ -277,7 +277,7 @@ const AlbumDetail = (props: { album: AlbumInfo; onBack: () => void }) => {
               const list = tracks()
               if (list && list.length > 0) playPlaylist(list, 0)
             }}
-            style={mediaPrimaryBtn}
+            style={mediaPrimaryBtn()}
           >
             <TbPlayerPlayFilled size={14} />
             {t("media.music.play_all")}

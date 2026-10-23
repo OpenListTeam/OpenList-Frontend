@@ -53,6 +53,11 @@ export default class MediaBunnyAudioPatch {
     this._driftTimer = 0
     this._wasMutedBeforePatch = !!video.muted
     this._prevVolume = video.volume
+    // 用户意图的静音状态：与「本补丁强制静音原生 video」区分开，
+    // 否则 ArtPlayer 的静音按钮会被永久吞掉（音频仍在输出）。
+    this._userMuted = this._wasMutedBeforePatch
+    // 忽略「本补丁自己写入 muted」所触发的那次 volumechange
+    this._suppressVolumeChange = false
     // 始终把原生 video 静音，音频由 mediabunny 提供
     try {
       video.muted = true
@@ -80,7 +85,7 @@ export default class MediaBunnyAudioPatch {
       v.addEventListener(k, fn)
     }
     // 初始音量同步（video 已被静音，所以从 video 端读取的 volume 仍可作为目标音量）
-    this.audio.setVolume(this._prevVolume, false)
+    this.audio.setVolume(this._prevVolume, this._userMuted)
     this.audio.setPlaybackRate(v.playbackRate || 1)
   }
 
@@ -152,8 +157,29 @@ export default class MediaBunnyAudioPatch {
   }
 
   _onVolumeChange() {
-    // video 自身仍保持 muted；从 video 的 volume 读取目标音量给音频
-    this.audio.setVolume(this.video.volume, false)
+    // 这次事件是本补丁自己强制静音原生 video 触发的，不代表用户意图
+    if (this._suppressVolumeChange) {
+      this._suppressVolumeChange = false
+      return
+    }
+    // ArtPlayer 的静音按钮改的是 video.muted，这里把它当作「用户意图」同步给音频引擎
+    this._userMuted = !!this.video.muted
+    this._prevVolume = this.video.volume
+    this.audio.setVolume(this.video.volume, this._userMuted)
+    // 原生音轨必须保持静音，否则会和 mediabunny 双声道；
+    // 这次写入由 _suppressVolumeChange 标记，不会回写上面的用户意图
+    this._forceNativeMute()
+  }
+
+  /** 强制静音原生 video，并忽略由此产生的那次 volumechange */
+  _forceNativeMute() {
+    if (this.video.muted) return
+    this._suppressVolumeChange = true
+    try {
+      this.video.muted = true
+    } catch (_) {
+      this._suppressVolumeChange = false
+    }
   }
 
   _onEnded() {

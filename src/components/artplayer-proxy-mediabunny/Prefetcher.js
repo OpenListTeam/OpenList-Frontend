@@ -53,20 +53,40 @@ export function prefetchVideoChunks(url, opts = {}) {
         signal: controller.signal,
       })
 
-      if (!resp.ok && resp.status !== 206) {
-        // 服务端不支持 Range 或鉴权失败等
+      if (resp.status === 200) {
+        // 服务端忽略了 Range，返回的是整个文件。继续读下去会把几 GB 的
+        // 数据全部灌进缓存/带宽，而且会拖慢真正的开播，直接放弃这次预取。
+        try {
+          await resp.body?.cancel()
+        } catch (_) {
+          /* ignore */
+        }
+        return { ok: false, status: 200, reason: "range-ignored" }
+      }
+      if (!resp.ok) {
+        // 鉴权失败 / 404 等
         return { ok: false, status: resp.status }
       }
 
       // 必须把 body 完整读出来才会真正落到浏览器 HTTP 缓存
-      // （仅响应头不会触发缓存写入）
+      // （仅响应头不会触发缓存写入）。
+      // 加一道字节上限兜底：服务端声称 206 但实际回更多数据时也不会无限读。
       const reader = resp.body?.getReader()
       let total = 0
+      const cap = byteRange * 2
       if (reader) {
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
           total += value?.byteLength ?? 0
+          if (total > cap) {
+            try {
+              await reader.cancel()
+            } catch (_) {
+              /* ignore */
+            }
+            break
+          }
         }
       }
 

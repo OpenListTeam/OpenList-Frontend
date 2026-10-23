@@ -1,6 +1,6 @@
 import { PluginItem, PluginType } from "~/types"
 import { loadScriptIIFE } from "./load_external"
-import { ZipLimitError, extractZipNative } from "./zip_read"
+import { DEFAULT_ZIP_LIMITS, ZipLimitError, extractZipNative } from "./zip_read"
 
 export interface ExtractedPluginPackage {
   manifest: Partial<PluginItem>
@@ -185,12 +185,54 @@ async function extractZipFallback(
     throw new Error("Failed to load ZIP extraction module")
   }
 
+  // 兜底路径必须和原生解压走同一套上限，否则压缩炸弹正好可以从这里绕过：
+  // fflate 会按中央目录声明的 originalSize 分配缓冲区，所以按声明值过滤即可挡住。
+  const limits = DEFAULT_ZIP_LIMITS
+  let seen = 0
+  let total = 0
+  let skipped = 0
+
   return new Promise((resolve, reject) => {
     fflate.unzip(
       new Uint8Array(buffer),
+      {
+        filter: (file: { originalSize: number }) => {
+          seen += 1
+          if (seen > limits.maxEntries) {
+            skipped += 1
+            return false
+          }
+          if (file.originalSize > limits.maxEntryBytes) {
+            skipped += 1
+            return false
+          }
+          if (total + file.originalSize > limits.maxTotalBytes) {
+            skipped += 1
+            return false
+          }
+          total += file.originalSize
+          return true
+        },
+      },
       (err: any, unzipped: Record<string, Uint8Array>) => {
-        if (err) reject(err)
-        else resolve(unzipped)
+        if (err) {
+          reject(err)
+          return
+        }
+        if (skipped > 0) {
+          // 插件包不该静默丢文件：超限直接报错，让用户知道需要精简插件
+          reject(
+            new ZipLimitError(
+              `插件包中有 ${skipped} 个条目超过解压上限（单条 ${Math.round(
+                limits.maxEntryBytes / 1024 / 1024,
+              )}MB / 总量 ${Math.round(
+                limits.maxTotalBytes / 1024 / 1024,
+              )}MB）`,
+            ),
+          )
+          return
+        }
+        resolve(unzipped)
       },
     )
   })

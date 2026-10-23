@@ -44,11 +44,18 @@ export interface ZipLimits {
   skipOversizedEntries?: boolean
 }
 
-const DEFAULT_LIMITS: Required<ZipLimits> = {
+/** 默认上限：原生解压与 fflate 兜底路径共用同一套数值 */
+export const DEFAULT_ZIP_LIMITS: Required<ZipLimits> = {
   maxEntryBytes: 64 * MB,
   maxTotalBytes: 256 * MB,
   maxEntries: 20000,
   skipOversizedEntries: false,
+}
+
+export interface ZipExtractOptions {
+  limits?: ZipLimits
+  /** 跳过一个超限条目时回调（EPUB 用来提示「已跳过 N 个超大资源」） */
+  onSkip?: (name: string) => void
 }
 
 /**
@@ -115,12 +122,12 @@ async function inflateRaw(
  */
 export async function extractZipNative(
   buffer: ArrayBuffer,
-  opts: { limits?: ZipLimits } = {},
+  opts: ZipExtractOptions = {},
 ): Promise<Record<string, Uint8Array>> {
   if (!supportsNativeZip()) {
     throw new Error("DecompressionStream is not supported in this environment")
   }
-  const limits = { ...DEFAULT_LIMITS, ...(opts.limits ?? {}) }
+  const limits = { ...DEFAULT_ZIP_LIMITS, ...(opts.limits ?? {}) }
   const view = new DataView(buffer)
   const length = buffer.byteLength
   const files: Record<string, Uint8Array> = {}
@@ -188,21 +195,30 @@ export async function extractZipNative(
     const dataOffset = localHeaderOffset + 30 + localFileNameLen + localExtraLen
     if (dataOffset + compressedSize > length) continue
 
-    // 剩余可用额度：单条目上限与总量剩余额度取小
+    // 剩余总量额度：单条目上限与它取小
     const remaining = limits.maxTotalBytes - totalUncompressed
-    const entryLimit = Math.min(limits.maxEntryBytes, remaining)
-    if (entryLimit <= 0) {
+    if (remaining <= 0) {
       throw new ZipLimitError("ZIP uncompressed size exceeds the total limit")
     }
-    // 只有「被单条目上限卡住」才允许跳过；被总量额度卡住时必须终止
-    const entryTooLarge = () => entryLimit === limits.maxEntryBytes
-    const skipThisEntry = () => limits.skipOversizedEntries && entryTooLarge()
+    // 这里区分两种超限，后续处理完全不同：
+    //   exceedsEntryCap —— 单条目自己太大：允许调用方选择「跳过该条目」
+    //   exceedsTotalCap —— 总量额度不够：必须终止整包，否则总量上限形同虚设
+    const exceedsEntryCap = limits.maxEntryBytes < remaining
+    const entryLimit = exceedsEntryCap ? limits.maxEntryBytes : remaining
+    const exceedsTotalCap = !exceedsEntryCap
+    const canSkipThisEntry = () =>
+      limits.skipOversizedEntries && exceedsEntryCap
 
     if (compressionMethod === 0) {
       if (compressedSize > entryLimit) {
-        if (skipThisEntry()) continue
+        if (canSkipThisEntry()) {
+          opts.onSkip?.(fileName)
+          continue
+        }
         throw new ZipLimitError(
-          `ZIP entry exceeds the ${Math.round(entryLimit / MB)}MB limit`,
+          exceedsTotalCap
+            ? "ZIP uncompressed size exceeds the total limit"
+            : `ZIP entry exceeds the ${Math.round(entryLimit / MB)}MB limit`,
         )
       }
       files[fileName] = new Uint8Array(
@@ -217,7 +233,17 @@ export async function extractZipNative(
           entryLimit,
         )
       } catch (err) {
-        if (err instanceof ZipLimitError && skipThisEntry()) continue
+        if (err instanceof ZipLimitError) {
+          if (canSkipThisEntry()) {
+            opts.onSkip?.(fileName)
+            continue
+          }
+          if (exceedsTotalCap) {
+            throw new ZipLimitError(
+              "ZIP uncompressed size exceeds the total limit",
+            )
+          }
+        }
         throw err
       }
       files[fileName] = out

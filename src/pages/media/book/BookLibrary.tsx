@@ -144,7 +144,7 @@ const BookReader = (props: {
                     : `${api}/d${encodePath(resolvedPath())}`
                 location.assign(url)
               }}
-              style={{ ...mediaPrimaryBtn, "text-decoration": "none" }}
+              style={{ ...mediaPrimaryBtn(), "text-decoration": "none" }}
             >
               ⬇ {t("media.book.download_file")}
             </a>

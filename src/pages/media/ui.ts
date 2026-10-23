@@ -18,11 +18,17 @@ export const mediaBtnBase = {
   transition: "opacity 0.15s, transform 0.15s",
 } as const
 
-export const mediaPrimaryBtn = {
+/**
+ * 主按钮样式。必须是函数而不是常量对象：
+ * `accentGradient()` 读取的是运行时信号，写成对象属性会在模块加载时求值一次，
+ * 之后在侧栏切换媒体主题色按钮仍是旧渐变。改为函数后由渲染时调用，
+ * 信号变化时才能跟着更新。
+ */
+export const mediaPrimaryBtn = () => ({
   ...mediaBtnBase,
   background: accentGradient(),
   color: "#fff",
-} as const
+})
 
 export const mediaSecondaryBtn = (isDark: boolean) => ({
   ...mediaBtnBase,

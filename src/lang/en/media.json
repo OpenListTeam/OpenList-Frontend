@@ -16,6 +16,7 @@
     "no_toc": "No contents",
     "prev_chapter": "Previous chapter",
     "next_chapter": "Next chapter",
+    "skipped_resources": "{{count}} oversized resources were skipped and may not display",
     "unsupported_format": "Reading this format online is not supported ({{ext}})",
     "download_file": "Download file",
     "author": "Author",

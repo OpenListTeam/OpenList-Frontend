@@ -23,6 +23,8 @@ export interface EpubChapter {
 export interface EpubBook {
   title: string
   chapters: EpubChapter[]
+  /** 因超过解压上限被跳过的资源数（超大插图等），用于给用户提示 */
+  skippedEntries: number
   /** 释放过程中创建的 blob URL */
   revoke: () => void
 }
@@ -182,9 +184,13 @@ export async function loadEpub(url: string): Promise<EpubBook> {
     throw new Error(`HTTP ${resp.status}`)
   }
   // 单条目超限（常见于超大插图）时跳过并继续，避免整本书打不开；
-  // 总量超限仍然会中止解压。
+  // 总量超限仍然会中止解压。跳过的数量会传给阅读器，避免用户只看到裂图却没提示。
+  let skippedEntries = 0
   const files = await extractZipNative(await resp.arrayBuffer(), {
     limits: { skipOversizedEntries: true },
+    onSkip: () => {
+      skippedEntries++
+    },
   })
 
   // 预建索引：EPUB 内路径可能带 %20 编码或大小写不一致。
@@ -380,6 +386,7 @@ export async function loadEpub(url: string): Promise<EpubBook> {
   return {
     title,
     chapters,
+    skippedEntries,
     revoke: () => {
       blobUrls.forEach((u) => URL.revokeObjectURL(u))
       blobUrls.length = 0

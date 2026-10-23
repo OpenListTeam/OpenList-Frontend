@@ -85,6 +85,20 @@ test("skipOversizedEntries 跳过超限条目并继续解压其它条目", async
   assert.equal(new TextDecoder().decode(files["keep.txt"]), "keep")
 })
 
+test("跳过超限条目时通过 onSkip 上报条目名", async () => {
+  const zip = buildZip([
+    { name: "big.bin", data: bytes(2 * 1024 * 1024) },
+    { name: "keep.txt", data: Buffer.from("keep") },
+  ])
+  const skipped = []
+  const files = await extractZipNative(zip, {
+    limits: { maxEntryBytes: 1024, skipOversizedEntries: true },
+    onSkip: (name) => skipped.push(name),
+  })
+  assert.deepEqual(skipped, ["big.bin"])
+  assert.equal(new TextDecoder().decode(files["keep.txt"]), "keep")
+})
+
 test("总量超过 maxTotalBytes 时即使允许跳过条目也要终止", async () => {
   const zip = buildZip([
     { name: "a.bin", data: bytes(1000) },

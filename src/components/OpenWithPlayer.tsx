@@ -94,7 +94,9 @@ export const OpenWithPlayer = (props: OpenWithPlayerProps) => {
     }
     setLoading(true)
     try {
-      const url = await resolveURL()
+      // 预取还在进行时直接复用同一个请求：既避免重复签名请求，
+      // 也少一次 await 往返，更容易保住用户手势
+      const url = await (prefetching ?? resolveURL())
       if (!url) return
       setDirectURL(url)
       launch(scheme, url)

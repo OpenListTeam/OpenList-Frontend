@@ -50,11 +50,14 @@ export interface MediaItem {
   scraped_at: string | null
 }
 
-// 解析 episodes JSON 字符串
+// 解析 episodes JSON 字符串。
+// JSON 合法但不是数组（如 "{}"）时必须返回空数组：调用方会直接当列表用（.length / <For>），
+// 非数组会让选集渲染或分页计算直接炸掉。
 export function parseEpisodes(episodes: string): EpisodeInfo[] {
   if (!episodes) return []
   try {
-    return JSON.parse(episodes)
+    const parsed = JSON.parse(episodes)
+    return Array.isArray(parsed) ? (parsed as EpisodeInfo[]) : []
   } catch {
     return []
   }
@@ -115,13 +118,19 @@ export interface MediaListQuery {
   content_tag?: string
 }
 
-// 解析 authors JSON字符串
+// 解析 authors JSON 字符串。
+// 同样要求解析结果是数组：非法 JSON 或非数组都回退成原始字符串，
+// 否则调用方拿到的不是 string[]，.slice / .join 会直接报错。
 export function parseAuthors(authors: string): string[] {
   if (!authors) return []
   try {
-    return JSON.parse(authors)
+    const parsed = JSON.parse(authors)
+    if (Array.isArray(parsed)) {
+      return parsed.map((a) => String(a))
+    }
+    return [authors]
   } catch {
-    return authors ? [authors] : []
+    return [authors]
   }
 }
 

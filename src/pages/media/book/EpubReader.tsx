@@ -137,6 +137,23 @@ export const EpubReader = (props: { url: string; title: string }) => {
         </button>
       </div>
 
+      {/* 有资源因超过解压上限被跳过时给出提示，避免用户只看到裂图 */}
+      <Show when={(book()?.skippedEntries ?? 0) > 0}>
+        <div
+          style={{
+            padding: "6px 16px",
+            background: "rgba(251,191,36,0.12)",
+            color: "#fbbf24",
+            "font-size": "12px",
+            "flex-shrink": "0",
+          }}
+        >
+          {t("media.book.skipped_resources", {
+            count: book()!.skippedEntries,
+          })}
+        </div>
+      </Show>
+
       {/* 主体 */}
       <div style={{ flex: "1", display: "flex", overflow: "hidden" }}>
         {/* 目录侧边栏 */}
@@ -248,6 +265,9 @@ export const EpubReader = (props: { url: string; title: string }) => {
               1) 不授予 allow-scripts，iframe 内脚本完全无法执行，同源身份拿不到任何能力；
               2) 文档头部的 CSP（buildChapterDoc）把网络请求限制在 blob:/data:。
               若以后改成 data: URI 内联图片，可以去掉 allow-same-origin。
+              注意：下面的 handleFrameLoad 依赖 contentDocument 拦截外链点击，
+              一旦为了某些 EPUB 打开 allow-scripts，同源脚本就能绕过这层拦截，
+              届时必须改成在 buildChapterDoc 里注入处理逻辑，或去掉 allow-same-origin。
             */}
             <iframe
               title={chapter()?.title ?? props.title}

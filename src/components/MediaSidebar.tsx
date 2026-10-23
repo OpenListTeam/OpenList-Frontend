@@ -137,6 +137,13 @@ export const MediaSidebar = () => {
       : {},
   )
 
+  // 移动端侧栏是覆盖式抽屉：选完导航要收起；桌面端常驻，不受影响
+  const closeOnMobile = () => {
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      setMediaSidebarOpen(false)
+    }
+  }
+
   return (
     <Box
       as="aside"
@@ -144,16 +151,31 @@ export const MediaSidebar = () => {
       w="216px"
       flexShrink={0}
       h="100vh"
-      position="sticky"
+      // 移动端浮在内容之上作为抽屉（App 只在展开时渲染本组件），桌面端为常驻 sticky 侧栏
+      position={{ "@initial": "fixed", "@md": "sticky" }}
       top="0"
+      left="0"
+      zIndex={{ "@initial": "$docked", "@md": "auto" }}
       overflowY="auto"
       bgColor="$neutral1"
       borderRight="1px solid $neutral4"
-      display={{ "@initial": "none", "@md": "block" }}
+      display="block"
       py="$3"
       px="$2"
     >
-      <VStack h="$full" spacing="$2" alignItems="stretch">
+      {/* 移动端遮罩：铺满视口，点击空白处收起抽屉；桌面端不渲染 */}
+      <Box
+        display={{ "@initial": "block", "@md": "none" }}
+        position="fixed"
+        top="0"
+        right="0"
+        bottom="0"
+        left="0"
+        zIndex="0"
+        bgColor="rgba(0,0,0,0.45)"
+        onClick={() => setMediaSidebarOpen(false)}
+      />
+      <VStack h="$full" spacing="$2" alignItems="stretch" position="relative">
         <HStack
           px="$2"
           pb="$2"
@@ -187,7 +209,10 @@ export const MediaSidebar = () => {
                   justifyContent="flex-start"
                   size="sm"
                   leftIcon={<Icon as={item.icon} boxSize="$5" />}
-                  onClick={() => to(item.path)}
+                  onClick={() => {
+                    to(item.path)
+                    closeOnMobile()
+                  }}
                 >
                   {item.label}
                 </Button>

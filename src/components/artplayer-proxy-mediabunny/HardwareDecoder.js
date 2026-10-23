@@ -41,6 +41,21 @@ const log = (...args) => {
   if (_debug) console.log("[HardwareDecoder]", ...args)
 }
 
+// 本解码器只是在原生 WebCodecs 之上追加 prefer-hardware / optimizeForLatency，
+// 因此只应该接管 WebCodecs 自己能处理的视频编解码器。
+// 如果对任意 codec 都返回 true，mediabunny 会把 WebCodecs 无法 configure 的格式
+// 也路由到这里；两边都失败后 init() 关闭解码器、decode() 静默丢帧，
+// mediabunny 也不会再回退到它自己的解码实现。
+const SUPPORTED_CODEC_PREFIXES = [
+  "avc1",
+  "avc3",
+  "hvc1",
+  "hev1",
+  "vp8",
+  "vp09",
+  "av01",
+]
+
 class HardwareAcceleratedVideoDecoder extends CustomVideoDecoder {
   /**
    * mediabunny 通过该静态方法选择解码器。这是同步调用，
@@ -49,7 +64,8 @@ class HardwareAcceleratedVideoDecoder extends CustomVideoDecoder {
   static supports(codec, config) {
     if (typeof VideoDecoder === "undefined") return false
     if (!config || !config.codec) return false
-    return true
+    const name = String(config.codec).toLowerCase()
+    return SUPPORTED_CODEC_PREFIXES.some((prefix) => name.startsWith(prefix))
   }
 
   /**

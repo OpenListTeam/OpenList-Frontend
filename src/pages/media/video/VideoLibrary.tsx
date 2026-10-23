@@ -68,10 +68,13 @@ const mediabunnyModeKey = (m: MediaBunnyMode) =>
     : m === "audio_only"
       ? "media.video.decode_audio_only"
       : "media.video.decode_all"
-// AC3 解码器改为按需注册：模块 import 期不产生任何副作用
+// AC3 解码器改为按需注册：模块 import 期不产生任何副作用。
+// force=true 用于 AC3 自动回退路径：即使播放器模式是 disabled，
+// 回退也会用 mediabunny 解音轨，此时必须注册解码器。
 let ac3Registered = false
-function ensureAc3Decoder() {
-  if (ac3Registered || !isMediaBunnyEnabled()) return
+function ensureAc3Decoder(force = false) {
+  if (ac3Registered) return
+  if (!force && !isMediaBunnyEnabled()) return
   ac3Registered = true
   registerAc3Decoder()
 }
@@ -685,6 +688,9 @@ const VideoPlayer = (props: {
       const patchAudio = () => {
         if (audioPatched || !player) return
         audioPatched = true
+        // 模式为 disabled 时 ensureAc3Decoder() 默认不会注册；回退路径要强制注册，
+        // 否则 AC3/EAC3 这类音轨即使挂上 MediaBunny 也解不出来
+        ensureAc3Decoder(true)
         attachMediabunnyAudio(player, videoUrl())
         player.notice.show = t("media.video.audio_fallback")
       }
