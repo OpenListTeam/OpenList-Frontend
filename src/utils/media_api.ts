@@ -328,6 +328,33 @@ export const adminGenerateStrm = (mediaType?: MediaType, scanPathId?: number) =>
     scan_path_id: scanPathId ?? 0,
   }) as Promise<Resp<{ written: number; path: string }>>
 
+/* ==================== 阅读器批注 ==================== */
+
+/**
+ * 一条批注：anchor 是查看器原生的批注对象（JSON 字符串），
+ * 回灌时原样交给 PDF 引擎，因此这里不拆字段。
+ */
+export interface MediaAnnotationRow {
+  remote_id: string
+  anchor: string
+}
+
+/** 读取当前用户对某个条目的全部批注（未登录 / 访客返回空数组） */
+export const getMediaAnnotations = (itemId: number) =>
+  r.get("/fs/media/annotations", { params: { item_id: itemId } }) as Promise<
+    Resp<MediaAnnotationRow[]>
+  >
+
+/** 增量保存批注：upserts 覆盖同一 remote_id，deletes 按 remote_id 删除 */
+export const syncMediaAnnotations = (payload: {
+  item_id: number
+  upserts: MediaAnnotationRow[]
+  deletes: string[]
+}) =>
+  r.post("/fs/media/annotations", payload) as Promise<
+    Resp<{ saved: number; deleted: number }>
+  >
+
 /* ==================== 播放进度与收藏 ==================== */
 
 export interface MediaUserData {

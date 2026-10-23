@@ -1,30 +1,204 @@
 import EmbedPDF from "@embedpdf/snippet"
 import pdfiumWasmUrl from "@embedpdf/snippet/dist/pdfium.wasm?url"
-import { Show, createSignal, onMount } from "solid-js"
+import { Show, createSignal, onCleanup, onMount } from "solid-js"
 import { useColorMode } from "@hope-ui/solid"
 import { base_path } from "~/utils"
 import { useT } from "~/hooks"
 import { currentLang } from "~/app/i18n"
+import { me } from "~/store"
+import { UserMethods } from "~/types"
+import {
+  getMediaAnnotations,
+  syncMediaAnnotations,
+  type MediaAnnotationRow,
+} from "~/utils/media_api"
+
+/**
+ * 查看器原生的批注对象。只有 id 需要被类型化（做去重和同步主键），
+ * 其余字段（pageIndex、rect、quadPoints、inkList…）原样存库、原样回灌。
+ */
+interface ViewerAnnotation {
+  id: string
+  [key: string]: unknown
+}
+
+interface ViewerAnnotationEvent {
+  type: "create" | "update" | "delete" | "loaded"
+  annotation?: ViewerAnnotation
+}
+
+/**
+ * EmbedPDF 批注插件能力的最小结构定义。
+ * 直接引 @embedpdf/plugin-annotation 的类型会越过 snippet 的公开入口，
+ * 这里只声明用到的方法，避免跟内部包路径耦合。
+ */
+interface ViewerAnnotationCapability {
+  importAnnotations: (items: { annotation: ViewerAnnotation }[]) => void
+  onAnnotationEvent: (cb: (ev: ViewerAnnotationEvent) => void) => () => void
+}
+
+/** 反序列化后端保存的批注：created/modified 存的是 ISO 字符串，回灌前要还原成 Date */
+const reviveAnnotation = (raw: string): ViewerAnnotation | null => {
+  try {
+    const obj = JSON.parse(raw) as ViewerAnnotation
+    if (!obj || typeof obj.id !== "string" || obj.id === "") return null
+    for (const key of ["created", "modified"]) {
+      const value = obj[key]
+      if (typeof value === "string") obj[key] = new Date(value)
+    }
+    return obj
+  } catch {
+    return null
+  }
+}
 
 /**
  * 媒体库 PDF 阅读器。
  *
- * 之前是运行时从 cdnjs 拉 pdf.js（离线部署不可用、且引入供应链风险），
- * 现在复用前端已有的 @embedpdf/snippet（已随包发布，含 self-host 的 pdfium wasm），
- * 不再有任何第三方 CDN 依赖。分页、缩放、目录由查看器自带工具栏提供。
+ * 查看器本身（@embedpdf/snippet）自带批注能力：高亮、下划线、画笔、文本框等。
+ * 这里做两件事把它接到后端：
+ *   1. 打开时把库里保存的批注回灌给查看器；
+ *   2. 订阅 create/update/delete 事件，合并后增量写库（访客/未登录不保存）。
  */
-export const PdfReader = (props: { url: string; title: string }) => {
+export const PdfReader = (props: {
+  url: string
+  title: string
+  itemId?: number
+}) => {
   const t = useT()
   const { colorMode } = useColorMode()
   const [error, setError] = createSignal("")
   let container: HTMLDivElement | undefined
 
+  // 批注是用户私有数据，访客是公共账号，写进去会互相覆盖，因此只对登录用户启用
+  const canAnnotate = () => {
+    const user = me()
+    return !!user?.id && !UserMethods.is_guest(user)
+  }
+
   onMount(() => {
     if (!container) return
+    let disposed = false
+    let unsubscribe: (() => void) | undefined
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let flushing = false
+    const pendingUpserts = new Map<string, ViewerAnnotation>()
+    const pendingDeletes = new Set<string>()
+
+    const toDraft = (a: ViewerAnnotation): MediaAnnotationRow => ({
+      remote_id: a.id,
+      anchor: JSON.stringify(a),
+    })
+
+    const flush = async () => {
+      const itemId = props.itemId
+      if (flushing || !itemId) return
+      if (pendingUpserts.size === 0 && pendingDeletes.size === 0) return
+      flushing = true
+      let failed = false
+      // 先取走本批变更：请求期间新产生的改动会落进新的队列，下一轮再提交
+      const batchUpserts = [...pendingUpserts.values()]
+      const batchDeletes = [...pendingDeletes]
+      pendingUpserts.clear()
+      pendingDeletes.clear()
+      try {
+        const resp = await syncMediaAnnotations({
+          item_id: itemId,
+          upserts: batchUpserts.map(toDraft),
+          deletes: batchDeletes,
+        })
+        if (resp.code === 200) return
+        // 4xx 说明这批数据本身被拒绝（超长 / 无权访问），重试也不会成功，
+        // 继续放回队列只会无限重试，这里直接丢弃并留日志。
+        if (resp.code >= 400 && resp.code < 500) {
+          console.warn("[pdf] 批注保存被拒绝", resp.message)
+          return
+        }
+        throw new Error(resp.message || `HTTP ${resp.code}`)
+      } catch (e) {
+        // 断网 / 服务端 5xx 时不能静默丢弃：放回队列，下次改动一起重试
+        failed = true
+        for (const a of batchUpserts) pendingUpserts.set(a.id, a)
+        for (const id of batchDeletes) pendingDeletes.add(id)
+        console.warn("[pdf] 批注保存失败", e)
+      } finally {
+        flushing = false
+        // 请求期间若又产生了改动，这里补一次调度，避免要等到下一次操作才提交；
+        // 失败时不自动重试，防止服务端不可用时变成 800ms 一次的死循环。
+        if (!failed && (pendingUpserts.size > 0 || pendingDeletes.size > 0)) {
+          schedule()
+        }
+      }
+    }
+
+    const schedule = () => {
+      clearTimeout(timer)
+      // 连续拖拽/连笔会产生大量事件，合并成一次请求
+      timer = setTimeout(() => void flush(), 800)
+    }
+
+    // 切到后台时把待提交的批注立刻写掉，避免只停在内存里
+    const flushOnHide = () => {
+      if (document.visibilityState === "hidden") void flush()
+    }
+    document.addEventListener("visibilitychange", flushOnHide)
+
+    const setupAnnotations = async (
+      editor: NonNullable<ReturnType<typeof EmbedPDF.init>>,
+    ) => {
+      // registry 在查看器启动完成后才 resolve
+      const registry = await editor.registry
+      if (disposed) return
+      const plugin = (
+        registry as unknown as {
+          getPlugin: (id: string) => {
+            provides: () => ViewerAnnotationCapability
+          } | null
+        }
+      ).getPlugin("annotation")
+      const capability = plugin?.provides()
+      if (!capability) {
+        console.warn("[pdf] 未找到批注插件，本次批注不会保存")
+        return
+      }
+
+      if (props.itemId && canAnnotate()) {
+        try {
+          const resp = await getMediaAnnotations(props.itemId)
+          const items = (resp.data ?? [])
+            .map((row) => reviveAnnotation(row.anchor))
+            .filter((a): a is ViewerAnnotation => a !== null)
+          if (items.length > 0 && !disposed) {
+            capability.importAnnotations(
+              items.map((annotation) => ({ annotation })),
+            )
+          }
+        } catch (e) {
+          // 拉取失败不影响阅读，最多这次看不到历史批注
+          console.warn("[pdf] 批注加载失败", e)
+        }
+      }
+
+      if (!props.itemId || !canAnnotate()) return
+      unsubscribe = capability.onAnnotationEvent((ev) => {
+        // loaded 是文档自带批注装载完成的信号，不是用户改动
+        if (!ev || ev.type === "loaded" || !ev.annotation?.id) return
+        const id = ev.annotation.id
+        if (ev.type === "delete") {
+          pendingUpserts.delete(id)
+          pendingDeletes.add(id)
+        } else {
+          pendingDeletes.delete(id)
+          pendingUpserts.set(id, ev.annotation)
+        }
+        schedule()
+      })
+    }
+
     try {
       // wasm 必须是绝对地址，随前端产物一起部署
       const wasmUrl = new URL(pdfiumWasmUrl, location.href + base_path).href
-      EmbedPDF.init({
+      const editor = EmbedPDF.init({
         type: "container",
         target: container,
         src: props.url,
@@ -35,11 +209,25 @@ export const PdfReader = (props: { url: string; title: string }) => {
         },
         wasmUrl,
       })
+      if (editor) {
+        void setupAnnotations(editor).catch((e) => {
+          console.warn("[pdf] 批注功能初始化失败", e)
+        })
+      }
     } catch (e: any) {
       setError(
         t("media.book.pdf_load_failed") + ": " + (e?.message ?? String(e)),
       )
     }
+
+    onCleanup(() => {
+      disposed = true
+      clearTimeout(timer)
+      unsubscribe?.()
+      document.removeEventListener("visibilitychange", flushOnHide)
+      // 关闭阅读器时把还没提交的改动立刻写掉
+      void flush()
+    })
   })
 
   return (

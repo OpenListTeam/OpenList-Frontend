@@ -97,7 +97,11 @@ const BookReader = (props: {
       {/* 阅读器主体 */}
       <div style={{ flex: "1", overflow: "hidden" }}>
         <Show when={isPDF() && fileUrl()}>
-          <PdfReader url={fileUrl()} title={getMediaName(props.item)} />
+          <PdfReader
+            url={fileUrl()}
+            title={getMediaName(props.item)}
+            itemId={props.item.id}
+          />
         </Show>
         <Show when={isEpub() && fileUrl()}>
           <EpubReader url={fileUrl()} title={getMediaName(props.item)} />
