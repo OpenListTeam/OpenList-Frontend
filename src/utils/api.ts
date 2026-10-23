@@ -20,6 +20,8 @@ import {
   SeedOperationRequest,
   SeedOperationResult,
   SeedParseResult,
+  UpdateShareLinkReq,
+  UpdateShareLinkResp,
 } from "~/types"
 import { r } from "."
 
@@ -383,3 +385,16 @@ export const seedUpdate = (
   request: SeedOperationRequest,
 ): PResp<SeedOperationResult> =>
   r.post("/fs/seed/update", seedWireRequest(request))
+/**
+ * 更新当前挂载目录对应的网盘分享链接。
+ *
+ * 只提交 path、sid（必填）与 pwd（无提取码时为空串），
+ * 存储配置的更新由后端 `/admin/storage/update_sharelink` 实现。
+ */
+export const updateShareLink = ({
+  path,
+  sid,
+  pwd,
+}: UpdateShareLinkReq): PResp<UpdateShareLinkResp> => {
+  return r.post("/admin/storage/update_sharelink", { path, sid, pwd })
+}

@@ -90,6 +90,13 @@
       "extract_header": "Extract {{path}} to..."
     },
     "share": "Share",
+    "update_share_link": "Update Share Link",
+    "update_share_link_sid": "Share ID",
+    "update_share_link_sid-tips": "The share ID from the netdisk share link, e.g. the part after the last / of the link.",
+    "update_share_link_sid_empty": "Please enter the share ID",
+    "update_share_link_pwd": "Passcode",
+    "update_share_link_pwd-tips": "Optional. Leave empty if the share has no passcode.",
+    "update_share_link_success": "Share link updated",
     "copy_link": "Copy link",
     "preview_page": "Preview page",
     "down_link": "Download link",

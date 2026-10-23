@@ -94,6 +94,8 @@ export const usePath = () => {
 
   // record is second time password is wrong
   let retry_pass = false
+  // 上一次复位/写入 is_share 时对应的目录，用于区分「换目录」与「同目录翻页/刷新」
+  let lastIsSharePath = ""
   // handle pathname change
   // if confirm current path is dir, fetch List directly
   // if not, fetch get then determine if it is dir or file
@@ -107,6 +109,13 @@ export const usePath = () => {
     cancelList?.()
     retry_pass = rp ?? false
     ObjStore.setErr("")
+    // 分享目录标记只由 fs/list 给出：目录变化时先复位，避免 fs/get 报错
+    // （如分享链接失效）时沿用上一个目录的 is_share。
+    // 同一目录（翻页 / 刷新）下保持原值，避免按钮闪一下。
+    if (lastIsSharePath !== path) {
+      ObjStore.setIsShare(false)
+    }
+    lastIsSharePath = path
     if (hasHistory(path, index)) {
       log(`handle [${getHistoryKey(path, index)}] from history`)
       return recoverHistory(path, index)
@@ -161,6 +170,16 @@ export const usePath = () => {
     if (!onlyList && !shouldKeepState())
       ObjStore.setState(append ? State.FetchingMore : State.FetchingObjs)
     const resp = await getObjs({ path, index, size, force })
+    // 列表失败时后端仍会带上 data.is_share（见 fs.List 出错分支），
+    // 这样分享链接失效导致列表报错时，仍能保留「更新分享链接」入口。
+    // 仅当这次请求依然是当前路径的请求时才写入，避免旧请求覆盖新路径的状态。
+    const isShareFromResp = (resp.data as { is_share?: boolean } | undefined)
+      ?.is_share
+    const applyIsShare = (value: boolean | undefined) => {
+      if (value !== undefined && pathname() === path) {
+        ObjStore.setIsShare(value)
+      }
+    }
     handleRespWithoutNotify(
       resp,
       (data) => {
@@ -172,6 +191,7 @@ export const usePath = () => {
           ObjStore.setTotal(data.total)
         }
         if (onlyList) {
+          applyIsShare(data.is_share)
           return
         }
         ObjStore.setReadme(data.readme)
@@ -179,16 +199,16 @@ export const usePath = () => {
         ObjStore.setWrite(data.write)
         ObjStore.setWriteContentBypass(data.write_content_bypass)
         ObjStore.setProvider(data.provider)
+        applyIsShare(data.is_share)
         ObjStore.setDirectUploadTools(data.direct_upload_tools)
         shouldKeepState() || ObjStore.setState(State.Folder)
       },
-      onlyList
-        ? (msg: string, code?: number) => {
-            if (code !== 403) {
-              handleErr(msg, code)
-            }
-          }
-        : handleErr,
+      (msg: string, code?: number) => {
+        applyIsShare(isShareFromResp)
+        if (!onlyList || code !== 403) {
+          handleErr(msg, code)
+        }
+      },
     )
   }
 

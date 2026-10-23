@@ -13,6 +13,7 @@ import { usePath, useRouter } from "~/hooks"
 import { Motion } from "solid-motionone"
 import { isTocVisible, setTocDisabled } from "~/components"
 import { BiSolidBookContent } from "solid-icons/bi"
+import { UpdateShareLinkModal } from "./UpdateShareLink"
 
 export const Right = () => {
   const { isOpen, onToggle } = createDisclosure({
@@ -173,6 +174,7 @@ export const Right = () => {
                 }}
               />
             </Show>
+            <UpdateShareLinkModal />
             <RightIcon
               tips="toggle_checkbox"
               as={TbCheckbox}

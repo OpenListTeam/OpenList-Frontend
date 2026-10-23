@@ -28,6 +28,7 @@ const initialObjStore = {
   readme: "",
   header: "",
   provider: "",
+  is_share: false,
   direct_upload_tools: <string[] | undefined>undefined,
   state: State.Initial,
   err: "",
@@ -59,6 +60,7 @@ export const ObjStore = {
   setProvider: (provider: string) => {
     setObjStore("provider", provider)
   },
+  setIsShare: (is_share: boolean) => setObjStore("is_share", is_share),
   setObjs: setObjs,
   setTotal: (total: number) => {
     setObjStore("total", total)

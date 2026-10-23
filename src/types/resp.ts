@@ -19,6 +19,8 @@ export type FsListResp = Resp<{
   write: boolean
   write_content_bypass: boolean
   provider: string
+  /** 当前目录是否为分享驱动挂载的目录 */
+  is_share: boolean
   direct_upload_tools?: string[]
 }>
 
