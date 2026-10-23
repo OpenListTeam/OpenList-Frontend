@@ -10,7 +10,7 @@ import { PdfReader } from "./PdfReader"
 import { EpubReader } from "./EpubReader"
 import { readerBtnStyle } from "./reader_style"
 import {
-  createSignedProxyUrl,
+  createSignedMediaUrls,
   getMediaItem,
   getMediaStreamUrl,
 } from "~/utils/media_api"
@@ -34,9 +34,11 @@ const BookReader = (props: {
     const folder = props.item.folder_path?.replace(/\/$/, "") ?? ""
     return `${folder}/${props.item.file_name}`
   }
-  // 签名 + 编码后的代理地址；就绪前为 undefined，避免先发出必然 401 的请求
-  const signedFileUrl = createSignedProxyUrl(resolvedPath)
-  const fileUrl = () => signedFileUrl() ?? ""
+  // 签名 + 编码后的地址；就绪前为 undefined，避免先发出必然 401 的请求。
+  // 阅读器读流需要代理地址（跨域 /p），下载用直链（302 到网盘，不占服务端带宽）。
+  const signedUrls = createSignedMediaUrls(resolvedPath)
+  const fileUrl = () => signedUrls()?.proxied ?? ""
+  const downloadUrl = () => signedUrls()?.direct ?? ""
   const readerTitle = () => props.title ?? getMediaName(props.item)
   const fileNameForExt = () => {
     const path = props.filePath ?? props.item.file_name ?? ""
@@ -120,14 +122,16 @@ const BookReader = (props: {
               })}
             </div>
             <a
-              href={fileUrl() || "#"}
+              href={downloadUrl() || "#"}
               target="_blank"
               rel="noopener"
               onClick={async (e) => {
                 e.preventDefault()
                 // 签名直链在打开阅读器时已经预取，正常情况下点击是同步打开，
                 // Safari/部分 Chrome 不会把它判定为“非用户手势”而拦截。
-                const ready = fileUrl()
+                // 这里用直链而不是 /p 代理：代理会让大文件流量全部走服务端，
+                // 且 force 参数会阻止 302 到网盘直链。
+                const ready = downloadUrl()
                 if (ready) {
                   window.open(ready, "_blank", "noopener")
                   return

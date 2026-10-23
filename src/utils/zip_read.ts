@@ -17,6 +17,19 @@ export const supportsNativeZip = () =>
 
 const MB = 1024 * 1024
 
+/**
+ * 解压超出安全上限时抛出的专用错误。
+ *
+ * 调用方必须把它和「环境不支持」区分开：这类错误不能回退到无上限的解压实现，
+ * 否则压缩炸弹防护会被直接绕过。
+ */
+export class ZipLimitError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "ZipLimitError"
+  }
+}
+
 export interface ZipLimits {
   /** 单条目解压上限，默认 64MB */
   maxEntryBytes?: number
@@ -24,12 +37,18 @@ export interface ZipLimits {
   maxTotalBytes?: number
   /** 中央目录条目数上限，默认 20000 */
   maxEntries?: number
+  /**
+   * 单条目超过 maxEntryBytes 时跳过而不是整包失败。
+   * EPUB 场景用：一张超大插图不该让整本书打不开；总量超限仍然终止。
+   */
+  skipOversizedEntries?: boolean
 }
 
 const DEFAULT_LIMITS: Required<ZipLimits> = {
   maxEntryBytes: 64 * MB,
   maxTotalBytes: 256 * MB,
   maxEntries: 20000,
+  skipOversizedEntries: false,
 }
 
 /**
@@ -46,8 +65,12 @@ async function inflateRaw(
   // Uint8Array<ArrayBufferLike>（可能挂在 SharedArrayBuffer 上）
   const chunk = new Uint8Array(data.length)
   chunk.set(data)
-  void writer.write(chunk)
-  void writer.close()
+  // 超限中止时整条流会被 abort，写入侧的 Promise 必然以 AbortError 拒绝；
+  // 必须在这里吞掉，否则会变成 unhandledRejection。
+  const writeDone = writer
+    .write(chunk)
+    .then(() => writer.close())
+    .catch(() => undefined)
 
   const reader = ds.readable.getReader()
   const parts: Uint8Array[] = []
@@ -59,8 +82,10 @@ async function inflateRaw(
       if (!value) continue
       total += value.byteLength
       if (total > limit) {
+        // cancel 自身也可能以 AbortError 拒绝，同样不能漏出去
         await reader.cancel().catch(() => undefined)
-        throw new Error(
+        await writeDone
+        throw new ZipLimitError(
           `ZIP entry exceeds the ${Math.round(limit / MB)}MB limit`,
         )
       }
@@ -73,6 +98,7 @@ async function inflateRaw(
       /* already released */
     }
   }
+  await writeDone
 
   const out = new Uint8Array(total)
   let offset = 0
@@ -116,7 +142,7 @@ export async function extractZipNative(
   const cdCount = view.getUint16(eocdOffset + 10, true)
   const cdOffset = view.getUint32(eocdOffset + 16, true)
   if (cdCount > limits.maxEntries) {
-    throw new Error(`ZIP has too many entries (${cdCount})`)
+    throw new ZipLimitError(`ZIP has too many entries (${cdCount})`)
   }
   if (cdOffset < 0 || cdOffset > length) {
     throw new Error("Invalid ZIP file: bad central directory offset")
@@ -163,17 +189,19 @@ export async function extractZipNative(
     if (dataOffset + compressedSize > length) continue
 
     // 剩余可用额度：单条目上限与总量剩余额度取小
-    const entryLimit = Math.min(
-      limits.maxEntryBytes,
-      limits.maxTotalBytes - totalUncompressed,
-    )
+    const remaining = limits.maxTotalBytes - totalUncompressed
+    const entryLimit = Math.min(limits.maxEntryBytes, remaining)
     if (entryLimit <= 0) {
-      throw new Error("ZIP uncompressed size exceeds the total limit")
+      throw new ZipLimitError("ZIP uncompressed size exceeds the total limit")
     }
+    // 只有「被单条目上限卡住」才允许跳过；被总量额度卡住时必须终止
+    const entryTooLarge = () => entryLimit === limits.maxEntryBytes
+    const skipThisEntry = () => limits.skipOversizedEntries && entryTooLarge()
 
     if (compressionMethod === 0) {
       if (compressedSize > entryLimit) {
-        throw new Error(
+        if (skipThisEntry()) continue
+        throw new ZipLimitError(
           `ZIP entry exceeds the ${Math.round(entryLimit / MB)}MB limit`,
         )
       }
@@ -182,10 +210,16 @@ export async function extractZipNative(
       )
       totalUncompressed += compressedSize
     } else if (compressionMethod === 8) {
-      const out = await inflateRaw(
-        new Uint8Array(buffer, dataOffset, compressedSize),
-        entryLimit,
-      )
+      let out: Uint8Array
+      try {
+        out = await inflateRaw(
+          new Uint8Array(buffer, dataOffset, compressedSize),
+          entryLimit,
+        )
+      } catch (err) {
+        if (err instanceof ZipLimitError && skipThisEntry()) continue
+        throw err
+      }
       files[fileName] = out
       totalUncompressed += out.byteLength
     }

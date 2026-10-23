@@ -63,6 +63,24 @@ export const EpubReader = (props: { url: string; title: string }) => {
     if (next >= 0 && next < chapters().length) setChapterIndex(next)
   }
 
+  /**
+   * 章节里的外链（loadEpub 已改成 href="#" + data-href）交给父页面打开。
+   * 直接保留原 href 会让沙箱 iframe 自己导航到第三方页面（地址栏不可见），
+   * 因此这里既阻止默认跳转，也不用 allow-popups 放开 iframe 的弹窗权限。
+   */
+  const handleFrameLoad = (e: Event & { currentTarget: HTMLIFrameElement }) => {
+    const doc = e.currentTarget.contentDocument
+    if (!doc) return
+    doc.addEventListener("click", (ev) => {
+      const target = ev.target as Element | null
+      const anchor = target?.closest?.("a[data-href]")
+      const href = anchor?.getAttribute("data-href")
+      if (!href) return
+      ev.preventDefault()
+      window.open(href, "_blank", "noopener,noreferrer")
+    })
+  }
+
   return (
     <div
       style={{
@@ -235,6 +253,7 @@ export const EpubReader = (props: { url: string; title: string }) => {
               title={chapter()?.title ?? props.title}
               srcdoc={doc()}
               sandbox="allow-same-origin"
+              onLoad={handleFrameLoad}
               style={{
                 width: "100%",
                 height: "100%",

@@ -1,6 +1,6 @@
 import { PluginItem, PluginType } from "~/types"
 import { loadScriptIIFE } from "./load_external"
-import { extractZipNative } from "./zip_read"
+import { ZipLimitError, extractZipNative } from "./zip_read"
 
 export interface ExtractedPluginPackage {
   manifest: Partial<PluginItem>
@@ -163,7 +163,10 @@ async function extractZipEntries(
   try {
     return await extractZipNative(buffer)
   } catch (err) {
-    // Fallback to fflate via CDN if native decompression encounters an edge case
+    // 超限错误必须直接抛出：下面的 fflate 兜底没有任何大小上限，
+    // 回退过去等于把压缩炸弹防护整个绕过（还会额外拉一次 CDN 脚本）。
+    if (err instanceof ZipLimitError) throw err
+    // 只对「原生解压不支持该 zip」这类环境问题回退
     return await extractZipFallback(buffer)
   }
 }

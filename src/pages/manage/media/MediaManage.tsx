@@ -54,6 +54,7 @@ import type {
   MediaConfig,
   MediaItem,
   MediaScanPath,
+  MediaScanProgress,
   MediaType,
   Storage,
 } from "~/types"
@@ -269,7 +270,10 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
       const conflicts = await checkSigningConflict()
       if (conflicts.length > 0) {
         notify.warning(
-          `已启用${props.title}，但检测到 ${conflicts.join("、")}，可能导致媒体无法正常播放，建议关闭后使用`,
+          t("media.admin.signing_conflict", {
+            title: props.title,
+            conflicts: conflicts.join(", "),
+          }),
         )
       }
     }
@@ -319,7 +323,9 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
   const handleDeleteScanPath = (sp: MediaScanPath) => {
     showConfirm({
       title: t("media.admin.delete_scan_path"),
-      message: `确定要删除扫描路径「${sp.name || sp.path}」吗？此操作不会删除已扫描的媒体数据。`,
+      message: t("media.admin.delete_scan_path_msg", {
+        name: sp.name || sp.path,
+      }),
       confirmText: t("global.delete"),
       danger: true,
       onConfirm: async () => {
@@ -337,7 +343,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
   const handleClearScanPathDB = (sp: MediaScanPath) => {
     showConfirm({
       title: t("media.admin.clear_path_title"),
-      message: `确定要清空「${sp.name || sp.path}」下的所有媒体数据吗？此操作不可恢复！`,
+      message: t("media.admin.clear_path_msg", { name: sp.name || sp.path }),
       confirmText: t("media.admin.clear"),
       danger: true,
       onConfirm: async () => {
@@ -356,37 +362,48 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
   const pollScanProgress = () => {
     // 先停掉旧的轮询，避免重复点击叠出多个定时器
     stopScanPolling()
-    // 登录过期/网络中断时接口会持续抛错，不处理的话每秒产生一个未捕获 rejection
+    // 注意：项目的 axios 拦截器对网络错误 / 非 2xx 不会 reject，而是返回 { code, message }，
+    // 所以失败计数必须按 code 判断（只看 catch 会永远为 0）：
+    // 登录过期后 code 为 401，否则会每秒静默空转直到离开页面。
     let failures = 0
     scanTimer = setInterval(async () => {
+      let code = -1
+      let message = ""
+      let data: MediaScanProgress | null = null
       try {
         const resp = await adminGetMediaScanProgress(props.mediaType)
-        failures = 0
-        if (resp.code === 200 && resp.data) {
-          const d = resp.data
-          setProgress({
-            status:
-              d.message ||
-              (d.running ? t("media.admin.scanning") : t("media.admin.done")),
-            current: d.done,
-            total: d.total,
-          })
-          if (!d.running) {
-            stopScanPolling()
-            setScanning(false)
-            refetchItems()
-            notify.success(t("media.admin.scan_done"))
-          }
-        }
+        code = resp.code
+        message = resp.message
+        data = resp.data
       } catch (e: any) {
+        message = e?.message ?? String(e)
+      }
+      if (code !== 200 || !data) {
         failures += 1
-        if (failures >= 5) {
+        if (failures >= 5 || code === 401 || code === 403) {
           stopScanPolling()
           setScanning(false)
           notify.error(
-            t("media.admin.progress_failed") + ": " + (e?.message ?? String(e)),
+            t("media.admin.progress_failed") +
+              ": " +
+              (message || `HTTP ${code}`),
           )
         }
+        return
+      }
+      failures = 0
+      setProgress({
+        status:
+          data.message ||
+          (data.running ? t("media.admin.scanning") : t("media.admin.done")),
+        current: data.done,
+        total: data.total,
+      })
+      if (!data.running) {
+        stopScanPolling()
+        setScanning(false)
+        refetchItems()
+        notify.success(t("media.admin.scan_done"))
       }
     }, 1000)
   }
@@ -439,8 +456,8 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
 
   const handleClearAll = () => {
     showConfirm({
-      title: `清空 ${props.title} 数据库`,
-      message: `确定要清空 ${props.title} 的所有媒体数据吗？此操作不可恢复！`,
+      title: t("media.admin.clear_all_title", { title: props.title }),
+      message: t("media.admin.clear_all_msg", { title: props.title }),
       confirmText: t("media.admin.clear_all"),
       danger: true,
       onConfirm: async () => {
@@ -457,14 +474,14 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
 
   const handleClearScrape = () => {
     showConfirm({
-      title: `清空 ${props.title} 刮削数据`,
-      message: `确定要清空 ${props.title} 的所有刮削结果吗？（扫描得到的文件记录会保留，仅清空封面、简介、评分、刮削时间等字段，便于重新刮削。）`,
+      title: t("media.admin.clear_scrape_title", { title: props.title }),
+      message: t("media.admin.clear_scrape_msg", { title: props.title }),
       confirmText: t("media.admin.clear_scrape"),
       onConfirm: async () => {
         const resp = await adminClearMediaScrape(props.mediaType)
         if (resp.code === 200) {
           const affected = resp.data?.affected ?? 0
-          notify.success(`已清空刮削数据，共影响 ${affected} 条`)
+          notify.success(t("media.admin.clear_scrape_ok", { count: affected }))
           refetchItems()
         } else {
           notify.error(
@@ -477,8 +494,8 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
 
   const handleDeleteInvalid = () => {
     showConfirm({
-      title: `删除 ${props.title} 失效条目`,
-      message: `将检测 ${props.title} 中所有条目对应的文件 / 文件夹是否仍存在，已失效的条目会被删除。此过程可能耗时较久，是否继续？`,
+      title: t("media.admin.delete_invalid_title", { title: props.title }),
+      message: t("media.admin.delete_invalid_msg", { title: props.title }),
       confirmText: t("media.admin.delete_invalid"),
       danger: true,
       onConfirm: async () => {
@@ -489,8 +506,10 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
           const deleted = resp.data?.deleted ?? 0
           const skipped = resp.data?.skipped ?? 0
           notify.success(
-            `检测 ${checked} 条，删除 ${deleted} 条已失效条目` +
-              (skipped > 0 ? `，${skipped} 条状态未知已跳过` : ""),
+            t("media.admin.delete_invalid_ok", { checked, deleted }) +
+              (skipped > 0
+                ? t("media.admin.delete_invalid_skipped", { count: skipped })
+                : ""),
           )
           refetchItems()
         } else {
@@ -579,15 +598,20 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     const file = await pickJsonFile()
     if (!file) return
     showConfirm({
-      title: `导入 ${props.title} 数据`,
-      message: `即将导入文件「${file.name}」，已存在的条目会按唯一键被覆盖更新。是否继续？`,
+      title: t("media.admin.import_title", { title: props.title }),
+      message: t("media.admin.import_msg", { file: file.name }),
       confirmText: t("media.admin.import"),
       onConfirm: async () => {
         const resp = await adminImportMediaDB(file)
         if (resp.code === 200) {
           const d = resp.data
           notify.success(
-            `导入完成：路径 +${d.scan_paths_created}/~${d.scan_paths_updated}，条目 +${d.items_created}/~${d.items_updated}`,
+            t("media.admin.import_ok", {
+              created: d.scan_paths_created,
+              updated: d.scan_paths_updated,
+              items_created: d.items_created,
+              items_updated: d.items_updated,
+            }),
           )
           await loadScanPaths()
           refetchItems()
@@ -602,15 +626,20 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     const file = await pickJsonFile()
     if (!file) return
     showConfirm({
-      title: `导入到「${sp.name || sp.path}」`,
-      message: `即将把文件「${file.name}」中的条目全部归入此扫描路径，是否继续？`,
+      title: t("media.admin.import_path_title", {
+        name: sp.name || sp.path,
+      }),
+      message: t("media.admin.import_path_msg", { file: file.name }),
       confirmText: t("media.admin.import"),
       onConfirm: async () => {
         const resp = await adminImportMediaDB(file, sp.id!)
         if (resp.code === 200) {
           const d = resp.data
           notify.success(
-            `导入完成：条目 +${d.items_created}/~${d.items_updated}`,
+            t("media.admin.import_path_ok", {
+              created: d.items_created,
+              updated: d.items_updated,
+            }),
           )
           refetchItems()
         } else {
@@ -624,7 +653,10 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     const resp = await adminGenerateStrm(props.mediaType)
     if (resp.code === 200) {
       notify.success(
-        `已生成 ${resp.data.written} 个 STRM 文件到 ${resp.data.path}`,
+        t("media.admin.strm_ok", {
+          count: resp.data.written,
+          path: resp.data.path,
+        }),
       )
     } else {
       notify.error(t("media.admin.strm_failed") + ": " + resp.message)
@@ -648,7 +680,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
   const handleDeleteItem = (id: number, name: string) => {
     showConfirm({
       title: t("media.admin.delete_item_title"),
-      message: `确定删除「${name}」吗？`,
+      message: t("media.admin.delete_item_msg", { name }),
       confirmText: t("global.delete"),
       danger: true,
       onConfirm: async () => {
@@ -696,7 +728,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
         <VStack alignItems="flex-start" spacing="2px">
           <Heading size="lg">{props.title}</Heading>
           <Text fontSize="$sm" color="$neutral11">
-            管理该媒体类型的配置、扫描路径和媒体数据
+            {t("media.admin.desc")}
           </Text>
         </VStack>
       </HStack>
@@ -736,7 +768,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                 loading={scanning()}
                 onClick={handleScanAll}
               >
-                扫描全部
+                {t("media.admin.scan_all")}
               </Button>
               <Button
                 size="xs"
@@ -744,19 +776,19 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                 loading={scraping()}
                 onClick={handleScrape}
               >
-                立即刮削
+                {t("media.admin.scrape_now")}
               </Button>
               <Button size="xs" variant="outline" onClick={handleExportAll}>
-                导出全部
+                {t("media.admin.export_all")}
               </Button>
               <Button size="xs" variant="outline" onClick={handleImportAll}>
-                导入数据
+                {t("media.admin.import_data")}
               </Button>
               <Button size="xs" variant="ghost" onClick={handleDeleteInvalid}>
-                删除已失效
+                {t("media.admin.delete_invalid")}
               </Button>
               <Button size="xs" variant="ghost" onClick={handleClearScrape}>
-                清空刮削
+                {t("media.admin.clear_scrape")}
               </Button>
               <Button
                 size="xs"
@@ -764,10 +796,10 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                 colorScheme="danger"
                 onClick={handleClearAll}
               >
-                清空全部
+                {t("media.admin.clear_all")}
               </Button>
               <Button size="xs" variant="ghost" onClick={handleGenerateStrm}>
-                生成 STRM
+                {t("media.admin.generate_strm")}
               </Button>
               <FormControl
                 display="flex"
@@ -777,7 +809,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                 ml="$2"
               >
                 <FormLabel m="0" fontSize="$sm">
-                  启用{props.title}
+                  {t("media.admin.enable_library", { title: props.title })}
                 </FormLabel>
                 <Switch
                   checked={config().enabled}
@@ -795,7 +827,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                 loading={configSaving()}
                 onClick={handleSaveConfig}
               >
-                保存配置
+                {t("media.admin.save_config")}
               </Button>
               <Tooltip label={t("media.admin.signing_warning")} placement="top">
                 <Box
@@ -837,14 +869,14 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
             alignItems="center"
           >
             <Text fontWeight="$semibold">
-              扫描路径（{scanPaths().length} 个）
+              {t("media.admin.scan_paths_count", { count: scanPaths().length })}
             </Text>
             <Button
               size="sm"
               colorScheme="accent"
               onClick={handleOpenCreateScanPath}
             >
-              + 添加路径
+              {t("media.admin.add_path")}
             </Button>
           </HStack>
           <Table>
@@ -867,7 +899,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                   <Tr>
                     <Td colSpan={8}>
                       <Text textAlign="center" color="$neutral11" py="$6">
-                        暂无扫描路径，点击「添加路径」开始配置
+                        {t("media.admin.no_scan_paths")}
                       </Text>
                     </Td>
                   </Tr>
@@ -943,7 +975,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                             loading={scanning()}
                             onClick={() => handleScanPath(sp)}
                           >
-                            扫描
+                            {t("media.admin.scan")}
                           </Button>
                           <Button
                             size="xs"
@@ -951,21 +983,21 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                             colorScheme="success"
                             onClick={() => handleOpenEditScanPath(sp)}
                           >
-                            编辑
+                            {t("media.admin.edit")}
                           </Button>
                           <Button
                             size="xs"
                             variant="ghost"
                             onClick={() => handleExportScanPath(sp)}
                           >
-                            导出
+                            {t("media.admin.export")}
                           </Button>
                           <Button
                             size="xs"
                             variant="ghost"
                             onClick={() => handleImportScanPath(sp)}
                           >
-                            导入
+                            {t("media.admin.import")}
                           </Button>
                           <Button
                             size="xs"
@@ -973,7 +1005,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                             colorScheme="warning"
                             onClick={() => handleClearScanPathDB(sp)}
                           >
-                            清空
+                            {t("media.admin.clear")}
                           </Button>
                           <Button
                             size="xs"
@@ -981,7 +1013,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                             colorScheme="danger"
                             onClick={() => handleDeleteScanPath(sp)}
                           >
-                            删除
+                            {t("global.delete")}
                           </Button>
                         </HStack>
                       </Td>
@@ -1057,7 +1089,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
               />
               <HStack spacing="$1" alignItems="center">
                 <Text fontSize="$sm" color="$neutral11">
-                  每页
+                  {t("media.admin.per_page")}
                 </Text>
                 <Box w="90px">
                   <Select
@@ -1132,7 +1164,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                     <Tr>
                       <Td colSpan={8}>
                         <Text textAlign="center" color="$neutral11" py="$8">
-                          暂无媒体数据
+                          {t("media.admin.no_items")}
                         </Text>
                       </Td>
                     </Tr>
@@ -1238,7 +1270,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                                 setShowEditModal(true)
                               }}
                             >
-                              编辑
+                              {t("media.admin.edit")}
                             </Button>
                             <Button
                               size="xs"
@@ -1251,7 +1283,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                                 )
                               }
                             >
-                              删除
+                              {t("global.delete")}
                             </Button>
                           </HStack>
                         </Td>
@@ -1286,10 +1318,14 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                 disabled={page() <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
               >
-                上一页
+                {t("media.admin.prev_page")}
               </Button>
               <Text fontSize="$sm" color="$neutral11">
-                第 {page()} / {totalPages()} 页，共 {total()} 条
+                {t("media.admin.page_info", {
+                  page: page(),
+                  totalPages: totalPages(),
+                  total: total(),
+                })}
               </Text>
               <Button
                 size="xs"
@@ -1297,7 +1333,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                 disabled={page() >= totalPages()}
                 onClick={() => setPage((p) => Math.min(totalPages(), p + 1))}
               >
-                下一页
+                {t("media.admin.next_page")}
               </Button>
               <Button
                 size="xs"

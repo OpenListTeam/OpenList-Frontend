@@ -181,7 +181,11 @@ export async function loadEpub(url: string): Promise<EpubBook> {
   if (!resp.ok) {
     throw new Error(`HTTP ${resp.status}`)
   }
-  const files = await extractZipNative(await resp.arrayBuffer())
+  // 单条目超限（常见于超大插图）时跳过并继续，避免整本书打不开；
+  // 总量超限仍然会中止解压。
+  const files = await extractZipNative(await resp.arrayBuffer(), {
+    limits: { skipOversizedEntries: true },
+  })
 
   // 预建索引：EPUB 内路径可能带 %20 编码或大小写不一致。
   // 之前每次未命中都全量扫描 Object.keys，图片多时会退化成 O(n²)。
@@ -339,10 +343,19 @@ export async function loadEpub(url: string): Promise<EpubBook> {
     const body = doc.body
     if (!body) continue
     sanitize(body)
-    // 书内跳转链接已无意义（章节是独立渲染的），统一置灰为锚点
+    // 链接处理：书内跳转已无意义（章节是独立渲染的），外链也不能留在 href 上——
+    // CSP 只约束子资源、不约束导航，点击会把沙箱 iframe 自己导航到第三方页面
+    // （父页面看不到地址栏，典型钓鱼场景）。外链改存 data-href，由阅读器用 window.open 打开。
     body.querySelectorAll("a[href]").forEach((a) => {
-      const href = a.getAttribute("href") ?? ""
-      if (!isExternal(href)) a.setAttribute("href", "#")
+      const href = (a.getAttribute("href") ?? "").trim()
+      // 书内锚点（脚注等）保留
+      if (href.startsWith("#")) return
+      a.setAttribute("href", "#")
+      if (/^(?:https?:)?\/\//i.test(href) || /^mailto:/i.test(href)) {
+        a.setAttribute("data-href", href)
+      } else {
+        a.removeAttribute("data-href")
+      }
     })
 
     const firstHeading = body.querySelector("h1, h2, h3, title")

@@ -223,7 +223,10 @@ export const getMediaStreamUrl = (params: {
 //  2. 文件名里的 `#`、`?`、`%` 会破坏 URL。
 // 统一通过后端 stream_url 取得带签名的 /p 地址，并补上 force（强制代理，避免 302 跨域）。
 
-const signedProxyCache = new Map<string, { url: string; at: number }>()
+const signedProxyCache = new Map<
+  string,
+  { urls: SignedMediaUrls; at: number }
+>()
 const SIGNED_PROXY_TTL = 5 * 60 * 1000
 // 上限兜底：媒体库翻页会不断产生新路径，长会话下必须有容量上限
 const SIGNED_PROXY_MAX = 300
@@ -249,28 +252,53 @@ const withForce = (url: string) =>
     ? url
     : `${url}${url.includes("?") ? "&" : "?"}force`
 
-/** 获取指定路径的签名代理地址（带短期缓存）；失败时降级为编码后的未签名地址 */
-export const getSignedProxyUrl = async (path: string): Promise<string> => {
+export interface SignedMediaUrls {
+  /**
+   * 签名后的 /d 直链：由服务端 302 到网盘直链。
+   * 下载、外链播放等由客户端自己取流的场景应该用它，避免服务端转发整份流量。
+   */
+  direct: string
+  /** 签名后的 /p 代理地址（强制代理）：浏览器内读取（播放器/阅读器）用它 */
+  proxied: string
+}
+
+const fallbackSignedUrls = (path: string): SignedMediaUrls => ({
+  direct: `${api}/d${encodePath(path)}`,
+  proxied: unsignedProxyUrl(path),
+})
+
+const fetchSignedMediaUrls = async (path: string): Promise<SignedMediaUrls> => {
   const hit = signedProxyCache.get(path)
   if (hit && Date.now() - hit.at < SIGNED_PROXY_TTL) {
     // 命中后提升为最近使用，避免被容量上限优先淘汰
     signedProxyCache.delete(path)
     signedProxyCache.set(path, hit)
-    return hit.url
+    return hit.urls
   }
   try {
     const resp = await getMediaStreamUrl({ path })
     if (resp.code === 200 && resp.data?.proxied) {
-      const url = withForce(resp.data.proxied)
-      signedProxyCache.set(path, { url, at: Date.now() })
+      // 直链与代理地址一次取回，避免下载按钮再发一次请求
+      const urls: SignedMediaUrls = {
+        direct: resp.data.url || fallbackSignedUrls(path).direct,
+        proxied: withForce(resp.data.proxied),
+      }
+      signedProxyCache.set(path, { urls, at: Date.now() })
       trimSignedProxyCache()
-      return url
+      return urls
     }
   } catch {
     // 降级处理见下
   }
-  return unsignedProxyUrl(path)
+  return fallbackSignedUrls(path)
 }
+
+/** 获取指定路径的签名直链与代理地址（带短期缓存）；失败时降级为未签名地址 */
+export const getSignedMediaUrls = fetchSignedMediaUrls
+
+/** 获取指定路径的签名代理地址（带短期缓存）；失败时降级为编码后的未签名地址 */
+export const getSignedProxyUrl = async (path: string): Promise<string> =>
+  (await fetchSignedMediaUrls(path)).proxied
 
 /** 条目 folder_path + file_name 拼出的 VFS 路径 */
 export const mediaItemPath = (item: {
@@ -285,6 +313,12 @@ export const mediaItemPath = (item: {
 export const createSignedProxyUrl = (path: () => string | undefined) => {
   const [url] = createResource(path, (p) => getSignedProxyUrl(p))
   return url
+}
+
+/** 同时拿到直链与代理地址的响应式版本（下载用直链、阅读/播放用代理） */
+export const createSignedMediaUrls = (path: () => string | undefined) => {
+  const [urls] = createResource(path, (p) => getSignedMediaUrls(p))
+  return urls
 }
 
 /** 批量生成 STRM */
