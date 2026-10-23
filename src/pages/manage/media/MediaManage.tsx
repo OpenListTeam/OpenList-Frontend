@@ -58,6 +58,7 @@ import type {
   Storage,
 } from "~/types"
 import { notify, r } from "~/utils"
+import { useT } from "~/hooks"
 import { TbAlertTriangle } from "solid-icons/tb"
 import {
   adminClearMediaDB,
@@ -104,6 +105,7 @@ type TabKey = "paths" | "items" | "settings"
  * 扫描路径严格按 props.mediaType 隔离，接口调用与字段与改造前完全一致。
  */
 export const MediaManagePage = (props: MediaManagePageProps) => {
+  const t = useT()
   const [tab, setTab] = createSignal<TabKey>("paths")
 
   // 确认弹窗（替代自写 ConfirmDialog）
@@ -234,7 +236,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
       const resp: any = await r.get("/admin/setting/list?group=4")
       const items: { key: string; value: string }[] = resp?.data ?? []
       if (items.find((i) => i.key === "sign_all")?.value === "true") {
-        conflicts.push("「全局设置 → 签名所有」已开启")
+        conflicts.push(t("media.admin.conflict_sign_all"))
       }
     } catch {
       // 检测失败不影响保存流程
@@ -245,7 +247,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
         enable_sign?: boolean
       })[]
       if (list.some((s) => s.enable_sign && !s.disabled)) {
-        conflicts.push("「存储驱动 → 启用签名」已开启")
+        conflicts.push(t("media.admin.conflict_storage_sign"))
       }
     } catch {
       // 检测失败不影响保存流程
@@ -259,10 +261,10 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     const resp = await adminSaveMediaConfig(config())
     setConfigSaving(false)
     if (resp.code !== 200) {
-      notify.error("保存失败: " + resp.message)
+      notify.error(t("media.admin.save_failed") + ": " + resp.message)
       return
     }
-    notify.success("配置保存成功")
+    notify.success(t("media.admin.config_saved"))
     if (config().enabled) {
       const conflicts = await checkSigningConflict()
       if (conflicts.length > 0) {
@@ -301,28 +303,32 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
       : await adminCreateMediaScanPath(sp)
     setScanPathSaving(false)
     if (resp.code === 200) {
-      notify.success(sp.id ? "扫描路径已更新" : "扫描路径已创建")
+      notify.success(
+        sp.id
+          ? t("media.admin.scan_path_updated")
+          : t("media.admin.scan_path_created"),
+      )
       setShowScanPathModal(false)
       setEditingScanPath(null)
       await loadScanPaths()
     } else {
-      notify.error("操作失败: " + resp.message)
+      notify.error(t("media.admin.op_failed") + ": " + resp.message)
     }
   }
 
   const handleDeleteScanPath = (sp: MediaScanPath) => {
     showConfirm({
-      title: "删除扫描路径",
+      title: t("media.admin.delete_scan_path"),
       message: `确定要删除扫描路径「${sp.name || sp.path}」吗？此操作不会删除已扫描的媒体数据。`,
-      confirmText: "删除",
+      confirmText: t("global.delete"),
       danger: true,
       onConfirm: async () => {
         const resp = await adminDeleteMediaScanPath(sp.id!)
         if (resp.code === 200) {
-          notify.success("扫描路径已删除")
+          notify.success(t("media.admin.scan_path_deleted"))
           await loadScanPaths()
         } else {
-          notify.error("删除失败: " + resp.message)
+          notify.error(t("media.admin.delete_failed") + ": " + resp.message)
         }
       },
     })
@@ -330,17 +336,17 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
 
   const handleClearScanPathDB = (sp: MediaScanPath) => {
     showConfirm({
-      title: "清空路径数据",
+      title: t("media.admin.clear_path_title"),
       message: `确定要清空「${sp.name || sp.path}」下的所有媒体数据吗？此操作不可恢复！`,
-      confirmText: "清空",
+      confirmText: t("media.admin.clear"),
       danger: true,
       onConfirm: async () => {
         const resp = await adminClearMediaScanPathDB(sp.id!)
         if (resp.code === 200) {
-          notify.success("路径数据已清空")
+          notify.success(t("media.admin.path_cleared"))
           refetchItems()
         } else {
-          notify.error("清空失败: " + resp.message)
+          notify.error(t("media.admin.clear_failed") + ": " + resp.message)
         }
       },
     })
@@ -359,7 +365,9 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
         if (resp.code === 200 && resp.data) {
           const d = resp.data
           setProgress({
-            status: d.message || (d.running ? "扫描中..." : "完成"),
+            status:
+              d.message ||
+              (d.running ? t("media.admin.scanning") : t("media.admin.done")),
             current: d.done,
             total: d.total,
           })
@@ -367,7 +375,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
             stopScanPolling()
             setScanning(false)
             refetchItems()
-            notify.success("扫描完成")
+            notify.success(t("media.admin.scan_done"))
           }
         }
       } catch (e: any) {
@@ -375,7 +383,9 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
         if (failures >= 5) {
           stopScanPolling()
           setScanning(false)
-          notify.error("扫描进度查询失败: " + (e?.message ?? String(e)))
+          notify.error(
+            t("media.admin.progress_failed") + ": " + (e?.message ?? String(e)),
+          )
         }
       }
     }, 1000)
@@ -384,24 +394,30 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
   /** 启动扫描：失败（如 403 未授权/未启用）时必须复位 scanning，否则按钮永久转圈 */
   const startScan = async (scanPathId?: number) => {
     if (!config().enabled) {
-      notify.warning("请先启用该媒体库")
+      notify.warning(t("media.admin.enable_first"))
       return
     }
     setScanning(true)
-    setProgress({ status: "扫描中...", current: 0, total: 0 })
+    setProgress({ status: t("media.admin.scanning"), current: 0, total: 0 })
     try {
       const resp = await adminStartMediaScan(props.mediaType, scanPathId)
       if (resp.code !== 200) {
         setScanning(false)
         setProgress(null)
-        notify.error("启动扫描失败: " + (resp.message || `HTTP ${resp.code}`))
+        notify.error(
+          t("media.admin.scan_start_failed") +
+            ": " +
+            (resp.message || `HTTP ${resp.code}`),
+        )
         return
       }
       pollScanProgress()
     } catch (e: any) {
       setScanning(false)
       setProgress(null)
-      notify.error("启动扫描失败: " + (e?.message ?? String(e)))
+      notify.error(
+        t("media.admin.scan_start_failed") + ": " + (e?.message ?? String(e)),
+      )
     }
   }
 
@@ -414,10 +430,10 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     const resp = await adminStartMediaScrape(props.mediaType)
     setScraping(false)
     if (resp.code === 200) {
-      notify.info("刮削任务已启动，请稍后刷新查看结果")
+      notify.info(t("media.admin.scrape_started"))
       refetchItems()
     } else {
-      notify.error("刮削失败: " + resp.message)
+      notify.error(t("media.admin.scrape_failed") + ": " + resp.message)
     }
   }
 
@@ -425,15 +441,15 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     showConfirm({
       title: `清空 ${props.title} 数据库`,
       message: `确定要清空 ${props.title} 的所有媒体数据吗？此操作不可恢复！`,
-      confirmText: "清空全部",
+      confirmText: t("media.admin.clear_all"),
       danger: true,
       onConfirm: async () => {
         const resp = await adminClearMediaDB(props.mediaType)
         if (resp.code === 200) {
-          notify.success("数据库已清空")
+          notify.success(t("media.admin.db_cleared"))
           refetchItems()
         } else {
-          notify.error("清空失败: " + resp.message)
+          notify.error(t("media.admin.clear_failed") + ": " + resp.message)
         }
       },
     })
@@ -443,7 +459,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     showConfirm({
       title: `清空 ${props.title} 刮削数据`,
       message: `确定要清空 ${props.title} 的所有刮削结果吗？（扫描得到的文件记录会保留，仅清空封面、简介、评分、刮削时间等字段，便于重新刮削。）`,
-      confirmText: "清空刮削",
+      confirmText: t("media.admin.clear_scrape"),
       onConfirm: async () => {
         const resp = await adminClearMediaScrape(props.mediaType)
         if (resp.code === 200) {
@@ -451,7 +467,9 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
           notify.success(`已清空刮削数据，共影响 ${affected} 条`)
           refetchItems()
         } else {
-          notify.error("清空刮削失败: " + resp.message)
+          notify.error(
+            t("media.admin.clear_scrape_failed") + ": " + resp.message,
+          )
         }
       },
     })
@@ -461,10 +479,10 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     showConfirm({
       title: `删除 ${props.title} 失效条目`,
       message: `将检测 ${props.title} 中所有条目对应的文件 / 文件夹是否仍存在，已失效的条目会被删除。此过程可能耗时较久，是否继续？`,
-      confirmText: "删除已失效",
+      confirmText: t("media.admin.delete_invalid"),
       danger: true,
       onConfirm: async () => {
-        notify.info("正在检测失效条目...")
+        notify.info(t("media.admin.checking_invalid"))
         const resp = await adminDeleteInvalidMedia(props.mediaType)
         if (resp.code === 200) {
           const checked = resp.data?.checked ?? 0
@@ -476,7 +494,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
           )
           refetchItems()
         } else {
-          notify.error("删除失败: " + resp.message)
+          notify.error(t("media.admin.delete_failed") + ": " + resp.message)
         }
       },
     })
@@ -496,7 +514,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
 
   const handleBlobExport = async (blob: Blob, filename: string) => {
     if (!blob || !(blob instanceof Blob)) {
-      notify.error("导出失败：未收到文件流")
+      notify.error(t("media.admin.export_no_stream"))
       return
     }
     if (blob.size < 1024) {
@@ -504,7 +522,11 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
         const txt = await blob.text()
         const obj = JSON.parse(txt)
         if (obj && typeof obj.code === "number" && obj.code !== 200) {
-          notify.error("导出失败: " + (obj.message || "未知错误"))
+          notify.error(
+            t("media.admin.export_failed") +
+              ": " +
+              (obj.message || t("media.admin.unknown_error")),
+          )
           return
         }
       } catch {
@@ -512,7 +534,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
       }
     }
     triggerDownload(blob, filename)
-    notify.success("导出成功")
+    notify.success(t("media.admin.export_ok"))
   }
 
   const handleExportAll = async () => {
@@ -521,7 +543,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
       const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)
       await handleBlobExport(blob, `media_export_${props.mediaType}_${ts}.json`)
     } catch (e: any) {
-      notify.error("导出失败: " + (e?.message || e))
+      notify.error(t("media.admin.export_failed") + ": " + (e?.message || e))
     }
   }
 
@@ -538,7 +560,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
         `media_export_${props.mediaType}_${safeName}_${ts}.json`,
       )
     } catch (e: any) {
-      notify.error("导出失败: " + (e?.message || e))
+      notify.error(t("media.admin.export_failed") + ": " + (e?.message || e))
     }
   }
 
@@ -559,7 +581,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     showConfirm({
       title: `导入 ${props.title} 数据`,
       message: `即将导入文件「${file.name}」，已存在的条目会按唯一键被覆盖更新。是否继续？`,
-      confirmText: "导入",
+      confirmText: t("media.admin.import"),
       onConfirm: async () => {
         const resp = await adminImportMediaDB(file)
         if (resp.code === 200) {
@@ -570,7 +592,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
           await loadScanPaths()
           refetchItems()
         } else {
-          notify.error("导入失败: " + resp.message)
+          notify.error(t("media.admin.import_failed") + ": " + resp.message)
         }
       },
     })
@@ -582,7 +604,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     showConfirm({
       title: `导入到「${sp.name || sp.path}」`,
       message: `即将把文件「${file.name}」中的条目全部归入此扫描路径，是否继续？`,
-      confirmText: "导入",
+      confirmText: t("media.admin.import"),
       onConfirm: async () => {
         const resp = await adminImportMediaDB(file, sp.id!)
         if (resp.code === 200) {
@@ -592,7 +614,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
           )
           refetchItems()
         } else {
-          notify.error("导入失败: " + resp.message)
+          notify.error(t("media.admin.import_failed") + ": " + resp.message)
         }
       },
     })
@@ -605,7 +627,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
         `已生成 ${resp.data.written} 个 STRM 文件到 ${resp.data.path}`,
       )
     } else {
-      notify.error("生成 STRM 失败: " + resp.message)
+      notify.error(t("media.admin.strm_failed") + ": " + resp.message)
     }
   }
 
@@ -614,28 +636,28 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     if (!editingItem()) return
     const resp = await adminUpdateMediaItem(editingItem()!)
     if (resp.code === 200) {
-      notify.success("保存成功")
+      notify.success(t("media.admin.save_ok"))
       setShowEditModal(false)
       setEditingItem(null)
       refetchItems()
     } else {
-      notify.error("保存失败: " + resp.message)
+      notify.error(t("media.admin.save_failed") + ": " + resp.message)
     }
   }
 
   const handleDeleteItem = (id: number, name: string) => {
     showConfirm({
-      title: "删除媒体条目",
+      title: t("media.admin.delete_item_title"),
       message: `确定删除「${name}」吗？`,
-      confirmText: "删除",
+      confirmText: t("global.delete"),
       danger: true,
       onConfirm: async () => {
         const resp = await adminDeleteMediaItem(id)
         if (resp.code === 200) {
-          notify.success("已删除")
+          notify.success(t("media.admin.deleted"))
           refetchItems()
         } else {
-          notify.error("删除失败: " + resp.message)
+          notify.error(t("media.admin.delete_failed") + ": " + resp.message)
         }
       },
     })
@@ -652,11 +674,11 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
   // 页签列表（图片 / 书籍额外提供缩略图设置）
   const tabItems = createMemo(() => {
     const list: { key: TabKey; label: string }[] = [
-      { key: "paths", label: "扫描路径" },
-      { key: "items", label: "媒体管理" },
+      { key: "paths", label: t("media.admin.tab_paths") },
+      { key: "items", label: t("media.admin.tab_items") },
     ]
     if (supportsThumbnailSettings()) {
-      list.push({ key: "settings", label: "设置" })
+      list.push({ key: "settings", label: t("media.admin.tab_settings") })
     }
     return list
   })
@@ -775,10 +797,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
               >
                 保存配置
               </Button>
-              <Tooltip
-                label="请关闭「全局设置」→「签名所有」和「存储驱动」→「启用签名」，并且不要对扫描路径及其父路径设置「元信息」→「密码」，否则将无法正常播放媒体内容。"
-                placement="top"
-              >
+              <Tooltip label={t("media.admin.signing_warning")} placement="top">
                 <Box
                   as="span"
                   display="inline-flex"
@@ -831,14 +850,14 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
           <Table>
             <Thead>
               <Tr>
-                <Th>路径名称</Th>
-                <Th>扫描路径</Th>
-                <Th>类型标签</Th>
-                <Th>内容标签</Th>
-                <Th>路径合并</Th>
-                <Th>刮削</Th>
-                <Th>最后扫描</Th>
-                <Th>操作</Th>
+                <Th>{t("media.admin.col_path_name")}</Th>
+                <Th>{t("media.admin.col_scan_path")}</Th>
+                <Th>{t("media.admin.col_type_tags")}</Th>
+                <Th>{t("media.admin.col_content_tags")}</Th>
+                <Th>{t("media.admin.col_path_merge")}</Th>
+                <Th>{t("media.admin.col_scrape")}</Th>
+                <Th>{t("media.admin.col_last_scan")}</Th>
+                <Th>{t("media.admin.col_actions")}</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -886,7 +905,9 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                           fontSize="$xs"
                           color={sp.path_merge ? "$success11" : "$neutral11"}
                         >
-                          {sp.path_merge ? "是" : "否"}
+                          {sp.path_merge
+                            ? t("media.admin.yes")
+                            : t("media.admin.no")}
                         </Text>
                       </Td>
                       <Td>
@@ -894,7 +915,9 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                           fontSize="$xs"
                           color={sp.enable_scrape ? "$success11" : "$neutral11"}
                         >
-                          {sp.enable_scrape ? "是" : "否"}
+                          {sp.enable_scrape
+                            ? t("media.admin.yes")
+                            : t("media.admin.no")}
                         </Text>
                       </Td>
                       <Td>
@@ -909,7 +932,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                                   minute: "2-digit",
                                 },
                               )
-                            : "从未"}
+                            : t("media.admin.never")}
                         </Text>
                       </Td>
                       <Td>
@@ -981,7 +1004,9 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
             borderBottom="1px solid $neutral4"
             alignItems="stretch"
           >
-            <Text fontWeight="$semibold">媒体管理（共 {total()} 条）</Text>
+            <Text fontWeight="$semibold">
+              {t("media.admin.items_total", { total: total() })}
+            </Text>
             <HStack spacing="$2" flexWrap="wrap" alignItems="center">
               <Box w="200px">
                 <Select
@@ -998,7 +1023,9 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                   <SelectContent>
                     <SelectListbox>
                       <SelectOption value="0">
-                        <SelectOptionText>全部路径</SelectOptionText>
+                        <SelectOptionText>
+                          {t("media.admin.all_paths")}
+                        </SelectOptionText>
                         <SelectOptionIndicator />
                       </SelectOption>
                       <For each={scanPaths()}>
@@ -1016,7 +1043,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                 </Select>
               </Box>
               <Input
-                placeholder="搜索名称..."
+                placeholder={t("media.admin.search_placeholder")}
                 w="200px"
                 value={searchInput()}
                 onInput={(e) => handleSearchInput(e.currentTarget.value)}
@@ -1065,7 +1092,9 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                   </Select>
                 </Box>
                 <Text fontSize="$sm" color="$neutral11">
-                  {props.mediaType === "image" ? "张" : "条"}
+                  {props.mediaType === "image"
+                    ? t("media.admin.unit_image")
+                    : t("media.admin.unit_item")}
                 </Text>
               </HStack>
             </HStack>
@@ -1074,14 +1103,14 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
           <Table>
             <Thead>
               <Tr>
-                <Th>文件名</Th>
-                <Th>名称</Th>
-                <Th>封面</Th>
-                <Th>扫描路径</Th>
-                <Th>发布时间</Th>
-                <Th>评分</Th>
-                <Th>隐藏</Th>
-                <Th>操作</Th>
+                <Th>{t("media.admin.col_file_name")}</Th>
+                <Th>{t("media.admin.col_name")}</Th>
+                <Th>{t("media.admin.col_cover")}</Th>
+                <Th>{t("media.admin.col_scan_path")}</Th>
+                <Th>{t("media.admin.col_release_date")}</Th>
+                <Th>{t("media.admin.col_rating")}</Th>
+                <Th>{t("media.admin.col_hidden")}</Th>
+                <Th>{t("media.admin.col_actions")}</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -1297,15 +1326,17 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>
-            {editingScanPath()?.id ? "编辑扫描路径" : "添加扫描路径"}
+            {editingScanPath()?.id
+              ? t("media.admin.edit_scan_path")
+              : t("media.admin.add_scan_path")}
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <VStack spacing="$4" alignItems="stretch">
               <FormControl>
-                <FormLabel>路径名称</FormLabel>
+                <FormLabel>{t("media.admin.col_path_name")}</FormLabel>
                 <Input
-                  placeholder="如：电影库、音乐收藏"
+                  placeholder={t("media.admin.name_placeholder")}
                   value={editingScanPath()?.name ?? ""}
                   onInput={(e) =>
                     setEditingScanPath((sp) => ({
@@ -1314,10 +1345,10 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                     }))
                   }
                 />
-                <FormHelperText>用于前端筛选显示</FormHelperText>
+                <FormHelperText>{t("media.admin.name_helper")}</FormHelperText>
               </FormControl>
               <FormControl>
-                <FormLabel>扫描路径</FormLabel>
+                <FormLabel>{t("media.admin.col_scan_path")}</FormLabel>
                 <Input
                   placeholder="/movies"
                   value={editingScanPath()?.path ?? "/"}
@@ -1328,12 +1359,14 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                     }))
                   }
                 />
-                <FormHelperText>VFS 虚拟路径，如 /movies</FormHelperText>
+                <FormHelperText>
+                  {t("media.admin.scan_path_helper")}
+                </FormHelperText>
               </FormControl>
               <FormControl>
-                <FormLabel>类型标签</FormLabel>
+                <FormLabel>{t("media.admin.col_type_tags")}</FormLabel>
                 <Input
-                  placeholder="电影"
+                  placeholder={t("media.admin.type_tag_placeholder")}
                   value={editingScanPath()?.type_tag ?? ""}
                   onInput={(e) =>
                     setEditingScanPath((sp) => ({
@@ -1343,13 +1376,13 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                   }
                 />
                 <FormHelperText>
-                  如：电影、电视剧（用于前端筛选）
+                  {t("media.admin.type_tag_helper")}
                 </FormHelperText>
               </FormControl>
               <FormControl>
-                <FormLabel>内容标签</FormLabel>
+                <FormLabel>{t("media.admin.col_content_tags")}</FormLabel>
                 <Input
-                  placeholder="喜剧,惊悚,动作"
+                  placeholder={t("media.admin.content_tags_placeholder")}
                   value={editingScanPath()?.content_tags ?? ""}
                   onInput={(e) =>
                     setEditingScanPath((sp) => ({
@@ -1358,7 +1391,9 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                     }))
                   }
                 />
-                <FormHelperText>多个标签用英文逗号分隔</FormHelperText>
+                <FormHelperText>
+                  {t("media.admin.content_tags_helper")}
+                </FormHelperText>
               </FormControl>
               <HStack spacing="$6" flexWrap="wrap">
                 <FormControl
@@ -1367,7 +1402,9 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                   gap="$2"
                   w="auto"
                 >
-                  <FormLabel m="0">路径合并模式</FormLabel>
+                  <FormLabel m="0">
+                    {t("media.admin.path_merge_mode")}
+                  </FormLabel>
                   <Switch
                     checked={editingScanPath()?.path_merge ?? false}
                     onChange={(e) =>
@@ -1384,7 +1421,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                   gap="$2"
                   w="auto"
                 >
-                  <FormLabel m="0">启用刮削</FormLabel>
+                  <FormLabel m="0">{t("media.admin.enable_scrape")}</FormLabel>
                   <Switch
                     checked={editingScanPath()?.enable_scrape ?? true}
                     onChange={(e) =>
@@ -1397,7 +1434,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                 </FormControl>
               </HStack>
               <Text fontSize="$xs" color="$neutral11">
-                媒体类型固定为「{props.title}」，不可更改。
+                {t("media.admin.media_type_fixed", { type: props.title })}
               </Text>
             </VStack>
           </ModalBody>
@@ -1407,14 +1444,14 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                 variant="ghost"
                 onClick={() => setShowScanPathModal(false)}
               >
-                取消
+                {t("global.cancel")}
               </Button>
               <Button
                 colorScheme="accent"
                 loading={scanPathSaving()}
                 onClick={handleSaveScanPath}
               >
-                保存
+                {t("global.save")}
               </Button>
             </HStack>
           </ModalFooter>
@@ -1429,17 +1466,20 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
       >
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>编辑媒体信息</ModalHeader>
+          <ModalHeader>{t("media.admin.edit_item_title")}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <VStack spacing="$3" alignItems="stretch">
               <For
                 each={[
-                  { key: "scraped_name", label: "名称" },
-                  { key: "cover", label: "封面URL" },
-                  { key: "release_date", label: "发布时间 (YYYY-MM-DD)" },
-                  { key: "genre", label: "类型（逗号分隔）" },
-                  { key: "authors", label: "作者/演员（JSON数组）" },
+                  { key: "scraped_name", label: t("media.admin.item_name") },
+                  { key: "cover", label: t("media.admin.item_cover_url") },
+                  {
+                    key: "release_date",
+                    label: t("media.admin.item_release_date"),
+                  },
+                  { key: "genre", label: t("media.admin.item_genre") },
+                  { key: "authors", label: t("media.admin.item_authors") },
                 ]}
               >
                 {(field) => (
@@ -1460,7 +1500,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                 )}
               </For>
               <FormControl>
-                <FormLabel>评分 (0-10)</FormLabel>
+                <FormLabel>{t("media.admin.rating_label")}</FormLabel>
                 <Input
                   type="number"
                   min="0"
@@ -1476,7 +1516,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                 />
               </FormControl>
               <FormControl>
-                <FormLabel>简介</FormLabel>
+                <FormLabel>{t("media.admin.summary")}</FormLabel>
                 <Textarea
                   rows={3}
                   value={editingItem()?.description ?? ""}
@@ -1493,10 +1533,10 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
           <ModalFooter>
             <HStack spacing="$2">
               <Button variant="ghost" onClick={() => setShowEditModal(false)}>
-                取消
+                {t("global.cancel")}
               </Button>
               <Button colorScheme="accent" onClick={handleSaveItem}>
-                保存
+                {t("global.save")}
               </Button>
             </HStack>
           </ModalFooter>
@@ -1521,14 +1561,14 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
           <ModalFooter>
             <HStack spacing="$2">
               <Button variant="ghost" onClick={() => setConfirmState(null)}>
-                取消
+                {t("global.cancel")}
               </Button>
               <Button
                 colorScheme={confirmState()?.danger ? "danger" : "accent"}
                 loading={confirming()}
                 onClick={runConfirm}
               >
-                {confirmState()?.confirmText || "确定"}
+                {confirmState()?.confirmText || t("global.confirm")}
               </Button>
             </HStack>
           </ModalFooter>
@@ -1540,18 +1580,46 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
 
 // ==================== 4个具体管理页 ====================
 
-export const VideoManage = () => (
-  <MediaManagePage mediaType="video" title="电影视频" icon="🎬" />
-)
+export const VideoManage = () => {
+  const t = useT()
+  return (
+    <MediaManagePage
+      mediaType="video"
+      title={t("media.admin.title_video")}
+      icon="🎬"
+    />
+  )
+}
 
-export const MusicManage = () => (
-  <MediaManagePage mediaType="music" title="音乐歌曲" icon="🎵" />
-)
+export const MusicManage = () => {
+  const t = useT()
+  return (
+    <MediaManagePage
+      mediaType="music"
+      title={t("media.admin.title_music")}
+      icon="🎵"
+    />
+  )
+}
 
-export const ImageManage = () => (
-  <MediaManagePage mediaType="image" title="图片壁纸" icon="🖼️" />
-)
+export const ImageManage = () => {
+  const t = useT()
+  return (
+    <MediaManagePage
+      mediaType="image"
+      title={t("media.admin.title_image")}
+      icon="🖼️"
+    />
+  )
+}
 
-export const BookManage = () => (
-  <MediaManagePage mediaType="book" title="电子书籍" icon="📚" />
-)
+export const BookManage = () => {
+  const t = useT()
+  return (
+    <MediaManagePage
+      mediaType="book"
+      title={t("media.admin.title_book")}
+      icon="📚"
+    />
+  )
+}
