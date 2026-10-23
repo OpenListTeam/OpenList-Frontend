@@ -53,20 +53,74 @@ export default class MediaBunnyAudioPatch {
     this._driftTimer = 0
     this._wasMutedBeforePatch = !!video.muted
     this._prevVolume = video.volume
-    // 用户意图的静音状态：与「本补丁强制静音原生 video」区分开，
-    // 否则 ArtPlayer 的静音按钮会被永久吞掉（音频仍在输出）。
+    // 用户意图的静音状态：与「本补丁把原生 video 静音」区分开。
+    // ArtPlayer 的静音按钮 / 音量 UI 都读写 video.muted，
+    // 所以下面会把该实例属性改造成「用户意图」，真实静音始终由原生元素承担。
     this._userMuted = this._wasMutedBeforePatch
-    // 忽略「本补丁自己写入 muted」所触发的那次 volumechange
+    // 忽略「本补丁自己写入真实 muted」所触发的那次 volumechange
     this._suppressVolumeChange = false
-    // 始终把原生 video 静音，音频由 mediabunny 提供
-    try {
-      video.muted = true
-    } catch (_) {
-      /* ignore */
-    }
+    // 原生 muted 的真实读写通道（覆盖实例属性后仍然需要它）
+    this._nativeMutedDesc =
+      typeof HTMLMediaElement !== "undefined"
+        ? Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "muted")
+        : null
+
+    // 先把原生 video 真正静音（音频改由 mediabunny 输出），再把 video.muted 暴露成用户意图
+    this._applyNativeMute(true)
+    this._patchMutedProperty()
 
     this._bind()
     this._load()
+  }
+
+  /** 读写原生元素真实的 muted（绕开被覆盖的实例属性） */
+  _applyNativeMute(muted) {
+    try {
+      if (this._nativeMutedDesc) {
+        if (this._nativeMutedDesc.get.call(this.video) === muted) return
+        this._suppressVolumeChange = true
+        this._nativeMutedDesc.set.call(this.video, muted)
+      } else {
+        if (this.video.muted === muted) return
+        this._suppressVolumeChange = true
+        this.video.muted = muted
+      }
+    } catch (_) {
+      this._suppressVolumeChange = false
+    }
+  }
+
+  /**
+   * 把 video.muted 覆盖成「用户是否静音」。
+   * 不覆盖的话它恒为 true（原生被强制静音），ArtPlayer 的音量 UI 会一直显示 0/静音，
+   * 拖动音量条看起来毫无反应。属性是实例级、可配置的，destroy 时删掉即可还原。
+   */
+  _patchMutedProperty() {
+    try {
+      Object.defineProperty(this.video, "muted", {
+        configurable: true,
+        get: () => this._userMuted,
+        set: (v) => this.setUserMuted(v),
+      })
+    } catch (_) {
+      // 覆盖失败时退回「始终静音」，至少不影响播放
+    }
+  }
+
+  /** 设置用户静音意图（ArtPlayer 的静音按钮会走到这里） */
+  setUserMuted(muted) {
+    this._userMuted = !!muted
+    this._syncVolume()
+  }
+
+  /** 把当前音量与静音意图同步给 mediabunny 音频引擎 */
+  _syncVolume() {
+    this._prevVolume = this.video.volume
+    // 音量为 0 同样视为静音（用户可能直接拖到 0）
+    this.audio.setVolume(
+      this._prevVolume,
+      this._userMuted || this._prevVolume === 0,
+    )
   }
 
   _bind() {
@@ -85,7 +139,7 @@ export default class MediaBunnyAudioPatch {
       v.addEventListener(k, fn)
     }
     // 初始音量同步（video 已被静音，所以从 video 端读取的 volume 仍可作为目标音量）
-    this.audio.setVolume(this._prevVolume, this._userMuted)
+    this._syncVolume()
     this.audio.setPlaybackRate(v.playbackRate || 1)
   }
 
@@ -157,29 +211,15 @@ export default class MediaBunnyAudioPatch {
   }
 
   _onVolumeChange() {
-    // 这次事件是本补丁自己强制静音原生 video 触发的，不代表用户意图
+    // 本补丁自己写真实 muted 触发的事件：用户意图没变，忽略
     if (this._suppressVolumeChange) {
       this._suppressVolumeChange = false
       return
     }
-    // ArtPlayer 的静音按钮改的是 video.muted，这里把它当作「用户意图」同步给音频引擎
-    this._userMuted = !!this.video.muted
-    this._prevVolume = this.video.volume
-    this.audio.setVolume(this.video.volume, this._userMuted)
-    // 原生音轨必须保持静音，否则会和 mediabunny 双声道；
-    // 这次写入由 _suppressVolumeChange 标记，不会回写上面的用户意图
-    this._forceNativeMute()
-  }
-
-  /** 强制静音原生 video，并忽略由此产生的那次 volumechange */
-  _forceNativeMute() {
-    if (this.video.muted) return
-    this._suppressVolumeChange = true
-    try {
-      this.video.muted = true
-    } catch (_) {
-      this._suppressVolumeChange = false
-    }
+    // 拖动音量条（>0）视为取消静音，与主流播放器一致；
+    // 静音按钮走 setUserMuted，不会再被这里覆盖回静音
+    if (this.video.volume > 0) this._userMuted = false
+    this._syncVolume()
   }
 
   _onEnded() {
@@ -234,12 +274,13 @@ export default class MediaBunnyAudioPatch {
     } catch (_) {
       /* ignore */
     }
-    // 还原 video 的 muted 状态（仅当之前不是静音时）
+    // 先删掉覆盖的实例属性，再恢复补丁前的真实静音状态
     try {
-      if (!this._wasMutedBeforePatch) this.video.muted = false
+      delete this.video.muted
     } catch (_) {
       /* ignore */
     }
+    this._applyNativeMute(this._wasMutedBeforePatch)
   }
 }
 
