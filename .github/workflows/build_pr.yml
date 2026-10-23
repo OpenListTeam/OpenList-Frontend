@@ -39,6 +39,10 @@ jobs:
           # OPENLIST_FRONTEND_BUILD_MODE: dev
           # OPENLIST_FRONTEND_BUILD_COMPRESS: false
 
+      # 单测依赖已由 build.sh 的 pnpm install 安装，放在构建之后执行
+      - name: Unit tests
+        run: pnpm test
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v7
         with:

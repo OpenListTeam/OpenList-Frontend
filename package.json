@@ -97,7 +97,7 @@
     "mediabunny": "^1.40.1",
     "mitt": "^3.0.1",
     "monaco-editor": "0.57.0",
-    "mpegts.js": "^1.8.2",
+    "mpegts.js": "1.8.2",
     "qrcode": "^1.5.4",
     "rehype-katex": "7.0.1",
     "rehype-raw": "^7.0.0",

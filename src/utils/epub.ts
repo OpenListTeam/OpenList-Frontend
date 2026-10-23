@@ -183,15 +183,16 @@ export async function loadEpub(url: string): Promise<EpubBook> {
   }
   const files = await extractZipNative(await resp.arrayBuffer())
 
-  // 找不到条目时再尝试一次 URL 解码后的名字（个别书用 %20 编码路径）
+  // 预建索引：EPUB 内路径可能带 %20 编码或大小写不一致。
+  // 之前每次未命中都全量扫描 Object.keys，图片多时会退化成 O(n²)。
+  const lowerIndex = new Map<string, Uint8Array>()
+  for (const [name, data] of Object.entries(files)) {
+    const key = tryDecode(name).toLowerCase()
+    if (!lowerIndex.has(key)) lowerIndex.set(key, data)
+  }
   const findEntry = (path: string): Uint8Array | undefined => {
-    if (files[path]) return files[path]
-    const alt = tryDecode(path)
-    if (files[alt]) return files[alt]
-    const entry = Object.keys(files).find(
-      (k) => tryDecode(k).toLowerCase() === alt.toLowerCase(),
-    )
-    return entry ? files[entry] : undefined
+    const decoded = tryDecode(path)
+    return files[decoded] ?? lowerIndex.get(decoded.toLowerCase())
   }
 
   const readText = (path: string) => {
@@ -379,6 +380,12 @@ export const buildChapterDoc = (chapter: EpubChapter) => `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8" />
+<!--
+  强制拦截一切外部请求：srcdoc 里的 <img src="https://...">、CSS @import、
+  相对路径 url(/api/...) 都会在这里被浏览器拒绝，恶意 EPUB 无法回传阅读行为。
+  只允许 blob:/data:（章节图片、字体都由父页面注入的 blob URL 提供）。
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src blob: data:; style-src 'unsafe-inline'; font-src blob: data:; media-src blob: data:">
 <style>
   html, body { margin: 0; padding: 0; }
   body {

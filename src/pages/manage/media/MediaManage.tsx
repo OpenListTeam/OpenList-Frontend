@@ -350,20 +350,32 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
   const pollScanProgress = () => {
     // 先停掉旧的轮询，避免重复点击叠出多个定时器
     stopScanPolling()
+    // 登录过期/网络中断时接口会持续抛错，不处理的话每秒产生一个未捕获 rejection
+    let failures = 0
     scanTimer = setInterval(async () => {
-      const resp = await adminGetMediaScanProgress(props.mediaType)
-      if (resp.code === 200 && resp.data) {
-        const d = resp.data
-        setProgress({
-          status: d.message || (d.running ? "扫描中..." : "完成"),
-          current: d.done,
-          total: d.total,
-        })
-        if (!d.running) {
+      try {
+        const resp = await adminGetMediaScanProgress(props.mediaType)
+        failures = 0
+        if (resp.code === 200 && resp.data) {
+          const d = resp.data
+          setProgress({
+            status: d.message || (d.running ? "扫描中..." : "完成"),
+            current: d.done,
+            total: d.total,
+          })
+          if (!d.running) {
+            stopScanPolling()
+            setScanning(false)
+            refetchItems()
+            notify.success("扫描完成")
+          }
+        }
+      } catch (e: any) {
+        failures += 1
+        if (failures >= 5) {
           stopScanPolling()
           setScanning(false)
-          refetchItems()
-          notify.success("扫描完成")
+          notify.error("扫描进度查询失败: " + (e?.message ?? String(e)))
         }
       }
     }, 1000)

@@ -43,12 +43,17 @@ import { useNavigate } from "@solidjs/router"
 import "./artplayer.css"
 import { registerAc3Decoder } from "@mediabunny/ac3"
 import { requestTranscodePlay } from "~/utils/media_api"
-// 仅在启用 MediaBunny 时注册 AC3 解码器
-if (isMediaBunnyEnabled()) {
+import { useT } from "~/hooks"
+// AC3 解码器改为按需注册：模块 import 期不产生任何副作用
+let ac3Registered = false
+function ensureAc3Decoder() {
+  if (ac3Registered || !isMediaBunnyEnabled()) return
+  ac3Registered = true
   registerAc3Decoder()
 }
 
 const Preview = () => {
+  const t = useT()
   const { pathname, searchParams } = useRouter()
   const { proxyLink } = useLink()
   const navigate = useNavigate()
@@ -342,16 +347,20 @@ const Preview = () => {
     )
   }
   // 添加 MediaBunny 播放器三档模式选择到设置菜单
-  const mediabunnyModeLabel = (m: MediaBunnyMode) =>
-    m === "disabled" ? "禁用" : m === "audio_only" ? "仅音频" : "全部解码"
+  const mediabunnyModeKey = (m: MediaBunnyMode) =>
+    m === "disabled"
+      ? "media.video.decode_disabled"
+      : m === "audio_only"
+        ? "media.video.decode_audio_only"
+        : "media.video.decode_all"
   option.settings?.push({
     id: "setting_mediabunny",
-    html: "MediaBunny 播放器",
-    tooltip: mediabunnyModeLabel(getMediaBunnyMode()),
+    html: t("media.video.mediabunny_player"),
+    tooltip: t(mediabunnyModeKey(getMediaBunnyMode())),
     icon: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
     selector: (["disabled", "audio_only", "full"] as MediaBunnyMode[]).map(
       (m) => ({
-        html: mediabunnyModeLabel(m),
+        html: t(mediabunnyModeKey(m)),
         name: m,
         default: getMediaBunnyMode() === m,
       }),
@@ -360,11 +369,11 @@ const Preview = () => {
       const newMode = item.name as MediaBunnyMode
       setMediaBunnyMode(newMode)
       setTimeout(() => {
-        if (confirm("切换播放器模式需要刷新页面才能生效，是否立即刷新？")) {
+        if (confirm(t("media.video.mode_reload_confirm"))) {
           location.reload()
         }
       }, 100)
-      return mediabunnyModeLabel(newMode)
+      return t(mediabunnyModeKey(newMode))
     },
   })
 
@@ -405,6 +414,7 @@ const Preview = () => {
         timeoutMs: 3000,
       })
     }
+    ensureAc3Decoder()
     player = new Artplayer(option)
     // "仅音频"模式：原生 <video> 解码视频，mediabunny 只提供音轨（仅直链模式）
     if (

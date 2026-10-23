@@ -68,8 +68,11 @@ const mediabunnyModeKey = (m: MediaBunnyMode) =>
     : m === "audio_only"
       ? "media.video.decode_audio_only"
       : "media.video.decode_all"
-// 仅在启用 MediaBunny 时注册 AC3 解码器
-if (isMediaBunnyEnabled()) {
+// AC3 解码器改为按需注册：模块 import 期不产生任何副作用
+let ac3Registered = false
+function ensureAc3Decoder() {
+  if (ac3Registered || !isMediaBunnyEnabled()) return
+  ac3Registered = true
   registerAc3Decoder()
 }
 
@@ -358,6 +361,7 @@ const VideoPlayer = (props: {
     //    在用户点击播放时才开始加载，且初始仅缓冲约 1 个分块；
     //    待第一个分块开始播放后再放宽缓冲到约 10 个分块顺序缓存。
 
+    ensureAc3Decoder()
     player = new Artplayer({
       container: playerContainer,
       url: actualUrl,

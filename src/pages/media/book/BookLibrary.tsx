@@ -120,16 +120,25 @@ const BookReader = (props: {
               })}
             </div>
             <a
-              href="#"
+              href={fileUrl() || "#"}
+              target="_blank"
+              rel="noopener"
               onClick={async (e) => {
                 e.preventDefault()
-                // /d 同样受签名保护：点击时取后端签名直链再下载
+                // 签名直链在打开阅读器时已经预取，正常情况下点击是同步打开，
+                // Safari/部分 Chrome 不会把它判定为“非用户手势”而拦截。
+                const ready = fileUrl()
+                if (ready) {
+                  window.open(ready, "_blank", "noopener")
+                  return
+                }
+                // 极端情况下签名还没就绪：退化为当前页跳转，不会被弹窗拦截
                 const resp = await getMediaStreamUrl({ path: resolvedPath() })
                 const url =
                   resp.code === 200 && resp.data?.url
                     ? resp.data.url
                     : `${api}/d${encodePath(resolvedPath())}`
-                window.open(url, "_blank")
+                location.assign(url)
               }}
               style={{ ...mediaPrimaryBtn, "text-decoration": "none" }}
             >

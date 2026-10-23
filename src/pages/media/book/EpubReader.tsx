@@ -223,7 +223,14 @@ export const EpubReader = (props: { url: string; title: string }) => {
             </div>
           </Show>
           <Show when={!error() && chapter()}>
-            {/* 保留同源以便加载 blob: 图片/字体，但不开 allow-scripts，脚本仍被完全禁用 */}
+            {/*
+              保留 allow-same-origin 的唯一原因：章节里的图片/字体是父页面创建的 blob: URL，
+              沙箱 iframe 若没有同源身份（opaque origin）会拒绝加载它们。
+              安全性由两点保证：
+              1) 不授予 allow-scripts，iframe 内脚本完全无法执行，同源身份拿不到任何能力；
+              2) 文档头部的 CSP（buildChapterDoc）把网络请求限制在 blob:/data:。
+              若以后改成 data: URI 内联图片，可以去掉 allow-same-origin。
+            */}
             <iframe
               title={chapter()?.title ?? props.title}
               srcdoc={doc()}
