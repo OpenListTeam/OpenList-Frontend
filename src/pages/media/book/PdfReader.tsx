@@ -13,6 +13,7 @@ import {
   syncMediaAnnotations,
   type MediaAnnotationRow,
 } from "~/utils/media_api"
+import { createAnnotationQueue } from "~/utils/annotation_queue"
 
 /**
  * 查看器原生的批注对象。只有 id 需要被类型化（做去重和同步主键），
@@ -94,8 +95,7 @@ export const PdfReader = (props: {
     let flushing = false
     // 只提示一次：同一轮失败会持续重试，反复弹窗只会打扰用户
     let saveErrorNotified = false
-    const pendingUpserts = new Map<string, ViewerAnnotation>()
-    const pendingDeletes = new Set<string>()
+    const queue = createAnnotationQueue<ViewerAnnotation>()
 
     const notifySaveError = (detail: unknown) => {
       if (saveErrorNotified) return
@@ -112,19 +112,16 @@ export const PdfReader = (props: {
     const flush = async () => {
       const itemId = props.itemId
       if (flushing || !itemId) return
-      if (pendingUpserts.size === 0 && pendingDeletes.size === 0) return
+      if (queue.size() === 0) return
       flushing = true
       let failed = false
       // 先取走本批变更：请求期间新产生的改动会落进新的队列，下一轮再提交
-      const batchUpserts = [...pendingUpserts.values()]
-      const batchDeletes = [...pendingDeletes]
-      pendingUpserts.clear()
-      pendingDeletes.clear()
+      const batch = queue.take()
       try {
         const resp = await syncMediaAnnotations({
           item_id: itemId,
-          upserts: batchUpserts.map(toDraft),
-          deletes: batchDeletes,
+          upserts: batch.upserts.map(toDraft),
+          deletes: batch.deletes,
         })
         if (resp.code === 200) {
           saveErrorNotified = false
@@ -138,16 +135,16 @@ export const PdfReader = (props: {
         }
         throw new Error(resp.message || `HTTP ${resp.code}`)
       } catch (e) {
-        // 断网 / 服务端 5xx 时不能静默丢弃：放回队列，下次改动一起重试
+        // 断网 / 服务端 5xx 时不能静默丢弃：放回队列，下次改动一起重试。
+        // restore 会保留请求期间产生的新操作，旧内容不会覆盖新编辑。
         failed = true
-        for (const a of batchUpserts) pendingUpserts.set(a.id, a)
-        for (const id of batchDeletes) pendingDeletes.add(id)
+        queue.restore(batch)
         notifySaveError(e)
       } finally {
         flushing = false
         // 请求期间若又产生了改动，这里补一次调度，避免要等到下一次操作才提交；
         // 失败时不自动重试，防止服务端不可用时变成 800ms 一次的死循环。
-        if (!failed && (pendingUpserts.size > 0 || pendingDeletes.size > 0)) {
+        if (!failed && queue.size() > 0) {
           schedule()
         }
       }
@@ -202,13 +199,8 @@ export const PdfReader = (props: {
           // loaded 是文档自带批注装载完成的信号，不是用户改动
           if (!ev || ev.type === "loaded" || !ev.annotation?.id) return
           const id = ev.annotation.id
-          if (ev.type === "delete") {
-            pendingUpserts.delete(id)
-            pendingDeletes.add(id)
-          } else {
-            pendingDeletes.delete(id)
-            pendingUpserts.set(id, ev.annotation)
-          }
+          if (ev.type === "delete") queue.remove(id)
+          else queue.upsert(ev.annotation)
           schedule()
         })
       }
