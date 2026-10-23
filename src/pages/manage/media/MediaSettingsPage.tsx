@@ -38,6 +38,7 @@ const BASE_KEYS = [
   "media_enabled",
   "media_emby_enabled",
   "media_subsonic_enabled",
+  "media_subsonic_allow_password_auth",
   "media_subsonic_proxy_stream",
   "media_proxy_cover",
 ]
@@ -165,6 +166,10 @@ const MediaSettingsPage = () => {
               </Button>
             </Show>
           </HStack>
+          <Divider />
+          <Text fontSize="$xs" color="$neutral11">
+            {t("manage.media_lib.protocol_auth_tip")}
+          </Text>
         </VStack>
       </Box>
 
