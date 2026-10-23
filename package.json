@@ -33,7 +33,7 @@
     "build": "vite build",
     "build:lite": "cross-env VITE_LITE=true vite build",
     "serve": "vite preview",
-    "test": "node --experimental-strip-types --test src/components/artplayer-proxy-mediabunny/EventTarget.test.js src/components/artplayer-proxy-mediabunny/Prefetcher.test.js src/components/artplayer-proxy-mediabunny/pitchPreservingTimeStretch.test.js src/utils/zip_read.test.js",
+    "test": "node --experimental-strip-types --test src/components/artplayer-proxy-mediabunny/EventTarget.test.js src/components/artplayer-proxy-mediabunny/Prefetcher.test.js src/components/artplayer-proxy-mediabunny/pitchPreservingTimeStretch.test.js src/utils/zip_read.test.js src/utils/epub_annotation.test.js",
     "prepare": "husky",
     "lint": "tsc -p tsconfig.json --noEmit",
     "format": "prettier --ignore-path .gitignore -w \"src/**/*.{js,ts,json,css,tsx,jsx}\""

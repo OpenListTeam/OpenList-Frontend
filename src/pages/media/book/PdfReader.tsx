@@ -7,6 +7,7 @@ import { useT } from "~/hooks"
 import { currentLang } from "~/app/i18n"
 import { me } from "~/store"
 import { UserMethods } from "~/types"
+import { notify } from "~/utils"
 import {
   getMediaAnnotations,
   syncMediaAnnotations,
@@ -33,8 +34,17 @@ interface ViewerAnnotationEvent {
  * 这里只声明用到的方法，避免跟内部包路径耦合。
  */
 interface ViewerAnnotationCapability {
-  importAnnotations: (items: { annotation: ViewerAnnotation }[]) => void
+  // 第二个参数是文档 id：不传时插件会去取“当前活动文档”，
+  // 而文档还没加载完时活动文档是 null，导入会被丢进一个取不出来的队列。
+  importAnnotations: (
+    items: { annotation: ViewerAnnotation }[],
+    documentId?: string,
+  ) => void
   onAnnotationEvent: (cb: (ev: ViewerAnnotationEvent) => void) => () => void
+}
+
+interface ViewerDocumentManagerCapability {
+  getActiveDocumentId?: () => string | null
 }
 
 /** 反序列化后端保存的批注：created/modified 存的是 ISO 字符串，回灌前要还原成 Date */
@@ -82,8 +92,17 @@ export const PdfReader = (props: {
     let unsubscribe: (() => void) | undefined
     let timer: ReturnType<typeof setTimeout> | undefined
     let flushing = false
+    // 只提示一次：同一轮失败会持续重试，反复弹窗只会打扰用户
+    let saveErrorNotified = false
     const pendingUpserts = new Map<string, ViewerAnnotation>()
     const pendingDeletes = new Set<string>()
+
+    const notifySaveError = (detail: unknown) => {
+      if (saveErrorNotified) return
+      saveErrorNotified = true
+      notify.error(t("media.book.annotation_save_failed"))
+      console.warn("[pdf] 批注保存失败", detail)
+    }
 
     const toDraft = (a: ViewerAnnotation): MediaAnnotationRow => ({
       remote_id: a.id,
@@ -107,11 +126,14 @@ export const PdfReader = (props: {
           upserts: batchUpserts.map(toDraft),
           deletes: batchDeletes,
         })
-        if (resp.code === 200) return
+        if (resp.code === 200) {
+          saveErrorNotified = false
+          return
+        }
         // 4xx 说明这批数据本身被拒绝（超长 / 无权访问），重试也不会成功，
-        // 继续放回队列只会无限重试，这里直接丢弃并留日志。
+        // 继续放回队列只会无限重试，这里直接丢弃并提示用户。
         if (resp.code >= 400 && resp.code < 500) {
-          console.warn("[pdf] 批注保存被拒绝", resp.message)
+          notifySaveError(resp.message || `HTTP ${resp.code}`)
           return
         }
         throw new Error(resp.message || `HTTP ${resp.code}`)
@@ -120,7 +142,7 @@ export const PdfReader = (props: {
         failed = true
         for (const a of batchUpserts) pendingUpserts.set(a.id, a)
         for (const id of batchDeletes) pendingDeletes.add(id)
-        console.warn("[pdf] 批注保存失败", e)
+        notifySaveError(e)
       } finally {
         flushing = false
         // 请求期间若又产生了改动，这里补一次调度，避免要等到下一次操作才提交；
@@ -143,56 +165,78 @@ export const PdfReader = (props: {
     }
     document.addEventListener("visibilitychange", flushOnHide)
 
+    // 文档加载完成前活动文档 id 是 null，此时导入批注会被丢进一个取不出来的队列，
+    // 所以先等 id 出现（最多 10s），再带着 id 导入。
+    const waitForDocumentId = async (
+      documents?: ViewerDocumentManagerCapability,
+    ): Promise<string | null> => {
+      for (let i = 0; i < 100; i++) {
+        if (disposed) return null
+        const id = documents?.getActiveDocumentId?.() ?? null
+        if (id) return id
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
+      return null
+    }
+
     const setupAnnotations = async (
       editor: NonNullable<ReturnType<typeof EmbedPDF.init>>,
     ) => {
       // registry 在查看器启动完成后才 resolve
       const registry = await editor.registry
       if (disposed) return
-      const plugin = (
-        registry as unknown as {
-          getPlugin: (id: string) => {
-            provides: () => ViewerAnnotationCapability
-          } | null
-        }
-      ).getPlugin("annotation")
-      const capability = plugin?.provides()
+      const plugins = registry as unknown as {
+        getPlugin: (id: string) => { provides: () => unknown } | null
+      }
+      const capability = plugins.getPlugin("annotation")?.provides() as
+        ViewerAnnotationCapability | undefined
       if (!capability) {
         console.warn("[pdf] 未找到批注插件，本次批注不会保存")
         return
       }
 
-      if (props.itemId && canAnnotate()) {
-        try {
-          const resp = await getMediaAnnotations(props.itemId)
-          const items = (resp.data ?? [])
-            .map((row) => reviveAnnotation(row.anchor))
-            .filter((a): a is ViewerAnnotation => a !== null)
-          if (items.length > 0 && !disposed) {
-            capability.importAnnotations(
-              items.map((annotation) => ({ annotation })),
-            )
+      const canSave = !!props.itemId && canAnnotate()
+      // 先订阅变更，避免等待文档期间用户的操作被漏掉
+      if (canSave) {
+        unsubscribe = capability.onAnnotationEvent((ev) => {
+          // loaded 是文档自带批注装载完成的信号，不是用户改动
+          if (!ev || ev.type === "loaded" || !ev.annotation?.id) return
+          const id = ev.annotation.id
+          if (ev.type === "delete") {
+            pendingUpserts.delete(id)
+            pendingDeletes.add(id)
+          } else {
+            pendingDeletes.delete(id)
+            pendingUpserts.set(id, ev.annotation)
           }
-        } catch (e) {
-          // 拉取失败不影响阅读，最多这次看不到历史批注
-          console.warn("[pdf] 批注加载失败", e)
-        }
+          schedule()
+        })
       }
 
-      if (!props.itemId || !canAnnotate()) return
-      unsubscribe = capability.onAnnotationEvent((ev) => {
-        // loaded 是文档自带批注装载完成的信号，不是用户改动
-        if (!ev || ev.type === "loaded" || !ev.annotation?.id) return
-        const id = ev.annotation.id
-        if (ev.type === "delete") {
-          pendingUpserts.delete(id)
-          pendingDeletes.add(id)
-        } else {
-          pendingDeletes.delete(id)
-          pendingUpserts.set(id, ev.annotation)
+      const documents = plugins.getPlugin("document-manager")?.provides() as
+        ViewerDocumentManagerCapability | undefined
+      const documentId = await waitForDocumentId(documents)
+      if (disposed || !documentId) {
+        console.warn("[pdf] 文档未就绪，跳过批注回灌")
+        return
+      }
+      if (!canSave) return
+
+      try {
+        const resp = await getMediaAnnotations(props.itemId!)
+        const items = (resp.data ?? [])
+          .map((row) => reviveAnnotation(row.anchor))
+          .filter((a): a is ViewerAnnotation => a !== null)
+        if (items.length > 0 && !disposed) {
+          capability.importAnnotations(
+            items.map((annotation) => ({ annotation })),
+            documentId,
+          )
         }
-        schedule()
-      })
+      } catch (e) {
+        // 拉取失败不影响阅读，最多这次看不到历史批注
+        console.warn("[pdf] 批注加载失败", e)
+      }
     }
 
     try {

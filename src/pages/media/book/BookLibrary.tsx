@@ -104,7 +104,11 @@ const BookReader = (props: {
           />
         </Show>
         <Show when={isEpub() && fileUrl()}>
-          <EpubReader url={fileUrl()} title={getMediaName(props.item)} />
+          <EpubReader
+            url={fileUrl()}
+            title={getMediaName(props.item)}
+            itemId={props.item.id}
+          />
         </Show>
         <Show when={!isPDF() && !isEpub()}>
           <div
