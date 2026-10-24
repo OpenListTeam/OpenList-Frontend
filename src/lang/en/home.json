@@ -385,5 +385,32 @@
     "overwrite_existing": "Overwrite existing files",
     "skip_existing": "Skip existing files",
     "merge": "Only Copy new files and subdirectories"
+  },
+  "media": {
+    "title": "Media Library",
+    "nav_files": "Files Mount Lists",
+    "nav_video": "Movies & TV Shows",
+    "nav_music": "Albums & Musician",
+    "nav_image": "Photos & Pictures",
+    "nav_book": "eBooks & Journals",
+    "nav_settings": "Media Settings",
+    "nav_manage": "Media Manage",
+    "open_with": "Open with local player",
+    "copy_link": "Copy direct link",
+    "download_strm": "Download .strm",
+    "settings_title": "Media Library Settings",
+    "settings_general": "General",
+    "settings_scrape": "Scraping",
+    "settings_strm": "STRM",
+    "settings_protocol": "Protocols",
+    "settings_appkeys": "App Keys",
+    "appkey_create": "Create key",
+    "appkey_name": "Key name",
+    "appkey_once": "The key is shown only once. Copy it now.",
+    "emby_endpoint": "Emby endpoint",
+    "subsonic_endpoint": "Subsonic endpoint",
+    "strm_generate": "Generate STRM now",
+    "strm_generated": "Generated {{count}} .strm files in {{path}}",
+    "enabled_tip": "Media library is disabled. Enable it to show the media entry."
   }
 }
