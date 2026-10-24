@@ -31,6 +31,8 @@ let cancelList: Canceler
 
 const IsDirRecord: Record<string, boolean> = {}
 let globalPage = 1
+// 上一次复位/写入 is_share 时对应的目录，用于区分「换目录」与「同目录翻页/刷新」。
+let lastIsSharePath = ""
 export const getGlobalPage = () => {
   return globalPage
 }
@@ -94,8 +96,6 @@ export const usePath = () => {
 
   // record is second time password is wrong
   let retry_pass = false
-  // 上一次复位/写入 is_share 时对应的目录，用于区分「换目录」与「同目录翻页/刷新」
-  let lastIsSharePath = ""
   // handle pathname change
   // if confirm current path is dir, fetch List directly
   // if not, fetch get then determine if it is dir or file
