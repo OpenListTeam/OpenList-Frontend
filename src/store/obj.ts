@@ -82,7 +82,7 @@ export const ObjStore = {
   setState: (state: State) => setObjStore("state", state),
   setDirectUploadTools: (tools?: string[]) =>
     setObjStore("direct_upload_tools", tools),
-  setErr: (err: string) => setObjStore("err", err),
+  setErr: (err?: string) => setObjStore("err", err ?? ""),
 }
 
 export type OrderBy = "name" | "size" | "modified"
