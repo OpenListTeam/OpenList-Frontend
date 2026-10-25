@@ -85,6 +85,23 @@ import {
 import { ThumbnailSettings } from "./ThumbnailSettings"
 import { resolveMediaCover } from "~/utils/media_cover"
 
+/**
+ * 类型标签预置。tv=true 的标签会让后端把该扫描路径下所有视频当作剧集入库
+ * （Emby 里按「电视剧」展示）；其余按电影处理。判定规则见后端
+ * internal/media.VideoTypeForTypeTag，改这里时请保持两边一致。
+ */
+const TYPE_TAG_PRESETS: { value: string; tv: boolean }[] = [
+  { value: "电影", tv: false },
+  { value: "电视剧", tv: true },
+  { value: "动漫", tv: true },
+  { value: "综艺", tv: true },
+  { value: "纪录片", tv: true },
+  { value: "美剧", tv: true },
+  { value: "日剧", tv: true },
+  { value: "韩剧", tv: true },
+  { value: "国产剧", tv: true },
+]
+
 interface MediaManagePageProps {
   mediaType: MediaType
   title: string
@@ -1411,6 +1428,30 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                     }))
                   }
                 />
+                {/* 预置选项：点击一键填入。电视剧类标签会让该路径下所有视频在 Emby 中按剧集展示 */}
+                <HStack spacing="$2" mt="$2" flexWrap="wrap">
+                  <For each={TYPE_TAG_PRESETS}>
+                    {(preset) => (
+                      <Button
+                        size="xs"
+                        variant={
+                          editingScanPath()?.type_tag === preset.value
+                            ? "solid"
+                            : "outline"
+                        }
+                        colorScheme={preset.tv ? "accent" : "neutral"}
+                        onClick={() =>
+                          setEditingScanPath((sp) => ({
+                            ...sp!,
+                            type_tag: preset.value,
+                          }))
+                        }
+                      >
+                        {preset.value}
+                      </Button>
+                    )}
+                  </For>
+                </HStack>
                 <FormHelperText>
                   {t("media.admin.type_tag_helper")}
                 </FormHelperText>

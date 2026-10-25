@@ -455,7 +455,15 @@ const MusicLibrary = () => {
   const [selectedTrack, setSelectedTrack] = createSignal<MediaItem | null>(null)
   const [favorites, setFavorites] = createSignal<Record<number, boolean>>({})
   const [page, setPage] = createSignal(1)
+  // keyword 是已提交的搜索词；输入中的内容放 draftKeyword，点击搜索 / 回车才提交，
+  // 否则每敲一个字母就触发请求，会打断中文输入法的组合输入。
   const [keyword, setKeyword] = createSignal("")
+  const [draftKeyword, setDraftKeyword] = createSignal("")
+  const [composing, setComposing] = createSignal(false)
+  const submitSearch = () => {
+    setKeyword(draftKeyword().trim())
+    setPage(1)
+  }
   const [browseMode, setBrowseMode] = createSignal<BrowseMode>("all")
   const [orderBy, setOrderBy] = createSignal<OrderBy>("name")
   const [orderDir, setOrderDir] = createSignal<OrderDir>("asc")
@@ -677,10 +685,15 @@ const MusicLibrary = () => {
               <input
                 type="text"
                 placeholder={t("media.music.search_placeholder")}
-                value={keyword()}
-                onInput={(e) => {
-                  setKeyword(e.currentTarget.value)
-                  setPage(1)
+                value={draftKeyword()}
+                onInput={(e) => setDraftKeyword(e.currentTarget.value)}
+                onCompositionStart={() => setComposing(true)}
+                onCompositionEnd={() => setComposing(false)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !composing() && !e.isComposing) {
+                    e.preventDefault()
+                    submitSearch()
+                  }
                 }}
                 style={{
                   background: searchBg(),
@@ -693,6 +706,20 @@ const MusicLibrary = () => {
                   width: "180px",
                 }}
               />
+              <button
+                onClick={submitSearch}
+                style={{
+                  background: btnActiveBg,
+                  border: `1px solid ${btnActiveBorder}`,
+                  "border-radius": "6px",
+                  color: btnActiveColor,
+                  padding: "5px 12px",
+                  "font-size": "12px",
+                  cursor: "pointer",
+                }}
+              >
+                {t("media.browser.search")}
+              </button>
 
               {/* 视图切换：卡片（专辑）/ 列表（歌曲） */}
               <div style={{ display: "flex", gap: "4px" }}>

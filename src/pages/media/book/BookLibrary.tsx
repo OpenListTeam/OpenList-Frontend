@@ -5,6 +5,7 @@ import { useColorMode } from "@hope-ui/solid"
 import { useT } from "~/hooks"
 import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
+import { useMediaRoute } from "../useMediaRoute"
 import { formatMediaSize, mediaBackBtn, mediaPrimaryBtn } from "../ui"
 import { PdfReader } from "./PdfReader"
 import { EpubReader } from "./EpubReader"
@@ -398,11 +399,22 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
       return null
     },
   )
-  const [showReader, setShowReader] = createSignal(false)
-  // 当前阅读的选集（null 表示阅读主文件）
-  const [currentEpisode, setCurrentEpisode] = createSignal<EpisodeInfo | null>(
-    null,
-  )
+  // 阅读状态与选集位置放在 URL（?play=1&ep=N）里，刷新后回到同一本书继续阅读
+  const route = useMediaRoute()
+  const showReader = () => route.playing()
+  const currentEpisode = createMemo<EpisodeInfo | null>(() => {
+    const pos = route.episode()
+    const it = item()
+    if (!pos || !it) return null
+    return parseEpisodes(it.episodes)[pos - 1] ?? null
+  })
+  const readEpisode = (ep: EpisodeInfo | null) => {
+    if (!ep) return route.startPlay(0)
+    const pos = parseEpisodes(item()?.episodes ?? "").findIndex(
+      (e) => e.file_name === ep.file_name,
+    )
+    route.startPlay(pos >= 0 ? pos + 1 : 0)
+  }
 
   return (
     <Show
@@ -439,7 +451,7 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
                     : currentEpisode()!.title
                   : undefined
               }
-              onClose={() => setShowReader(false)}
+              onClose={route.stopPlay}
             />
           </Show>
 
@@ -555,8 +567,7 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
               <Show when={parseEpisodes(data().episodes).length === 0}>
                 <button
                   onClick={() => {
-                    setCurrentEpisode(null)
-                    setShowReader(true)
+                    readEpisode(null)
                   }}
                   style={{
                     background: accentGradient(),
@@ -619,8 +630,7 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
                             return (
                               <button
                                 onClick={() => {
-                                  setCurrentEpisode(ep)
-                                  setShowReader(true)
+                                  readEpisode(ep)
                                 }}
                                 title={ep.file_name}
                                 style={{
@@ -704,7 +714,9 @@ const BookDetail = (props: { id: string; onBack: () => void }) => {
 // ==================== 书籍库主页 ====================
 const BookLibrary = () => {
   const t = useT()
-  const [selectedId, setSelectedId] = createSignal<string | null>(null)
+  // 选中的条目放在 URL（?id=）里：返回只清 id，page / q 保留
+  const route = useMediaRoute()
+  const selectedId = route.selectedId
 
   return (
     <MediaLayout title={t("media.book.title")}>
@@ -713,7 +725,7 @@ const BookLibrary = () => {
         fallback={
           <MediaBrowser
             mediaType="book"
-            onItemClick={(item) => setSelectedId(String(item.id))}
+            onItemClick={(item) => route.openDetail(item.id)}
             renderCard={(item) => <BookCard item={item} />}
             renderListRow={(item) => {
               const { colorMode: cm } = useColorMode()
@@ -782,7 +794,7 @@ const BookLibrary = () => {
           />
         }
       >
-        <BookDetail id={selectedId()!} onBack={() => setSelectedId(null)} />
+        <BookDetail id={selectedId()!} onBack={route.closeDetail} />
       </Show>
     </MediaLayout>
   )

@@ -13,6 +13,7 @@ import {
 import { useColorMode } from "@hope-ui/solid"
 import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
+import { useMediaRoute } from "../useMediaRoute"
 import {
   formatMediaSize,
   mediaBackBtn,
@@ -816,11 +817,27 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
     },
   )
 
-  const [showPlayer, setShowPlayer] = createSignal(false)
-  // 当前播放的选集（null 表示播放主文件）
-  const [currentEpisode, setCurrentEpisode] = createSignal<EpisodeInfo | null>(
-    null,
-  )
+  // 播放状态和选集序号放在 URL（?play=1&ep=N）而不是组件内存里：
+  // 切换 mediabunny 后 location.reload()、或手动刷新页面，都能回到同一个详情页继续播放。
+  const route = useMediaRoute()
+  const showPlayer = () => route.playing()
+  // 原子地设置「播放哪一集」+「进入播放」，避免两次分开的 URL 写入互相覆盖
+  const playEpisode = (ep: EpisodeInfo | null) => {
+    if (!ep) return route.startPlay(0)
+    const pos = parseEpisodes(item()?.episodes ?? "").findIndex(
+      (e) => e.file_name === ep.file_name,
+    )
+    route.startPlay(pos >= 0 ? pos + 1 : 0)
+  }
+  const closePlayer = () => route.stopPlay()
+  // URL 里的 ep 是「选集在数组中的位置（从 1 开始）」，而不是文件名里的集号：
+  // 集号 index 可能为 0（文件名没有序号），按它还原会选错集。
+  const currentEpisode = createMemo<EpisodeInfo | null>(() => {
+    const pos = route.episode()
+    const it = item()
+    if (!pos || !it) return null
+    return parseEpisodes(it.episodes)[pos - 1] ?? null
+  })
   const [favorite, setFavorite] = createSignal(false)
 
   // 详情页收藏状态
@@ -1133,7 +1150,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                         : undefined
                     }
                     episodeIndex={currentEpisode()?.index ?? 0}
-                    onClose={() => setShowPlayer(false)}
+                    onClose={closePlayer}
                   />
                 </Show>
 
@@ -1152,8 +1169,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                       itemId={data().id}
                       name={data().file_name}
                       onBrowserPlay={() => {
-                        setCurrentEpisode(null)
-                        setShowPlayer(true)
+                        playEpisode(null)
                       }}
                     />
                     <button
@@ -1205,8 +1221,7 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                               return (
                                 <button
                                   onClick={() => {
-                                    setCurrentEpisode(ep)
-                                    setShowPlayer(true)
+                                    playEpisode(ep)
                                   }}
                                   title={ep.file_name}
                                   style={{
@@ -1287,7 +1302,10 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
 // ==================== 视频库主页 ====================
 const VideoLibrary = () => {
   const t = useT()
-  const [selectedId, setSelectedId] = createSignal<string | null>(null)
+  // 选中的条目放在 URL（?id=）里：返回时只清掉 id，page / q 原样保留，
+  // 列表页回到进入详情前的页码和搜索结果，而不是默认第一页。
+  const route = useMediaRoute()
+  const selectedId = route.selectedId
 
   return (
     <MediaLayout title={t("media.video.title")}>
@@ -1297,7 +1315,7 @@ const VideoLibrary = () => {
           <MediaBrowser
             mediaType="video"
             enableFavorites
-            onItemClick={(item) => setSelectedId(String(item.id))}
+            onItemClick={(item) => route.openDetail(item.id)}
             renderCard={(item) => <VideoCard item={item} />}
             renderListRow={(item) => {
               const { colorMode: cm } = useColorMode()
@@ -1385,7 +1403,7 @@ const VideoLibrary = () => {
           />
         }
       >
-        <VideoDetail id={selectedId()!} onBack={() => setSelectedId(null)} />
+        <VideoDetail id={selectedId()!} onBack={route.closeDetail} />
       </Show>
     </MediaLayout>
   )

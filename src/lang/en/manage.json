@@ -18,6 +18,7 @@
     "copy": "Copy",
     "move": "Move",
     "decompress": "Decompress",
+    "seed_tasks": "Seed Tasks",
     "backup-restore": "Backup & Restore",
     "home": "Home",
     "indexes": "Indexes",
