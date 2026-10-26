@@ -560,6 +560,30 @@
     "thumbnail": "Thumbnail",
     "thumbnail-tips": "enable thumbnail which pre-generated under .thumbnails folder"
   },
+  "CtFile": {
+    "base_url": "Base url",
+    "base_url-tips": "API base URL",
+    "cloud_type": "Cloud type",
+    "cloud_types": {
+      "private": "Private",
+      "public": "Public"
+    },
+    "order_by": "Order by",
+    "order_bys": {
+      "name": "Name",
+      "size": "Size",
+      "time": "Time"
+    },
+    "order_direction": "Order direction",
+    "order_directions": {
+      "asc": "Asc",
+      "desc": "Desc"
+    },
+    "root_folder_id": "Root folder id",
+    "session": "Session",
+    "session-tips": "OpenAPI session token from 开放接口登录密钥管理",
+    "user_agent": "User agent"
+  },
   "Degoo": {
     "access_token": "Access token",
     "access_token-tips": "Access token for Degoo API, obtained automatically",
@@ -1634,6 +1658,7 @@
     "Cloudreve": {},
     "Cloudreve V4": {},
     "Crypt": {},
+    "CtFile": {},
     "Degoo": {},
     "Doge": {},
     "Doubao": {},
@@ -1735,6 +1760,7 @@
     "Cloudreve": "Cloudreve",
     "Cloudreve V4": "Cloudreve V4",
     "Crypt": "Crypt",
+    "CtFile": "CtFile",
     "Degoo": "Degoo",
     "Doge": "Doge",
     "Doubao": "Doubao",
