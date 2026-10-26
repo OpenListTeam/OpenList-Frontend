@@ -93,7 +93,7 @@
     "highlight.js": "^11.12.0",
     "hls.js": "^1.7.3",
     "ini": "^7.0.0",
-    "katex": "^0.18.2",
+    "katex": "^0.19.1",
     "libheif-js": "^1.23.5",
     "lightgallery": "^2.9.0",
     "mark.js": "^8.11.1",
