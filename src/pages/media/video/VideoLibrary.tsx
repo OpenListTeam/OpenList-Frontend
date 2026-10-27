@@ -11,6 +11,7 @@ import {
   onCleanup,
 } from "solid-js"
 import { useColorMode } from "@hope-ui/solid"
+import { Portal } from "solid-js/web"
 import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
 import { useMediaRoute } from "../useMediaRoute"
@@ -38,6 +39,7 @@ import { base_path, ext, notify } from "~/utils"
 import { useT } from "~/hooks"
 import { OpenWithPlayer } from "~/components/OpenWithPlayer"
 import { MediaPlayButton } from "~/components/MediaPlayButton"
+import { pauseMusic } from "../music/player"
 import Artplayer from "artplayer"
 import artplayerProxyMediabunny from "~/components/artplayer-proxy-mediabunny"
 import { attachMediabunnyAudio } from "~/components/artplayer-proxy-mediabunny/AudioPatch"
@@ -361,6 +363,25 @@ const VideoPlayer = (props: {
   // 卸载标记：onMount 中有多处 await，期间用户可能已离开，
   // 此时 onCleanup 已执行，之后创建的实例不会再被销毁。
   let disposed = false
+
+  // ---- 移动端音量 ----
+  // Artplayer 在移动端会把整个音量面板设为 display:none（只保留静音键）：
+  // 它认为手机音量应由系统控制。但 Android 浏览器其实支持 video.volume，
+  // 完全不给控件体验很差，所以这里补一个自己的滑块。
+  // iOS Safari 的 volume 只读，探测后降级成静音开关 + 提示。
+  const [isMobileUi, setIsMobileUi] = createSignal(false)
+  const [playerRoot, setPlayerRoot] = createSignal<HTMLElement>()
+  const [volOpen, setVolOpen] = createSignal(false)
+  const [volValue, setVolValue] = createSignal(1)
+  const [volMuted, setVolMuted] = createSignal(false)
+  const [volAdjustable, setVolAdjustable] = createSignal(true)
+  onMount(() => {
+    const mq = window.matchMedia("(max-width: 767px)")
+    const update = () => setIsMobileUi(mq.matches)
+    update()
+    mq.addEventListener("change", update)
+    onCleanup(() => mq.removeEventListener("change", update))
+  })
 
   // 播放文件的 VFS 路径：优先使用传入的 filePath，否则 folder_path + "/" + file_name
   const videoPath = () => props.filePath ?? mediaItemPath(props.item)
@@ -704,6 +725,27 @@ const VideoPlayer = (props: {
       if (player) player.loading.show = false
       // 已经起播说明上一个错误是瞬时的（见下方 video:error 里的说明）
       cancelDecodeErrorNotify()
+      // 视频出画就把音乐停掉：底部播放条是全局的，两路声音会叠在一起
+      pauseMusic()
+    })
+
+    // 探测 volume 是否可写：iOS Safari 会忽略赋值（始终返回 1）
+    const wasMuted = player.muted
+    const prevVolume = player.volume
+    player.volume = 0.42
+    const volumeWritable = Math.abs(player.volume - 0.42) < 0.01
+    player.volume = prevVolume
+    player.muted = wasMuted
+    setVolAdjustable(volumeWritable)
+    setVolValue(player.volume)
+    setVolMuted(player.muted)
+    // 音量控件要挂进播放器自己的节点：全屏时 Artplayer 只把 .art-video-player
+    // 放进 Fullscreen，挂在外层容器里会看不见
+    setPlayerRoot(player.template.$player)
+    player.on("video:volumechange", () => {
+      if (!player) return
+      setVolValue(player.volume)
+      setVolMuted(player.muted)
     })
     // 部分浏览器会拦截自动播放：失败时保持暂停，用户点击中间的播放键即可
     player.on("ready", () => {
@@ -901,6 +943,97 @@ const VideoPlayer = (props: {
       <div style={{ flex: "1", position: "relative", background: "#000" }}>
         <div ref={playerContainer} style={{ width: "100%", height: "100%" }} />
       </div>
+
+      {/* 移动端音量：Artplayer 在手机 UA 下把音量面板直接隐藏了（只剩静音键），
+          Android 上 video.volume 是可用的，这里补一个自己的滑块；
+          iOS 只读 volume，降级为静音开关 + 提示。
+          必须 Portal 到播放器节点内部，全屏时才不会被落下。 */}
+      <Show when={isMobileUi() && playerRoot()}>
+        <Portal mount={playerRoot()!}>
+          <div
+            style={{
+              position: "absolute",
+              right: "10px",
+              bottom: "76px",
+              "z-index": "20",
+              display: "flex",
+              "flex-direction": "column",
+              "align-items": "flex-end",
+              gap: "8px",
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Show when={volOpen() && volAdjustable()}>
+              <div
+                style={{
+                  display: "flex",
+                  "align-items": "center",
+                  gap: "10px",
+                  padding: "10px 14px",
+                  "border-radius": "12px",
+                  background: "rgba(0,0,0,0.72)",
+                  border: "1px solid rgba(255,255,255,0.16)",
+                }}
+              >
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={String(Math.round(volValue() * 100))}
+                  aria-label={t("media.video.volume")}
+                  onInput={(e) => {
+                    const p = player
+                    if (!p) return
+                    const v = Number(e.currentTarget.value) / 100
+                    p.muted = v === 0
+                    p.volume = v
+                  }}
+                  style={{ width: "130px" }}
+                />
+                <span
+                  style={{
+                    color: "#e2e8f0",
+                    "font-size": "12px",
+                    width: "34px",
+                    "text-align": "right",
+                  }}
+                >
+                  {Math.round(volValue() * 100)}%
+                </span>
+              </div>
+            </Show>
+            <button
+              onClick={() => {
+                const p = player
+                if (!p) return
+                if (!volAdjustable()) {
+                  p.muted = !p.muted
+                  notify.info(t("media.video.volume_system"))
+                  return
+                }
+                setVolOpen(!volOpen())
+              }}
+              aria-label={t("media.video.volume")}
+              title={t("media.video.volume")}
+              style={{
+                width: "38px",
+                height: "38px",
+                "border-radius": "50%",
+                background: "rgba(0,0,0,0.6)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "#fff",
+                "font-size": "16px",
+                "line-height": "1",
+                cursor: "pointer",
+              }}
+            >
+              {volMuted() || volValue() === 0 ? "🔇" : "🔊"}
+            </button>
+          </div>
+        </Portal>
+      </Show>
     </div>
   )
 }

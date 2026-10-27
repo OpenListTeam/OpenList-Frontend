@@ -199,6 +199,18 @@ export const togglePlay = () => {
   }
 }
 
+/**
+ * 暂停音乐但保留播放列表（不关闭底部播放条）。
+ * 视频开始播放时调用，避免视频声音和音乐叠在一起。
+ */
+export const pauseMusic = () => {
+  const audio = initAudio()
+  if (!audio.paused) audio.pause()
+  if (playerState().playing) {
+    setPlayerState((s) => ({ ...s, playing: false }))
+  }
+}
+
 export const playNext = () => {
   const { playlist, currentIndex, loopMode } = playerState()
   if (playlist.length === 0) return

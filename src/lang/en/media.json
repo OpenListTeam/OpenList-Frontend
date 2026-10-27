@@ -161,7 +161,9 @@
     "unsupported": "The browser cannot play this video (unsupported container or codec). Try a local player instead.",
     "iso_title": "ISO disc images cannot play in the browser",
     "iso_desc": "An ISO is a disc image (UDF / ISO 9660) that browsers cannot demux, so the built-in player can never open it. Use \"Player\" to hand it to VLC / PotPlayer, or download the image and mount it locally.",
-    "iso_no_player": "This file cannot play in the browser — pick a local player or download it first"
+    "iso_no_player": "This file cannot play in the browser — pick a local player or download it first",
+    "volume": "Volume",
+    "volume_system": "iOS does not allow changing volume in the browser — please use the device volume buttons"
   },
   "common": {
     "loading": "Loading...",
