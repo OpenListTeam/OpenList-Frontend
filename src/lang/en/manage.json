@@ -1,4 +1,5 @@
 {
+  "no_permission": "Administrator permission is required",
   "sidemenu": {
     "dashboard": "Dashboard",
     "settings": "Settings",
