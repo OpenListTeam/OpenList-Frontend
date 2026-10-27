@@ -52,9 +52,9 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
   const [saving, setSaving] = createSignal(false)
   const [cfg, setCfg] = createSignal<MediaConfig | null>(null)
   const [storeThumbnail, setStoreThumbnail] = createSignal(false)
-  const [mode, setMode] = createSignal<"base64" | "runtime" | "local">(
-    "runtime",
-  )
+  const [mode, setMode] = createSignal<
+    "base64" | "runtime" | "local" | "samedir"
+  >("runtime")
   const [path, setPath] = createSignal("/imgs")
 
   const parse = (raw?: string): ScraperConfig => {
@@ -79,7 +79,9 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
         const sc = parse(found.scraper_config)
         setStoreThumbnail(sc.store_thumbnail === "true")
         setMode(
-          sc.thumbnail_mode === "local" || sc.thumbnail_mode === "base64"
+          sc.thumbnail_mode === "local" ||
+            sc.thumbnail_mode === "base64" ||
+            sc.thumbnail_mode === "samedir"
             ? sc.thumbnail_mode
             : "runtime",
         )
@@ -173,7 +175,9 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
             <FormLabel>{t("manage.media_lib.thumb_mode")}</FormLabel>
             <Select
               value={mode()}
-              onChange={(v) => setMode(v as "base64" | "local")}
+              onChange={(v) =>
+                setMode(v as "base64" | "runtime" | "local" | "samedir")
+              }
             >
               <SelectTrigger>
                 <SelectValue />
@@ -199,6 +203,12 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
                     </SelectOptionText>
                     <SelectOptionIndicator />
                   </SelectOption>
+                  <SelectOption value="samedir">
+                    <SelectOptionText>
+                      {t("manage.media_lib.mode_samedir")}
+                    </SelectOptionText>
+                    <SelectOptionIndicator />
+                  </SelectOption>
                 </SelectListbox>
               </SelectContent>
             </Select>
@@ -207,7 +217,9 @@ export const ThumbnailSettings = (props: ThumbnailSettingsProps) => {
                 ? t("manage.media_lib.mode_base64_tips")
                 : mode() === "runtime"
                   ? t("manage.media_lib.mode_runtime_tips")
-                  : t("manage.media_lib.mode_local_tips")}
+                  : mode() === "samedir"
+                    ? t("manage.media_lib.mode_samedir_tips")
+                    : t("manage.media_lib.mode_local_tips")}
             </FormHelperText>
           </FormControl>
 
