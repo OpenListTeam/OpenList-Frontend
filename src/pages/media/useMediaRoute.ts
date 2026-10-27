@@ -1,4 +1,5 @@
 import { useSearchParams } from "@solidjs/router"
+import type { Params } from "@solidjs/router"
 
 /**
  * 媒体库的「浏览位置」全部放在 URL 查询参数里，而不是组件内存信号：
@@ -16,18 +17,28 @@ export interface MediaRouteParams {
   id?: string
   ep?: string
   play?: string
-  [key: string]: string | undefined
 }
 
+/**
+ * useSearchParams 的泛型约束是 Params = Record<string, string>。
+ * 这里保留具名键便于阅读，同时用 & Params 让类型满足约束：
+ * 若直接写索引签名 `[key: string]: string | undefined`，
+ * 会因为值可能是 undefined 而不满足 Params（TS2344）。
+ */
+type MediaSearchParams = MediaRouteParams & Params
+
 export const useMediaRoute = () => {
-  const [params, setParams] = useSearchParams<MediaRouteParams>()
+  const [params, setParams] = useSearchParams<MediaSearchParams>()
 
   /** 当前打开的详情条目 ID（没有则在列表页） */
   const selectedId = () => params.id || null
 
   /** 打开详情页：新增一条历史记录，浏览器「返回」回到列表 */
   const openDetail = (id: string | number) => {
-    setParams({ id: String(id), play: undefined, ep: undefined }, { scroll: false })
+    setParams(
+      { id: String(id), play: undefined, ep: undefined },
+      { scroll: false },
+    )
   }
 
   /**
@@ -57,7 +68,10 @@ export const useMediaRoute = () => {
     )
   }
   const stopPlay = () => {
-    setParams({ play: undefined, ep: undefined }, { replace: true, scroll: false })
+    setParams(
+      { play: undefined, ep: undefined },
+      { replace: true, scroll: false },
+    )
   }
 
   return {

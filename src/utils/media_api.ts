@@ -110,10 +110,56 @@ export const adminGetMediaItems = (params: {
     Resp<{ content: MediaItem[]; total: number }>
   >
 
+/** 后台按专辑聚合列出音乐条目 */
+export const adminGetMediaAlbums = (params: {
+  page?: number
+  page_size?: number
+  scan_path_id?: number
+  keyword?: string
+}) =>
+  r.get("/admin/media/albums", { params }) as Promise<
+    Resp<{ content: AlbumInfo[]; total: number }>
+  >
+
+/** 后台列出某专辑下的可编辑曲目（真实条目，含 id） */
+export const adminGetAlbumItems = (params: {
+  album_name: string
+  album_artist: string
+  scan_path_id?: number
+}) =>
+  r.get("/admin/media/album/items", { params }) as Promise<Resp<MediaItem[]>>
+
+/** 后台按专辑批量更新（封面 / 简介 / 年份 / 类型 / 专辑名 / 艺术家） */
+export const adminUpdateMediaAlbum = (payload: {
+  album_name: string
+  album_artist: string
+  scan_path_id?: number
+  new_album_name?: string
+  new_album_artist?: string
+  cover?: string
+  release_date?: string
+  genre?: string
+  plot?: string
+  description?: string
+}) =>
+  r.post("/admin/media/album/update", payload) as Promise<
+    Resp<{ affected: number }>
+  >
+
 /** 更新媒体条目 */
 export const adminUpdateMediaItem = (
   item: Partial<MediaItem> & { id: number },
 ) => r.post("/admin/media/items/update", item) as Promise<Resp<null>>
+
+/** 上传自定义封面（jpg/png/gif/webp，≤8MB），返回 thumb:/... 形式的 cover 值 */
+export const adminUploadMediaCover = (id: number, file: File) => {
+  const form = new FormData()
+  form.append("id", String(id))
+  form.append("file", file)
+  return r.post("/admin/media/items/cover", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }) as Promise<Resp<{ cover: string }>>
+}
 
 /** 删除媒体条目 */
 export const adminDeleteMediaItem = (id: number) =>
@@ -252,6 +298,24 @@ const withForce = (url: string) =>
     ? url
     : `${url}${url.includes("?") ? "&" : "?"}force`
 
+/**
+ * 后端返回的 `/p`、`/d` 是站内相对路径（如 `/p/xxx?sign=...`）。
+ *
+ * 后端在「未配置 site_url 且请求 host 是回环地址」时会故意返回相对地址，
+ * 让浏览器按当前页面 origin 解析（见 PR #3263）。但前后端不同源时
+ * （dev 用 VITE_API_URL，或 OPENLIST_CONFIG.api 指向独立 API 域名），
+ * 浏览器会把相对路径解析到前端站点，拿到的是 index.html：
+ * `<video>` 报 `NotSupportedError: The element has no supported sources`，
+ * 外部播放器 / 下载链接也会指向错误的站点。
+ *
+ * 这里统一补上 API 前缀；已是绝对地址（含 `//` 开头）的原样返回。
+ */
+export const resolveMediaUrl = (url: string) => {
+  if (!url) return url
+  if (/^[a-z][a-z\d+\-.]*:\/\//i.test(url) || url.startsWith("//")) return url
+  return `${api}${url.startsWith("/") ? url : `/${url}`}`
+}
+
 export interface SignedMediaUrls {
   /**
    * 签名后的 /d 直链：由服务端 302 到网盘直链。
@@ -280,8 +344,9 @@ const fetchSignedMediaUrls = async (path: string): Promise<SignedMediaUrls> => {
     if (resp.code === 200 && resp.data?.proxied) {
       // 直链与代理地址一次取回，避免下载按钮再发一次请求
       const urls: SignedMediaUrls = {
-        direct: resp.data.url || fallbackSignedUrls(path).direct,
-        proxied: withForce(resp.data.proxied),
+        direct:
+          resolveMediaUrl(resp.data.url) || fallbackSignedUrls(path).direct,
+        proxied: resolveMediaUrl(withForce(resp.data.proxied)),
       }
       signedProxyCache.set(path, { urls, at: Date.now() })
       trimSignedProxyCache()

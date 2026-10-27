@@ -7,6 +7,7 @@ export interface EpisodeInfo {
   file_name: string // 原始文件名（含扩展名）
   index: number // 序号，默认0，文件名开头有数字则取该数字
   title: string // 选集标题（去掉序号后的文件名，不含扩展名）
+  season?: number // 季号，0/缺省表示未识别（按第 1 季展示）
 }
 
 export interface MediaItem {
@@ -89,6 +90,11 @@ export interface MediaScanPath {
   name: string
   path: string
   path_merge: boolean
+  /**
+   * 合并深度：0 = 自动；1 = 剧名（扫描根的直接子文件夹）下面的第一层作为条目
+   * （如 /电视剧/群星/第一季、第二季），2 = 再往下一层。
+   */
+  merge_depth?: number
   type_tag: string // 类型标签：电影、电视剧等
   content_tags: string // 内容标签：喜剧、惊悚等（逗号分隔）
   enable_scrape: boolean
