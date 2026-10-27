@@ -127,6 +127,11 @@ export const TransferSeedGenerator = () => {
   const [directFiles, setDirectFiles] = createSignal<string[]>([])
   const [outputPath, setOutputPath] = createSignal("")
   const [seedName, setSeedName] = createSignal("")
+  // 生成方式：默认合并成一个种子；拆分时每个文件一个种子
+  const [splitMode, setSplitMode] = createSignal(false)
+  // 目录展开后是否保留目录结构（默认不保留，拍平成文件名）
+  const [preserveStructure, setPreserveStructure] = createSignal(false)
+  const [hasDir, setHasDir] = createSignal(false)
   const [fileComments, setFileComments] = createSignal<Record<string, string>>(
     {},
   )
@@ -237,8 +242,20 @@ export const TransferSeedGenerator = () => {
     }
   }
 
-  const openHandler = (payload: { paths: string[] }) => {
+  // 默认种子名：单文件/单目录用它的名字，多选合并固定 "torrent"（与后端一致）
+  const defaultSeedName = () => {
+    const list = paths()
+    if (list.length !== 1) return "torrent"
+    const base = list[0].replace(/\/+$/, "").split("/").pop() || list[0]
+    const dot = base.lastIndexOf(".")
+    return dot > 0 ? base.slice(0, dot) : base
+  }
+
+  const openHandler = (payload: { paths: string[]; hasDir?: boolean }) => {
     setPaths(payload.paths)
+    setHasDir(!!payload.hasDir)
+    setSplitMode(false)
+    setPreserveStructure(false)
     setOutputPath(pathname())
     setSeedName("")
     setCapabilities(null)
@@ -272,6 +289,9 @@ export const TransferSeedGenerator = () => {
         direct_files: directFiles(),
         output_path: outputPath(),
         name: seedName().trim() || undefined,
+        // 目录展开后是否保留结构；拆分模式每个文件单独一个种子
+        preserve_structure: preserveStructure(),
+        split: splitMode(),
       })
       handleResp(resp, (data: SeedGenerateResult) => {
         if (data?.task || data?.async) {
@@ -503,10 +523,18 @@ export const TransferSeedGenerator = () => {
                 </Text>
                 <Input
                   id="transfer-seed-name"
-                  placeholder={t("home.transfer_seed.seed_name_placeholder")}
+                  placeholder={defaultSeedName()}
                   value={seedName()}
+                  disabled={splitMode()}
                   onInput={(e) => setSeedName(e.currentTarget.value)}
                 />
+                <Text fontSize="$xs" color="$neutral10" mt="$1">
+                  {splitMode()
+                    ? t("home.transfer_seed.seed_name_split_hint")
+                    : t("home.transfer_seed.seed_name_tips", {
+                        name: defaultSeedName(),
+                      })}
+                </Text>
               </Box>
               <Box>
                 <Text fontSize="$sm" mb="$1">
@@ -518,6 +546,49 @@ export const TransferSeedGenerator = () => {
                   onChange={setOutputPath}
                 />
               </Box>
+            </SimpleGrid>
+
+            <SimpleGrid columns={{ "@initial": 1, "@md": 2 }} gap="$3">
+              <Box>
+                <Text fontSize="$sm" mb="$1">
+                  {t("home.transfer_seed.generate_mode")}
+                </Text>
+                <SelectWrapper
+                  value={splitMode() ? "split" : "merge"}
+                  onChange={(value) => setSplitMode(value === "split")}
+                  options={[
+                    {
+                      value: "merge",
+                      label: t("home.transfer_seed.mode_merge"),
+                    },
+                    {
+                      value: "split",
+                      label: t("home.transfer_seed.mode_split"),
+                    },
+                  ]}
+                />
+                <Text fontSize="$xs" color="$neutral10" mt="$1">
+                  {splitMode()
+                    ? t("home.transfer_seed.mode_split_tips")
+                    : t("home.transfer_seed.mode_merge_tips")}
+                </Text>
+              </Box>
+              <Show when={hasDir()}>
+                <Box>
+                  <Checkbox
+                    checked={preserveStructure()}
+                    disabled={splitMode()}
+                    onChange={(event) =>
+                      setPreserveStructure(event.currentTarget.checked)
+                    }
+                  >
+                    {t("home.transfer_seed.preserve_structure")}
+                  </Checkbox>
+                  <Text fontSize="$xs" color="$neutral10">
+                    {t("home.transfer_seed.preserve_structure_tips")}
+                  </Text>
+                </Box>
+              </Show>
             </SimpleGrid>
 
             <Box>

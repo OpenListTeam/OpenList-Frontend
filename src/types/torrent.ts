@@ -126,6 +126,10 @@ export interface SeedGenerateRequest {
   share_files?: string[]
   direct_files?: string[]
   output_path?: string
+  /** 目录展开后保留目录结构；默认 false（拍平成文件名） */
+  preserve_structure?: boolean
+  /** 每个文件生成一个种子；默认 false（全部合并成一个） */
+  split?: boolean
 }
 
 export interface SeedArtifact {
