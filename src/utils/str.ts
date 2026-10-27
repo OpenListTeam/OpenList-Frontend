@@ -98,6 +98,24 @@ export const convertURL = (scheme: string, args: ConvertURLArgs) => {
   return ans
 }
 
+/**
+ * 安全解析 JSON：来源可能是用户/旧版本写入的 localStorage，非法内容不应抛异常。
+ * 解析失败或结果不是普通对象时返回兜底值（默认空对象）。
+ */
+export function safeJsonParse<T = Record<string, any>>(
+  raw: string | null | undefined,
+  fallback: T = {} as T,
+): T {
+  if (!raw) return fallback
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed === null || typeof parsed !== "object") return fallback
+    return parsed as T
+  } catch {
+    return fallback
+  }
+}
+
 export const strToRegExp = (str: string) => {
   str = str.trim()
   let pattern = str.replace(/^\/(.*)\/([a-z]*)$/, "$1")

@@ -28,6 +28,8 @@ export type ItemProps = SettingItem & {
   onDelete?: () => void
   hideLabel?: boolean
   w?: string
+  /** 由父组件控制的只读状态（例如依赖其它设置项时） */
+  readOnly?: boolean
 }
 
 const Item = (props: ItemProps) => {
@@ -59,7 +61,7 @@ const Item = (props: ItemProps) => {
             id={props.key}
             value={props.value}
             onInput={(e) => props.onChange?.(e.currentTarget.value)}
-            readOnly={props.flag === Flag.READONLY}
+            readOnly={props.readOnly || props.flag === Flag.READONLY}
           />
         </Match>
         <Match when={props.type === Type.Bool}>
@@ -69,7 +71,7 @@ const Item = (props: ItemProps) => {
             onChange={(e: { currentTarget: HTMLInputElement }) =>
               props.onChange?.(e.currentTarget?.checked ? "true" : "false")
             }
-            readOnly={props.flag === Flag.READONLY}
+            readOnly={props.readOnly || props.flag === Flag.READONLY}
           />
         </Match>
         <Match when={props.type === Type.Text}>
@@ -77,7 +79,7 @@ const Item = (props: ItemProps) => {
             id={props.key}
             value={props.value}
             onChange={(e) => props.onChange?.(e.currentTarget.value)}
-            readOnly={props.flag === Flag.READONLY}
+            readOnly={props.readOnly || props.flag === Flag.READONLY}
           />
         </Match>
         <Match when={props.type === Type.Select}>
@@ -85,7 +87,7 @@ const Item = (props: ItemProps) => {
             id={props.key}
             value={props.value}
             onChange={(e) => props.onChange?.(e)}
-            readOnly={props.flag === Flag.READONLY}
+            readOnly={props.readOnly || props.flag === Flag.READONLY}
           >
             <SelectTrigger>
               <SelectPlaceholder>{t("global.choose")}</SelectPlaceholder>

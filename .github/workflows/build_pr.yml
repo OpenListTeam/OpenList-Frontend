@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
-          node-version: "24.21.0"
+          node-version: "24.22.1"
           registry-url: "https://registry.npmjs.org"
 
       - uses: pnpm/action-setup@v6
@@ -38,6 +38,10 @@ jobs:
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
           # OPENLIST_FRONTEND_BUILD_MODE: dev
           # OPENLIST_FRONTEND_BUILD_COMPRESS: false
+
+      # 单测依赖已由 build.sh 的 pnpm install 安装，放在构建之后执行
+      - name: Unit tests
+        run: pnpm test
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v7
