@@ -190,6 +190,8 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
   // 音乐默认按专辑聚合，切到「按曲目」才展示平铺列表
   const [albumView, setAlbumView] = createSignal(true)
   const albumMode = () => props.mediaType === "music" && albumView()
+  // 保存单曲后自增，通知专辑视图重新聚合（否则封面/曲目数还是旧值）
+  const [albumRefreshToken, setAlbumRefreshToken] = createSignal(0)
 
   // 搜索防抖
   let searchTimer: ReturnType<typeof setTimeout> | undefined
@@ -717,6 +719,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
       setShowEditModal(false)
       setEditingItem(null)
       refetchItems()
+      setAlbumRefreshToken((n) => n + 1)
     } else {
       notify.error(t("media.admin.save_failed") + ": " + resp.message)
     }
@@ -1247,6 +1250,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
               pageSize={pageSize()}
               getScanPathName={getScanPathName}
               onEditTrack={openEditItem}
+              refreshToken={albumRefreshToken()}
             />
           </Show>
 

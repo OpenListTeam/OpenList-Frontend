@@ -40,6 +40,7 @@ import {
   adminGetAlbumItems,
   adminGetMediaAlbums,
   adminUpdateMediaAlbum,
+  adminUpdateMediaItem,
   adminUploadMediaCover,
 } from "~/utils/media_api"
 
@@ -50,6 +51,8 @@ interface MediaAlbumTableProps {
   getScanPathName: (id: number) => string
   /** 打开单曲编辑弹窗（复用媒体条目的编辑表单） */
   onEditTrack: (item: MediaItem) => void
+  /** 外部刷新令牌：父组件保存条目后自增，触发专辑列表重新拉取 */
+  refreshToken?: number
 }
 
 /**
@@ -71,6 +74,10 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
   const [saving, setSaving] = createSignal(false)
   const [uploading, setUploading] = createSignal(false)
   const [firstTrackId, setFirstTrackId] = createSignal(0)
+  // 上传封面会立刻写进首曲（接口按单条生效）；用户取消弹窗时要改回去，
+  // 否则这张专辑会变成「只有一首有封面」的不一致状态
+  const [originalCover, setOriginalCover] = createSignal("")
+  const [uploadedCover, setUploadedCover] = createSignal(false)
   const [draft, setDraft] = createSignal({
     name: "",
     artist: "",
@@ -82,10 +89,11 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
 
   const albumKey = (al: AlbumInfo) => `${al.album_name}\u0000${al.album_artist}`
 
-  // 筛选条件变化时回到第一页
+  // 筛选条件或每页数量变化时回到第一页（否则可能停在不存在的页上显示空白）
   createEffect(() => {
     props.scanPathId
     props.keyword
+    props.pageSize
     setPage(1)
     setExpandedKey(null)
   })
@@ -96,6 +104,8 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
       pageSize: props.pageSize,
       scanPathId: props.scanPathId,
       keyword: props.keyword,
+      // 父组件保存单曲后自增，用于刷新专辑聚合（封面 / 曲目数）
+      token: props.refreshToken ?? 0,
     }),
     async (q) => {
       const resp = await adminGetMediaAlbums({
@@ -148,6 +158,8 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
       plot: "",
     })
     setFirstTrackId(0)
+    setOriginalCover(al.cover)
+    setUploadedCover(false)
     setShowModal(true)
     // 取首曲作为「曲目号/类型/简介」的默认值，同时拿到上传封面时要用的 item id
     const resp = await adminGetAlbumItems({
@@ -186,12 +198,28 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
       const resp = await adminUploadMediaCover(id, file)
       if (resp.code === 200 && resp.data?.cover) {
         setDraft((d) => ({ ...d, cover: resp.data.cover }))
+        setUploadedCover(true)
         notify.success(t("media.admin.cover_uploaded"))
       } else {
         notify.error(t("media.admin.cover_upload_failed") + ": " + resp.message)
       }
     } finally {
       setUploading(false)
+    }
+  }
+
+  // 关闭弹窗：如果本次已经上传过封面但没保存，把首曲的封面改回去
+  const closeModal = async () => {
+    setShowModal(false)
+    if (!uploadedCover()) return
+    setUploadedCover(false)
+    const id = firstTrackId()
+    if (!id) return
+    try {
+      // 更新接口是 PATCH 语义，只传 cover 不会动其它字段
+      await adminUpdateMediaItem({ id, cover: originalCover() })
+    } catch {
+      /* 回滚失败不阻塞关闭，用户可再上传一次覆盖 */
     }
   }
 
@@ -215,6 +243,7 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
         notify.success(
           t("media.admin.album_saved", { count: resp.data.affected }),
         )
+        setUploadedCover(false)
         setShowModal(false)
         setEditing(null)
         setExpandedKey(null)
@@ -466,7 +495,7 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
       </Show>
 
       {/* 专辑编辑弹窗 */}
-      <Modal opened={showModal()} onClose={() => setShowModal(false)} size="xl">
+      <Modal opened={showModal()} onClose={closeModal} size="xl">
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>{t("media.admin.edit_album")}</ModalHeader>
@@ -593,7 +622,7 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
           </ModalBody>
           <ModalFooter>
             <HStack spacing="$2">
-              <Button variant="ghost" onClick={() => setShowModal(false)}>
+              <Button variant="ghost" onClick={closeModal}>
                 {t("global.cancel")}
               </Button>
               <Button
