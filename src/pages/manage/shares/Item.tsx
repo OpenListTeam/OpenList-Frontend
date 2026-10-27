@@ -136,7 +136,7 @@ const Item = (props: ItemProps) => {
           <HopeSwitch
             id={props.name}
             readOnly={props.readonly}
-            defaultChecked={props.value as boolean}
+            checked={props.value as boolean}
             invalid={!props.valid}
             onChange={
               props.type === Type.Bool
