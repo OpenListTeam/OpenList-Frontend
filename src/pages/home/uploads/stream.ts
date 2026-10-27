@@ -1,7 +1,7 @@
 import { password } from "~/store"
 import { EmptyResp } from "~/types"
 import { r } from "~/utils"
-import { SetUpload, Upload } from "./types"
+import { seedUploadHeaders, SetUpload, Upload } from "./types"
 import { calculateHash } from "./util"
 export const StreamUpload: Upload = async (
   uploadPath: string,
@@ -10,6 +10,7 @@ export const StreamUpload: Upload = async (
   asTask = false,
   overwrite = false,
   rapid = false,
+  seedOptions,
 ): Promise<undefined> => {
   let oldTimestamp = new Date().valueOf()
   let oldLoaded = 0
@@ -20,6 +21,7 @@ export const StreamUpload: Upload = async (
     "Last-Modified": file.lastModified,
     Password: password(),
     Overwrite: overwrite.toString(),
+    ...seedUploadHeaders(seedOptions),
   }
   if (rapid) {
     setUpload("status", "hashing")

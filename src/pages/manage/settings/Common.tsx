@@ -9,13 +9,17 @@ import {
 } from "~/utils"
 import { createStore } from "solid-js/store"
 import { Button, HStack, VStack } from "@hope-ui/solid"
-import { createSignal, Index } from "solid-js"
+import { createMemo, createSignal, Index } from "solid-js"
 import { Item } from "./SettingItem"
 import { ResponsiveGrid } from "../common/ResponsiveGrid"
 import { setSettings as renewSettings } from "~/store"
 
 export interface CommonSettingsProps {
   group: Group
+  /** 只渲染指定的设置项（不传则渲染整个分组），用于把媒体库设置拆成多个页面 */
+  keys?: string[]
+  /** 根据其它设置项的当前值决定某一项是否只读 */
+  readOnlyKey?: (key: string, all: SettingItem[]) => boolean
 }
 const CommonSettings = (props: CommonSettingsProps) => {
   const t = useT()
@@ -37,13 +41,22 @@ const CommonSettings = (props: CommonSettingsProps) => {
     r.post(`/admin/setting/default?group=${props.group}`),
   )
   const [loading, setLoading] = createSignal(false)
+  const visible = createMemo(() => {
+    if (!props.keys?.length) return settings
+    // 按调用方给定的顺序输出，保证设置项可以自由排序
+    const map = new Map(settings.map((item) => [item.key, item]))
+    return props.keys
+      .map((key) => map.get(key))
+      .filter((item): item is SettingItem => !!item)
+  })
   return (
     <VStack w="$full" alignItems="start" spacing="$2">
       <ResponsiveGrid>
-        <Index each={settings}>
+        <Index each={visible()}>
           {(item) => (
             <Item
               {...item()}
+              readOnly={props.readOnlyKey?.(item().key, settings) === true}
               onChange={(val) => {
                 setSettings((i) => item().key === i.key, "value", val)
               }}

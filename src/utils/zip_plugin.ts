@@ -1,5 +1,6 @@
 import { PluginItem, PluginType } from "~/types"
 import { loadScriptIIFE } from "./load_external"
+import { DEFAULT_ZIP_LIMITS, ZipLimitError, extractZipNative } from "./zip_read"
 
 export interface ExtractedPluginPackage {
   manifest: Partial<PluginItem>
@@ -162,92 +163,12 @@ async function extractZipEntries(
   try {
     return await extractZipNative(buffer)
   } catch (err) {
-    // Fallback to fflate via CDN if native decompression encounters an edge case
+    // 超限错误必须直接抛出：下面的 fflate 兜底没有任何大小上限，
+    // 回退过去等于把压缩炸弹防护整个绕过（还会额外拉一次 CDN 脚本）。
+    if (err instanceof ZipLimitError) throw err
+    // 只对「原生解压不支持该 zip」这类环境问题回退
     return await extractZipFallback(buffer)
   }
-}
-
-async function extractZipNative(
-  buffer: ArrayBuffer,
-): Promise<Record<string, Uint8Array>> {
-  const view = new DataView(buffer)
-  const length = buffer.byteLength
-  const files: Record<string, Uint8Array> = {}
-
-  // 1. Locate End of Central Directory record (EOCD)
-  let eocdOffset = -1
-  for (let i = length - 22; i >= Math.max(0, length - 65557); i--) {
-    if (view.getUint32(i, true) === 0x06054b50) {
-      eocdOffset = i
-      break
-    }
-  }
-  if (eocdOffset === -1) {
-    throw new Error(
-      "Invalid ZIP file: End of Central Directory signature not found",
-    )
-  }
-
-  const cdCount = view.getUint16(eocdOffset + 10, true)
-  const cdOffset = view.getUint32(eocdOffset + 16, true)
-
-  let currentCdOffset = cdOffset
-  for (let i = 0; i < cdCount; i++) {
-    if (view.getUint32(currentCdOffset, true) !== 0x02014b50) {
-      break
-    }
-    const compressionMethod = view.getUint16(currentCdOffset + 10, true)
-    const compressedSize = view.getUint32(currentCdOffset + 20, true)
-    const uncompressedSize = view.getUint32(currentCdOffset + 24, true)
-    const fileNameLength = view.getUint16(currentCdOffset + 28, true)
-    const extraFieldLength = view.getUint16(currentCdOffset + 30, true)
-    const fileCommentLength = view.getUint16(currentCdOffset + 32, true)
-    const localHeaderOffset = view.getUint32(currentCdOffset + 42, true)
-
-    const fileNameBytes = new Uint8Array(
-      buffer,
-      currentCdOffset + 46,
-      fileNameLength,
-    )
-    const fileName = new TextDecoder("utf-8").decode(fileNameBytes)
-
-    currentCdOffset +=
-      46 + fileNameLength + extraFieldLength + fileCommentLength
-
-    // Skip directories
-    if (fileName.endsWith("/")) continue
-
-    // Read local header to find data offset
-    if (view.getUint32(localHeaderOffset, true) !== 0x04034b50) {
-      continue
-    }
-    const localFileNameLen = view.getUint16(localHeaderOffset + 26, true)
-    const localExtraLen = view.getUint16(localHeaderOffset + 28, true)
-    const dataOffset = localHeaderOffset + 30 + localFileNameLen + localExtraLen
-
-    const compressedData = new Uint8Array(buffer, dataOffset, compressedSize)
-
-    if (compressionMethod === 0) {
-      // Stored / Uncompressed
-      files[fileName] = new Uint8Array(compressedData)
-    } else if (compressionMethod === 8) {
-      // Deflate
-      if (typeof DecompressionStream !== "undefined") {
-        const ds = new DecompressionStream("deflate-raw")
-        const writer = ds.writable.getWriter()
-        writer.write(compressedData)
-        writer.close()
-        const decompressedStream = await new Response(ds.readable).arrayBuffer()
-        files[fileName] = new Uint8Array(decompressedStream)
-      } else {
-        throw new Error(
-          "DecompressionStream is not supported in this environment",
-        )
-      }
-    }
-  }
-
-  return files
 }
 
 async function extractZipFallback(
@@ -264,12 +185,54 @@ async function extractZipFallback(
     throw new Error("Failed to load ZIP extraction module")
   }
 
+  // 兜底路径必须和原生解压走同一套上限，否则压缩炸弹正好可以从这里绕过：
+  // fflate 会按中央目录声明的 originalSize 分配缓冲区，所以按声明值过滤即可挡住。
+  const limits = DEFAULT_ZIP_LIMITS
+  let seen = 0
+  let total = 0
+  let skipped = 0
+
   return new Promise((resolve, reject) => {
     fflate.unzip(
       new Uint8Array(buffer),
+      {
+        filter: (file: { originalSize: number }) => {
+          seen += 1
+          if (seen > limits.maxEntries) {
+            skipped += 1
+            return false
+          }
+          if (file.originalSize > limits.maxEntryBytes) {
+            skipped += 1
+            return false
+          }
+          if (total + file.originalSize > limits.maxTotalBytes) {
+            skipped += 1
+            return false
+          }
+          total += file.originalSize
+          return true
+        },
+      },
       (err: any, unzipped: Record<string, Uint8Array>) => {
-        if (err) reject(err)
-        else resolve(unzipped)
+        if (err) {
+          reject(err)
+          return
+        }
+        if (skipped > 0) {
+          // 插件包不该静默丢文件：超限直接报错，让用户知道需要精简插件
+          reject(
+            new ZipLimitError(
+              `插件包中有 ${skipped} 个条目超过解压上限（单条 ${Math.round(
+                limits.maxEntryBytes / 1024 / 1024,
+              )}MB / 总量 ${Math.round(
+                limits.maxTotalBytes / 1024 / 1024,
+              )}MB）`,
+            ),
+          )
+          return
+        }
+        resolve(unzipped)
       },
     )
   })

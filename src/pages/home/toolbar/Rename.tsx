@@ -1,4 +1,4 @@
-import { Checkbox, createDisclosure } from "@hope-ui/solid"
+import { Checkbox, createDisclosure, VStack } from "@hope-ui/solid"
 import { createSignal, onCleanup, Show } from "solid-js"
 import { ModalInput } from "~/components"
 import { useFetch, usePath, useRouter, useT } from "~/hooks"
@@ -12,6 +12,7 @@ export const Rename = () => {
   const { pathname } = useRouter()
   const { refresh } = usePath()
   const [overwrite, setOverwrite] = createSignal(false)
+  const [followSeed, setFollowSeed] = createSignal(false)
   const handler = (name: string) => {
     if (name === "rename") {
       if (!oneChecked()) {
@@ -20,6 +21,7 @@ export const Rename = () => {
       }
       onOpen()
       setOverwrite(false)
+      setFollowSeed(false)
     }
   }
   bus.on("tool", handler)
@@ -32,15 +34,21 @@ export const Rename = () => {
         title="home.toolbar.input_new_name"
         validateFilename={true}
         footerSlot={
-          <Checkbox
-            mr="auto"
-            checked={overwrite()}
-            onChange={() => {
-              setOverwrite(!overwrite())
-            }}
-          >
-            {t("home.conflict_policy.overwrite_existing")}
-          </Checkbox>
+          <VStack mr="auto" spacing="$2" alignItems="start">
+            <Checkbox
+              checked={overwrite()}
+              onChange={() => setOverwrite(!overwrite())}
+            >
+              {t("home.conflict_policy.overwrite_existing")}
+            </Checkbox>
+            <Checkbox
+              checked={followSeed()}
+              disabled={selectedObjs()[0]?.is_dir}
+              onChange={() => setFollowSeed(!followSeed())}
+            >
+              {t("home.toolbar.follow_seed")}
+            </Checkbox>
+          </VStack>
         }
         isRenamingFile={!selectedObjs()[0].is_dir}
         opened={isOpen()}
@@ -52,6 +60,7 @@ export const Rename = () => {
             pathJoin(pathname(), selectedObjs()[0].name),
             name,
             overwrite(),
+            followSeed(),
           )
           handleRespWithNotifySuccess(resp, () => {
             refresh()
