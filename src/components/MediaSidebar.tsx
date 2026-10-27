@@ -34,6 +34,8 @@ import {
   TbCheck,
   TbChevronLeft,
   TbFolder,
+  TbLayoutSidebarLeftCollapse,
+  TbLayoutSidebarLeftExpand,
   TbLogin,
   TbLogout,
   TbMoon,
@@ -198,12 +200,14 @@ export const MediaSidebar = () => {
             <Text fontWeight="$semibold" fontSize="$sm" color="$neutral11">
               {t("home.media.title")}
             </Text>
+            {/* 桌面端顶栏已有同一个开关，这里只在移动端抽屉里保留关闭按钮 */}
             <Button
               size="xs"
               variant="ghost"
               colorScheme="neutral"
               px="$1"
               minW="0"
+              display={{ "@initial": "inline-flex", "@md": "none" }}
               aria-label="collapse media sidebar"
               onClick={() => setMediaSidebarOpen(false)}
             >
@@ -512,50 +516,27 @@ export const MediaSidebarFloatingTrigger = () => {
 export const MediaSidebarTrigger = () => {
   return (
     <Show when={mediaEnabled()}>
-      <Button
-        variant="ghost"
-        colorScheme="neutral"
-        size="sm"
-        px="$2"
-        onClick={() => setMediaSidebarOpen(!mediaSidebarOpen())}
-        aria-label="media sidebar"
-      >
-        <Icon
-          as={() => (
-            <Box
-              as="span"
-              display="inline-flex"
-              flexDirection="column"
-              justifyContent="center"
-              gap="3px"
-              w="$4"
-            >
-              <Box
-                as="span"
-                h="2px"
-                w="$4"
-                bgColor="currentColor"
-                rounded="$full"
-              />
-              <Box
-                as="span"
-                h="2px"
-                w="$4"
-                bgColor="currentColor"
-                rounded="$full"
-              />
-              <Box
-                as="span"
-                h="2px"
-                w="$4"
-                bgColor="currentColor"
-                rounded="$full"
-              />
-            </Box>
-          )}
-          boxSize="$5"
-        />
-      </Button>
+      {/* 用现成图标替代手绘三条横线：之前那三个 Box 在 1.5x 屏上粗细不一半像素模糊，
+          和侧栏右上角的收起按钮功能重复，这里统一成「展开/收起」语义的图标 */}
+      <Tooltip label={mediaSidebarOpen() ? "收起媒体库侧栏" : "展开媒体库侧栏"}>
+        <Button
+          variant="ghost"
+          colorScheme="neutral"
+          size="sm"
+          px="$2"
+          onClick={() => setMediaSidebarOpen(!mediaSidebarOpen())}
+          aria-label="media sidebar"
+        >
+          <Icon
+            as={
+              mediaSidebarOpen()
+                ? TbLayoutSidebarLeftCollapse
+                : TbLayoutSidebarLeftExpand
+            }
+            boxSize="$5"
+          />
+        </Button>
+      </Tooltip>
     </Show>
   )
 }

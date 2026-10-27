@@ -33,7 +33,7 @@ import {
   setMediaFavorite,
 } from "~/utils/media_api"
 import type { MediaItem, EpisodeInfo } from "~/types"
-import { getMediaName, parseAuthors, parseEpisodes } from "~/types"
+import { getMediaName, isDiscImage, parseAuthors, parseEpisodes } from "~/types"
 import { base_path, ext, notify } from "~/utils"
 import { useT } from "~/hooks"
 import { OpenWithPlayer } from "~/components/OpenWithPlayer"
@@ -953,6 +953,10 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
   // 原子地设置「播放哪一集」+「进入播放」，避免两次分开的 URL 写入互相覆盖
   const playEpisode = (ep: EpisodeInfo | null) => {
     if (!ep) return route.startPlay(0)
+    if (isDiscImage(ep.file_name)) {
+      notify.error(t("media.video.iso_title"))
+      return
+    }
     const pos = episodes().findIndex((e) => e.file_name === ep.file_name)
     route.startPlay(pos >= 0 ? pos + 1 : 0)
   }
@@ -963,6 +967,15 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
     const pos = route.episode()
     if (!pos || !item()) return null
     return episodes()[pos - 1] ?? null
+  })
+  // ISO 光盘镜像：浏览器没有 UDF / ISO 9660 解复用能力，
+  // 站内播放器（<video> / mediabunny / HLS）必然失败，提前拦住并引导到本地播放器。
+  // 注意要放在 currentEpisode 之后：createMemo 是立即执行的，提前引用会命中 TDZ。
+  const discPlayBlocked = createMemo(() => {
+    const ep = currentEpisode()
+    if (ep) return isDiscImage(ep.file_name)
+    const it = item()
+    return !!it && !it.is_folder && isDiscImage(it.file_name)
   })
   const [favorite, setFavorite] = createSignal(false)
 
@@ -1271,8 +1284,8 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                   </div>
                 </Show>
 
-                {/* 播放器（全屏覆盖层） */}
-                <Show when={showPlayer()}>
+                {/* 播放器（全屏覆盖层）：ISO 镜像不进站内播放器 */}
+                <Show when={showPlayer() && !discPlayBlocked()}>
                   <VideoPlayer
                     item={data()}
                     filePath={playFilePath()}
@@ -1280,6 +1293,93 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                     episodeIndex={currentEpisode()?.index ?? 0}
                     onClose={closePlayer}
                   />
+                </Show>
+
+                {/* ISO 原盘：浏览器没有 UDF 解复用能力，直接给出可操作的替代方案，
+                    而不是让播放器抛一个用户看不懂的解码错误 */}
+                <Show when={showPlayer() && discPlayBlocked()}>
+                  <div
+                    style={{
+                      position: "fixed",
+                      inset: "0",
+                      "z-index": mediaOverlayZ,
+                      background: "rgba(0,0,0,0.92)",
+                      display: "flex",
+                      "align-items": "center",
+                      "justify-content": "center",
+                      padding: "24px",
+                    }}
+                    onClick={(e) => {
+                      if (e.target === e.currentTarget) closePlayer()
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "100%",
+                        "max-width": "520px",
+                        padding: "24px",
+                        "border-radius": "14px",
+                        background: isDark() ? "rgba(30,41,59,0.96)" : "#fff",
+                        border: `1px solid ${
+                          isDark()
+                            ? "rgba(255,255,255,0.12)"
+                            : "rgba(0,0,0,0.08)"
+                        }`,
+                        color: isDark() ? "#e2e8f0" : "#1e293b",
+                      }}
+                    >
+                      <div
+                        style={{
+                          "font-size": "18px",
+                          "font-weight": "600",
+                          "margin-bottom": "10px",
+                        }}
+                      >
+                        💿 {t("media.video.iso_title")}
+                      </div>
+                      <p
+                        style={{
+                          "font-size": "14px",
+                          "line-height": "1.7",
+                          color: isDark() ? "#94a3b8" : "#475569",
+                          margin: "0 0 16px",
+                        }}
+                      >
+                        {t("media.video.iso_desc")}
+                      </p>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "10px",
+                          "flex-wrap": "wrap",
+                          "align-items": "center",
+                        }}
+                      >
+                        <MediaPlayButton
+                          itemId={data().id}
+                          episode={currentEpisode()?.index ?? 0}
+                          name={currentEpisode()?.file_name || data().file_name}
+                          browserUnsupported
+                          unsupportedHint={t("media.video.iso_no_player")}
+                          onBrowserPlay={() => {
+                            /* 镜像文件没有站内播放路径 */
+                          }}
+                        />
+                        <button
+                          onClick={() => downloadStrm(data())}
+                          style={mediaSecondaryBtn(isDark())}
+                        >
+                          下载 STRM
+                        </button>
+                        <button
+                          onClick={closePlayer}
+                          style={mediaSecondaryBtn(isDark())}
+                        >
+                          {t("media.player.close")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </Show>
 
                 {/* 无选集：直接显示播放按钮 */}
@@ -1296,6 +1396,8 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                     <MediaPlayButton
                       itemId={data().id}
                       name={data().file_name}
+                      browserUnsupported={isDiscImage(data().file_name)}
+                      unsupportedHint={t("media.video.iso_no_player")}
                       onBrowserPlay={() => {
                         playEpisode(null)
                       }}
@@ -1370,7 +1472,11 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                                       onClick={() => {
                                         playEpisode(ep)
                                       }}
-                                      title={ep.file_name}
+                                      title={
+                                        isDiscImage(ep.file_name)
+                                          ? `${ep.file_name}\n${t("media.video.iso_title")}`
+                                          : ep.file_name
+                                      }
                                       style={{
                                         background: isActive()
                                           ? accentGradient()
@@ -1399,7 +1505,8 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
                                           : "none",
                                       }}
                                     >
-                                      ▶ {label}
+                                      {isDiscImage(ep.file_name) ? "💿" : "▶"}{" "}
+                                      {label}
                                     </button>
                                   )
                                 }}

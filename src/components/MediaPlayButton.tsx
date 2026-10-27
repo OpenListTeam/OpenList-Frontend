@@ -30,6 +30,13 @@ interface MediaPlayButtonProps {
   name?: string
   /** 选择「浏览器」时执行：通常是打开站内播放器 */
   onBrowserPlay: () => void
+  /**
+   * 该文件无法在浏览器内播放（如 .iso 光盘镜像）：
+   * 下拉里不再出现「浏览器播放」，默认直接走本地播放器。
+   */
+  browserUnsupported?: boolean
+  /** browserUnsupported 时给用户的说明文案 */
+  unsupportedHint?: string
 }
 
 const iconOf = (id: string) => {
@@ -62,11 +69,21 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
     }
   })()
 
-  const isAvailable = (id: string) =>
-    id === "browser" || players().some((p) => p.id === id)
+  // 可选目标：不支持浏览器播放时直接剔除，避免用户选中后又报错
+  const targets = () => [
+    ...(props.browserUnsupported
+      ? []
+      : [{ id: "browser", name: "浏览器播放", browser: true }]),
+    ...players().map((p) => ({ id: p.id, name: p.name, browser: false })),
+  ]
+
+  const isAvailable = (id: string) => targets().some((t) => t.id === id)
 
   const [target, setTarget] = createSignal(
-    isAvailable(stored) ? stored : "browser",
+    // 上次选的是「浏览器」但这个文件不支持时，退到第一个本地播放器
+    isAvailable(stored)
+      ? stored
+      : (targets().find((t) => !t.browser)?.id ?? "browser"),
   )
   const [open, setOpen] = createSignal(false)
   const [directURL, setDirectURL] = createSignal<string | null>(null)
@@ -75,7 +92,11 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
   let rootRef: HTMLDivElement | undefined
 
   const current = () => players().find((p) => p.id === target())
-  const label = () => (target() === "browser" ? "浏览器播放" : "播放器播放")
+  const label = () => {
+    if (target() !== "browser") return "播放器播放"
+    // 不支持浏览器播放又没有本地播放器时，按钮语义是「去选一个播放器」
+    return props.browserUnsupported ? "选择播放器" : "浏览器播放"
+  }
 
   const resolveURL = async (): Promise<string | null> => {
     if (props.path) {
@@ -150,11 +171,26 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
 
   const play = async () => {
     if (target() === "browser") {
+      // 兜底：即使状态被别处改回 browser，也不让不支持的文件进站内播放器
+      if (props.browserUnsupported) {
+        notify.error(
+          props.unsupportedHint || "该文件无法在浏览器内播放，请选择本地播放器",
+        )
+        setOpen(true)
+        return
+      }
       props.onBrowserPlay()
       return
     }
     const player = current()
     if (!player) {
+      if (props.browserUnsupported) {
+        notify.error(
+          props.unsupportedHint || "没有可用的本地播放器，请先下载该文件",
+        )
+        setOpen(true)
+        return
+      }
       props.onBrowserPlay()
       return
     }
@@ -300,12 +336,7 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
             "box-shadow": "0 12px 32px rgba(0,0,0,0.35)",
           }}
         >
-          <For
-            each={[
-              { id: "browser", name: "浏览器播放" },
-              ...players().map((p) => ({ id: p.id, name: p.name })),
-            ]}
-          >
+          <For each={targets()}>
             {(item) => (
               <button
                 onClick={() => select(item.id)}

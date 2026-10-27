@@ -5,7 +5,17 @@
     "zoom_in": "Zoom in",
     "zoom_out": "Zoom out",
     "reset": "Reset",
-    "close": "Close (Esc)"
+    "close": "Close (Esc)",
+    "info": "Photo info (I)",
+    "exif_empty": "No EXIF information found for this image",
+    "exif_camera": "Camera",
+    "exif_lens": "Lens",
+    "exif_params": "Exposure",
+    "exif_taken_at": "Taken at",
+    "exif_size": "Size",
+    "exif_location": "Location",
+    "exif_open_map": "Open in map",
+    "exif_software": "Software"
   },
   "book": {
     "title": "📚 eBooks & Journals",
@@ -110,6 +120,12 @@
     "search_placeholder": "Search albums or artists...",
     "view_card": "Cards (albums)",
     "view_list": "List (tracks)",
+    "by_album": "Albums",
+    "by_artist": "Artists",
+    "by_song": "Tracks",
+    "all_artists": "All artists",
+    "no_artists": "No artists",
+    "artist_meta": "{{albums}} albums · {{tracks}} tracks",
     "track_item_tip": "Click to view details, double-click to play",
     "play": "Play"
   },
@@ -142,7 +158,10 @@
     "favorite": "☆ Favorite",
     "movie": "Movie",
     "tv": "TV Series",
-    "unsupported": "The browser cannot play this video (unsupported container or codec). Try a local player instead."
+    "unsupported": "The browser cannot play this video (unsupported container or codec). Try a local player instead.",
+    "iso_title": "ISO disc images cannot play in the browser",
+    "iso_desc": "An ISO is a disc image (UDF / ISO 9660) that browsers cannot demux, so the built-in player can never open it. Use \"Player\" to hand it to VLC / PotPlayer, or download the image and mount it locally.",
+    "iso_no_player": "This file cannot play in the browser — pick a local player or download it first"
   },
   "common": {
     "loading": "Loading...",

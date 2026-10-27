@@ -4,6 +4,8 @@ import { encodePath } from "~/utils/path"
 import type {
   MediaItem,
   AlbumInfo,
+  ArtistInfo,
+  MediaExif,
   MediaConfig,
   MediaScanPath,
   MediaScanProgress,
@@ -30,10 +32,27 @@ export const getAlbumList = (params: {
   page_size?: number
   keyword?: string
   scan_path_id?: number
+  /** 只看某个艺术家名下的专辑（按艺术家分类时使用） */
+  album_artist?: string
 }) =>
   r.get("/fs/media/albums", { params }) as Promise<
     Resp<{ content: AlbumInfo[]; total: number }>
   >
+
+/** 获取艺术家列表（按专辑艺术家聚合） */
+export const getArtistList = (params: {
+  page?: number
+  page_size?: number
+  keyword?: string
+  scan_path_id?: number
+}) =>
+  r.get("/fs/media/artists", { params }) as Promise<
+    Resp<{ content: ArtistInfo[]; total: number }>
+  >
+
+/** 获取图片 EXIF（拍摄设备 / 参数 / GPS） */
+export const getMediaExif = (id: number) =>
+  r.get("/fs/media/exif", { params: { id } }) as Promise<Resp<MediaExif>>
 
 /** 获取专辑曲目 */
 export const getAlbumTracks = (albumName: string, albumArtist: string) =>

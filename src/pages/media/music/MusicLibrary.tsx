@@ -16,12 +16,13 @@ import { mediaBackBtn, mediaPrimaryBtn } from "../ui"
 import {
   getAlbumList,
   getAlbumTracks,
+  getArtistList,
   getMediaFolders,
   getMediaList,
   getMediaUserData,
   setMediaFavorite,
 } from "~/utils/media_api"
-import type { MediaItem, AlbumInfo } from "~/types"
+import type { MediaItem, AlbumInfo, ArtistInfo } from "~/types"
 import { getMediaName, formatDuration } from "~/types"
 import { notify } from "~/utils"
 import { useT } from "~/hooks"
@@ -30,6 +31,8 @@ import { playPlaylist, playTrack } from "./player"
 type BrowseMode = "all" | "folder"
 type OrderBy = "name" | "date" | "size"
 type OrderDir = "asc" | "desc"
+// 音乐库分类：按专辑（卡片）/ 按艺术家 / 按歌曲（平铺列表）
+type MusicCategory = "album" | "artist" | "song"
 
 export {
   MusicPlayer,
@@ -433,21 +436,28 @@ const MusicLibrary = () => {
   )
 
   const [selectedAlbum, setSelectedAlbum] = createSignal<AlbumInfo | null>(null)
-  // 卡片（专辑）/ 列表（歌曲）视图，持久化到浏览器
-  const MUSIC_VIEW_KEY = "media-view-mode-music"
-  const storedMusicView = (() => {
+  // 分类（专辑 / 艺术家 / 歌曲），持久化到浏览器
+  const MUSIC_CATEGORY_KEY = "media-category-music"
+  const storedCategory = ((): MusicCategory => {
     try {
-      const v = localStorage.getItem(MUSIC_VIEW_KEY)
-      return v === "list" || v === "card" ? v : "card"
+      const v = localStorage.getItem(MUSIC_CATEGORY_KEY)
+      if (v === "album" || v === "artist" || v === "song") return v
+      // 兼容旧版本：card = 专辑，list = 歌曲
+      const legacy = localStorage.getItem("media-view-mode-music")
+      return legacy === "list" ? "song" : "album"
     } catch {
-      return "card"
+      return "album"
     }
   })()
-  const [viewMode, setViewMode] = createSignal<"card" | "list">(storedMusicView)
-  const changeViewMode = (mode: "card" | "list") => {
-    setViewMode(mode)
+  const [category, setCategory] = createSignal<MusicCategory>(storedCategory)
+  // 艺术家分类下的二级选择：为空表示显示艺术家列表
+  const [selectedArtist, setSelectedArtist] = createSignal("")
+  const changeCategory = (mode: MusicCategory) => {
+    setCategory(mode)
+    setSelectedArtist("")
+    setPage(1)
     try {
-      localStorage.setItem(MUSIC_VIEW_KEY, mode)
+      localStorage.setItem(MUSIC_CATEGORY_KEY, mode)
     } catch {
       /* ignore */
     }
@@ -470,17 +480,42 @@ const MusicLibrary = () => {
   const [selectedFolder, setSelectedFolder] = createSignal("")
   const pageSize = 40
 
+  // 专辑列表：分类为「专辑」时全量，「艺术家」下选中艺术家时只取该艺术家的专辑
   const [albumData] = createResource(
-    () => ({
-      page: page(),
-      page_size: pageSize,
-      keyword: keyword() || undefined,
-      order_by: orderBy(),
-      order_dir: orderDir(),
-      folder_path: browseMode() === "folder" ? selectedFolder() : undefined,
-    }),
+    () => {
+      if (category() === "song") return null
+      if (category() === "artist" && !selectedArtist()) return null
+      return {
+        page: page(),
+        page_size: pageSize,
+        keyword: keyword() || undefined,
+        order_by: orderBy(),
+        order_dir: orderDir(),
+        folder_path: browseMode() === "folder" ? selectedFolder() : undefined,
+        album_artist: selectedArtist() || undefined,
+      }
+    },
     async (params) => {
+      if (!params) return { content: [] as AlbumInfo[], total: 0 }
       const resp = await getAlbumList(params)
+      if (resp.code === 200) return resp.data
+      return { content: [], total: 0 }
+    },
+  )
+
+  // 艺术家列表：仅「按艺术家」且未选中具体艺术家时拉取
+  const [artistData] = createResource(
+    () =>
+      category() === "artist" && !selectedArtist()
+        ? {
+            page: page(),
+            page_size: pageSize,
+            keyword: keyword() || undefined,
+          }
+        : null,
+    async (params) => {
+      if (!params) return { content: [] as ArtistInfo[], total: 0 }
+      const resp = await getArtistList(params)
       if (resp.code === 200) return resp.data
       return { content: [], total: 0 }
     },
@@ -497,10 +532,10 @@ const MusicLibrary = () => {
     },
   )
 
-  // 列表视图：直接拉取歌曲条目，展示专辑 / 作者 / 类型 / 年代
+  // 歌曲视图：直接拉取歌曲条目，展示专辑 / 作者 / 类型 / 年代
   const [trackData] = createResource(
     () =>
-      viewMode() === "list"
+      category() === "song"
         ? {
             page: page(),
             page_size: pageSize,
@@ -520,10 +555,57 @@ const MusicLibrary = () => {
   )
 
   const albums = () => (albumData()?.content as AlbumInfo[]) ?? []
+  const artists = () => (artistData()?.content as ArtistInfo[]) ?? []
   const tracks = () => (trackData()?.content as MediaItem[]) ?? []
-  const total = () =>
-    (viewMode() === "list" ? trackData()?.total : albumData()?.total) ?? 0
+  const total = () => {
+    if (category() === "song") return trackData()?.total ?? 0
+    if (category() === "artist" && !selectedArtist())
+      return artistData()?.total ?? 0
+    return albumData()?.total ?? 0
+  }
   const totalPages = () => Math.ceil(total() / pageSize)
+
+  // 歌曲视图按专辑分组：同一张专辑的曲目连续排列，重复文件（flac+mp3）
+  // 也能一眼看出属于同一张专辑，而不是散落成「两条一样的歌」。
+  // 返回与 tracks() 等长的数组：非分组首曲为 null，首曲带上专辑信息与本页曲目数。
+  const songGroupHeaders = createMemo(() => {
+    const list = tracks()
+    const counts = new Map<string, number>()
+    const keys = list.map(
+      (item) => `${item.album_name ?? ""}\u0000${item.album_artist ?? ""}`,
+    )
+    keys.forEach((key) => counts.set(key, (counts.get(key) ?? 0) + 1))
+
+    const headers: ({
+      album: string
+      artist: string
+      cover: string
+      count: number
+    } | null)[] = []
+    let prevKey: string | null = null
+    for (let i = 0; i < list.length; i++) {
+      const key = keys[i]
+      if (key !== prevKey) {
+        headers.push({
+          album: list[i].album_name ?? "",
+          artist: list[i].album_artist ?? "",
+          cover: list[i].cover ?? "",
+          count: counts.get(key) ?? 1,
+        })
+        prevKey = key
+      } else {
+        headers.push(null)
+      }
+    }
+    return headers
+  })
+
+  // 文件格式徽标：同一首歌可能有多种格式（flac / mp3），标出来避免误以为是重复条目
+  const trackFormat = (item: MediaItem) => {
+    const name = item.file_name || ""
+    const dot = name.lastIndexOf(".")
+    return dot > 0 ? name.slice(dot + 1).toUpperCase() : ""
+  }
 
   // 批量拉取收藏状态
   createEffect(() => {
@@ -547,11 +629,11 @@ const MusicLibrary = () => {
       })
   })
 
-  // 列表视图保持有选中项
+  // 歌曲视图保持有选中项
   createEffect(() => {
     const list = tracks()
     const current = selectedTrack()
-    if (viewMode() !== "list" || list.length === 0) {
+    if (category() !== "song" || list.length === 0) {
       if (current && !list.some((item) => item.id === current.id)) {
         setSelectedTrack(null)
       }
@@ -721,37 +803,35 @@ const MusicLibrary = () => {
                 {t("media.browser.search")}
               </button>
 
-              {/* 视图切换：卡片（专辑）/ 列表（歌曲） */}
-              <div style={{ display: "flex", gap: "4px" }}>
-                {(["card", "list"] as const).map((mode) => (
+              {/* 分类：按专辑 / 按艺术家 / 按歌曲 */}
+              <div style={{ display: "flex", gap: "6px" }}>
+                {(
+                  [
+                    { mode: "album", label: t("media.music.by_album") },
+                    { mode: "artist", label: t("media.music.by_artist") },
+                    { mode: "song", label: t("media.music.by_song") },
+                  ] as { mode: MusicCategory; label: string }[]
+                ).map((item) => (
                   <button
-                    onClick={() => {
-                      changeViewMode(mode)
-                      setPage(1)
-                    }}
-                    title={
-                      mode === "card"
-                        ? t("media.music.view_card")
-                        : t("media.music.view_list")
-                    }
+                    onClick={() => changeCategory(item.mode)}
                     style={{
                       background:
-                        viewMode() === mode ? btnActiveBg : "transparent",
+                        category() === item.mode ? btnActiveBg : "transparent",
                       border:
-                        viewMode() === mode
+                        category() === item.mode
                           ? `1px solid ${btnActiveBorder}`
                           : `1px solid ${btnInactiveBorder()}`,
                       "border-radius": "6px",
                       color:
-                        viewMode() === mode
+                        category() === item.mode
                           ? btnActiveColor
                           : btnInactiveColor(),
-                      padding: "5px 8px",
-                      "font-size": "14px",
+                      padding: "5px 12px",
+                      "font-size": "12px",
                       cursor: "pointer",
                     }}
                   >
-                    {mode === "card" ? "⊞" : "☰"}
+                    {item.label}
                   </button>
                 ))}
               </div>
@@ -823,8 +903,171 @@ const MusicLibrary = () => {
               </div>
             </Show>
 
-            {/* 卡片视图：专辑 */}
-            <Show when={viewMode() === "card"}>
+            {/* 艺术家视图：艺术家列表（选中后回到专辑网格） */}
+            <Show when={category() === "artist" && !selectedArtist()}>
+              <Show
+                when={!artistData.loading}
+                fallback={
+                  <div
+                    style={{
+                      "text-align": "center",
+                      padding: "60px",
+                      color: emptyColor(),
+                    }}
+                  >
+                    <div
+                      style={{ "font-size": "32px", "margin-bottom": "12px" }}
+                    >
+                      ⏳
+                    </div>
+                    <div>{t("media.music.loading")}</div>
+                  </div>
+                }
+              >
+                <Show
+                  when={artists().length > 0}
+                  fallback={
+                    <div
+                      style={{
+                        "text-align": "center",
+                        padding: "60px",
+                        color: emptyColor(),
+                      }}
+                    >
+                      <div style={{ "margin-bottom": "12px" }}>
+                        <TbMusic size={48} style={{ opacity: 0.5 }} />
+                      </div>
+                      <div>{t("media.music.no_artists")}</div>
+                    </div>
+                  }
+                >
+                  <div
+                    style={{
+                      display: "grid",
+                      "grid-template-columns":
+                        "repeat(auto-fill, minmax(180px, 1fr))",
+                      gap: "12px",
+                    }}
+                  >
+                    <For each={artists()}>
+                      {(artist) => (
+                        <div
+                          onClick={() => {
+                            setSelectedArtist(artist.artist)
+                            setPage(1)
+                          }}
+                          style={{
+                            display: "flex",
+                            gap: "12px",
+                            "align-items": "center",
+                            padding: "10px",
+                            "border-radius": "12px",
+                            cursor: "pointer",
+                            background: toolbarBg(),
+                            border: `1px solid ${toolbarBorder()}`,
+                          }}
+                        >
+                          <Show
+                            when={artist.cover}
+                            fallback={
+                              <div
+                                style={{
+                                  width: "48px",
+                                  height: "48px",
+                                  "border-radius": "50%",
+                                  background: accentGradient(),
+                                  display: "flex",
+                                  "align-items": "center",
+                                  "justify-content": "center",
+                                  color: "white",
+                                  "flex-shrink": "0",
+                                }}
+                              >
+                                <TbMusic size={20} />
+                              </div>
+                            }
+                          >
+                            <img
+                              src={resolveMediaCover(artist.cover)}
+                              alt={artist.artist}
+                              loading="lazy"
+                              style={{
+                                width: "48px",
+                                height: "48px",
+                                "border-radius": "50%",
+                                "object-fit": "cover",
+                                "flex-shrink": "0",
+                              }}
+                            />
+                          </Show>
+                          <div style={{ "min-width": "0" }}>
+                            <div
+                              style={{
+                                color: isDark() ? "#e2e8f0" : "#1e293b",
+                                "font-size": "14px",
+                                overflow: "hidden",
+                                "text-overflow": "ellipsis",
+                                "white-space": "nowrap",
+                              }}
+                            >
+                              {artist.artist || t("media.music.unknown_artist")}
+                            </div>
+                            <div
+                              style={{
+                                color: isDark() ? "#64748b" : "#94a3b8",
+                                "font-size": "12px",
+                              }}
+                            >
+                              {t("media.music.artist_meta", {
+                                albums: artist.album_count,
+                                tracks: artist.track_count,
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+              </Show>
+            </Show>
+
+            {/* 专辑视图（含「按艺术家」点进某位艺术家后的专辑网格） */}
+            <Show
+              when={
+                category() === "album" ||
+                (category() === "artist" && !!selectedArtist())
+              }
+            >
+              <Show when={selectedArtist()}>
+                <div
+                  style={{
+                    display: "flex",
+                    "align-items": "center",
+                    gap: "10px",
+                    "margin-bottom": "14px",
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      setSelectedArtist("")
+                      setPage(1)
+                    }}
+                    style={mediaBackBtn(isDark())}
+                  >
+                    ← {t("media.music.all_artists")}
+                  </button>
+                  <span
+                    style={{
+                      "font-size": "16px",
+                      "font-weight": "600",
+                      color: isDark() ? "#e2e8f0" : "#1e293b",
+                    }}
+                  >
+                    {selectedArtist()}
+                  </span>
+                </div>
+              </Show>
               <Show
                 when={!albumData.loading}
                 fallback={
@@ -881,8 +1124,8 @@ const MusicLibrary = () => {
               </Show>
             </Show>
 
-            {/* 列表视图：歌曲 + 右侧详情 */}
-            <Show when={viewMode() === "list"}>
+            {/* 歌曲视图：按专辑分组的平铺列表 + 右侧详情 */}
+            <Show when={category() === "song"}>
               <style>{`
                 .music-list-layout {
                   display: grid;
@@ -940,123 +1183,224 @@ const MusicLibrary = () => {
                       }}
                     >
                       <For each={tracks()}>
-                        {(track) => (
-                          <div
-                            onClick={() => setSelectedTrack(track)}
-                            onDblClick={() => playTrack(track)}
-                            title={t("media.music.track_item_tip")}
-                            style={{
-                              display: "flex",
-                              "align-items": "center",
-                              gap: "12px",
-                              padding: "8px 12px",
-                              "border-radius": "8px",
-                              cursor: "pointer",
-                              background:
-                                selectedTrack()?.id === track.id
-                                  ? isDark()
-                                    ? "rgba(24,144,255,0.16)"
-                                    : "rgba(24,144,255,0.08)"
-                                  : isDark()
-                                    ? "rgba(255,255,255,0.03)"
-                                    : "rgba(0,0,0,0.02)",
-                              border:
-                                selectedTrack()?.id === track.id
-                                  ? `1px solid ${btnActiveBorder}`
-                                  : `1px solid ${
-                                      isDark()
-                                        ? "rgba(255,255,255,0.05)"
-                                        : "rgba(0,0,0,0.06)"
-                                    }`,
-                            }}
-                          >
-                            <Show
-                              when={track.cover}
-                              fallback={
+                        {(track, i) => (
+                          <>
+                            <Show when={songGroupHeaders()[i()]}>
+                              {(header) => (
                                 <div
+                                  style={{
+                                    display: "flex",
+                                    "align-items": "center",
+                                    gap: "10px",
+                                    "margin-top": i() === 0 ? "0" : "14px",
+                                    "margin-bottom": "4px",
+                                    padding: "6px 12px",
+                                    "border-radius": "8px",
+                                    background: isDark()
+                                      ? "rgba(255,255,255,0.04)"
+                                      : "rgba(0,0,0,0.04)",
+                                  }}
+                                >
+                                  <Show when={header().cover}>
+                                    <img
+                                      src={resolveMediaCover(header().cover)}
+                                      alt={header().album}
+                                      loading="lazy"
+                                      style={{
+                                        width: "24px",
+                                        height: "24px",
+                                        "border-radius": "4px",
+                                        "object-fit": "cover",
+                                        "flex-shrink": "0",
+                                      }}
+                                    />
+                                  </Show>
+                                  <span
+                                    style={{
+                                      color: isDark() ? "#e2e8f0" : "#1e293b",
+                                      "font-size": "13px",
+                                      "font-weight": "600",
+                                      overflow: "hidden",
+                                      "text-overflow": "ellipsis",
+                                      "white-space": "nowrap",
+                                    }}
+                                  >
+                                    {header().album ||
+                                      t("media.music.unknown_album")}
+                                  </span>
+                                  <span
+                                    style={{
+                                      color: isDark() ? "#64748b" : "#94a3b8",
+                                      "font-size": "12px",
+                                      overflow: "hidden",
+                                      "text-overflow": "ellipsis",
+                                      "white-space": "nowrap",
+                                    }}
+                                  >
+                                    {header().artist}
+                                  </span>
+                                  <span
+                                    style={{
+                                      color: isDark() ? "#64748b" : "#94a3b8",
+                                      "font-size": "12px",
+                                      "flex-shrink": "0",
+                                    }}
+                                  >
+                                    {t("media.music.track_count", {
+                                      count: header().count,
+                                    })}
+                                  </span>
+                                </div>
+                              )}
+                            </Show>
+                            <div
+                              onClick={() => setSelectedTrack(track)}
+                              onDblClick={() => playTrack(track)}
+                              title={t("media.music.track_item_tip")}
+                              style={{
+                                display: "flex",
+                                "align-items": "center",
+                                gap: "12px",
+                                padding: "8px 12px",
+                                "border-radius": "8px",
+                                cursor: "pointer",
+                                background:
+                                  selectedTrack()?.id === track.id
+                                    ? isDark()
+                                      ? "rgba(24,144,255,0.16)"
+                                      : "rgba(24,144,255,0.08)"
+                                    : isDark()
+                                      ? "rgba(255,255,255,0.03)"
+                                      : "rgba(0,0,0,0.02)",
+                                border:
+                                  selectedTrack()?.id === track.id
+                                    ? `1px solid ${btnActiveBorder}`
+                                    : `1px solid ${
+                                        isDark()
+                                          ? "rgba(255,255,255,0.05)"
+                                          : "rgba(0,0,0,0.06)"
+                                      }`,
+                              }}
+                            >
+                              <Show
+                                when={track.cover}
+                                fallback={
+                                  <div
+                                    style={{
+                                      width: "40px",
+                                      height: "40px",
+                                      "border-radius": "6px",
+                                      background: accentGradient(),
+                                      display: "flex",
+                                      "align-items": "center",
+                                      "justify-content": "center",
+                                      "flex-shrink": "0",
+                                      color: "white",
+                                    }}
+                                  >
+                                    <TbMusic size={18} />
+                                  </div>
+                                }
+                              >
+                                <img
+                                  src={resolveMediaCover(track.cover)}
+                                  alt={getMediaName(track)}
+                                  loading="lazy"
                                   style={{
                                     width: "40px",
                                     height: "40px",
                                     "border-radius": "6px",
-                                    background: accentGradient(),
+                                    "object-fit": "cover",
+                                    "flex-shrink": "0",
+                                  }}
+                                />
+                              </Show>
+                              <div style={{ flex: "1", "min-width": "0" }}>
+                                <div
+                                  style={{
                                     display: "flex",
                                     "align-items": "center",
-                                    "justify-content": "center",
-                                    "flex-shrink": "0",
-                                    color: "white",
+                                    gap: "6px",
                                   }}
                                 >
-                                  <TbMusic size={18} />
+                                  <span
+                                    style={{
+                                      color: isDark() ? "#e2e8f0" : "#1e293b",
+                                      "font-size": "14px",
+                                      overflow: "hidden",
+                                      "text-overflow": "ellipsis",
+                                      "white-space": "nowrap",
+                                    }}
+                                  >
+                                    {getMediaName(track)}
+                                  </span>
+                                  {/* 同一首歌的多种格式（flac / mp3）标出来，避免看成重复条目 */}
+                                  <Show when={trackFormat(track)}>
+                                    <span
+                                      style={{
+                                        "font-size": "10px",
+                                        "line-height": "1",
+                                        padding: "2px 5px",
+                                        "border-radius": "4px",
+                                        color: isDark() ? "#94a3b8" : "#64748b",
+                                        border: `1px solid ${
+                                          isDark()
+                                            ? "rgba(255,255,255,0.15)"
+                                            : "rgba(0,0,0,0.12)"
+                                        }`,
+                                        "flex-shrink": "0",
+                                      }}
+                                    >
+                                      {trackFormat(track)}
+                                    </span>
+                                  </Show>
                                 </div>
-                              }
-                            >
-                              <img
-                                src={resolveMediaCover(track.cover)}
-                                alt={getMediaName(track)}
-                                loading="lazy"
-                                style={{
-                                  width: "40px",
-                                  height: "40px",
-                                  "border-radius": "6px",
-                                  "object-fit": "cover",
-                                  "flex-shrink": "0",
-                                }}
-                              />
-                            </Show>
-                            <div style={{ flex: "1", "min-width": "0" }}>
-                              <div
-                                style={{
-                                  color: isDark() ? "#e2e8f0" : "#1e293b",
-                                  "font-size": "14px",
-                                  overflow: "hidden",
-                                  "text-overflow": "ellipsis",
-                                  "white-space": "nowrap",
-                                }}
-                              >
-                                {getMediaName(track)}
+                                <div
+                                  style={{
+                                    color: isDark() ? "#64748b" : "#94a3b8",
+                                    "font-size": "12px",
+                                    overflow: "hidden",
+                                    "text-overflow": "ellipsis",
+                                    "white-space": "nowrap",
+                                  }}
+                                >
+                                  {[track.album_name, track.album_artist]
+                                    .filter(Boolean)
+                                    .join(" · ") ||
+                                    t("media.music.unknown_album")}
+                                </div>
                               </div>
                               <div
                                 style={{
                                   color: isDark() ? "#64748b" : "#94a3b8",
                                   "font-size": "12px",
-                                  overflow: "hidden",
-                                  "text-overflow": "ellipsis",
-                                  "white-space": "nowrap",
-                                }}
-                              >
-                                {[track.album_name, track.album_artist]
-                                  .filter(Boolean)
-                                  .join(" · ") ||
-                                  t("media.music.unknown_album")}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                color: isDark() ? "#64748b" : "#94a3b8",
-                                "font-size": "12px",
-                                "text-align": "right",
-                                "flex-shrink": "0",
-                              }}
-                            >
-                              <div>
-                                {[track.genre, track.release_date?.slice(0, 4)]
-                                  .filter(Boolean)
-                                  .join(" · ")}
-                              </div>
-                              <div>{formatDuration(track.duration)}</div>
-                            </div>
-                            <Show when={favorites()[track.id]}>
-                              <span
-                                style={{
-                                  color: "#fbbf24",
-                                  "font-size": "13px",
+                                  "text-align": "right",
                                   "flex-shrink": "0",
                                 }}
                               >
-                                ★
-                              </span>
-                            </Show>
-                          </div>
+                                <div>
+                                  {[
+                                    track.genre,
+                                    track.release_date?.slice(0, 4),
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </div>
+                                <div>{formatDuration(track.duration)}</div>
+                              </div>
+                              <Show when={favorites()[track.id]}>
+                                <span
+                                  style={{
+                                    color: "#fbbf24",
+                                    "font-size": "13px",
+                                    "flex-shrink": "0",
+                                  }}
+                                >
+                                  ★
+                                </span>
+                              </Show>
+                            </div>
+                          </>
                         )}
                       </For>
                     </div>

@@ -73,6 +73,32 @@ export interface AlbumInfo {
   scan_path_id: number
 }
 
+export interface ArtistInfo {
+  artist: string
+  album_count: number
+  track_count: number
+  cover: string
+  scan_path_id: number
+}
+
+/** 图片 EXIF 摘要（后端按需解析，字段为空表示该图没有对应信息） */
+export interface MediaExif {
+  available: boolean
+  format?: string
+  width?: number
+  height?: number
+  camera?: string
+  lens?: string
+  software?: string
+  exposure?: string
+  aperture?: string
+  iso?: string
+  focal_length?: string
+  taken_at?: string
+  latitude?: number
+  longitude?: number
+}
+
 export interface MediaConfig {
   id?: number
   media_type: MediaType
@@ -151,6 +177,17 @@ export function formatDuration(seconds: number): string {
 // 获取媒体显示名称
 export function getMediaName(item: MediaItem): string {
   return item.scraped_name || item.file_name || ""
+}
+
+/**
+ * 是否为光盘镜像（.iso / 原盘）。
+ *
+ * 浏览器没有 UDF / ISO 9660 解复用能力，`<video>`、mediabunny、HLS 都读不了，
+ * 只能交给本地播放器（VLC/PotPlayer）或先下载再挂载。扫描端仍会把 .iso 入库，
+ * 所以界面要主动拦住「浏览器播放」，而不是让播放器报一个看不懂的错误。
+ */
+export function isDiscImage(name?: string | null): boolean {
+  return /\.iso$/i.test((name ?? "").trim())
 }
 
 // 获取媒体文件的VFS路径（folder_path + "/" + file_name）
