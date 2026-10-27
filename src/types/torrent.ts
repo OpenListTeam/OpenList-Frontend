@@ -222,6 +222,8 @@ export interface SeedOperationRequest {
   compute_missing?: boolean
   /** 补算哈希时源文件所在目录 */
   file_base_path?: string
+  /** 转换时一并写入的整体注释 */
+  comment?: string
 }
 
 export interface SeedOperationResult {

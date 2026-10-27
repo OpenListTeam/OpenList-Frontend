@@ -20,7 +20,6 @@ import {
   Tooltip,
   IconButton,
   createDisclosure,
-  SimpleGrid,
 } from "@hope-ui/solid"
 import { createEffect, createSignal, For, onMount, Show } from "solid-js"
 import { getSettingBool, objStore } from "~/store"
@@ -737,6 +736,8 @@ const TorrentPreview = () => {
         const info = normalizeSeedInfo(parsed.data)
         setTorrentInfo(info)
         setEditComment(info.comment || "")
+        // 目标格式默认对齐当前格式，避免一打开就处于「需要转换」状态
+        if (info.format) setTargetFormat(info.format as SeedFormat)
         setSelectedFiles(info.files.map((_, index) => index))
         initRecalcMatrix(info)
         void autoCASDirectAccess(info)
@@ -744,6 +745,7 @@ const TorrentPreview = () => {
         const legacy = parseLocalTorrent(new Uint8Array(buffer))
         setTorrentInfo({ ...legacy, format: "torrent" })
         setSelectedFiles(legacy.files.map((_, index) => index))
+        setTargetFormat("torrent")
       } else {
         throw new Error(parsed.message)
       }
@@ -795,6 +797,51 @@ const TorrentPreview = () => {
   // 缺哈希时不直接禁用转换：只要知道源目录，就可以从文件补算
   const canConvert = () =>
     conversionSupported() || !!effectiveRecalcSourceDir().trim()
+
+  // ── 统一「编辑并保存」：注释 / 转换 / 重算哈希 一个按钮完成 ──────────────
+  const currentFormat = () => torrentInfo()?.format
+  const targetDiffers = () =>
+    !!currentFormat() && targetFormat() !== currentFormat()
+  const hasRecalcSelection = () =>
+    ALGORITHMS.some(
+      (algo) => recalcMatrix()[algo].whole || recalcMatrix()[algo].pieces,
+    )
+  // 只有需要读文件时才显示源目录
+  const needSourceDir = () =>
+    targetDiffers() ||
+    (!conversionSupported() && operationSupported("convert")) ||
+    (operationSupported("recalculate") && hasRecalcSelection())
+
+  const applyMode = () =>
+    targetDiffers()
+      ? "convert"
+      : hasRecalcSelection()
+        ? "recalculate"
+        : "update"
+
+  const applyEnabled = () => {
+    if (applyMode() === "convert") {
+      return operationSupported("convert") && canConvert()
+    }
+    if (applyMode() === "recalculate") {
+      return operationSupported("recalculate") && selectedFiles().length > 0
+    }
+    return operationSupported("edit")
+  }
+
+  const applyLabel = () => {
+    if (applyMode() === "convert") {
+      return conversionSupported()
+        ? t("home.transfer_seed.convert_and_save")
+        : t("home.transfer_seed.convert_and_rehash")
+    }
+    if (applyMode() === "recalculate") {
+      return t("home.transfer_seed.recalculate_and_save")
+    }
+    return t("global.save")
+  }
+
+  const applyChanges = () => runOperation(applyMode())
 
   const request = () => ({
     seed_data: torrentData(),
@@ -852,6 +899,8 @@ const TorrentPreview = () => {
               ? await seedConvert({
                   ...request(),
                   format: targetFormat(),
+                  // 转换时一并保存注释，避免先保存再转换两次请求
+                  comment: editComment(),
                   // 无法直接转换时，用源目录里的文件补算缺失哈希
                   compute_missing: !conversionSupported(),
                   file_base_path: !conversionSupported()
@@ -1266,21 +1315,6 @@ const TorrentPreview = () => {
             </For>
           </Box>
 
-          {/* 整体注释（多行） */}
-          <Show when={!isShare() && operationSupported("edit")}>
-            <Box>
-              <Text fontSize="$sm" fontWeight="$semibold" mb="$1">
-                {t("home.transfer_seed.overall_comment")}
-              </Text>
-              <Textarea
-                rows={3}
-                placeholder={t("home.transfer_seed.comment_placeholder")}
-                value={editComment()}
-                onInput={(event) => setEditComment(event.currentTarget.value)}
-              />
-            </Box>
-          </Show>
-
           {/* 下载 / 秒传区 */}
           <Show when={!isShare()}>
             <Divider />
@@ -1397,180 +1431,187 @@ const TorrentPreview = () => {
             </Show>
           </Show>
 
-          {/* 转换区：格式按钮悬浮显示不可转换原因；缺哈希时可直接从文件补算 */}
-          <Show when={!isShare() && operationSupported("convert")}>
+          {/* 编辑并保存：注释 / 目标格式 / 重算哈希，一个按钮统一提交 */}
+          <Show
+            when={
+              !isShare() &&
+              (operationSupported("edit") || operationSupported("convert"))
+            }
+          >
             <Divider />
-            <VStack alignItems="stretch" spacing="$2">
-              <HStack spacing="$2" alignItems="center" flexWrap="wrap">
-                <Text fontSize="$sm" fontWeight="$semibold" flexShrink={0}>
+            <VStack alignItems="stretch" spacing="$3">
+              <Text fontSize="$sm" fontWeight="$semibold">
+                {t("home.transfer_seed.edit_and_save")}
+              </Text>
+
+              <Box>
+                <Text fontSize="$sm" mb="$1">
+                  {t("home.transfer_seed.overall_comment")}
+                </Text>
+                <Textarea
+                  rows={3}
+                  placeholder={t("home.transfer_seed.comment_placeholder")}
+                  value={editComment()}
+                  onInput={(event) => setEditComment(event.currentTarget.value)}
+                />
+              </Box>
+
+              <Box>
+                <Text fontSize="$sm" mb="$1">
                   {t("home.transfer_seed.convert_to")}
                 </Text>
-                <For each={["torrent", "cas", "oss"] as SeedFormat[]}>
-                  {(format) => {
-                    const state = () => torrentInfo()!.conversions?.[format]
-                    const feasible = () => !!state()?.feasible
-                    const reasons = () => state()?.missing || []
-                    return (
-                      <Tooltip
-                        maxW="420px"
-                        label={
-                          feasible() ? (
-                            t("home.transfer_seed.feasible")
-                          ) : (
-                            <Text
-                              fontSize="$xs"
-                              css={{ whiteSpace: "pre-line" }}
-                            >
-                              {reasons().join("\n") ||
-                                t("home.transfer_seed.unavailable")}
-                            </Text>
-                          )
-                        }
-                      >
-                        <Button
-                          size="sm"
-                          variant={
-                            targetFormat() === format ? "solid" : "subtle"
-                          }
-                          colorScheme={
-                            targetFormat() === format ? "accent" : "neutral"
-                          }
-                          onClick={() => setTargetFormat(format)}
-                        >
-                          {FORMAT_DISPLAY[format] || format.toUpperCase()}
-                          <Text
-                            as="span"
-                            ml="$1"
-                            color={feasible() ? "$success9" : "$danger9"}
-                          >
-                            {feasible() ? "✓" : "✗"}
-                          </Text>
-                        </Button>
-                      </Tooltip>
-                    )
-                  }}
-                </For>
-                <Button
-                  loading={operation() === "convert"}
-                  disabled={!canConvert()}
-                  onClick={() => runOperation("convert")}
-                >
-                  {conversionSupported()
-                    ? t("home.transfer_seed.convert")
-                    : t("home.transfer_seed.convert_and_rehash")}
-                </Button>
-              </HStack>
-              <Show when={!conversionSupported()}>
                 <HStack spacing="$2" alignItems="center" flexWrap="wrap">
-                  <Text fontSize="$sm" flexShrink={0}>
+                  <For each={["torrent", "cas", "oss"] as SeedFormat[]}>
+                    {(format) => {
+                      const state = () => torrentInfo()!.conversions?.[format]
+                      const feasible = () => !!state()?.feasible
+                      const reasons = () => state()?.missing || []
+                      return (
+                        <Tooltip
+                          maxW="420px"
+                          label={
+                            feasible() ? (
+                              t("home.transfer_seed.feasible")
+                            ) : (
+                              <Text
+                                fontSize="$xs"
+                                css={{ whiteSpace: "pre-line" }}
+                              >
+                                {reasons().join("\n") ||
+                                  t("home.transfer_seed.unavailable")}
+                              </Text>
+                            )
+                          }
+                        >
+                          <Button
+                            size="sm"
+                            variant={
+                              targetFormat() === format ? "solid" : "subtle"
+                            }
+                            colorScheme={
+                              targetFormat() === format ? "accent" : "neutral"
+                            }
+                            onClick={() => setTargetFormat(format)}
+                          >
+                            {FORMAT_DISPLAY[format] || format.toUpperCase()}
+                            <Text
+                              as="span"
+                              ml="$1"
+                              color={feasible() ? "$success9" : "$danger9"}
+                            >
+                              {feasible() ? "✓" : "✗"}
+                            </Text>
+                          </Button>
+                        </Tooltip>
+                      )
+                    }}
+                  </For>
+                </HStack>
+              </Box>
+
+              <Show when={operationSupported("recalculate")}>
+                <Box>
+                  <Text fontSize="$sm" mb="$1">
+                    {t("home.transfer_seed.recalc_matrix")}
+                  </Text>
+                  <Box
+                    border="1px solid $neutral6"
+                    borderRadius="$md"
+                    overflow="hidden"
+                  >
+                    <HStack px="$3" py="$2" spacing="$2" bgColor="$neutral3">
+                      <Text flex="1" fontSize="$xs" color="$neutral11">
+                        {t("home.transfer_seed.hash_algorithm")}
+                      </Text>
+                      <Text w="$24" fontSize="$xs" color="$neutral11">
+                        {t("home.transfer_seed.whole")}
+                      </Text>
+                      <Text w="$24" fontSize="$xs" color="$neutral11">
+                        {t("home.transfer_seed.pieces")}
+                      </Text>
+                    </HStack>
+                    <For each={ALGORITHMS}>
+                      {(algo, index) => (
+                        <HStack
+                          px="$3"
+                          py="$2"
+                          spacing="$2"
+                          alignItems="center"
+                          borderTop={
+                            index() === 0 ? undefined : "1px solid $neutral5"
+                          }
+                        >
+                          <Text flex="1" fontSize="$sm" fontWeight="$medium">
+                            {algo.toUpperCase()}
+                          </Text>
+                          <Checkbox
+                            w="$24"
+                            size="sm"
+                            checked={recalcMatrix()[algo].whole}
+                            onChange={(event: {
+                              currentTarget: HTMLInputElement
+                            }) =>
+                              setRecalcHash(
+                                algo,
+                                "whole",
+                                event.currentTarget.checked,
+                              )
+                            }
+                          >
+                            {t("home.transfer_seed.whole")}
+                          </Checkbox>
+                          <Checkbox
+                            w="$24"
+                            size="sm"
+                            checked={recalcMatrix()[algo].pieces}
+                            onChange={(event: {
+                              currentTarget: HTMLInputElement
+                            }) =>
+                              setRecalcHash(
+                                algo,
+                                "pieces",
+                                event.currentTarget.checked,
+                              )
+                            }
+                          >
+                            {t("home.transfer_seed.pieces")}
+                          </Checkbox>
+                        </HStack>
+                      )}
+                    </For>
+                  </Box>
+                  <Text fontSize="$xs" color="$neutral10" mt="$1">
+                    {t("home.transfer_seed.recalc_selected_hint")}
+                  </Text>
+                </Box>
+              </Show>
+
+              <Show when={needSourceDir()}>
+                <Box>
+                  <Text fontSize="$sm" mb="$1">
                     {t("home.transfer_seed.rehash_source_dir")}
                   </Text>
-                  <Box flex="1" minW={{ "@initial": "$full", "@md": "$72" }}>
-                    <FolderChooseInput
-                      id="seed-preview-rehash-source-dir"
-                      value={effectiveRecalcSourceDir()}
-                      onChange={setRecalcSourceDir}
-                    />
-                  </Box>
-                </HStack>
-                <Text fontSize="$xs" color="$neutral11">
-                  {t("home.transfer_seed.rehash_hint")}
-                </Text>
-              </Show>
-            </VStack>
-          </Show>
-
-          {/* 整体保存 */}
-          <Show when={!isShare() && operationSupported("edit")}>
-            <Divider />
-            <Show when={operationSupported("recalculate")}>
-              <Text fontSize="$xs" fontWeight="$semibold" mt="$2">
-                {t("home.transfer_seed.recalc_matrix")}
-              </Text>
-              <SimpleGrid
-                columns={{ "@initial": 1, "@md": 3 }}
-                gap="$2"
-                mb="$2"
-              >
-                <For each={ALGORITHMS}>
-                  {(algo) => (
-                    <VStack
-                      alignItems="flex-start"
-                      spacing="$1"
-                      border="1px solid $neutral7"
-                      borderRadius="$md"
-                      bg="$background"
-                      p="$2"
-                    >
-                      <Text fontSize="$xs" fontWeight="$semibold">
-                        {algo.toUpperCase()}
-                      </Text>
-                      <Checkbox
-                        size="sm"
-                        checked={recalcMatrix()[algo].whole}
-                        onChange={(event: {
-                          currentTarget: HTMLInputElement
-                        }) =>
-                          setRecalcHash(
-                            algo,
-                            "whole",
-                            event.currentTarget.checked,
-                          )
-                        }
-                      >
-                        {t("home.transfer_seed.whole")}
-                      </Checkbox>
-                      <Checkbox
-                        size="sm"
-                        checked={recalcMatrix()[algo].pieces}
-                        onChange={(event: {
-                          currentTarget: HTMLInputElement
-                        }) =>
-                          setRecalcHash(
-                            algo,
-                            "pieces",
-                            event.currentTarget.checked,
-                          )
-                        }
-                      >
-                        {t("home.transfer_seed.pieces")}
-                      </Checkbox>
-                    </VStack>
-                  )}
-                </For>
-              </SimpleGrid>
-              <Text fontSize="$xs" fontWeight="$semibold" mt="$2">
-                {t("home.transfer_seed.recalc_source_dir")}
-              </Text>
-              <HStack spacing="$2" alignItems="center" flexWrap="wrap" mb="$2">
-                <Box flex="1" minW={{ "@initial": "$full", "@md": "$72" }}>
                   <FolderChooseInput
-                    id="seed-preview-recalc-source-dir"
+                    id="seed-preview-rehash-source-dir"
                     value={effectiveRecalcSourceDir()}
                     onChange={setRecalcSourceDir}
                   />
+                  <Text fontSize="$xs" color="$neutral10" mt="$1">
+                    {t("home.transfer_seed.rehash_hint")}
+                  </Text>
                 </Box>
+              </Show>
+
+              <HStack justifyContent="flex-end">
                 <Button
-                  variant="outline"
-                  loading={operation() === "update"}
-                  disabled={!operationSupported("edit")}
-                  onClick={() => runOperation("update")}
+                  loading={operation() !== "" && operation() === applyMode()}
+                  disabled={!applyEnabled()}
+                  onClick={applyChanges}
                 >
-                  {t("global.save")}
-                </Button>
-                <Button
-                  variant="outline"
-                  loading={operation() === "recalculate"}
-                  disabled={
-                    !operationSupported("recalculate") ||
-                    selectedFiles().length === 0
-                  }
-                  onClick={() => runOperation("recalculate")}
-                >
-                  {t("home.transfer_seed.recalculate")}
+                  {applyLabel()}
                 </Button>
               </HStack>
-            </Show>
+            </VStack>
           </Show>
         </VStack>
       </Show>
