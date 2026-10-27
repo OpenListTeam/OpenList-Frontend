@@ -76,7 +76,8 @@ const Placeholder = (props: { title: string; to: string }) => {
  * 但 URL 直连 / 媒体库侧栏的「设置」按钮仍能进到页面，这里补一层路由守卫。
  */
 const withAdminGuard = (to: string, component: Component) => {
-  if (!to.startsWith("/media")) return component
+  // 站点设置与媒体库后台都只对管理员开放；其余页面（个人资料 / 2FA 等）保持原样
+  if (!to.startsWith("/media") && !to.startsWith("/settings")) return component
   return () => (
     <MustAdmin>
       <Dynamic component={component} />

@@ -136,8 +136,10 @@ export const MediaSidebar = () => {
     }
     return list
   })
-  // 管理入口固定在侧栏底部（仅管理员可见）
-  const manageActive = createMemo(() => pathname().startsWith("/@manage/media"))
+  // 管理入口固定在侧栏底部：跳到「设置」首页（站点设置），而不是媒体库专属设置
+  const manageActive = createMemo(() =>
+    pathname().startsWith("/@manage/settings"),
+  )
 
   // 主题色只作用在侧栏自身：其它页面复用站点默认色板，避免全局 CSS 变量污染
   const paletteVars = createMemo<Record<string, string>>(() =>
@@ -339,7 +341,7 @@ export const MediaSidebar = () => {
                           minW="$6"
                           p="0"
                           aria-label="设置"
-                          onClick={() => to("/@manage/media/settings")}
+                          onClick={() => to("/@manage/settings/site")}
                         >
                           <Icon as={TbSettings} boxSize="$4" />
                         </Button>
@@ -388,7 +390,7 @@ export const MediaSidebar = () => {
                       minW="0"
                       px="$1"
                       aria-label="设置"
-                      onClick={() => to("/@manage/media/settings")}
+                      onClick={() => to("/@manage/settings/site")}
                     >
                       <Icon as={TbSettings} boxSize="$4" />
                     </Button>
