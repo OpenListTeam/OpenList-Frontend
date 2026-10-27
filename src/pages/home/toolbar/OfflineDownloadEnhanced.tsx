@@ -159,6 +159,12 @@ export const TransferSeedGenerator = () => {
     }
   })
 
+  // 所选容器格式强制要求的哈希算法（torrent 需要 SHA1，CAS 需要 MD5）
+  const forcedAlgorithms = (): SeedHashAlgorithm[] => [
+    ...(formats().includes("torrent") ? (["sha1"] as SeedHashAlgorithm[]) : []),
+    ...(formats().includes("cas") ? (["md5"] as SeedHashAlgorithm[]) : []),
+  ]
+
   const setHashScope = (
     algorithm: SeedHashAlgorithm,
     scope: "whole" | "pieces",
@@ -465,24 +471,49 @@ export const TransferSeedGenerator = () => {
               <Text fontSize="$sm" fontWeight="$semibold" mb="$2">
                 {t("home.transfer_seed.hash_matrix")}
               </Text>
-              <SimpleGrid columns={{ "@initial": 1, "@md": 3 }} gap="$3">
+              <Box
+                border="1px solid $neutral6"
+                borderRadius="$md"
+                overflow="hidden"
+              >
+                <HStack px="$3" py="$2" spacing="$2" bgColor="$neutral3">
+                  <Text flex="1" fontSize="$xs" color="$neutral11">
+                    {t("home.transfer_seed.hash_algorithm")}
+                  </Text>
+                  <Text w="$24" fontSize="$xs" color="$neutral11">
+                    {t("home.transfer_seed.whole")}
+                  </Text>
+                  <Text w="$24" fontSize="$xs" color="$neutral11">
+                    {t("home.transfer_seed.pieces")}
+                  </Text>
+                </HStack>
                 <For each={["md5", "sha1", "sha256"] as SeedHashAlgorithm[]}>
-                  {(algorithm) => {
-                    const forced = () =>
-                      (algorithm === "sha1" && formats().includes("torrent")) ||
-                      (algorithm === "md5" && formats().includes("cas"))
+                  {(algorithm, index) => {
+                    const forced = () => forcedAlgorithms().includes(algorithm)
                     return (
-                      <VStack
-                        alignItems="flex-start"
-                        spacing="$1"
-                        border="1px solid $neutral7"
-                        borderRadius="$md"
-                        p="$2"
+                      <HStack
+                        px="$3"
+                        py="$2"
+                        spacing="$2"
+                        alignItems="center"
+                        borderTop={
+                          index() === 0 ? undefined : "1px solid $neutral5"
+                        }
+                        bgColor={forced() ? "$neutral2" : undefined}
                       >
-                        <Text fontWeight="$semibold">
-                          {algorithm.toUpperCase()}
-                        </Text>
+                        <HStack flex="1" spacing="$2" alignItems="center">
+                          <Text fontSize="$sm" fontWeight="$medium">
+                            {algorithm.toUpperCase()}
+                          </Text>
+                          <Show when={forced()}>
+                            <Badge colorScheme="info">
+                              {t("home.transfer_seed.required_short")}
+                            </Badge>
+                          </Show>
+                        </HStack>
                         <Checkbox
+                          w="$24"
+                          size="sm"
                           checked={effectiveMatrix()[algorithm].whole}
                           disabled={
                             forced() ||
@@ -500,6 +531,8 @@ export const TransferSeedGenerator = () => {
                           {t("home.transfer_seed.whole")}
                         </Checkbox>
                         <Checkbox
+                          w="$24"
+                          size="sm"
                           checked={effectiveMatrix()[algorithm].pieces}
                           disabled={
                             forced() ||
@@ -516,16 +549,20 @@ export const TransferSeedGenerator = () => {
                         >
                           {t("home.transfer_seed.pieces")}
                         </Checkbox>
-                        <Show when={forced()}>
-                          <Text fontSize="$xs" color="$neutral10">
-                            {t("home.transfer_seed.required_by_format")}
-                          </Text>
-                        </Show>
-                      </VStack>
+                      </HStack>
                     )
                   }}
                 </For>
-              </SimpleGrid>
+              </Box>
+              <Show when={forcedAlgorithms().length > 0}>
+                <Text fontSize="$xs" color="$neutral10" mt="$1">
+                  {t("home.transfer_seed.hash_matrix_forced", {
+                    algos: forcedAlgorithms()
+                      .map((algorithm) => algorithm.toUpperCase())
+                      .join(", "),
+                  })}
+                </Text>
+              </Show>
             </Box>
 
             <SimpleGrid columns={{ "@initial": 1, "@md": 2 }} gap="$3">
@@ -564,45 +601,41 @@ export const TransferSeedGenerator = () => {
                       })}
                 </Text>
               </Box>
-              <Box>
-                <Text fontSize="$sm" mb="$1">
-                  {t("home.transfer_seed.output_path")}
-                </Text>
-                <FolderChooseInput
-                  id="transfer-seed-output"
-                  value={outputPath()}
-                  onChange={setOutputPath}
-                />
-              </Box>
             </SimpleGrid>
 
-            <SimpleGrid columns={{ "@initial": 1, "@md": 2 }} gap="$3">
-              <Box>
-                <Text fontSize="$sm" mb="$1">
-                  {t("home.transfer_seed.generate_mode")}
-                </Text>
-                <SelectWrapper
-                  value={splitMode() ? "split" : "merge"}
-                  onChange={(value) => setSplitMode(value === "split")}
-                  options={[
-                    {
-                      value: "merge",
-                      label: t("home.transfer_seed.mode_merge"),
-                    },
-                    {
-                      value: "split",
-                      label: t("home.transfer_seed.mode_split"),
-                    },
-                  ]}
-                />
-                <Text fontSize="$xs" color="$neutral10" mt="$1">
-                  {splitMode()
-                    ? t("home.transfer_seed.mode_split_tips")
-                    : t("home.transfer_seed.mode_merge_tips")}
-                </Text>
-              </Box>
-              <Show when={hasDir()}>
-                <Box>
+            <Box>
+              <Text fontSize="$sm" mb="$1">
+                {t("home.transfer_seed.output_path")}
+              </Text>
+              <FolderChooseInput
+                id="transfer-seed-output"
+                value={outputPath()}
+                onChange={setOutputPath}
+              />
+            </Box>
+
+            <Box>
+              <Text fontSize="$sm" mb="$1">
+                {t("home.transfer_seed.generate_mode")}
+              </Text>
+              <HStack spacing="$4" alignItems="center" flexWrap="wrap">
+                <Box flex="1" minW={{ "@initial": "$full", "@md": "$64" }}>
+                  <SelectWrapper
+                    value={splitMode() ? "split" : "merge"}
+                    onChange={(value) => setSplitMode(value === "split")}
+                    options={[
+                      {
+                        value: "merge",
+                        label: t("home.transfer_seed.mode_merge"),
+                      },
+                      {
+                        value: "split",
+                        label: t("home.transfer_seed.mode_split"),
+                      },
+                    ]}
+                  />
+                </Box>
+                <Show when={hasDir()}>
                   <Checkbox
                     checked={preserveStructure()}
                     disabled={splitMode()}
@@ -612,12 +645,18 @@ export const TransferSeedGenerator = () => {
                   >
                     {t("home.transfer_seed.preserve_structure")}
                   </Checkbox>
-                  <Text fontSize="$xs" color="$neutral10">
-                    {t("home.transfer_seed.preserve_structure_tips")}
-                  </Text>
-                </Box>
-              </Show>
-            </SimpleGrid>
+                </Show>
+              </HStack>
+              <Text fontSize="$xs" color="$neutral10" mt="$1">
+                {splitMode()
+                  ? t("home.transfer_seed.mode_split_tips")
+                  : t("home.transfer_seed.mode_merge_tips")}
+                <Show when={hasDir() && !splitMode()}>
+                  {" "}
+                  {t("home.transfer_seed.preserve_structure_tips")}
+                </Show>
+              </Text>
+            </Box>
 
             <Box>
               <Text fontSize="$sm" mb="$1">
