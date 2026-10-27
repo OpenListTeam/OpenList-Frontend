@@ -14,6 +14,7 @@ const SCRAPE_KEYS = [
   "media_google_books_key",
   "media_download_cover",
   "media_overwrite_cover",
+  "media_skip_file_metadata",
   "media_store_thumbnail",
   "media_thumbnail_mode",
   "media_thumbnail_path",
