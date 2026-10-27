@@ -1185,77 +1185,88 @@ const MusicLibrary = () => {
                       <For each={tracks()}>
                         {(track, i) => (
                           <>
+                            {/* 单曲专辑不显示分组头：行内已经有「专辑 · 艺术家」，再显示一行会像重复 */}
                             <Show when={songGroupHeaders()[i()]}>
                               {(header) => (
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    "align-items": "center",
-                                    gap: "10px",
-                                    "margin-top": i() === 0 ? "0" : "14px",
-                                    "margin-bottom": "4px",
-                                    padding: "6px 12px",
-                                    "border-radius": "8px",
-                                    background: isDark()
-                                      ? "rgba(255,255,255,0.04)"
-                                      : "rgba(0,0,0,0.04)",
-                                  }}
-                                >
-                                  <Show when={header().cover}>
-                                    <img
-                                      src={resolveMediaCover(header().cover)}
-                                      alt={header().album}
-                                      loading="lazy"
+                                <Show when={header().count > 1}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      "align-items": "center",
+                                      gap: "10px",
+                                      "margin-top": i() === 0 ? "0" : "14px",
+                                      "margin-bottom": "4px",
+                                      padding: "6px 12px",
+                                      "border-radius": "8px",
+                                      background: isDark()
+                                        ? "rgba(255,255,255,0.04)"
+                                        : "rgba(0,0,0,0.04)",
+                                    }}
+                                  >
+                                    <Show when={header().cover}>
+                                      <img
+                                        src={resolveMediaCover(header().cover)}
+                                        alt={header().album}
+                                        loading="lazy"
+                                        style={{
+                                          width: "24px",
+                                          height: "24px",
+                                          "border-radius": "4px",
+                                          "object-fit": "cover",
+                                          "flex-shrink": "0",
+                                        }}
+                                      />
+                                    </Show>
+                                    <span
                                       style={{
-                                        width: "24px",
-                                        height: "24px",
-                                        "border-radius": "4px",
-                                        "object-fit": "cover",
+                                        color: isDark() ? "#e2e8f0" : "#1e293b",
+                                        "font-size": "13px",
+                                        "font-weight": "600",
+                                        overflow: "hidden",
+                                        "text-overflow": "ellipsis",
+                                        "white-space": "nowrap",
+                                      }}
+                                    >
+                                      {header().album ||
+                                        t("media.music.unknown_album")}
+                                    </span>
+                                    <span
+                                      style={{
+                                        color: isDark() ? "#64748b" : "#94a3b8",
+                                        "font-size": "12px",
+                                        overflow: "hidden",
+                                        "text-overflow": "ellipsis",
+                                        "white-space": "nowrap",
+                                      }}
+                                    >
+                                      {header().artist}
+                                    </span>
+                                    <span
+                                      style={{
+                                        color: isDark() ? "#64748b" : "#94a3b8",
+                                        "font-size": "12px",
                                         "flex-shrink": "0",
                                       }}
-                                    />
-                                  </Show>
-                                  <span
-                                    style={{
-                                      color: isDark() ? "#e2e8f0" : "#1e293b",
-                                      "font-size": "13px",
-                                      "font-weight": "600",
-                                      overflow: "hidden",
-                                      "text-overflow": "ellipsis",
-                                      "white-space": "nowrap",
-                                    }}
-                                  >
-                                    {header().album ||
-                                      t("media.music.unknown_album")}
-                                  </span>
-                                  <span
-                                    style={{
-                                      color: isDark() ? "#64748b" : "#94a3b8",
-                                      "font-size": "12px",
-                                      overflow: "hidden",
-                                      "text-overflow": "ellipsis",
-                                      "white-space": "nowrap",
-                                    }}
-                                  >
-                                    {header().artist}
-                                  </span>
-                                  <span
-                                    style={{
-                                      color: isDark() ? "#64748b" : "#94a3b8",
-                                      "font-size": "12px",
-                                      "flex-shrink": "0",
-                                    }}
-                                  >
-                                    {t("media.music.track_count", {
-                                      count: header().count,
-                                    })}
-                                  </span>
-                                </div>
+                                    >
+                                      {t("media.music.track_count", {
+                                        count: header().count,
+                                      })}
+                                    </span>
+                                  </div>
+                                </Show>
                               )}
                             </Show>
                             <div
                               onClick={() => setSelectedTrack(track)}
-                              onDblClick={() => playTrack(track)}
+                              onDblClick={() => {
+                                // 用整个可见列表作为播放队列：只调 playTrack 不会写入 playlist，
+                                // 底部播放条就不会出现（表现为「歌在响，但没有暂停/进度条」）
+                                const list = tracks()
+                                const idx = list.findIndex(
+                                  (t) => t.id === track.id,
+                                )
+                                playPlaylist(list, idx >= 0 ? idx : i())
+                              }}
                               title={t("media.music.track_item_tip")}
                               style={{
                                 display: "flex",

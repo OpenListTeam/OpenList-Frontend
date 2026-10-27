@@ -69,12 +69,21 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
     }
   })()
 
-  // 可选目标：不支持浏览器播放时直接剔除，避免用户选中后又报错
+  // 可选目标：不支持浏览器播放时保留该项但置灰（禁用），
+  // 让用户知道「浏览器播放」存在但当前文件用不了，而不是莫名其妙消失
   const targets = () => [
-    ...(props.browserUnsupported
-      ? []
-      : [{ id: "browser", name: "浏览器播放", browser: true }]),
-    ...players().map((p) => ({ id: p.id, name: p.name, browser: false })),
+    {
+      id: "browser",
+      name: "浏览器播放",
+      browser: true,
+      disabled: !!props.browserUnsupported,
+    },
+    ...players().map((p) => ({
+      id: p.id,
+      name: p.name,
+      browser: false,
+      disabled: false,
+    })),
   ]
 
   const isAvailable = (id: string) => targets().some((t) => t.id === id)
@@ -227,6 +236,14 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
   }
 
   const select = (id: string) => {
+    const item = targets().find((t) => t.id === id)
+    if (!item || item.disabled) {
+      // 置灰项只解释原因，不改变当前选择
+      notify.error(
+        props.unsupportedHint || "该文件无法在浏览器内播放，请选择本地播放器",
+      )
+      return
+    }
     setTarget(id)
     setDirectURL(null)
     setOpen(false)
@@ -356,13 +373,19 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
                       : "transparent",
                   color: isDark() ? "#e2e8f0" : "#1e293b",
                   "font-size": "13px",
-                  cursor: "pointer",
+                  cursor: item.disabled ? "not-allowed" : "pointer",
+                  opacity: item.disabled ? 0.45 : 1,
                   "text-align": "left",
                 }}
               >
                 <Dynamic component={iconOf(item.id)} size={15} />
                 <span style={{ flex: "1" }}>{item.name}</span>
-                <Show when={target() === item.id}>
+                <Show when={item.disabled}>
+                  <span style={{ "font-size": "10px", opacity: 0.8 }}>
+                    （不支持）
+                  </span>
+                </Show>
+                <Show when={target() === item.id && !item.disabled}>
                   <TbCheck size={14} />
                 </Show>
               </button>

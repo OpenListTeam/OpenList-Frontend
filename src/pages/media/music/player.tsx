@@ -19,15 +19,20 @@ import {
   TbPlayerSkipForwardFilled,
   TbRepeat,
   TbRepeatOnce,
+  TbStar,
+  TbStarFilled,
   TbVolume,
   TbVolumeOff,
   TbX,
 } from "solid-icons/tb"
 import {
   getMediaProgress,
+  getMediaUserData,
   getSignedProxyUrl,
   saveMediaProgress,
+  setMediaFavorite,
 } from "~/utils/media_api"
+import { notify } from "~/utils"
 import type { MediaItem } from "~/types"
 import { formatDuration, getMediaName } from "~/types"
 import { accentBar, accentGradient } from "~/utils/accent"
@@ -258,8 +263,156 @@ const parseLRC = (lrc: string): LyricLine[] => {
 }
 
 // ==================== 全屏歌词页 ====================
+/**
+ * 当前播放曲目的收藏状态（底栏与歌词页共用）。
+ *
+ * 依赖用 memo 收窄到「曲目 id」：playerState 每次 timeupdate 都会换新对象，
+ * 直接在 effect 里读 playerState() 会导致每秒几十次请求。
+ */
+const useTrackFavorite = () => {
+  const t = useT()
+  const id = createMemo(() => {
+    const s = playerState()
+    return s.playlist[s.currentIndex]?.id
+  })
+  const [favorite, setFavorite] = createSignal(false)
+  let reqId = 0
+  createEffect(() => {
+    const cur = id()
+    const mine = ++reqId
+    if (!cur) {
+      setFavorite(false)
+      return
+    }
+    getMediaUserData([cur])
+      .then((resp) => {
+        if (mine !== reqId) return
+        if (resp.code !== 200 || !resp.data) return
+        const row = resp.data.find((d) => d.item_id === cur)
+        setFavorite(!!row?.is_favorite)
+      })
+      .catch(() => {
+        /* 访客 / 未登录：忽略 */
+      })
+  })
+  const toggle = async () => {
+    const cur = id()
+    if (!cur) return
+    const next = !favorite()
+    setFavorite(next)
+    const resp = await setMediaFavorite(cur, next)
+    if (resp.code !== 200) {
+      setFavorite(!next)
+      notify.error(t("media.browser.favorite_failed") + ": " + resp.message)
+    }
+  }
+  return { favorite, toggle }
+}
+
+/**
+ * 可拖动的进度条。
+ *
+ * 之前只有 onClick、可视高度 3~4px：手机上一是点不准，二是根本拖不动。
+ * 这里改用 Pointer Events（鼠标/触摸一套逻辑）+ 指针捕获，
+ * 并把可交互区域用 padding 撑到 ~24px；拖动期间用本地比例覆盖播放进度，
+ * 避免和音频 timeupdate 抢位置导致滑块回弹。
+ */
+const SeekBar = (props: {
+  height?: number
+  padding?: string
+  trackColor?: string
+  onSeek: (seconds: number) => void
+}) => {
+  let trackRef: HTMLDivElement | undefined
+  const [dragging, setDragging] = createSignal(false)
+  const [dragRatio, setDragRatio] = createSignal<number | null>(null)
+
+  const ratio = () => {
+    const dragging = dragRatio()
+    if (dragging !== null) return dragging
+    const { currentTime, duration } = playerState()
+    return duration > 0 ? Math.min(1, currentTime / duration) : 0
+  }
+
+  const seekByClientX = (clientX: number) => {
+    const el = trackRef
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    if (rect.width <= 0) return
+    const r = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+    setDragRatio(r)
+    const duration = playerState().duration
+    if (duration > 0) props.onSeek(r * duration)
+  }
+
+  return (
+    <div
+      style={{
+        padding: props.padding ?? "10px 0",
+        cursor: "pointer",
+        "touch-action": "none",
+        "user-select": "none",
+      }}
+      onPointerDown={(e) => {
+        e.preventDefault()
+        setDragging(true)
+        e.currentTarget.setPointerCapture?.(e.pointerId)
+        seekByClientX(e.clientX)
+      }}
+      onPointerMove={(e) => {
+        if (!dragging()) return
+        seekByClientX(e.clientX)
+      }}
+      onPointerUp={(e) => {
+        setDragging(false)
+        setDragRatio(null)
+        e.currentTarget.releasePointerCapture?.(e.pointerId)
+      }}
+      onPointerCancel={() => {
+        setDragging(false)
+        setDragRatio(null)
+      }}
+    >
+      <div
+        ref={trackRef}
+        style={{
+          height: `${props.height ?? 4}px`,
+          background: props.trackColor ?? "rgba(255,255,255,0.15)",
+          "border-radius": "2px",
+          position: "relative",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${ratio() * 100}%`,
+            background: accentBar(),
+            "border-radius": "2px",
+            transition: dragging() ? "none" : "width 0.4s linear",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: `${ratio() * 100}%`,
+            width: "12px",
+            height: "12px",
+            "border-radius": "50%",
+            background: "#fff",
+            transform: "translate(-50%, -50%)",
+            "box-shadow": "0 1px 4px rgba(0,0,0,0.45)",
+            opacity: dragging() ? 1 : 0.9,
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
 const LyricsPage = () => {
   const t = useT()
+  const { favorite, toggle: toggleFavorite } = useTrackFavorite()
   // 窄屏（手机竖屏）必须换成纵向布局：左右两栏里左栏固定 340px 且不可压缩，
   // 加上外层 40px 内边距，390px 的屏幕根本放不下，歌词那一栏会被挤到可视区外，
   // 表现就是「有封面、没歌词」。
@@ -581,37 +734,11 @@ const LyricsPage = () => {
               "max-width": isNarrow() ? "100%" : "280px",
             }}
           >
-            <div
-              style={{
-                height: "4px",
-                background: "rgba(255,255,255,0.15)",
-                "border-radius": "2px",
-                cursor: "pointer",
-                position: "relative",
-                "margin-bottom": "8px",
+            <SeekBar
+              onSeek={(seconds) => {
+                initAudio().currentTime = seconds
               }}
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                const ratio = (e.clientX - rect.left) / rect.width
-                const audio = initAudio()
-                audio.currentTime = ratio * playerState().duration
-              }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  background: accentBar(),
-                  "border-radius": "2px",
-                  width: `${
-                    playerState().duration > 0
-                      ? (playerState().currentTime / playerState().duration) *
-                        100
-                      : 0
-                  }%`,
-                  transition: "width 0.5s linear",
-                }}
-              />
-            </div>
+            />
             <div
               style={{
                 display: "flex",
@@ -695,7 +822,25 @@ const LyricsPage = () => {
             >
               <TbPlayerSkipForwardFilled size={18} />
             </button>
-            <div style={{ width: "32px" }} />
+            {/* 收藏当前歌曲：与底栏、详情页同一份状态 */}
+            <button
+              onClick={toggleFavorite}
+              style={{
+                ...lyricsCtrlBtn,
+                color: favorite() ? "#fbbf24" : "#94a3b8",
+              }}
+              title={
+                favorite()
+                  ? t("media.video.favorited")
+                  : t("media.video.favorite")
+              }
+              aria-label={t("media.video.favorite")}
+            >
+              <Dynamic
+                component={favorite() ? TbStarFilled : TbStar}
+                size={18}
+              />
+            </button>
           </div>
         </div>
 
@@ -902,6 +1047,9 @@ export const MusicPlayer = () => {
   const barLeft = () =>
     mediaEnabled() && mediaSidebarOpen() && isDesktop() ? "216px" : "0"
 
+  // 底栏收藏：与详情页/列表共用同一份 userdata
+  const { favorite, toggle: toggleFavorite } = useTrackFavorite()
+
   // ===== 底栏滚动歌词：复用 parseLRC，外部 .lrc 优先于内嵌歌词 =====
   // 仅在歌词文本变化时才重新解析（依赖 currentIndex / externalLyrics / 当前 item.lyrics）
   const miniLyricLines = createMemo(() => {
@@ -920,14 +1068,6 @@ export const MusicPlayer = () => {
       else break
     }
     return idx
-  }
-
-  const handleSeek = (e: MouseEvent) => {
-    const bar = e.currentTarget as HTMLDivElement
-    const rect = bar.getBoundingClientRect()
-    const ratio = (e.clientX - rect.left) / rect.width
-    const audio = initAudio()
-    audio.currentTime = ratio * playerState().duration
   }
 
   const handleVolume = (e: MouseEvent) => {
@@ -983,30 +1123,15 @@ export const MusicPlayer = () => {
             "border-top": "1px solid rgba(255,255,255,0.07)",
           }}
         >
-          {/* 进度条（可点击） */}
-          <div
-            style={{
-              height: "3px",
-              background: "rgba(255,255,255,0.08)",
-              cursor: "pointer",
-              position: "relative",
+          {/* 进度条（可拖动；手机端也能拖） */}
+          <SeekBar
+            height={3}
+            padding="7px 0"
+            trackColor="rgba(255,255,255,0.08)"
+            onSeek={(seconds) => {
+              initAudio().currentTime = seconds
             }}
-            onClick={handleSeek}
-          >
-            <div
-              style={{
-                height: "100%",
-                background: accentBar(),
-                width: `${
-                  playerState().duration > 0
-                    ? (playerState().currentTime / playerState().duration) * 100
-                    : 0
-                }%`,
-                transition: "width 0.5s linear",
-                "border-radius": "0 2px 2px 0",
-              }}
-            />
-          </div>
+          />
 
           {/* 控制区 */}
           <div
@@ -1255,12 +1380,12 @@ export const MusicPlayer = () => {
               </Show>
             </div>
 
-            {/* 右：时间 + 循环 + 音量（手机端只保留关闭按钮，其余会挤压播放控制） */}
+            {/* 右：时间 + 循环 + 收藏 + 音量（手机端只隐藏时间和音量，循环/收藏保留） */}
             <div
               style={{
                 display: "flex",
                 "align-items": "center",
-                gap: "10px",
+                gap: isDesktop() ? "10px" : "4px",
                 "flex-shrink": "0",
               }}
             >
@@ -1278,16 +1403,38 @@ export const MusicPlayer = () => {
                   <span style={{ margin: "0 3px", opacity: "0.4" }}>/</span>
                   {formatDuration(Math.floor(playerState().duration))}
                 </div>
+              </Show>
 
-                {/* 循环模式 */}
-                <button
-                  onClick={cycleLoop}
-                  style={ctrlBtnStyle}
-                  title={t("media.player.loop_mode")}
-                >
-                  <Dynamic component={loopIcon()} size={16} />
-                </button>
+              {/* 循环模式：手机端也必须能切（顺序 / 单曲 / 列表 / 随机） */}
+              <button
+                onClick={cycleLoop}
+                style={ctrlBtnStyle}
+                title={t("media.player.loop_mode")}
+              >
+                <Dynamic component={loopIcon()} size={16} />
+              </button>
 
+              {/* 收藏当前歌曲 */}
+              <button
+                onClick={toggleFavorite}
+                style={{
+                  ...ctrlBtnStyle,
+                  color: favorite() ? "#fbbf24" : ctrlBtnStyle.color,
+                }}
+                title={
+                  favorite()
+                    ? t("media.video.favorited")
+                    : t("media.video.favorite")
+                }
+                aria-label={t("media.video.favorite")}
+              >
+                <Dynamic
+                  component={favorite() ? TbStarFilled : TbStar}
+                  size={16}
+                />
+              </button>
+
+              <Show when={isDesktop()}>
                 {/* 音量 */}
                 <div
                   style={{
