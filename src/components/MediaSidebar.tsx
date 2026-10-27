@@ -10,7 +10,14 @@
   useColorMode,
   VStack,
 } from "@hope-ui/solid"
-import { For, Show, createMemo, createSignal } from "solid-js"
+import {
+  For,
+  Show,
+  createMemo,
+  createSignal,
+  onCleanup,
+  onMount,
+} from "solid-js"
 import { useRouter, useT } from "~/hooks"
 import {
   mediaEnabled,
@@ -145,25 +152,13 @@ export const MediaSidebar = () => {
   }
 
   return (
-    <Box
-      as="aside"
-      style={paletteVars()}
-      w="216px"
-      flexShrink={0}
-      h="100vh"
-      // 移动端浮在内容之上作为抽屉（App 只在展开时渲染本组件），桌面端为常驻 sticky 侧栏
-      position={{ "@initial": "fixed", "@md": "sticky" }}
-      top="0"
-      left="0"
-      zIndex={{ "@initial": "$docked", "@md": "auto" }}
-      overflowY="auto"
-      bgColor="$neutral1"
-      borderRight="1px solid $neutral4"
-      display="block"
-      py="$3"
-      px="$2"
-    >
-      {/* 移动端遮罩：铺满视口，点击空白处收起抽屉；桌面端不渲染 */}
+    <>
+      {/* 移动端遮罩：必须和 aside 平级。
+          放在 aside 内部会画在侧栏自身背景之上（侧栏跟着一起变暗），
+          而且受 aside 的 docked(10) 层级限制，站点顶栏（sticky=1000）会盖住抽屉顶部，
+          整页看起来就是「一片黑 + 顶栏浮在上面」。
+          这里用 $modal(1300)：高于顶栏 / 顶部进度条 / 媒体库全屏播放层，
+          仍低于下拉菜单与通知。 */}
       <Box
         display={{ "@initial": "block", "@md": "none" }}
         position="fixed"
@@ -171,282 +166,309 @@ export const MediaSidebar = () => {
         right="0"
         bottom="0"
         left="0"
-        zIndex="0"
+        zIndex="$modal"
         bgColor="rgba(0,0,0,0.45)"
         onClick={() => setMediaSidebarOpen(false)}
       />
-      <VStack h="$full" spacing="$2" alignItems="stretch" position="relative">
-        <HStack
-          px="$2"
-          pb="$2"
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          <Text fontWeight="$semibold" fontSize="$sm" color="$neutral11">
-            {t("home.media.title")}
-          </Text>
-          <Button
-            size="xs"
-            variant="ghost"
-            colorScheme="neutral"
-            px="$1"
-            minW="0"
-            aria-label="collapse media sidebar"
-            onClick={() => setMediaSidebarOpen(false)}
+      <Box
+        as="aside"
+        style={paletteVars()}
+        w="216px"
+        flexShrink={0}
+        h="100vh"
+        // 移动端浮在内容之上作为抽屉（App 只在展开时渲染本组件），桌面端为常驻 sticky 侧栏
+        position={{ "@initial": "fixed", "@md": "sticky" }}
+        top="0"
+        left="0"
+        zIndex={{ "@initial": "$modal", "@md": "auto" }}
+        overflowY="auto"
+        bgColor="$neutral1"
+        borderRight="1px solid $neutral4"
+        display="block"
+        py="$3"
+        px="$2"
+      >
+        <VStack h="$full" spacing="$2" alignItems="stretch" position="relative">
+          <HStack
+            px="$2"
+            pb="$2"
+            justifyContent="space-between"
+            alignItems="center"
           >
-            <Icon as={TbChevronLeft} boxSize="$4" />
-          </Button>
-        </HStack>
-        <Divider />
-        <VStack spacing="$1" alignItems="stretch">
-          <For each={items()}>
-            {(item) => {
-              const active = createMemo(() => item.match(pathname()))
-              return (
+            <Text fontWeight="$semibold" fontSize="$sm" color="$neutral11">
+              {t("home.media.title")}
+            </Text>
+            <Button
+              size="xs"
+              variant="ghost"
+              colorScheme="neutral"
+              px="$1"
+              minW="0"
+              aria-label="collapse media sidebar"
+              onClick={() => setMediaSidebarOpen(false)}
+            >
+              <Icon as={TbChevronLeft} boxSize="$4" />
+            </Button>
+          </HStack>
+          <Divider />
+          <VStack spacing="$1" alignItems="stretch">
+            <For each={items()}>
+              {(item) => {
+                const active = createMemo(() => item.match(pathname()))
+                return (
+                  <Button
+                    variant={active() ? "subtle" : "ghost"}
+                    colorScheme={active() ? "accent" : "neutral"}
+                    justifyContent="flex-start"
+                    size="sm"
+                    leftIcon={<Icon as={item.icon} boxSize="$5" />}
+                    onClick={() => {
+                      to(item.path)
+                      closeOnMobile()
+                    }}
+                  >
+                    {item.label}
+                  </Button>
+                )
+              }}
+            </For>
+          </VStack>
+          <Box flex="1" />
+          <Divider />
+          <VStack px="$2" py="$1" spacing="$1" alignItems="stretch">
+            <HStack justifyContent="space-between" alignItems="center" h="$7">
+              <Text fontSize="$xs" fontWeight="$semibold" color="$neutral11">
+                OpenList
+              </Text>
+              <HStack
+                spacing="$1"
+                alignItems="center"
+                justifyContent="flex-end"
+              >
+                <Tooltip label="GitHub Repository">
+                  <Anchor
+                    href="https://github.com/OpenListTeam/OpenList"
+                    external
+                    w="$6"
+                    h="$6"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    color="$neutral11"
+                    _hover={{ color: "$accent9" }}
+                  >
+                    <Icon as={TbBrandGithub} boxSize="$4" />
+                  </Anchor>
+                </Tooltip>
+                <Tooltip label="Documentation">
+                  <Anchor
+                    href="https://doc.oplist.org"
+                    external
+                    w="$6"
+                    h="$6"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    color="$neutral11"
+                    _hover={{ color: "$accent9" }}
+                  >
+                    <Icon as={TbBook2} boxSize="$4" />
+                  </Anchor>
+                </Tooltip>
+                <Tooltip label="Theme color">
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    colorScheme="neutral"
+                    w="$6"
+                    h="$6"
+                    minW="$6"
+                    p="0"
+                    aria-label="theme color"
+                    onClick={() => setShowPalette(!showPalette())}
+                  >
+                    <Icon as={TbPalette} boxSize="$4" />
+                  </Button>
+                </Tooltip>
+              </HStack>
+            </HStack>
+            <HStack justifyContent="space-between" alignItems="center" h="$7">
+              <Text fontSize="$xs" color="$neutral11">
+                v{mediaStatus().version || "dev"}
+              </Text>
+              <HStack
+                spacing="$1"
+                alignItems="center"
+                justifyContent="flex-end"
+              >
+                <Tooltip
+                  label={colorMode() === "dark" ? "Light mode" : "Dark mode"}
+                >
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    colorScheme="neutral"
+                    w="$6"
+                    h="$6"
+                    minW="$6"
+                    p="0"
+                    aria-label="toggle color mode"
+                    onClick={toggleColorMode}
+                  >
+                    <Icon
+                      as={colorMode() === "dark" ? TbSun : TbMoon}
+                      boxSize="$4"
+                    />
+                  </Button>
+                </Tooltip>
+                <Show
+                  when={UserMethods.is_guest(me())}
+                  fallback={
+                    <>
+                      <Tooltip label="设置">
+                        <Button
+                          variant={manageActive() ? "subtle" : "ghost"}
+                          colorScheme={manageActive() ? "accent" : "neutral"}
+                          size="xs"
+                          w="$6"
+                          h="$6"
+                          minW="$6"
+                          p="0"
+                          aria-label="设置"
+                          onClick={() => to("/@manage/media/settings")}
+                        >
+                          <Icon as={TbSettings} boxSize="$4" />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip label="退出登录">
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          colorScheme="neutral"
+                          w="$6"
+                          h="$6"
+                          minW="$6"
+                          p="0"
+                          loading={loggingOut()}
+                          aria-label="退出登录"
+                          onClick={logout}
+                        >
+                          <Icon as={TbLogout} boxSize="$4" />
+                        </Button>
+                      </Tooltip>
+                    </>
+                  }
+                >
+                  <Tooltip label="登录">
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorScheme="neutral"
+                      minW="0"
+                      px="$1"
+                      aria-label="登录"
+                      onClick={() =>
+                        to(
+                          `/@login?redirect=${encodeURIComponent(location.pathname)}`,
+                        )
+                      }
+                    >
+                      <Icon as={TbLogin} boxSize="$4" />
+                    </Button>
+                  </Tooltip>
+                  <Tooltip label="设置">
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorScheme="neutral"
+                      minW="0"
+                      px="$1"
+                      aria-label="设置"
+                      onClick={() => to("/@manage/media/settings")}
+                    >
+                      <Icon as={TbSettings} boxSize="$4" />
+                    </Button>
+                  </Tooltip>
+                </Show>
+              </HStack>
+            </HStack>
+          </VStack>
+
+          <Show when={showPalette()}>
+            <Box
+              position="fixed"
+              left="12px"
+              bottom="64px"
+              zIndex="$popover"
+              w="200px"
+              p="$3"
+              bgColor="$neutral1"
+              rounded="$lg"
+              border="1px solid $neutral4"
+              shadow="$lg"
+            >
+              <VStack spacing="$2" alignItems="stretch">
+                <Text fontSize="$xs" color="$neutral11">
+                  Theme color
+                </Text>
+                <HStack spacing="$2" flexWrap="wrap">
+                  <For each={ACCENT_PRESETS}>
+                    {(preset) => (
+                      <Tooltip label={preset.name}>
+                        <Box
+                          as="button"
+                          w="$6"
+                          h="$6"
+                          rounded="$full"
+                          border={
+                            accentColor() === preset.color
+                              ? "2px solid $accent9"
+                              : "2px solid transparent"
+                          }
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          style={{ background: preset.color }}
+                          aria-label={preset.name}
+                          onClick={() => {
+                            setAccentColor(preset.color)
+                            setShowPalette(false)
+                          }}
+                        >
+                          <Show when={accentColor() === preset.color}>
+                            <Icon as={TbCheck} boxSize="$3" color="white" />
+                          </Show>
+                        </Box>
+                      </Tooltip>
+                    )}
+                  </For>
+                </HStack>
                 <Button
-                  variant={active() ? "subtle" : "ghost"}
-                  colorScheme={active() ? "accent" : "neutral"}
-                  justifyContent="flex-start"
-                  size="sm"
-                  leftIcon={<Icon as={item.icon} boxSize="$5" />}
+                  size="xs"
+                  variant="ghost"
                   onClick={() => {
-                    to(item.path)
-                    closeOnMobile()
+                    resetAccentColor()
+                    setShowPalette(false)
                   }}
                 >
-                  {item.label}
+                  Follow site default
                 </Button>
-              )
-            }}
-          </For>
-        </VStack>
-        <Box flex="1" />
-        <Divider />
-        <VStack px="$2" py="$1" spacing="$1" alignItems="stretch">
-          <HStack justifyContent="space-between" alignItems="center" h="$7">
-            <Text fontSize="$xs" fontWeight="$semibold" color="$neutral11">
-              OpenList
-            </Text>
-            <HStack spacing="$1" alignItems="center" justifyContent="flex-end">
-              <Tooltip label="GitHub Repository">
-                <Anchor
-                  href="https://github.com/OpenListTeam/OpenList"
-                  external
-                  w="$6"
-                  h="$6"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  color="$neutral11"
-                  _hover={{ color: "$accent9" }}
-                >
-                  <Icon as={TbBrandGithub} boxSize="$4" />
-                </Anchor>
-              </Tooltip>
-              <Tooltip label="Documentation">
-                <Anchor
-                  href="https://doc.oplist.org"
-                  external
-                  w="$6"
-                  h="$6"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  color="$neutral11"
-                  _hover={{ color: "$accent9" }}
-                >
-                  <Icon as={TbBook2} boxSize="$4" />
-                </Anchor>
-              </Tooltip>
-              <Tooltip label="Theme color">
                 <Button
                   size="xs"
                   variant="ghost"
-                  colorScheme="neutral"
-                  w="$6"
-                  h="$6"
-                  minW="$6"
-                  p="0"
-                  aria-label="theme color"
-                  onClick={() => setShowPalette(!showPalette())}
+                  colorScheme={mediaAccentEnabled() ? "accent" : "neutral"}
+                  onClick={() => setMediaAccentEnabled(!mediaAccentEnabled())}
                 >
-                  <Icon as={TbPalette} boxSize="$4" />
+                  {mediaAccentEnabled()
+                    ? "Theme color: media only (on)"
+                    : "Theme color: off"}
                 </Button>
-              </Tooltip>
-            </HStack>
-          </HStack>
-          <HStack justifyContent="space-between" alignItems="center" h="$7">
-            <Text fontSize="$xs" color="$neutral11">
-              v{mediaStatus().version || "dev"}
-            </Text>
-            <HStack spacing="$1" alignItems="center" justifyContent="flex-end">
-              <Tooltip
-                label={colorMode() === "dark" ? "Light mode" : "Dark mode"}
-              >
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  colorScheme="neutral"
-                  w="$6"
-                  h="$6"
-                  minW="$6"
-                  p="0"
-                  aria-label="toggle color mode"
-                  onClick={toggleColorMode}
-                >
-                  <Icon
-                    as={colorMode() === "dark" ? TbSun : TbMoon}
-                    boxSize="$4"
-                  />
-                </Button>
-              </Tooltip>
-              <Show
-                when={UserMethods.is_guest(me())}
-                fallback={
-                  <>
-                    <Tooltip label="设置">
-                      <Button
-                        variant={manageActive() ? "subtle" : "ghost"}
-                        colorScheme={manageActive() ? "accent" : "neutral"}
-                        size="xs"
-                        w="$6"
-                        h="$6"
-                        minW="$6"
-                        p="0"
-                        aria-label="设置"
-                        onClick={() => to("/@manage/media/settings")}
-                      >
-                        <Icon as={TbSettings} boxSize="$4" />
-                      </Button>
-                    </Tooltip>
-                    <Tooltip label="退出登录">
-                      <Button
-                        size="xs"
-                        variant="ghost"
-                        colorScheme="neutral"
-                        w="$6"
-                        h="$6"
-                        minW="$6"
-                        p="0"
-                        loading={loggingOut()}
-                        aria-label="退出登录"
-                        onClick={logout}
-                      >
-                        <Icon as={TbLogout} boxSize="$4" />
-                      </Button>
-                    </Tooltip>
-                  </>
-                }
-              >
-                <Tooltip label="登录">
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    colorScheme="neutral"
-                    minW="0"
-                    px="$1"
-                    aria-label="登录"
-                    onClick={() =>
-                      to(
-                        `/@login?redirect=${encodeURIComponent(location.pathname)}`,
-                      )
-                    }
-                  >
-                    <Icon as={TbLogin} boxSize="$4" />
-                  </Button>
-                </Tooltip>
-                <Tooltip label="设置">
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    colorScheme="neutral"
-                    minW="0"
-                    px="$1"
-                    aria-label="设置"
-                    onClick={() => to("/@manage/media/settings")}
-                  >
-                    <Icon as={TbSettings} boxSize="$4" />
-                  </Button>
-                </Tooltip>
-              </Show>
-            </HStack>
-          </HStack>
+              </VStack>
+            </Box>
+          </Show>
         </VStack>
-
-        <Show when={showPalette()}>
-          <Box
-            position="fixed"
-            left="12px"
-            bottom="64px"
-            zIndex="$popover"
-            w="200px"
-            p="$3"
-            bgColor="$neutral1"
-            rounded="$lg"
-            border="1px solid $neutral4"
-            shadow="$lg"
-          >
-            <VStack spacing="$2" alignItems="stretch">
-              <Text fontSize="$xs" color="$neutral11">
-                Theme color
-              </Text>
-              <HStack spacing="$2" flexWrap="wrap">
-                <For each={ACCENT_PRESETS}>
-                  {(preset) => (
-                    <Tooltip label={preset.name}>
-                      <Box
-                        as="button"
-                        w="$6"
-                        h="$6"
-                        rounded="$full"
-                        border={
-                          accentColor() === preset.color
-                            ? "2px solid $accent9"
-                            : "2px solid transparent"
-                        }
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        style={{ background: preset.color }}
-                        aria-label={preset.name}
-                        onClick={() => {
-                          setAccentColor(preset.color)
-                          setShowPalette(false)
-                        }}
-                      >
-                        <Show when={accentColor() === preset.color}>
-                          <Icon as={TbCheck} boxSize="$3" color="white" />
-                        </Show>
-                      </Box>
-                    </Tooltip>
-                  )}
-                </For>
-              </HStack>
-              <Button
-                size="xs"
-                variant="ghost"
-                onClick={() => {
-                  resetAccentColor()
-                  setShowPalette(false)
-                }}
-              >
-                Follow site default
-              </Button>
-              <Button
-                size="xs"
-                variant="ghost"
-                colorScheme={mediaAccentEnabled() ? "accent" : "neutral"}
-                onClick={() => setMediaAccentEnabled(!mediaAccentEnabled())}
-              >
-                {mediaAccentEnabled()
-                  ? "Theme color: media only (on)"
-                  : "Theme color: off"}
-              </Button>
-            </VStack>
-          </Box>
-        </Show>
-      </VStack>
-    </Box>
+      </Box>
+    </>
   )
 }
 
@@ -455,8 +477,17 @@ export const MediaSidebar = () => {
  * 管理后台等页面没有 Home 的顶栏，需要这个入口才能重新展开。
  */
 export const MediaSidebarFloatingTrigger = () => {
+  // 手机端顶栏本身就有侧栏入口，浮动开关会和底部播放条叠在一起，直接不渲染
+  const [isMobile, setIsMobile] = createSignal(false)
+  onMount(() => {
+    const mq = window.matchMedia("(max-width: 767px)")
+    const update = () => setIsMobile(mq.matches)
+    update()
+    mq.addEventListener("change", update)
+    onCleanup(() => mq.removeEventListener("change", update))
+  })
   return (
-    <Show when={mediaEnabled() && !mediaSidebarOpen()}>
+    <Show when={mediaEnabled() && !mediaSidebarOpen() && !isMobile()}>
       <Button
         position="fixed"
         left="$3"

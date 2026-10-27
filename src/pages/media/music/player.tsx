@@ -35,6 +35,7 @@ import { resolveMediaCover } from "~/utils/media_cover"
 import { OpenWithPlayer } from "~/components/OpenWithPlayer"
 import { useT } from "~/hooks"
 import { mediaEnabled, mediaSidebarOpen } from "~/store/media"
+import { mediaOverlayZ } from "../ui"
 
 /**
  * 全局音乐播放器：播放状态、音频元素、全屏歌词页与底部播放条。
@@ -247,6 +248,17 @@ const parseLRC = (lrc: string): LyricLine[] => {
 // ==================== 全屏歌词页 ====================
 const LyricsPage = () => {
   const t = useT()
+  // 窄屏（手机竖屏）必须换成纵向布局：左右两栏里左栏固定 340px 且不可压缩，
+  // 加上外层 40px 内边距，390px 的屏幕根本放不下，歌词那一栏会被挤到可视区外，
+  // 表现就是「有封面、没歌词」。
+  const [isNarrow, setIsNarrow] = createSignal(false)
+  onMount(() => {
+    const mq = window.matchMedia("(max-width: 767px)")
+    const update = () => setIsNarrow(mq.matches)
+    update()
+    mq.addEventListener("change", update)
+    onCleanup(() => mq.removeEventListener("change", update))
+  })
   // 使用函数形式访问 signal，保持响应式
   const currentItem = () => {
     const s = playerState()
@@ -338,7 +350,8 @@ const LyricsPage = () => {
       style={{
         position: "fixed",
         inset: "0",
-        "z-index": "200",
+        // 必须盖住站点 Header（吸附时 z-index 1000），否则顶部「收起」按钮点不到
+        "z-index": mediaOverlayZ,
         display: "flex",
         "flex-direction": "column",
         overflow: "hidden",
@@ -374,7 +387,7 @@ const LyricsPage = () => {
           display: "flex",
           "align-items": "center",
           "justify-content": "space-between",
-          padding: "20px 28px",
+          padding: isNarrow() ? "12px 16px" : "20px 28px",
         }}
       >
         <button
@@ -418,34 +431,37 @@ const LyricsPage = () => {
           "z-index": "1",
           flex: "1",
           display: "flex",
-          gap: "40px",
-          "align-items": "stretch",
+          // 窄屏：上封面、下歌词；宽屏：左封面、右歌词
+          "flex-direction": isNarrow() ? "column" : "row",
+          gap: isNarrow() ? "6px" : "40px",
+          "align-items": isNarrow() ? "stretch" : "stretch",
           overflow: "hidden",
-          padding: "0 40px",
+          padding: isNarrow() ? "0 16px" : "0 40px",
           width: "100%",
           "max-width": "1150px",
           margin: "0 auto",
+          "min-height": "0",
         }}
       >
-        {/* 左侧：封面 + 信息 + 控制 */}
+        {/* 左侧：封面 + 信息 + 控制（窄屏为顶部一块，让出下方空间给歌词） */}
         <div
           style={{
-            width: "340px",
+            width: isNarrow() ? "100%" : "340px",
             "flex-shrink": "0",
             display: "flex",
             "flex-direction": "column",
             "align-items": "center",
             "justify-content": "center",
-            gap: "20px",
-            padding: "0 20px 80px",
+            gap: isNarrow() ? "10px" : "20px",
+            padding: isNarrow() ? "0 0 6px" : "0 20px 80px",
           }}
         >
           {/* 旋转唱片 */}
           <div
             style={{
               position: "relative",
-              width: "220px",
-              height: "220px",
+              width: isNarrow() ? "132px" : "220px",
+              height: isNarrow() ? "132px" : "220px",
             }}
           >
             {/* 唱片外圈 */}
@@ -524,11 +540,11 @@ const LyricsPage = () => {
             <div
               style={{
                 color: "white",
-                "font-size": "20px",
+                "font-size": isNarrow() ? "17px" : "20px",
                 "font-weight": "700",
                 "letter-spacing": "-0.02em",
-                "margin-bottom": "6px",
-                "max-width": "280px",
+                "margin-bottom": isNarrow() ? "2px" : "6px",
+                "max-width": isNarrow() ? "100%" : "280px",
                 overflow: "hidden",
                 "text-overflow": "ellipsis",
                 "white-space": "nowrap",
@@ -537,14 +553,22 @@ const LyricsPage = () => {
               {getMediaName(currentItem()!)}
             </div>
             <div
-              style={{ color: "rgba(255,255,255,0.55)", "font-size": "14px" }}
+              style={{
+                color: "rgba(255,255,255,0.55)",
+                "font-size": isNarrow() ? "12px" : "14px",
+              }}
             >
               {currentItem()?.album_artist || t("media.music.unknown_artist")}
             </div>
           </div>
 
           {/* 进度条 */}
-          <div style={{ width: "100%", "max-width": "280px" }}>
+          <div
+            style={{
+              width: "100%",
+              "max-width": isNarrow() ? "100%" : "280px",
+            }}
+          >
             <div
               style={{
                 height: "4px",
@@ -593,7 +617,11 @@ const LyricsPage = () => {
 
           {/* 播放控制 */}
           <div
-            style={{ display: "flex", "align-items": "center", gap: "16px" }}
+            style={{
+              display: "flex",
+              "align-items": "center",
+              gap: isNarrow() ? "12px" : "16px",
+            }}
           >
             <button
               onClick={() => {
@@ -624,13 +652,13 @@ const LyricsPage = () => {
             <button
               onClick={togglePlay}
               style={{
-                width: "52px",
-                height: "52px",
+                width: isNarrow() ? "46px" : "52px",
+                height: isNarrow() ? "46px" : "52px",
                 "border-radius": "50%",
                 background: accentGradient(),
                 border: "none",
                 color: "white",
-                "font-size": "20px",
+                "font-size": isNarrow() ? "18px" : "20px",
                 cursor: "pointer",
                 display: "flex",
                 "align-items": "center",
@@ -664,11 +692,13 @@ const LyricsPage = () => {
           style={{
             flex: "1",
             "min-width": "0",
-            "max-width": "680px",
+            // flex 子项必须允许收缩，否则歌词容器会被内容撑高、把自身推出可视区
+            "min-height": "0",
+            "max-width": isNarrow() ? "100%" : "680px",
             display: "flex",
             "flex-direction": "column",
             overflow: "hidden",
-            padding: "20px 0 100px 0",
+            padding: isNarrow() ? "0 0 8px 0" : "20px 0 100px 0",
           }}
         >
           <Show
@@ -701,8 +731,8 @@ const LyricsPage = () => {
                   "overflow-y": "auto",
                   "overflow-x": "hidden",
                   "scroll-behavior": "smooth",
-                  "padding-top": "36vh",
-                  "padding-bottom": "40vh",
+                  "padding-top": isNarrow() ? "22vh" : "36vh",
+                  "padding-bottom": isNarrow() ? "28vh" : "40vh",
                   "scrollbar-width": "none",
                 }}
               >
@@ -726,17 +756,23 @@ const LyricsPage = () => {
                         }}
                         title={t("media.player.jump_to_line")}
                         style={{
-                          "min-height": "52px",
+                          "min-height": isNarrow() ? "42px" : "52px",
                           display: "flex",
                           "align-items": "center",
                           "justify-content": "center",
-                          gap: "12px",
+                          gap: isNarrow() ? "8px" : "12px",
                           cursor: "pointer",
                           "max-width": "100%",
                           padding: "4px 8px",
                           "text-align": "center",
                           "font-size":
-                            i() === currentLyricIndex() ? "22px" : "16px",
+                            i() === currentLyricIndex()
+                              ? isNarrow()
+                                ? "19px"
+                                : "22px"
+                              : isNarrow()
+                                ? "15px"
+                                : "16px",
                           "font-weight":
                             i() === currentLyricIndex() ? "700" : "400",
                           color:
@@ -965,21 +1001,23 @@ export const MusicPlayer = () => {
             style={{
               display: "flex",
               "align-items": "center",
-              height: "68px",
-              padding: "0 20px",
-              gap: "12px",
+              height: isDesktop() ? "68px" : "60px",
+              padding: isDesktop() ? "0 20px" : "0 12px",
+              gap: isDesktop() ? "12px" : "8px",
             }}
           >
             {/* 左：封面 + 歌曲信息（点击展开歌词） */}
-            {/* 取消 flex:1，改为有限宽度，把剩余空间让给中间的歌词条 */}
+            {/* 桌面端用有限宽度，把剩余空间让给中间的歌词条；
+                手机端没有歌词条，改为占满剩余宽度，否则右侧控件会被挤出屏幕 */}
             <div
               style={{
                 display: "flex",
                 "align-items": "center",
-                gap: "12px",
-                width: "260px",
+                gap: isDesktop() ? "12px" : "8px",
+                width: isDesktop() ? "260px" : "auto",
+                flex: isDesktop() ? "0 0 260px" : "1 1 auto",
                 "min-width": "0",
-                "flex-shrink": "0",
+                "flex-shrink": isDesktop() ? "0" : "1",
                 cursor: "pointer",
               }}
               onClick={() =>
@@ -988,8 +1026,8 @@ export const MusicPlayer = () => {
             >
               <div
                 style={{
-                  width: "46px",
-                  height: "46px",
+                  width: isDesktop() ? "46px" : "38px",
+                  height: isDesktop() ? "46px" : "38px",
                   "border-radius": "8px",
                   overflow: "hidden",
                   "flex-shrink": "0",
@@ -1049,82 +1087,85 @@ export const MusicPlayer = () => {
                 - flex:1 占据剩余空间；min-width:0 保证 ellipsis 生效
                 - 点击同样可展开全屏歌词页
                 - 双行：上方为当前行（高亮），下方为下一行预览
-                - 没有歌词时显示淡占位以保持布局稳定 */}
-            <div
-              onClick={() =>
-                setPlayerState((s) => ({ ...s, showLyrics: true }))
-              }
-              title={t("media.player.view_full_lyrics")}
-              style={{
-                flex: "1",
-                "min-width": "0",
-                display: "flex",
-                "flex-direction": "column",
-                "justify-content": "center",
-                gap: "2px",
-                cursor: "pointer",
-                padding: "0 14px",
-                "text-align": "center",
-                "user-select": "none",
-              }}
-            >
-              <Show
-                when={miniLyricLines().length > 0}
-                fallback={
+                - 没有歌词时显示淡占位以保持布局稳定
+                - 手机端不渲染：屏幕太窄，留着会把播放控制挤出可视区 */}
+            <Show when={isDesktop()}>
+              <div
+                onClick={() =>
+                  setPlayerState((s) => ({ ...s, showLyrics: true }))
+                }
+                title={t("media.player.view_full_lyrics")}
+                style={{
+                  flex: "1",
+                  "min-width": "0",
+                  display: "flex",
+                  "flex-direction": "column",
+                  "justify-content": "center",
+                  gap: "2px",
+                  cursor: "pointer",
+                  padding: "0 14px",
+                  "text-align": "center",
+                  "user-select": "none",
+                }}
+              >
+                <Show
+                  when={miniLyricLines().length > 0}
+                  fallback={
+                    <div
+                      style={{
+                        color: "rgba(148,163,184,0.4)",
+                        "font-size": "13px",
+                        "white-space": "nowrap",
+                        overflow: "hidden",
+                        "text-overflow": "ellipsis",
+                      }}
+                    >
+                      <TbMusic
+                        size={13}
+                        style={{
+                          "vertical-align": "-2px",
+                          "margin-right": "4px",
+                        }}
+                      />
+                      {t("media.player.no_lyrics")}
+                    </div>
+                  }
+                >
                   <div
                     style={{
-                      color: "rgba(148,163,184,0.4)",
-                      "font-size": "13px",
+                      color: "#f1f5f9",
+                      "font-size": "14px",
+                      "font-weight": "500",
+                      "white-space": "nowrap",
+                      overflow: "hidden",
+                      "text-overflow": "ellipsis",
+                      "letter-spacing": "-0.01em",
+                      transition: "color 0.3s",
+                    }}
+                  >
+                    {currentMiniLyricIdx() >= 0
+                      ? miniLyricLines()[currentMiniLyricIdx()].text || "♪"
+                      : miniLyricLines()[0]?.text || "♪"}
+                  </div>
+                  <div
+                    style={{
+                      color: "rgba(148,163,184,0.55)",
+                      "font-size": "12px",
                       "white-space": "nowrap",
                       overflow: "hidden",
                       "text-overflow": "ellipsis",
                     }}
                   >
-                    <TbMusic
-                      size={13}
-                      style={{
-                        "vertical-align": "-2px",
-                        "margin-right": "4px",
-                      }}
-                    />
-                    {t("media.player.no_lyrics")}
+                    {(() => {
+                      const lines = miniLyricLines()
+                      const i = currentMiniLyricIdx()
+                      const next = i >= 0 ? lines[i + 1] : lines[1]
+                      return next?.text ?? ""
+                    })()}
                   </div>
-                }
-              >
-                <div
-                  style={{
-                    color: "#f1f5f9",
-                    "font-size": "14px",
-                    "font-weight": "500",
-                    "white-space": "nowrap",
-                    overflow: "hidden",
-                    "text-overflow": "ellipsis",
-                    "letter-spacing": "-0.01em",
-                    transition: "color 0.3s",
-                  }}
-                >
-                  {currentMiniLyricIdx() >= 0
-                    ? miniLyricLines()[currentMiniLyricIdx()].text || "♪"
-                    : miniLyricLines()[0]?.text || "♪"}
-                </div>
-                <div
-                  style={{
-                    color: "rgba(148,163,184,0.55)",
-                    "font-size": "12px",
-                    "white-space": "nowrap",
-                    overflow: "hidden",
-                    "text-overflow": "ellipsis",
-                  }}
-                >
-                  {(() => {
-                    const lines = miniLyricLines()
-                    const i = currentMiniLyricIdx()
-                    const next = i >= 0 ? lines[i + 1] : lines[1]
-                    return next?.text ?? ""
-                  })()}
-                </div>
-              </Show>
-            </div>
+                </Show>
+              </div>
+            </Show>
 
             {/* 中：播放控制 */}
             <div
@@ -1182,7 +1223,8 @@ export const MusicPlayer = () => {
               >
                 <TbPlayerSkipForwardFilled size={16} />
               </button>
-              <Show when={currentItem()}>
+              {/* 「本地播放器」入口在手机上先隐藏：窄屏放不下 */}
+              <Show when={isDesktop() ? currentItem() : undefined}>
                 {(cur) => (
                   <div
                     style={{
@@ -1201,7 +1243,7 @@ export const MusicPlayer = () => {
               </Show>
             </div>
 
-            {/* 右：时间 + 循环 + 音量 */}
+            {/* 右：时间 + 循环 + 音量（手机端只保留关闭按钮，其余会挤压播放控制） */}
             <div
               style={{
                 display: "flex",
@@ -1210,69 +1252,75 @@ export const MusicPlayer = () => {
                 "flex-shrink": "0",
               }}
             >
-              {/* 时间 */}
-              <div
-                style={{
-                  color: "#475569",
-                  "font-size": "12px",
-                  "white-space": "nowrap",
-                  "font-variant-numeric": "tabular-nums",
-                }}
-              >
-                {formatDuration(Math.floor(playerState().currentTime))}
-                <span style={{ margin: "0 3px", opacity: "0.4" }}>/</span>
-                {formatDuration(Math.floor(playerState().duration))}
-              </div>
-
-              {/* 循环模式 */}
-              <button
-                onClick={cycleLoop}
-                style={ctrlBtnStyle}
-                title={t("media.player.loop_mode")}
-              >
-                <Dynamic component={loopIcon()} size={16} />
-              </button>
-
-              {/* 音量 */}
-              <div
-                style={{ display: "flex", "align-items": "center", gap: "6px" }}
-              >
-                <span
-                  style={{
-                    color: "#475569",
-                    "font-size": "14px",
-                    "flex-shrink": "0",
-                  }}
-                >
-                  <Dynamic
-                    component={
-                      playerState().volume <= 0 ? TbVolumeOff : TbVolume
-                    }
-                    size={16}
-                  />
-                </span>
+              <Show when={isDesktop()}>
+                {/* 时间 */}
                 <div
                   style={{
-                    width: "72px",
-                    height: "4px",
-                    background: "rgba(255,255,255,0.1)",
-                    "border-radius": "2px",
-                    cursor: "pointer",
-                    position: "relative",
-                    "flex-shrink": "0",
+                    color: "#475569",
+                    "font-size": "12px",
+                    "white-space": "nowrap",
+                    "font-variant-numeric": "tabular-nums",
                   }}
-                  onClick={handleVolume}
                 >
+                  {formatDuration(Math.floor(playerState().currentTime))}
+                  <span style={{ margin: "0 3px", opacity: "0.4" }}>/</span>
+                  {formatDuration(Math.floor(playerState().duration))}
+                </div>
+
+                {/* 循环模式 */}
+                <button
+                  onClick={cycleLoop}
+                  style={ctrlBtnStyle}
+                  title={t("media.player.loop_mode")}
+                >
+                  <Dynamic component={loopIcon()} size={16} />
+                </button>
+
+                {/* 音量 */}
+                <div
+                  style={{
+                    display: "flex",
+                    "align-items": "center",
+                    gap: "6px",
+                  }}
+                >
+                  <span
+                    style={{
+                      color: "#475569",
+                      "font-size": "14px",
+                      "flex-shrink": "0",
+                    }}
+                  >
+                    <Dynamic
+                      component={
+                        playerState().volume <= 0 ? TbVolumeOff : TbVolume
+                      }
+                      size={16}
+                    />
+                  </span>
                   <div
                     style={{
-                      height: "100%",
-                      background: accentBar(),
+                      width: "72px",
+                      height: "4px",
+                      background: "rgba(255,255,255,0.1)",
                       "border-radius": "2px",
-                      width: `${playerState().volume * 100}%`,
+                      cursor: "pointer",
+                      position: "relative",
+                      "flex-shrink": "0",
                     }}
-                  />
+                    onClick={handleVolume}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        background: accentBar(),
+                        "border-radius": "2px",
+                        width: `${playerState().volume * 100}%`,
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
+              </Show>
 
               {/* 关闭底部播放器 */}
               <button

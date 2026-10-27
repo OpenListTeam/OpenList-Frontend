@@ -17,7 +17,7 @@ import {
   TbPlayerPlay,
 } from "solid-icons/tb"
 import { api, getPlatform, notify } from "~/utils"
-import { getMediaStreamUrl } from "~/utils/media_api"
+import { getMediaStreamUrl, resolveMediaUrl } from "~/utils/media_api"
 import { accent } from "~/store/accent"
 import { playersForPlatform, renderPlayerScheme } from "~/utils/players"
 
@@ -84,7 +84,8 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
         notify.error(resp.message || "获取直链失败")
         return null
       }
-      return resp.data.url
+      // 外部播放器/新窗口需要绝对地址：后端在回环 host 场景会返回 /d/... 相对路径
+      return resolveMediaUrl(resp.data.url)
     }
     if (!props.itemId) {
       notify.error("缺少媒体信息")
@@ -98,7 +99,7 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
       notify.error(resp.message || "获取直链失败")
       return null
     }
-    return resp.data.url
+    return resolveMediaUrl(resp.data.url)
   }
 
   const resolveEmbyServer = async (): Promise<string | null> => {

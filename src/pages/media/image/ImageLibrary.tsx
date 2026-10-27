@@ -6,7 +6,7 @@ import type { MediaItem } from "~/types"
 import { getMediaName } from "~/types"
 import { createSignedProxyUrl, mediaItemPath } from "~/utils/media_api"
 import { useT } from "~/hooks"
-import { formatMediaSize } from "../ui"
+import { formatMediaSize, mediaOverlayZ } from "../ui"
 
 // ==================== 图片预览器 ====================
 const ImageViewer = (props: {
@@ -63,7 +63,8 @@ const ImageViewer = (props: {
       style={{
         position: "fixed",
         inset: "0",
-        "z-index": "300",
+        // 必须盖住站点 Header（吸附时 z-index 1000），否则顶部关闭按钮点不到
+        "z-index": mediaOverlayZ,
         background: "rgba(0,0,0,0.95)",
         display: "flex",
         "flex-direction": "column",

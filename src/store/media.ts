@@ -58,9 +58,14 @@ const stored =
   typeof localStorage !== "undefined"
     ? localStorage.getItem("media-sidebar-open")
     : null
-// 默认展开：媒体库启用后侧边栏直接可见，用户手动收起后记住选择
+// 手机端（<768px）侧栏是覆盖式抽屉 + 全屏遮罩，必须默认收起：
+// 否则一进页面就是「抽屉 + 黑色遮罩盖住整页」，看起来像整个站点挂了。
+const isMobileViewport = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(max-width: 767px)").matches
+// 桌面端默认展开：媒体库启用后侧边栏直接可见，用户手动收起后记住选择
 const [mediaSidebarOpen, setMediaSidebarOpenRaw] = createSignal(
-  stored === null ? true : stored === "true",
+  isMobileViewport() ? false : stored === null ? true : stored === "true",
 )
 
 export const setMediaSidebarOpen = (open: boolean) => {

@@ -6,7 +6,12 @@ import { useT } from "~/hooks"
 import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
 import { useMediaRoute } from "../useMediaRoute"
-import { formatMediaSize, mediaBackBtn, mediaPrimaryBtn } from "../ui"
+import {
+  formatMediaSize,
+  mediaBackBtn,
+  mediaOverlayZ,
+  mediaPrimaryBtn,
+} from "../ui"
 import { PdfReader } from "./PdfReader"
 import { EpubReader } from "./EpubReader"
 import { readerBtnStyle } from "./reader_style"
@@ -14,6 +19,7 @@ import {
   createSignedMediaUrls,
   getMediaItem,
   getMediaStreamUrl,
+  resolveMediaUrl,
 } from "~/utils/media_api"
 import type { MediaItem, EpisodeInfo } from "~/types"
 import { getMediaName, parseAuthors, parseEpisodes } from "~/types"
@@ -54,7 +60,8 @@ const BookReader = (props: {
       style={{
         position: "fixed",
         inset: "0",
-        "z-index": "200",
+        // 必须盖住站点 Header（吸附时 z-index 1000），否则顶部「关闭」按钮点不到
+        "z-index": mediaOverlayZ,
         background: "#1a1a2e",
         display: "flex",
         "flex-direction": "column",
@@ -149,7 +156,7 @@ const BookReader = (props: {
                 const resp = await getMediaStreamUrl({ path: resolvedPath() })
                 const url =
                   resp.code === 200 && resp.data?.url
-                    ? resp.data.url
+                    ? resolveMediaUrl(resp.data.url)
                     : `${api}/d${encodePath(resolvedPath())}`
                 location.assign(url)
               }}
