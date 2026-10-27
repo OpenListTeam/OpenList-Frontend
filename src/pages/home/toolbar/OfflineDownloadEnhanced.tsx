@@ -308,6 +308,34 @@ export const TransferSeedGenerator = () => {
   const capabilityFiles = () => capabilities()?.files ?? []
   const reuseOnly = () => capabilities()?.hash_reuse_only === true
 
+  // 列表展示用文件名（完整路径放到第二行）
+  const fileNameOf = (path?: string) => {
+    const value = (path || "").replace(/\/+$/, "")
+    return value.split("/").pop() || value
+  }
+
+  // 可批量勾选的文件（不可用的单独禁用，不参与全选）
+  const shareSelectable = () =>
+    capabilityFiles()
+      .filter((file) => file.share_available !== false)
+      .map((file) => file.source_path || file.path)
+  const directSelectable = () =>
+    capabilityFiles()
+      .filter((file) => file.direct_source_available !== false)
+      .map((file) => file.source_path || file.path)
+  const allShareSelected = () => {
+    const list = shareSelectable()
+    return list.length > 0 && list.every((path) => shareFiles().includes(path))
+  }
+  const allDirectSelected = () => {
+    const list = directSelectable()
+    return list.length > 0 && list.every((path) => directFiles().includes(path))
+  }
+  const toggleAllShare = (checked: boolean) =>
+    setShareFiles(checked ? Array.from(new Set(shareSelectable())) : [])
+  const toggleAllDirect = (checked: boolean) =>
+    setDirectFiles(checked ? Array.from(new Set(directSelectable())) : [])
+
   // Hashes shared by every selected file: only those can be turned into a
   // seed without downloading the content again.
   const availableWholeHashes = createMemo<Set<SeedHashAlgorithm>>(() => {
@@ -650,6 +678,29 @@ export const TransferSeedGenerator = () => {
                     )}
                   </Badge>
                 </HStack>
+                {/* 一键全选：逐个勾选在文件多时太费劲 */}
+                <HStack spacing="$4" flexWrap="wrap" mb="$2">
+                  <Checkbox
+                    size="sm"
+                    checked={allShareSelected()}
+                    disabled={!shareSelectable().length}
+                    onChange={(event) =>
+                      toggleAllShare(event.currentTarget.checked)
+                    }
+                  >
+                    {t("home.transfer_seed.select_all_share")}
+                  </Checkbox>
+                  <Checkbox
+                    size="sm"
+                    checked={allDirectSelected()}
+                    disabled={!directSelectable().length}
+                    onChange={(event) =>
+                      toggleAllDirect(event.currentTarget.checked)
+                    }
+                  >
+                    {t("home.transfer_seed.select_all_direct")}
+                  </Checkbox>
+                </HStack>
                 <For each={capabilityFiles()}>
                   {(file) => {
                     const directAvailable = () =>
@@ -658,20 +709,39 @@ export const TransferSeedGenerator = () => {
                     return (
                       <VStack
                         alignItems="stretch"
-                        spacing="$2"
-                        mb="$3"
-                        p="$2"
-                        border="1px solid $neutral6"
-                        borderRadius="$md"
+                        spacing="$1"
+                        py="$3"
+                        borderTop="1px solid $neutral5"
                       >
-                        <HStack justifyContent="space-between" flexWrap="wrap">
-                          <Text fontSize="$sm" css={{ wordBreak: "break-all" }}>
-                            {file.source_path || file.path}
+                        <HStack justifyContent="space-between" spacing="$3">
+                          <Text
+                            fontSize="$sm"
+                            fontWeight="$medium"
+                            flex="1"
+                            minW="0"
+                            css={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {fileNameOf(file.path)}
                           </Text>
-                          <Text fontSize="$xs" color="$neutral10">
+                          <Text
+                            fontSize="$xs"
+                            color="$neutral10"
+                            flexShrink={0}
+                          >
                             {formatFileSize(file.size || 0)}
                           </Text>
                         </HStack>
+                        <Text
+                          fontSize="$xs"
+                          color="$neutral10"
+                          css={{ wordBreak: "break-all" }}
+                        >
+                          {file.source_path || file.path}
+                        </Text>
                         <HStack spacing="$1" flexWrap="wrap">
                           <For
                             each={
@@ -727,7 +797,12 @@ export const TransferSeedGenerator = () => {
                             )}
                           </For>
                         </HStack>
-                        <HStack spacing="$4" flexWrap="wrap">
+                        <HStack
+                          spacing="$3"
+                          flexWrap="wrap"
+                          alignItems="center"
+                          pt="$1"
+                        >
                           <Checkbox
                             size="sm"
                             checked={shareFiles().includes(
@@ -758,18 +833,20 @@ export const TransferSeedGenerator = () => {
                           >
                             {t("home.transfer_seed.include_direct_source")}
                           </Checkbox>
+                          <Input
+                            size="xs"
+                            flex="1"
+                            minW="$40"
+                            placeholder={t("home.transfer_seed.file_comment")}
+                            value={fileComments()[file.path] || ""}
+                            onInput={(event) =>
+                              setFileComments((current) => ({
+                                ...current,
+                                [file.path]: event.currentTarget.value,
+                              }))
+                            }
+                          />
                         </HStack>
-                        <Input
-                          size="sm"
-                          placeholder={t("home.transfer_seed.file_comment")}
-                          value={fileComments()[file.path] || ""}
-                          onInput={(event) =>
-                            setFileComments((current) => ({
-                              ...current,
-                              [file.path]: event.currentTarget.value,
-                            }))
-                          }
-                        />
                       </VStack>
                     )
                   }}

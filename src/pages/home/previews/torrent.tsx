@@ -483,16 +483,6 @@ const TorrentPreview = () => {
     null,
   )
 
-  // 转换可行性详情弹窗
-  const conversionDetailDisclosure = createDisclosure()
-  const [conversionDetailFormat, setConversionDetailFormat] =
-    createSignal<SeedFormat | null>(null)
-
-  const openConversionDetail = (format: SeedFormat) => {
-    setConversionDetailFormat(format)
-    conversionDetailDisclosure.onOpen()
-  }
-
   // 离线下载弹窗（复用工具选择逻辑）
   const offlineDisclosure = createDisclosure()
   const [offlineTools, setOfflineTools] = createSignal<string[]>([])
@@ -802,6 +792,10 @@ const TorrentPreview = () => {
     return operationSupported("convert") && conversion?.feasible === true
   }
 
+  // 缺哈希时不直接禁用转换：只要知道源目录，就可以从文件补算
+  const canConvert = () =>
+    conversionSupported() || !!effectiveRecalcSourceDir().trim()
+
   const request = () => ({
     seed_data: torrentData(),
     file_name: objStore.obj.name,
@@ -855,7 +849,15 @@ const TorrentPreview = () => {
                 options: name === "transit" ? { mode: "transfer" } : undefined,
               })
             : name === "convert"
-              ? await seedConvert({ ...request(), format: targetFormat() })
+              ? await seedConvert({
+                  ...request(),
+                  format: targetFormat(),
+                  // 无法直接转换时，用源目录里的文件补算缺失哈希
+                  compute_missing: !conversionSupported(),
+                  file_base_path: !conversionSupported()
+                    ? effectiveRecalcSourceDir()
+                    : undefined,
+                })
               : await seedUpdate({
                   ...request(),
                   recalc_files:
@@ -1395,42 +1397,14 @@ const TorrentPreview = () => {
             </Show>
           </Show>
 
-          {/* 转换区：feasibility 与 convert 合并到一行 */}
+          {/* 转换区：格式按钮悬浮显示不可转换原因；缺哈希时可直接从文件补算 */}
           <Show when={!isShare() && operationSupported("convert")}>
             <Divider />
-            <HStack spacing="$2" alignItems="center" flexWrap="wrap">
-              <Text fontSize="$sm" fontWeight="$semibold" flexShrink={0}>
-                {t("home.transfer_seed.convert_to")}
-              </Text>
-              <Box flex="1" minW={{ "@initial": "$full", "@md": "$64" }}>
-                <SelectWrapper
-                  value={targetFormat()}
-                  onChange={(value) => setTargetFormat(value as SeedFormat)}
-                  options={(["torrent", "cas", "oss"] as SeedFormat[]).map(
-                    (format) => {
-                      const state = () => torrentInfo()!.conversions?.[format]
-                      return {
-                        value: format,
-                        label: `${FORMAT_DISPLAY[format] || format.toUpperCase()}${
-                          state()?.feasible
-                            ? " ✓"
-                            : state()?.missing?.length
-                              ? ` (${state()!.missing!.join(", ")})`
-                              : ""
-                        }`,
-                      }
-                    },
-                  )}
-                />
-              </Box>
-              <Button
-                loading={operation() === "convert"}
-                disabled={!conversionSupported()}
-                onClick={() => runOperation("convert")}
-              >
-                {t("home.transfer_seed.convert")}
-              </Button>
-              <Show when={torrentInfo()!.conversions}>
+            <VStack alignItems="stretch" spacing="$2">
+              <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+                <Text fontSize="$sm" fontWeight="$semibold" flexShrink={0}>
+                  {t("home.transfer_seed.convert_to")}
+                </Text>
                 <For each={["torrent", "cas", "oss"] as SeedFormat[]}>
                   {(format) => {
                     const state = () => torrentInfo()!.conversions?.[format]
@@ -1438,27 +1412,72 @@ const TorrentPreview = () => {
                     const reasons = () => state()?.missing || []
                     return (
                       <Tooltip
+                        maxW="420px"
                         label={
-                          feasible()
-                            ? t("home.transfer_seed.feasible")
-                            : reasons().join("\n") ||
-                              t("home.transfer_seed.unavailable")
+                          feasible() ? (
+                            t("home.transfer_seed.feasible")
+                          ) : (
+                            <Text
+                              fontSize="$xs"
+                              css={{ whiteSpace: "pre-line" }}
+                            >
+                              {reasons().join("\n") ||
+                                t("home.transfer_seed.unavailable")}
+                            </Text>
+                          )
                         }
                       >
                         <Button
-                          size="xs"
-                          variant="subtle"
-                          colorScheme={feasible() ? "success" : "danger"}
-                          onClick={() => openConversionDetail(format)}
+                          size="sm"
+                          variant={
+                            targetFormat() === format ? "solid" : "subtle"
+                          }
+                          colorScheme={
+                            targetFormat() === format ? "accent" : "neutral"
+                          }
+                          onClick={() => setTargetFormat(format)}
                         >
-                          {format.toUpperCase()} {feasible() ? "✓" : "✗"}
+                          {FORMAT_DISPLAY[format] || format.toUpperCase()}
+                          <Text
+                            as="span"
+                            ml="$1"
+                            color={feasible() ? "$success9" : "$danger9"}
+                          >
+                            {feasible() ? "✓" : "✗"}
+                          </Text>
                         </Button>
                       </Tooltip>
                     )
                   }}
                 </For>
+                <Button
+                  loading={operation() === "convert"}
+                  disabled={!canConvert()}
+                  onClick={() => runOperation("convert")}
+                >
+                  {conversionSupported()
+                    ? t("home.transfer_seed.convert")
+                    : t("home.transfer_seed.convert_and_rehash")}
+                </Button>
+              </HStack>
+              <Show when={!conversionSupported()}>
+                <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+                  <Text fontSize="$sm" flexShrink={0}>
+                    {t("home.transfer_seed.rehash_source_dir")}
+                  </Text>
+                  <Box flex="1" minW={{ "@initial": "$full", "@md": "$72" }}>
+                    <FolderChooseInput
+                      id="seed-preview-rehash-source-dir"
+                      value={effectiveRecalcSourceDir()}
+                      onChange={setRecalcSourceDir}
+                    />
+                  </Box>
+                </HStack>
+                <Text fontSize="$xs" color="$neutral11">
+                  {t("home.transfer_seed.rehash_hint")}
+                </Text>
               </Show>
-            </HStack>
+            </VStack>
           </Show>
 
           {/* 整体保存 */}
@@ -1699,60 +1718,6 @@ const TorrentPreview = () => {
             </Button>
             <Button loading={offlineLoading()} onClick={confirmOfflineDownload}>
               {t("global.confirm")}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      {/* 转换可行性详情弹窗 */}
-      <Modal
-        opened={conversionDetailDisclosure.isOpen()}
-        onClose={conversionDetailDisclosure.onClose}
-      >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            {conversionDetailFormat()?.toUpperCase()} —{" "}
-            {torrentInfo()?.conversions?.[conversionDetailFormat()!]?.feasible
-              ? t("home.transfer_seed.feasible")
-              : t("home.transfer_seed.unavailable")}
-          </ModalHeader>
-          <ModalBody>
-            <Show
-              when={
-                conversionDetailFormat() &&
-                torrentInfo()?.conversions?.[conversionDetailFormat()!]
-              }
-              fallback={null}
-            >
-              {(detail) => (
-                <VStack alignItems="stretch" spacing="$2">
-                  <For each={detail()?.missing || []}>
-                    {(reason) => (
-                      <Text
-                        fontSize="$sm"
-                        color="$warning10"
-                        css={{ wordBreak: "break-all" }}
-                      >
-                        • {reason}
-                      </Text>
-                    )}
-                  </For>
-                  <Show when={!detail()?.missing?.length}>
-                    <Text fontSize="$sm" color="$success10">
-                      {t("home.transfer_seed.feasible")}
-                    </Text>
-                  </Show>
-                </VStack>
-              )}
-            </Show>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              colorScheme="neutral"
-              onClick={conversionDetailDisclosure.onClose}
-            >
-              {t("global.close")}
             </Button>
           </ModalFooter>
         </ModalContent>

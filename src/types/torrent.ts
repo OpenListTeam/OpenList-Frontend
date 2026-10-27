@@ -218,6 +218,10 @@ export interface SeedOperationRequest {
   recalc_files?: Array<{ path: string; source_path: string }>
   hash_matrix?: SeedHashMatrix
   options?: Record<string, unknown>
+  /** 转换时是否从文件补算缺失哈希 */
+  compute_missing?: boolean
+  /** 补算哈希时源文件所在目录 */
+  file_base_path?: string
 }
 
 export interface SeedOperationResult {
