@@ -252,6 +252,8 @@
     "update_channel_short": "Update channel",
     "driver_short": "Driver",
     "no_hashes": "no hashes",
+    "rapid_available_short": "Rapid",
+    "rapid_unavailable_short": "No rapid",
     "invalid_share": "Invalid share",
     "preview": "Preview",
     "preview_file": "Preview file",

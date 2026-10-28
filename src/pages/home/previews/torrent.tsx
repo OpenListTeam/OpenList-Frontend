@@ -21,7 +21,7 @@ import {
   IconButton,
   createDisclosure,
 } from "@hope-ui/solid"
-import { createEffect, createSignal, For, onMount, Show } from "solid-js"
+import { createEffect, createSignal, For, JSX, onMount, Show } from "solid-js"
 import { getSettingBool, objStore } from "~/store"
 import {
   TorrentInfo,
@@ -56,9 +56,12 @@ import bencode from "bencode"
 import crypto from "crypto-js"
 import { TbCopy, TbRefresh, TbTrash } from "solid-icons/tb"
 import {
-  BsCheckCircleFill,
+  BsDownload,
   BsExclamationCircleFill,
+  BsHash,
+  BsHdd,
   BsInfoCircle,
+  BsLightningChargeFill,
 } from "solid-icons/bs"
 import { FiExternalLink } from "solid-icons/fi"
 
@@ -74,6 +77,29 @@ function utf8Decode(data: Uint8Array | undefined): string {
   if (!data) return ""
   return crypto.enc.Utf8.stringify(crypto.lib.WordArray.create(data))
 }
+
+/** 保存区的小标签：图标 + 文案，统一圆角与底色 */
+const SeedInfoTag = (props: {
+  icon: JSX.Element
+  label: string
+  color?: string
+  cursor?: string
+}) => (
+  <HStack
+    spacing="$1"
+    alignItems="center"
+    px="$2"
+    py="2px"
+    bgColor="$neutral3"
+    borderRadius="$full"
+    color={props.color || "$neutral11"}
+    flexShrink={0}
+    cursor={props.cursor}
+  >
+    {props.icon}
+    <Text fontSize="$xs">{props.label}</Text>
+  </HStack>
+)
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer)
@@ -1320,6 +1346,16 @@ const TorrentPreview = () => {
   // 秒传是否真的可用（能力 + 所需哈希齐全）
   const rapidReady = () => canRapidSave() && hasRequiredHashes()
 
+  // 种子内可用的整文件哈希（紧凑展示：MD5/SHA1/SHA256）
+  const hashSummary = () => {
+    const hashes = torrentInfo()?.files?.[0]?.hashes
+    const list: string[] = []
+    if (hashes?.md5) list.push("MD5")
+    if (hashes?.sha1) list.push("SHA1")
+    if (hashes?.sha256) list.push("SHA256")
+    return list.length > 0 ? list.join("/") : t("home.transfer_seed.no_hashes")
+  }
+
   return (
     <VStack spacing="$4" w="$full" p="$4">
       <Show when={loading()}>
@@ -1515,57 +1551,51 @@ const TorrentPreview = () => {
                   flexWrap="wrap"
                 >
                   <HStack spacing="$2" alignItems="center" flexWrap="wrap">
-                    <HStack
-                      spacing="$1"
-                      alignItems="center"
-                      px="$2"
-                      py="2px"
-                      bgColor="$neutral3"
-                      borderRadius="$full"
-                    >
-                      <Text fontSize="$xs" color="$neutral9">
-                        {t("home.transfer_seed.driver_short")}
-                      </Text>
-                      <Text fontSize="$xs" fontWeight="$medium">
-                        {destinationProvider() || "-"}
-                      </Text>
-                    </HStack>
-
-                    <Show when={saveCapabilities()}>
-                      <HStack
-                        spacing="$1"
-                        alignItems="center"
-                        px="$2"
-                        py="2px"
-                        bgColor="$neutral3"
-                        borderRadius="$full"
-                        color={rapidReady() ? "$success10" : "$warning10"}
-                      >
-                        {rapidReady() ? (
-                          <BsCheckCircleFill size={11} />
-                        ) : (
-                          <BsExclamationCircleFill size={11} />
-                        )}
-                        <Text fontSize="$xs">
-                          {rapidReady()
-                            ? t("home.transfer_seed.rapid_available")
-                            : t("home.transfer_seed.rapid_unavailable")}
-                        </Text>
-                      </HStack>
-                    </Show>
+                    {/* 驱动 */}
                     <Tooltip label={driverDetails()} maxW="420px">
-                      <HStack
-                        alignItems="center"
-                        justifyContent="center"
-                        px="$2"
-                        py="2px"
-                        bgColor="$neutral3"
-                        borderRadius="$full"
+                      <SeedInfoTag
+                        icon={<BsHdd size={11} />}
+                        label={destinationProvider() || "-"}
+                        cursor="help"
+                      />
+                    </Tooltip>
+
+                    {/* 支持能力：离线下载 / 秒传 / ... */}
+                    <Show when={driverSupportsText()}>
+                      <SeedInfoTag
+                        icon={<BsDownload size={11} />}
+                        label={driverSupportsText()}
+                        color="$success10"
+                      />
+                    </Show>
+
+                    {/* 秒传状态 */}
+                    <Show when={saveCapabilities()}>
+                      <SeedInfoTag
+                        icon={
+                          rapidReady() ? (
+                            <BsLightningChargeFill size={11} />
+                          ) : (
+                            <BsExclamationCircleFill size={11} />
+                          )
+                        }
+                        label={
+                          rapidReady()
+                            ? t("home.transfer_seed.rapid_available_short")
+                            : t("home.transfer_seed.rapid_unavailable_short")
+                        }
+                        color={rapidReady() ? "$success10" : "$warning10"}
+                      />
+                    </Show>
+
+                    {/* 可用哈希 */}
+                    <Tooltip label={driverDetails()} maxW="420px">
+                      <SeedInfoTag
+                        icon={<BsHash size={11} />}
+                        label={hashSummary()}
                         color="$neutral10"
                         cursor="help"
-                      >
-                        <BsInfoCircle size={12} />
-                      </HStack>
+                      />
                     </Tooltip>
                   </HStack>
 
@@ -1577,7 +1607,7 @@ const TorrentPreview = () => {
                     >
                       {t("home.transfer_seed.update_channel_short")}
                     </Checkbox>
-                    <Box w="$32">
+                    <Box w="$28">
                       <SelectWrapper
                         value={saveMethod()}
                         onChange={(value) => setSaveMethod(value as SaveMethod)}
