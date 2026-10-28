@@ -481,8 +481,8 @@ const TorrentPreview = () => {
     pathname().split("/").slice(0, -1).join("/") || "/",
   )
   const [destinationProvider, setDestinationProvider] = createSignal("")
-  // 转换目标支持多选，默认等于当前格式（不转换）
-  const [targetFormats, setTargetFormats] = createSignal<SeedFormat[]>(["oss"])
+  // 转换目标支持多选；默认一个都不选（只看不改），选了才开始转换
+  const [targetFormats, setTargetFormats] = createSignal<SeedFormat[]>([])
   const [editComment, setEditComment] = createSignal("")
   const [operation, setOperation] = createSignal("")
   const [transitPath, setTransitPath] = createSignal("")
@@ -662,20 +662,47 @@ const TorrentPreview = () => {
     }
   }
 
-  // 从种子已有哈希初始化重算矩阵：默认勾选当前种子已包含的哈希类型
+  // 种子内是否已带某个算法的整文件哈希 / 分片哈希。
+  // 兼容两种来源：种子自身 hashes.pieces，以及旧格式顶层的 piece_hashes。
+  const hasHashIn = (
+    info: SeedInfo | null | undefined,
+    algo: SeedHashAlgorithm,
+  ) => {
+    const files = info?.files || []
+    return files.length > 0 && files.every((file) => !!file.hashes?.[algo])
+  }
+  const hasPiecesIn = (
+    info: SeedInfo | null | undefined,
+    algo: SeedHashAlgorithm,
+  ) => {
+    const files = info?.files || []
+    return (
+      files.length > 0 &&
+      files.every((file) => {
+        const pieces =
+          file.hashes?.pieces?.[algo] || file.piece_hashes?.[algo] || []
+        return pieces.length > 0
+      })
+    )
+  }
+  const seedHasHash = (algo: SeedHashAlgorithm) =>
+    hasHashIn(torrentInfo(), algo)
+  const seedHasPieces = (algo: SeedHashAlgorithm) =>
+    hasPiecesIn(torrentInfo(), algo)
+
+  // 从种子已有哈希初始化重算矩阵：种子已经提供的哈希默认勾上
+  // （转换时原样保留），缺的留空，等用户显式要求再读文件补算。
   const initRecalcMatrix = (info: SeedInfo) => {
     const matrix: SeedHashMatrix = {
-      md5: { whole: false, pieces: false },
-      sha1: { whole: false, pieces: false },
-      sha256: { whole: false, pieces: false },
-    }
-    for (const file of info.files) {
-      const hashes = file.hashes
-      if (!hashes) continue
-      for (const algo of ALGORITHMS) {
-        if (hashes[algo]) matrix[algo].whole = true
-        if (hashes.pieces?.[algo]?.length) matrix[algo].pieces = true
-      }
+      md5: { whole: hasHashIn(info, "md5"), pieces: hasPiecesIn(info, "md5") },
+      sha1: {
+        whole: hasHashIn(info, "sha1"),
+        pieces: hasPiecesIn(info, "sha1"),
+      },
+      sha256: {
+        whole: hasHashIn(info, "sha256"),
+        pieces: hasPiecesIn(info, "sha256"),
+      },
     }
     setRecalcMatrix(matrix)
   }
@@ -767,16 +794,18 @@ const TorrentPreview = () => {
         const info = normalizeSeedInfo(parsed.data)
         setTorrentInfo(info)
         setEditComment(info.comment || "")
-        // 目标格式默认对齐当前格式，避免一打开就处于「需要转换」状态
-        if (info.format) setTargetFormats([info.format as SeedFormat])
+        // 目标格式不预选：一打开就是「不转换」，由用户主动挑目标
+        setTargetFormats([])
         setSelectedFiles(info.files.map((_, index) => index))
         initRecalcMatrix(info)
         void autoCASDirectAccess(info)
       } else if (inferFormat() === "torrent") {
         const legacy = parseLocalTorrent(new Uint8Array(buffer))
-        setTorrentInfo({ ...legacy, format: "torrent" })
+        const info = { ...legacy, format: "torrent" as SeedFormat }
+        setTorrentInfo(info)
+        setTargetFormats([])
         setSelectedFiles(legacy.files.map((_, index) => index))
-        setTargetFormats(["torrent"])
+        initRecalcMatrix(info)
       } else {
         throw new Error(parsed.message)
       }
@@ -826,13 +855,11 @@ const TorrentPreview = () => {
       (format) => torrentInfo()?.conversions?.[format]?.feasible === true,
     )
 
-  // 点击切换目标格式；至少保留一个，否则按钮失去意义
+  // 点击切换目标格式；可以一个都不选（不转换，只改注释或补算哈希）
   const toggleTargetFormat = (format: SeedFormat) => {
     setTargetFormats((current) =>
       current.includes(format)
-        ? current.length === 1
-          ? current
-          : current.filter((item) => item !== format)
+        ? current.filter((item) => item !== format)
         : [...current, format],
     )
   }
@@ -857,7 +884,8 @@ const TorrentPreview = () => {
       (algorithm === "md5" && targetFormats().includes("cas")))
 
   // 选中格式后自动勾上必需哈希（torrent → SHA1，CAS → MD5）；
-  // 取消该格式时把「自动勾上的」还原，避免留下一个莫名的重算任务
+  // 取消该格式时把「自动勾上的」还原成种子自身的状态（而不是一律清空），
+  // 否则会连带清掉种子本来就已经提供的哈希
   let autoForcedAlgos: SeedHashAlgorithm[] = []
   createEffect(() => {
     const formats = targetFormats()
@@ -870,7 +898,12 @@ const TorrentPreview = () => {
     if (dropped.length > 0) {
       setRecalcMatrix((previous) => {
         const next = { ...previous }
-        for (const algo of dropped) next[algo] = { whole: false, pieces: false }
+        for (const algo of dropped) {
+          next[algo] = {
+            whole: hasHashIn(torrentInfo(), algo),
+            pieces: hasPiecesIn(torrentInfo(), algo),
+          }
+        }
         return next
       })
     }
@@ -886,31 +919,20 @@ const TorrentPreview = () => {
 
   // ── 统一「编辑并保存」：注释 / 转换 / 重算哈希 一个按钮完成 ──────────────
   const currentFormat = () => torrentInfo()?.format
+  // 没选目标格式 = 不转换，只改注释/补算哈希
   const targetDiffers = () => {
     const current = currentFormat()
     const targets = targetFormats()
-    return !!current && (targets.length !== 1 || targets[0] !== current)
+    return (
+      !!current &&
+      targets.length > 0 &&
+      (targets.length !== 1 || targets[0] !== current)
+    )
   }
   const hasRecalcSelection = () =>
     ALGORITHMS.some(
       (algo) => recalcMatrix()[algo].whole || recalcMatrix()[algo].pieces,
     )
-  // 种子内是否已带某个算法的整文件哈希 / 分片哈希
-  const seedHasHash = (algo: SeedHashAlgorithm) => {
-    const files = torrentInfo()?.files || []
-    return files.length > 0 && files.every((file) => !!file.hashes?.[algo])
-  }
-  const seedHasPieces = (algo: SeedHashAlgorithm) => {
-    const files = torrentInfo()?.files || []
-    return (
-      files.length > 0 &&
-      files.every((file) => {
-        const pieces =
-          file.hashes?.pieces?.[algo] || file.piece_hashes?.[algo] || []
-        return pieces.length > 0
-      })
-    )
-  }
 
   // 只有需要读文件时才显示源目录（要转换，或勾了重算矩阵）
   const needSourceDir = () =>
@@ -983,7 +1005,11 @@ const TorrentPreview = () => {
     data: Awaited<ReturnType<typeof seedUpdate>>["data"],
   ) => {
     if (data?.seed_data) setTorrentData(data.seed_data)
-    if (data?.seed) setTorrentInfo(data.seed)
+    if (data?.seed) {
+      setTorrentInfo(data.seed)
+      // 保存后矩阵跟着新种子刷新，避免残留已经不成立的勾选
+      initRecalcMatrix(data.seed)
+    }
     const shareStatus = data?.share_status
     if (shareStatus && typeof shareStatus === "object") {
       const invalid = Object.entries(shareStatus).filter(([, valid]) => !valid)
