@@ -477,6 +477,16 @@ export const TransferSeedGenerator = () => {
                   setHashScope(algorithm, scope, checked)
                 }
                 isForced={(algorithm) => forcedAlgorithms().includes(algorithm)}
+                requiredBy={(algorithm) => {
+                  const list: string[] = []
+                  if (algorithm === "sha1" && formats().includes("torrent")) {
+                    list.push("BitTorrent")
+                  }
+                  if (algorithm === "md5" && formats().includes("cas")) {
+                    list.push("CAS")
+                  }
+                  return list
+                }}
                 isWholeDisabled={(algorithm) =>
                   reuseOnly() && !availableWholeHashes().has(algorithm)
                 }

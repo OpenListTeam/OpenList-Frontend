@@ -1748,8 +1748,17 @@ const TorrentPreview = () => {
                             setRecalcHash(algo, scope, checked)
                           }
                           isForced={(algo) => forcedHashAlgo(algo)}
-                          noteFor={(algo) =>
-                            seedHasHash(algo) && seedHasPieces(algo)
+                          requiredBy={(algo) =>
+                            forcedHashAlgo(algo)
+                              ? [algo === "sha1" ? "BitTorrent" : "CAS"]
+                              : []
+                          }
+                          statusFor={(algo, scope) =>
+                            (
+                              scope === "whole"
+                                ? seedHasHash(algo)
+                                : seedHasPieces(algo)
+                            )
                               ? {
                                   text: t("home.transfer_seed.hash_exists"),
                                   tone: "success",
@@ -1760,9 +1769,6 @@ const TorrentPreview = () => {
                                 }
                           }
                         />
-                        <Text fontSize="$xs" color="$neutral10" mt="$1">
-                          {t("home.transfer_seed.recalc_selected_hint")}
-                        </Text>
                       </Box>
                     </Show>
 
