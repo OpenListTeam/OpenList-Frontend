@@ -959,6 +959,11 @@ const TorrentPreview = () => {
         ? "recalculate"
         : "update"
 
+  // 更新模式下是否真的有改动：注释变了，或取消了部分文件
+  const hasEdits = () =>
+    editComment() !== (torrentInfo()?.comment || "") ||
+    selectedFiles().length !== (torrentInfo()?.files.length || 0)
+
   const applyEnabled = () => {
     if (applyMode() === "convert") {
       return operationSupported("convert") && canConvert()
@@ -966,7 +971,8 @@ const TorrentPreview = () => {
     if (applyMode() === "recalculate") {
       return operationSupported("recalculate") && selectedFiles().length > 0
     }
-    return operationSupported("edit")
+    // 什么都没改就禁用，避免「一个格式都没选也能按保存」
+    return operationSupported("edit") && hasEdits()
   }
 
   const applyLabel = () => {
@@ -1232,7 +1238,32 @@ const TorrentPreview = () => {
     )
   }
 
-  // 预览单个文件：先秒传保存，再跳转预览
+  // 点预览时的入口：目标目录 / 源目录里已经有这个文件就直接打开，
+  // 只有确实不存在时才退回「秒传保存后再预览」
+  const openFilePreview = async (index: number) => {
+    const file = torrentInfo()?.files[index]
+    if (!file) return
+    const rel = file.path.replace(/^\//, "")
+    const candidates = [destination(), effectiveRecalcSourceDir()]
+      .map((dir) => (dir || "").replace(/\/$/, ""))
+      .filter((dir, i, all) => dir !== "" && all.indexOf(dir) === i)
+      .map((dir) => `${dir}/${rel}`)
+    for (const candidate of candidates) {
+      try {
+        const resp = await fsGet(candidate)
+        if (resp.code === 200 && resp.data && !resp.data.is_dir) {
+          to(candidate)
+          return
+        }
+      } catch {
+        // 查不到就试下一个目录
+      }
+    }
+    setPreviewFileIndex(index)
+    previewDisclosure.onOpen()
+  }
+
+  // 兜底：先秒传保存，再跳转预览
   const confirmPreviewFile = async () => {
     const index = previewFileIndex()
     const info = torrentInfo()
@@ -1561,10 +1592,7 @@ const TorrentPreview = () => {
                   }}
                   saveMethod={saveMethodByPath(file.path)}
                   pieceSize={torrentInfo()!.piece_size || 0}
-                  onPreview={() => {
-                    setPreviewFileIndex(index())
-                    previewDisclosure.onOpen()
-                  }}
+                  onPreview={() => void openFilePreview(index())}
                   onRemove={() => {
                     setRemoveFileIndex(index())
                     removeDisclosure.onOpen()
@@ -1801,20 +1829,17 @@ const TorrentPreview = () => {
                         </For>
                       </VStack>
 
-                      {/* 选了目标格式就是「产出一份新文件」，这里给出保存目录，
-                          同格式也能另存为 */}
-                      <Show when={targetFormats().length > 0}>
-                        <Box>
-                          <Text fontSize="$sm" mb="$1">
-                            {t("home.transfer_seed.destination")}
-                          </Text>
-                          <FolderChooseInput
-                            id="seed-preview-convert-destination"
-                            value={destination()}
-                            onChange={setDestination}
-                          />
-                        </Box>
-                      </Show>
+                      {/* 保存目录：常驻显示，选了格式就是另存为的落点 */}
+                      <Box>
+                        <Text fontSize="$sm" mb="$1">
+                          {t("home.transfer_seed.destination")}
+                        </Text>
+                        <FolderChooseInput
+                          id="seed-preview-convert-destination"
+                          value={destination()}
+                          onChange={setDestination}
+                        />
+                      </Box>
 
                       {/* 目标格式无法直接编码时说明「为什么要读文件」，
                         避免矩阵全显示 in seed 却要求补算时的困惑 */}
