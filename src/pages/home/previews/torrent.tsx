@@ -487,8 +487,6 @@ const TorrentPreview = () => {
   const [editComment, setEditComment] = createSignal("")
   const [operation, setOperation] = createSignal("")
   const [transitPath, setTransitPath] = createSignal("")
-  // 重算源目录：种子文件对应源文件所在目录（默认当前浏览目录）
-  const [recalcSourceDir, setRecalcSourceDir] = createSignal("")
   const [recalcMatrix, setRecalcMatrix] = createSignal<SeedHashMatrix>({
     md5: { whole: false, pieces: false },
     sha1: { whole: false, pieces: false },
@@ -736,9 +734,9 @@ const TorrentPreview = () => {
     }))
   }
 
-  // 重算源目录：默认当前浏览目录，可手动改为其它网盘目录
-  const effectiveRecalcSourceDir = () =>
-    recalcSourceDir().trim() || destination().trim()
+  // 源目录固定为保存目录（默认就是种子所在目录），不再单独提供选择，
+  // 避免出现「填了源目录却和目标目录不一致」的两套路径
+  const effectiveRecalcSourceDir = () => destination().trim()
 
   // 源文件路径 = 源目录 + 种子内相对路径
   const buildRecalcSourcePath = (filePath: string) => {
@@ -863,9 +861,11 @@ const TorrentPreview = () => {
     }
   })
 
+  // 能力字段缺失时按「支持」处理：老版本/前端本地解析的种子没有 capabilities，
+  // 若按 false 处理，整个「编辑并保存」区块（含展开按钮）会直接消失
   const operationSupported = (
     operationName: keyof NonNullable<SeedInfo["capabilities"]>,
-  ) => torrentInfo()?.capabilities?.[operationName] === true
+  ) => torrentInfo()?.capabilities?.[operationName] !== false
 
   const conversionSupported = () =>
     operationSupported("convert") &&
@@ -882,9 +882,7 @@ const TorrentPreview = () => {
     )
   }
 
-  // 缺哈希时只要有可用的源目录就允许转换（后端读文件补算）。
-  // 这里必须用 effectiveRecalcSourceDir：输入框显示的就是它（默认回落到
-  // 种子所在目录），用空信号判断会出现「界面上明明有目录，按钮却是灰的」。
+  // 缺哈希时只要保存目录可用就允许转换（后端从该目录读文件补算）
   const canConvert = () => conversionSupported() || !!effectiveRecalcSourceDir()
 
   // 整个编辑区（转换 + 注释 + 保存）默认折叠
@@ -945,12 +943,6 @@ const TorrentPreview = () => {
     ALGORITHMS.some(
       (algo) => recalcMatrix()[algo].whole || recalcMatrix()[algo].pieces,
     )
-
-  // 只有需要读文件时才显示源目录：目标格式缺哈希必须补算，或勾了重算矩阵。
-  // 同格式另存为只是复制字节，不需要源文件。
-  const needSourceDir = () =>
-    (targetFormats().length > 0 && !conversionSupported()) ||
-    (operationSupported("recalculate") && hasRecalcSelection())
 
   const applyMode = () =>
     targetDiffers()
@@ -1014,9 +1006,9 @@ const TorrentPreview = () => {
             (reason) => `${format.toUpperCase()}: ${reason}`,
           ),
         )
-      // 只有确实没有可用目录时才提示「去选源目录」，否则输入框里已经有值
+      // 源文件固定从保存目录读取，目录为空时才提示
       if (!effectiveRecalcSourceDir()) {
-        reasons.push(t("home.transfer_seed.rehash_need_source_dir"))
+        reasons.push(t("home.transfer_seed.destination_required"))
       }
       return reasons.join("\n")
     }
@@ -1068,7 +1060,7 @@ const TorrentPreview = () => {
       return
     }
     if (name === "recalculate" && !effectiveRecalcSourceDir().trim()) {
-      notify.error(t("home.transfer_seed.source_dir_required"))
+      notify.error(t("home.transfer_seed.destination_required"))
       return
     }
     setOperation(name)
@@ -1361,7 +1353,7 @@ const TorrentPreview = () => {
     const file = info.files[index]
     if (!file) return
     if (!effectiveRecalcSourceDir().trim()) {
-      notify.error(t("home.transfer_seed.source_dir_required"))
+      notify.error(t("home.transfer_seed.destination_required"))
       return
     }
     recalcDisclosure.onClose()
@@ -1862,19 +1854,6 @@ const TorrentPreview = () => {
                           {t("home.transfer_seed.convert_rehash_notice")}
                         </Text>
                       </Show>
-
-                      <Show when={needSourceDir()}>
-                        <Box>
-                          <Text fontSize="$sm" mb="$1">
-                            {t("home.transfer_seed.rehash_source_dir")}
-                          </Text>
-                          <FolderChooseInput
-                            id="seed-preview-rehash-source-dir"
-                            value={effectiveRecalcSourceDir()}
-                            onChange={setRecalcSourceDir}
-                          />
-                        </Box>
-                      </Show>
                     </VStack>
 
                     <Show when={operationSupported("recalculate")}>
@@ -2019,14 +1998,6 @@ const TorrentPreview = () => {
                 {torrentInfo()!.files[recalcFileIndex()!]?.path}
               </Text>
             </Show>
-            <Text fontSize="$sm" mb="$1">
-              {t("home.transfer_seed.recalc_source_dir")}
-            </Text>
-            <FolderChooseInput
-              id="seed-preview-recalc-file-source-dir"
-              value={effectiveRecalcSourceDir()}
-              onChange={setRecalcSourceDir}
-            />
             <Show when={recalcFileIndex() !== null && torrentInfo()}>
               <Text fontSize="$xs" color="$neutral10" mt="$1">
                 {t("home.transfer_seed.recalc_source_hint")}:{" "}
