@@ -191,6 +191,8 @@
     "preserve_structure": "Keep directory structure",
     "preserve_structure_tips": "Keep subdirectories inside the seed; off by default (files are flattened to the root).",
     "convert_and_rehash": "Compute missing hashes and convert",
+    "convert_rehash_files": "Rehash from source files and convert",
+    "convert_rehash_notice": "This target cannot reuse the hashes stored in the seed (for example piece hashes that span several files), so the files are read again from the source folder. Nothing is missing from the seed itself.",
     "rehash_source_dir": "Source folder",
     "select_all_share": "Select all share links",
     "select_all_direct": "Select all direct links",

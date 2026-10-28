@@ -19,6 +19,7 @@ import {
   ModalFooter,
   Tooltip,
   IconButton,
+  SimpleGrid,
   createDisclosure,
 } from "@hope-ui/solid"
 import { createEffect, createSignal, For, JSX, onMount, Show } from "solid-js"
@@ -693,6 +694,17 @@ const TorrentPreview = () => {
   const seedHasPieces = (algo: SeedHashAlgorithm) =>
     hasPiecesIn(torrentInfo(), algo)
 
+  // 目标格式是否真的「缺哈希」。矩阵全显示 in seed 时仍可能无法直接转换，
+  // 那是结构性原因（如 piece 跨文件），不该再提示「补算缺失哈希」
+  const targetMissingHashes = () =>
+    targetFormats().some((format) =>
+      format === "torrent"
+        ? !seedHasPieces("sha1")
+        : format === "cas"
+          ? !seedHasHash("md5")
+          : false,
+    )
+
   // 从种子已有哈希初始化重算矩阵：种子已经提供的哈希默认勾上
   // （转换时原样保留），缺的留空，等用户显式要求再读文件补算。
   const initRecalcMatrix = (info: SeedInfo) => {
@@ -965,9 +977,13 @@ const TorrentPreview = () => {
 
   const applyLabel = () => {
     if (applyMode() === "convert") {
-      return conversionSupported()
-        ? t("home.transfer_seed.convert_and_save")
-        : t("home.transfer_seed.convert_and_rehash")
+      if (conversionSupported()) {
+        return t("home.transfer_seed.convert_and_save")
+      }
+      // 缺哈希才说「补算缺失哈希」，否则是结构问题，如实说「从文件重算」
+      return targetMissingHashes()
+        ? t("home.transfer_seed.convert_and_rehash")
+        : t("home.transfer_seed.convert_rehash_files")
     }
     if (applyMode() === "recalculate") {
       return t("home.transfer_seed.recalculate_and_save")
@@ -1718,59 +1734,95 @@ const TorrentPreview = () => {
               </HStack>
               <Show when={editDisclosure.isOpen()}>
                 <VStack alignItems="stretch" spacing="$3" mt="$2">
-                  <Box>
-                    <HStack spacing="$2" alignItems="center" flexWrap="wrap">
-                      <For each={["torrent", "cas", "oss"] as SeedFormat[]}>
-                        {(format) => {
-                          const state = () =>
-                            torrentInfo()!.conversions?.[format]
-                          const feasible = () => !!state()?.feasible
-                          const reasons = () => state()?.missing || []
-                          return (
-                            <Tooltip
-                              maxW="420px"
-                              label={
-                                feasible() ? (
-                                  t("home.transfer_seed.feasible")
-                                ) : (
-                                  <Text
-                                    fontSize="$xs"
-                                    css={{ whiteSpace: "pre-line" }}
-                                  >
-                                    {reasons().join("\n") ||
-                                      t("home.transfer_seed.unavailable")}
-                                  </Text>
-                                )
-                              }
-                            >
-                              <Button
-                                size="sm"
-                                variant={
-                                  targetFormats().includes(format)
-                                    ? "solid"
-                                    : "subtle"
+                  {/* 宽屏下「目标格式 + 源目录」与「哈希矩阵」左右并排，窄屏自动堆叠 */}
+                  <SimpleGrid
+                    columns={{ "@initial": 1, "@lg": 2 }}
+                    gap="$4"
+                    alignItems="start"
+                  >
+                    <Box>
+                      <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+                        <For each={["torrent", "cas", "oss"] as SeedFormat[]}>
+                          {(format) => {
+                            const state = () =>
+                              torrentInfo()!.conversions?.[format]
+                            const feasible = () => !!state()?.feasible
+                            const reasons = () => state()?.missing || []
+                            return (
+                              <Tooltip
+                                maxW="420px"
+                                label={
+                                  feasible() ? (
+                                    t("home.transfer_seed.feasible")
+                                  ) : (
+                                    <Text
+                                      fontSize="$xs"
+                                      css={{ whiteSpace: "pre-line" }}
+                                    >
+                                      {reasons().join("\n") ||
+                                        t("home.transfer_seed.unavailable")}
+                                    </Text>
+                                  )
                                 }
-                                colorScheme={
-                                  targetFormats().includes(format)
-                                    ? "accent"
-                                    : "neutral"
-                                }
-                                onClick={() => toggleTargetFormat(format)}
                               >
-                                {FORMAT_DISPLAY[format] || format.toUpperCase()}
-                                <Text
-                                  as="span"
-                                  ml="$1"
-                                  color={feasible() ? "$success9" : "$danger9"}
+                                <Button
+                                  size="sm"
+                                  variant={
+                                    targetFormats().includes(format)
+                                      ? "solid"
+                                      : "subtle"
+                                  }
+                                  colorScheme={
+                                    targetFormats().includes(format)
+                                      ? "accent"
+                                      : "neutral"
+                                  }
+                                  onClick={() => toggleTargetFormat(format)}
                                 >
-                                  {feasible() ? "✓" : "✗"}
-                                </Text>
-                              </Button>
-                            </Tooltip>
-                          )
-                        }}
-                      </For>
-                    </HStack>
+                                  {FORMAT_DISPLAY[format] ||
+                                    format.toUpperCase()}
+                                  <Text
+                                    as="span"
+                                    ml="$1"
+                                    color={
+                                      feasible() ? "$success9" : "$danger9"
+                                    }
+                                  >
+                                    {feasible() ? "✓" : "✗"}
+                                  </Text>
+                                </Button>
+                              </Tooltip>
+                            )
+                          }}
+                        </For>
+                      </HStack>
+
+                      {/* 目标格式无法直接编码时说明「为什么要读文件」，
+                          避免矩阵全显示 in seed 却要求补算时的困惑 */}
+                      <Show when={targetDiffers() && !conversionSupported()}>
+                        <Text
+                          fontSize="$xs"
+                          color="$warning11"
+                          mt="$2"
+                          css={{ whiteSpace: "pre-line" }}
+                        >
+                          {t("home.transfer_seed.convert_rehash_notice")}
+                        </Text>
+                      </Show>
+
+                      <Show when={needSourceDir()}>
+                        <Box mt="$3">
+                          <Text fontSize="$sm" mb="$1">
+                            {t("home.transfer_seed.rehash_source_dir")}
+                          </Text>
+                          <FolderChooseInput
+                            id="seed-preview-rehash-source-dir"
+                            value={effectiveRecalcSourceDir()}
+                            onChange={setRecalcSourceDir}
+                          />
+                        </Box>
+                      </Show>
+                    </Box>
 
                     <Show when={operationSupported("recalculate")}>
                       <Box>
@@ -1806,20 +1858,7 @@ const TorrentPreview = () => {
                         />
                       </Box>
                     </Show>
-
-                    <Show when={needSourceDir()}>
-                      <Box>
-                        <Text fontSize="$sm" mb="$1">
-                          {t("home.transfer_seed.rehash_source_dir")}
-                        </Text>
-                        <FolderChooseInput
-                          id="seed-preview-rehash-source-dir"
-                          value={effectiveRecalcSourceDir()}
-                          onChange={setRecalcSourceDir}
-                        />
-                      </Box>
-                    </Show>
-                  </Box>
+                  </SimpleGrid>
 
                   <Box>
                     <Text fontSize="$sm" mb="$1">
