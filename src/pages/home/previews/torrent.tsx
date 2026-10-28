@@ -937,15 +937,15 @@ const TorrentPreview = () => {
 
   // ── 统一「编辑并保存」：注释 / 转换 / 重算哈希 一个按钮完成 ──────────────
   const currentFormat = () => torrentInfo()?.format
-  // 没选目标格式 = 不转换，只改注释/补算哈希
+  // 没选目标格式 = 不转换，只改注释/补算哈希；选的就是当前格式同样不需要转换
+  // （后端对「目标 = 当前格式」直接返回可行，不会再把合法 torrent 判成不可转换）
   const targetDiffers = () => {
     const current = currentFormat()
     const targets = targetFormats()
-    return (
-      !!current &&
-      targets.length > 0 &&
-      (targets.length !== 1 || targets[0] !== current)
-    )
+    if (targets.length === 0) return false
+    // 格式未知时按转换处理，否则选了格式却没有任何反应
+    if (!current) return true
+    return targets.length !== 1 || targets[0] !== current
   }
   const hasRecalcSelection = () =>
     recalcTouched() &&
@@ -1734,14 +1734,14 @@ const TorrentPreview = () => {
               </HStack>
               <Show when={editDisclosure.isOpen()}>
                 <VStack alignItems="stretch" spacing="$3" mt="$2">
-                  {/* 宽屏下「目标格式 + 源目录」与「哈希矩阵」左右并排，窄屏自动堆叠 */}
+                  {/* 宽屏：左「格式选择 + 源目录」，右「哈希矩阵」 */}
                   <SimpleGrid
                     columns={{ "@initial": 1, "@lg": 2 }}
                     gap="$4"
                     alignItems="start"
                   >
-                    <Box>
-                      <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+                    <VStack alignItems="stretch" spacing="$3">
+                      <VStack spacing="$2" alignItems="stretch">
                         <For each={["torrent", "cas", "oss"] as SeedFormat[]}>
                           {(format) => {
                             const state = () =>
@@ -1767,6 +1767,8 @@ const TorrentPreview = () => {
                               >
                                 <Button
                                   size="sm"
+                                  w="$full"
+                                  justifyContent="space-between"
                                   variant={
                                     targetFormats().includes(format)
                                       ? "solid"
@@ -1795,15 +1797,14 @@ const TorrentPreview = () => {
                             )
                           }}
                         </For>
-                      </HStack>
+                      </VStack>
 
                       {/* 目标格式无法直接编码时说明「为什么要读文件」，
-                          避免矩阵全显示 in seed 却要求补算时的困惑 */}
+                        避免矩阵全显示 in seed 却要求补算时的困惑 */}
                       <Show when={targetDiffers() && !conversionSupported()}>
                         <Text
                           fontSize="$xs"
                           color="$warning11"
-                          mt="$2"
                           css={{ whiteSpace: "pre-line" }}
                         >
                           {t("home.transfer_seed.convert_rehash_notice")}
@@ -1811,7 +1812,7 @@ const TorrentPreview = () => {
                       </Show>
 
                       <Show when={needSourceDir()}>
-                        <Box mt="$3">
+                        <Box>
                           <Text fontSize="$sm" mb="$1">
                             {t("home.transfer_seed.rehash_source_dir")}
                           </Text>
@@ -1822,7 +1823,7 @@ const TorrentPreview = () => {
                           />
                         </Box>
                       </Show>
-                    </Box>
+                    </VStack>
 
                     <Show when={operationSupported("recalculate")}>
                       <Box>
