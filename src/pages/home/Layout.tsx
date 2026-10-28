@@ -1,3 +1,4 @@
+import { Box } from "@hope-ui/solid"
 import { Markdown } from "~/components"
 import { useTitle } from "~/hooks"
 import { getSetting } from "~/store"
@@ -17,7 +18,9 @@ const Index = () => {
     <>
       <Header />
       <Toolbar />
-      <Body />
+      <Box as="main" role="main" id="main-content">
+        <Body />
+      </Box>
       <Footer />
     </>
   )

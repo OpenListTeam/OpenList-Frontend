@@ -48,6 +48,8 @@ export const BackTop = () => {
           p="$1"
           rounded="$lg"
           as={FiArrowUp}
+          aria-label="Back to top"
+          tabIndex={0}
           onClick={() => {
             window.scrollTo({ top: 0, behavior: "smooth" })
           }}
