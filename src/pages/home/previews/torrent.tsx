@@ -470,7 +470,7 @@ const TorrentPreview = () => {
   const t = useT()
   const { proxyLink, rawLink } = useLink()
   const { isShare, pathname, to } = useRouter()
-  const { refresh } = usePath()
+  const { refresh, setPathAs } = usePath()
   const { copy } = useUtil()
 
   const [loading, setLoading] = createSignal(true)
@@ -1244,16 +1244,22 @@ const TorrentPreview = () => {
     const file = torrentInfo()?.files[index]
     if (!file) return
     const rel = file.path.replace(/^\//, "")
-    // 依次尝试：种子所在目录、保存目录、源目录
+    // 依次尝试：种子所在目录、保存目录、源目录（根目录 "/" 归一化成空前缀）
     const seedDir = pathname().split("/").slice(0, -1).join("/") || "/"
-    const candidates = [seedDir, destination(), effectiveRecalcSourceDir()]
-      .map((dir) => (dir || "").replace(/\/$/, ""))
-      .filter((dir, i, all) => dir !== "" && all.indexOf(dir) === i)
-      .map((dir) => `${dir}/${rel}`)
+    const candidates = [
+      ...new Set(
+        [seedDir, destination(), effectiveRecalcSourceDir()]
+          .filter((dir) => typeof dir === "string" && dir.trim() !== "")
+          .map((dir) => `${dir.replace(/\/$/, "")}/${rel}`),
+      ),
+    ]
     for (const candidate of candidates) {
       try {
         const resp = await fsGet(candidate)
         if (resp.code === 200 && resp.data && !resp.data.is_dir) {
+          // 该路径可能被页面缓存成「目录」过，先清掉，否则跳转后首页会按目录
+          // 去 list，直接报 failed get objs: not a folder（CAS 种子常见）
+          setPathAs(candidate, false)
           to(candidate)
           return
         }
@@ -1306,6 +1312,8 @@ const TorrentPreview = () => {
           match?.target ||
           `${destination().replace(/\/$/, "")}/${file.path.replace(/^\//, "")}`
         refresh(undefined, true)
+        // 同理：清掉可能残留的「目录」缓存，再跳到文件
+        setPathAs(targetPath, false)
         to(targetPath)
       })
     } catch (err) {
