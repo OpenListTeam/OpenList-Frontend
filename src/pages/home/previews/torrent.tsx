@@ -55,7 +55,11 @@ import axios from "axios"
 import bencode from "bencode"
 import crypto from "crypto-js"
 import { TbCopy, TbRefresh, TbTrash } from "solid-icons/tb"
-import { BsInfoCircle } from "solid-icons/bs"
+import {
+  BsCheckCircleFill,
+  BsExclamationCircleFill,
+  BsInfoCircle,
+} from "solid-icons/bs"
 import { FiExternalLink } from "solid-icons/fi"
 
 function formatFileSize(bytes: number): string {
@@ -1313,6 +1317,9 @@ const TorrentPreview = () => {
     return parts.join(" · ")
   }
 
+  // 秒传是否真的可用（能力 + 所需哈希齐全）
+  const rapidReady = () => canRapidSave() && hasRequiredHashes()
+
   return (
     <VStack spacing="$4" w="$full" p="$4">
       <Show when={loading()}>
@@ -1325,19 +1332,17 @@ const TorrentPreview = () => {
 
       <Show when={!loading() && !error() && torrentInfo()}>
         <VStack spacing="$3" alignItems="stretch" w="$full">
-          <HStack
-            justifyContent="space-between"
-            alignItems="center"
-            flexWrap="wrap"
-            gap="$2"
-          >
-            <VStack alignItems="flex-start" spacing="$1" flex="1" minW="0">
-              {/* 文件名 + 格式/大小/文件数/日期同一行 */}
-              <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+          {/* 种子信息卡片：标题 / 元信息 / 状态 / 备注 */}
+          <Box border="1px solid $neutral5" borderRadius="$lg" p="$3">
+            <HStack
+              justifyContent="space-between"
+              alignItems="flex-start"
+              spacing="$3"
+            >
+              <VStack alignItems="flex-start" spacing="$1" flex="1" minW="0">
                 <Heading size="sm" css={{ wordBreak: "break-all" }}>
                   {objStore.obj.name}
                 </Heading>
-                <Badge colorScheme="info">{formatDisplayName()}</Badge>
                 <Text fontSize="$xs" color="$neutral10">
                   {formatFileSize(torrentInfo()!.total_size)} ·{" "}
                   {torrentInfo()!.files.length}{" "}
@@ -1347,9 +1352,48 @@ const TorrentPreview = () => {
                     {formatDate(torrentInfo()!.created_at!)}
                   </Show>
                 </Text>
-              </HStack>
-              {/* 注释放在原来的大小/日期位置，不再单独加标题 */}
-              <Show when={torrentInfo()?.comment}>
+              </VStack>
+              <VStack alignItems="flex-end" spacing="$1" flexShrink={0}>
+                <Badge colorScheme="info">{formatDisplayName()}</Badge>
+                <HStack spacing="$1" flexWrap="wrap" justifyContent="flex-end">
+                  <Show when={torrentInfo()!.has_cas}>
+                    <Badge colorScheme="success">
+                      {t(
+                        "home.toolbar.offline_download_enhanced.cas_supported",
+                      )}
+                    </Badge>
+                  </Show>
+                  <Show when={torrentInfo()!.share}>
+                    <Badge
+                      colorScheme={
+                        torrentInfo()!.share?.valid ? "success" : "danger"
+                      }
+                    >
+                      {torrentInfo()!.share?.valid
+                        ? t("home.transfer_seed.share_valid")
+                        : t("home.transfer_seed.share_invalid")}
+                    </Badge>
+                  </Show>
+                  <Show when={torrentInfo()!.channel?.status}>
+                    <Badge colorScheme="accent">
+                      {torrentInfo()!.channel?.name ||
+                        t("home.transfer_seed.channel")}
+                      : {torrentInfo()!.channel?.status}
+                    </Badge>
+                  </Show>
+                  <For each={torrentInfo()!.channels || []}>
+                    {(channel) => (
+                      <Badge colorScheme="accent">
+                        {channel.driver}
+                        {channel.mount_path ? `: ${channel.mount_path}` : ""}
+                      </Badge>
+                    )}
+                  </For>
+                </HStack>
+              </VStack>
+            </HStack>
+            <Show when={torrentInfo()?.comment}>
+              <Box mt="$2" pl="$2" borderLeft="2px solid $neutral6">
                 <Text
                   fontSize="$sm"
                   color="$neutral11"
@@ -1357,42 +1401,9 @@ const TorrentPreview = () => {
                 >
                   {torrentInfo()!.comment}
                 </Text>
-              </Show>
-            </VStack>
-            <HStack spacing="$2">
-              <Show when={torrentInfo()!.has_cas}>
-                <Badge colorScheme="success">
-                  {t("home.toolbar.offline_download_enhanced.cas_supported")}
-                </Badge>
-              </Show>
-              <Show when={torrentInfo()!.share}>
-                <Badge
-                  colorScheme={
-                    torrentInfo()!.share?.valid ? "success" : "danger"
-                  }
-                >
-                  {torrentInfo()!.share?.valid
-                    ? t("home.transfer_seed.share_valid")
-                    : t("home.transfer_seed.share_invalid")}
-                </Badge>
-              </Show>
-              <Show when={torrentInfo()!.channel?.status}>
-                <Badge colorScheme="accent">
-                  {torrentInfo()!.channel?.name ||
-                    t("home.transfer_seed.channel")}
-                  : {torrentInfo()!.channel?.status}
-                </Badge>
-              </Show>
-              <For each={torrentInfo()!.channels || []}>
-                {(channel) => (
-                  <Badge colorScheme="accent">
-                    {channel.driver}
-                    {channel.mount_path ? `: ${channel.mount_path}` : ""}
-                  </Badge>
-                )}
-              </For>
-            </HStack>
-          </HStack>
+              </Box>
+            </Show>
+          </Box>
 
           <Show when={torrentInfo()!.format === "cas" && !hasCasPieces()}>
             <Alert status="warning">
@@ -1479,96 +1490,141 @@ const TorrentPreview = () => {
             </For>
           </Box>
 
-          {/* 保存区：目标路径 + 驱动信息 + 保存方式，压成一行 */}
+          {/* 保存卡片：路径一行，驱动信息与操作一行 */}
           <Show when={!isShare()}>
-            <Divider />
-            <HStack spacing="$2" alignItems="center" flexWrap="wrap">
-              <Text fontSize="$sm" flexShrink={0}>
-                {t("home.transfer_seed.destination")}
-              </Text>
-              <Box flex="1" minW={{ "@initial": "$full", "@md": "$64" }}>
-                <FolderChooseInput
-                  id="seed-preview-destination"
-                  value={destination()}
-                  onChange={setDestination}
-                />
-              </Box>
+            <Box border="1px solid $neutral5" borderRadius="$lg" p="$3">
+              <VStack alignItems="stretch" spacing="$2">
+                <HStack spacing="$2" alignItems="center">
+                  <Text fontSize="$sm" flexShrink={0}>
+                    {t("home.transfer_seed.destination")}
+                  </Text>
+                  <Box flex="1" minW="0">
+                    <FolderChooseInput
+                      id="seed-preview-destination"
+                      value={destination()}
+                      onChange={setDestination}
+                    />
+                  </Box>
+                </HStack>
 
-              {/* 驱动能力收进悬浮徽标，避免单独占一行 */}
-              <Tooltip label={driverDetails()} maxW="420px">
-                <Badge colorScheme="info" cursor="help">
-                  {destinationProvider() ||
-                    t("home.transfer_seed.destination_driver")}
-                </Badge>
-              </Tooltip>
-              <Show when={saveCapabilities()}>
-                <Tooltip
-                  label={rapidUnavailableReason()}
-                  disabled={!rapidUnavailableReason()}
+                {/* 左：驱动状态胶囊；右：保存选项。两组各自不拆散，避免交错换行 */}
+                <HStack
+                  justifyContent="space-between"
+                  alignItems="center"
+                  spacing="$3"
+                  flexWrap="wrap"
                 >
-                  <Badge
-                    colorScheme={
-                      canRapidSave() && hasRequiredHashes()
-                        ? "success"
-                        : "warning"
-                    }
-                    cursor={rapidUnavailableReason() ? "help" : undefined}
-                  >
-                    {canRapidSave() && hasRequiredHashes()
-                      ? t("home.transfer_seed.rapid_available")
-                      : t("home.transfer_seed.rapid_unavailable")}
-                  </Badge>
-                </Tooltip>
-              </Show>
-              <Checkbox
-                size="sm"
-                checked={updateChannel()}
-                onChange={() => setUpdateChannel(!updateChannel())}
-              >
-                {t("home.transfer_seed.update_channel")}
-              </Checkbox>
+                  <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+                    <HStack
+                      spacing="$1"
+                      alignItems="center"
+                      px="$2"
+                      py="2px"
+                      bgColor="$neutral3"
+                      borderRadius="$full"
+                    >
+                      <Text fontSize="$xs" color="$neutral9">
+                        {t("home.transfer_seed.driver_short")}
+                      </Text>
+                      <Text fontSize="$xs" fontWeight="$medium">
+                        {destinationProvider() || "-"}
+                      </Text>
+                    </HStack>
 
-              <Box w={{ "@initial": "$full", "@md": "$40" }}>
-                <SelectWrapper
-                  value={saveMethod()}
-                  onChange={(value) => setSaveMethod(value as SaveMethod)}
-                  options={availableSaveMethods().map((method) => ({
-                    value: method,
-                    label:
-                      method === "rapid"
-                        ? t("home.transfer_seed.rapid_save")
-                        : method === "offline"
-                          ? t("home.toolbar.offline_download")
-                          : t("home.transfer_seed.transit_save"),
-                  }))}
-                />
-              </Box>
-              <Button
-                loading={operation() === "rapid" || operation() === "transit"}
-                disabled={!canSave()}
-                onClick={runSave}
-              >
-                {t("global.save")}
-              </Button>
-            </HStack>
-            <Show
-              when={
-                operationSupported("transfer") && saveMethod() === "transfer"
-              }
-            >
-              <HStack spacing="$2" alignItems="center" flexWrap="wrap">
-                <Text fontSize="$sm" flexShrink={0}>
-                  {t("home.transfer_seed.transit_path")}
-                </Text>
-                <Box w={{ "@initial": "$full", "@md": "$64" }}>
-                  <FolderChooseInput
-                    id="seed-preview-transit-path"
-                    value={transitPath()}
-                    onChange={setTransitPath}
-                  />
-                </Box>
-              </HStack>
-            </Show>
+                    <Show when={saveCapabilities()}>
+                      <HStack
+                        spacing="$1"
+                        alignItems="center"
+                        px="$2"
+                        py="2px"
+                        bgColor="$neutral3"
+                        borderRadius="$full"
+                        color={rapidReady() ? "$success10" : "$warning10"}
+                      >
+                        {rapidReady() ? (
+                          <BsCheckCircleFill size={11} />
+                        ) : (
+                          <BsExclamationCircleFill size={11} />
+                        )}
+                        <Text fontSize="$xs">
+                          {rapidReady()
+                            ? t("home.transfer_seed.rapid_available")
+                            : t("home.transfer_seed.rapid_unavailable")}
+                        </Text>
+                      </HStack>
+                    </Show>
+                    <Tooltip label={driverDetails()} maxW="420px">
+                      <HStack
+                        alignItems="center"
+                        justifyContent="center"
+                        px="$2"
+                        py="2px"
+                        bgColor="$neutral3"
+                        borderRadius="$full"
+                        color="$neutral10"
+                        cursor="help"
+                      >
+                        <BsInfoCircle size={12} />
+                      </HStack>
+                    </Tooltip>
+                  </HStack>
+
+                  <HStack spacing="$2" alignItems="center" flexShrink={0}>
+                    <Checkbox
+                      size="sm"
+                      checked={updateChannel()}
+                      onChange={() => setUpdateChannel(!updateChannel())}
+                    >
+                      {t("home.transfer_seed.update_channel_short")}
+                    </Checkbox>
+                    <Box w="$32">
+                      <SelectWrapper
+                        value={saveMethod()}
+                        onChange={(value) => setSaveMethod(value as SaveMethod)}
+                        options={availableSaveMethods().map((method) => ({
+                          value: method,
+                          label:
+                            method === "rapid"
+                              ? t("home.transfer_seed.rapid_save")
+                              : method === "offline"
+                                ? t("home.toolbar.offline_download")
+                                : t("home.transfer_seed.transit_save"),
+                        }))}
+                      />
+                    </Box>
+                    <Button
+                      loading={
+                        operation() === "rapid" || operation() === "transit"
+                      }
+                      disabled={!canSave()}
+                      onClick={runSave}
+                    >
+                      {t("global.save")}
+                    </Button>
+                  </HStack>
+                </HStack>
+
+                <Show
+                  when={
+                    operationSupported("transfer") &&
+                    saveMethod() === "transfer"
+                  }
+                >
+                  <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+                    <Text fontSize="$sm" flexShrink={0}>
+                      {t("home.transfer_seed.transit_path")}
+                    </Text>
+                    <Box flex="1" minW="0">
+                      <FolderChooseInput
+                        id="seed-preview-transit-path"
+                        value={transitPath()}
+                        onChange={setTransitPath}
+                      />
+                    </Box>
+                  </HStack>
+                </Show>
+              </VStack>
+            </Box>
           </Show>
 
           {/* 编辑并保存：注释 / 目标格式 / 重算哈希，一个按钮统一提交 */}
