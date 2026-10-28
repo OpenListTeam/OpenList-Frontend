@@ -20,7 +20,7 @@ import {
   SimpleGrid,
   Divider,
 } from "@hope-ui/solid"
-import { SelectWrapper, FolderChooseInput } from "~/components"
+import { SelectWrapper, FolderChooseInput, HashMatrixTable } from "~/components"
 import { useFetch, usePath, useRouter, useT } from "~/hooks"
 import {
   offlineDownload,
@@ -471,89 +471,19 @@ export const TransferSeedGenerator = () => {
               <Text fontSize="$sm" fontWeight="$semibold" mb="$2">
                 {t("home.transfer_seed.hash_matrix")}
               </Text>
-              <Box
-                border="1px solid $neutral6"
-                borderRadius="$md"
-                overflow="hidden"
-              >
-                <HStack px="$3" py="$2" spacing="$2" bgColor="$neutral3">
-                  <Text flex="1" fontSize="$xs" color="$neutral11">
-                    {t("home.transfer_seed.hash_algorithm")}
-                  </Text>
-                  <Text w="$24" fontSize="$xs" color="$neutral11">
-                    {t("home.transfer_seed.whole")}
-                  </Text>
-                  <Text w="$24" fontSize="$xs" color="$neutral11">
-                    {t("home.transfer_seed.pieces")}
-                  </Text>
-                </HStack>
-                <For each={["md5", "sha1", "sha256"] as SeedHashAlgorithm[]}>
-                  {(algorithm, index) => {
-                    const forced = () => forcedAlgorithms().includes(algorithm)
-                    return (
-                      <HStack
-                        px="$3"
-                        py="$2"
-                        spacing="$2"
-                        alignItems="center"
-                        borderTop={
-                          index() === 0 ? undefined : "1px solid $neutral5"
-                        }
-                        bgColor={forced() ? "$neutral2" : undefined}
-                      >
-                        <HStack flex="1" spacing="$2" alignItems="center">
-                          <Text fontSize="$sm" fontWeight="$medium">
-                            {algorithm.toUpperCase()}
-                          </Text>
-                          <Show when={forced()}>
-                            <Badge colorScheme="info">
-                              {t("home.transfer_seed.required_short")}
-                            </Badge>
-                          </Show>
-                        </HStack>
-                        <Checkbox
-                          w="$24"
-                          size="sm"
-                          checked={effectiveMatrix()[algorithm].whole}
-                          disabled={
-                            forced() ||
-                            (reuseOnly() &&
-                              !availableWholeHashes().has(algorithm))
-                          }
-                          onChange={(event) =>
-                            setHashScope(
-                              algorithm,
-                              "whole",
-                              event.currentTarget.checked,
-                            )
-                          }
-                        >
-                          {t("home.transfer_seed.whole")}
-                        </Checkbox>
-                        <Checkbox
-                          w="$24"
-                          size="sm"
-                          checked={effectiveMatrix()[algorithm].pieces}
-                          disabled={
-                            forced() ||
-                            (reuseOnly() &&
-                              !availablePieceHashes().has(algorithm))
-                          }
-                          onChange={(event) =>
-                            setHashScope(
-                              algorithm,
-                              "pieces",
-                              event.currentTarget.checked,
-                            )
-                          }
-                        >
-                          {t("home.transfer_seed.pieces")}
-                        </Checkbox>
-                      </HStack>
-                    )
-                  }}
-                </For>
-              </Box>
+              <HashMatrixTable
+                matrix={effectiveMatrix()}
+                onChange={(algorithm, scope, checked) =>
+                  setHashScope(algorithm, scope, checked)
+                }
+                isForced={(algorithm) => forcedAlgorithms().includes(algorithm)}
+                isWholeDisabled={(algorithm) =>
+                  reuseOnly() && !availableWholeHashes().has(algorithm)
+                }
+                isPiecesDisabled={(algorithm) =>
+                  reuseOnly() && !availablePieceHashes().has(algorithm)
+                }
+              />
               <Show when={forcedAlgorithms().length > 0}>
                 <Text fontSize="$xs" color="$neutral10" mt="$1">
                   {t("home.transfer_seed.hash_matrix_forced", {
