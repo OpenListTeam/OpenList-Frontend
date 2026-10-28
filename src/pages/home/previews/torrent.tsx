@@ -1684,14 +1684,6 @@ const TorrentPreview = () => {
               <Show when={editDisclosure.isOpen()}>
                 <VStack alignItems="stretch" spacing="$3" mt="$2">
                   <Box>
-                    <Text fontSize="$sm" mb="$1">
-                      {t("home.transfer_seed.convert_to")}{" "}
-                      <Text as="span" fontSize="$xs" color="$neutral10">
-                        {targetFormats()
-                          .map((format) => FORMAT_DISPLAY[format] || format)
-                          .join(" / ")}
-                      </Text>
-                    </Text>
                     <HStack spacing="$2" alignItems="center" flexWrap="wrap">
                       <For each={["torrent", "cas", "oss"] as SeedFormat[]}>
                         {(format) => {
@@ -1744,9 +1736,6 @@ const TorrentPreview = () => {
                         }}
                       </For>
                     </HStack>
-                    <Text fontSize="$xs" color="$neutral10" mt="$1">
-                      {t("home.transfer_seed.convert_multi_hint")}
-                    </Text>
 
                     <Show when={operationSupported("recalculate")}>
                       <Box>
@@ -1787,9 +1776,6 @@ const TorrentPreview = () => {
                           value={effectiveRecalcSourceDir()}
                           onChange={setRecalcSourceDir}
                         />
-                        <Text fontSize="$xs" color="$neutral10" mt="$1">
-                          {t("home.transfer_seed.rehash_hint")}
-                        </Text>
                       </Box>
                     </Show>
                   </Box>
