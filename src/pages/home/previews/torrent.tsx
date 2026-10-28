@@ -936,26 +936,20 @@ const TorrentPreview = () => {
   })
 
   // ── 统一「编辑并保存」：注释 / 转换 / 重算哈希 一个按钮完成 ──────────────
-  const currentFormat = () => torrentInfo()?.format
-  // 没选目标格式 = 不转换，只改注释/补算哈希；选的就是当前格式同样不需要转换
-  // （后端对「目标 = 当前格式」直接返回可行，不会再把合法 torrent 判成不可转换）
-  const targetDiffers = () => {
-    const current = currentFormat()
-    const targets = targetFormats()
-    if (targets.length === 0) return false
-    // 格式未知时按转换处理，否则选了格式却没有任何反应
-    if (!current) return true
-    return targets.length !== 1 || targets[0] !== current
-  }
+  // 选了任何目标格式就按「产出一份该格式」处理：即使选的就是当前格式，
+  // 也允许另存为一份新文件（后端对同格式直接复制原始字节，不重新编码）。
+  // 一个都没选 = 不转换，只改注释 / 补算哈希。
+  const targetDiffers = () => targetFormats().length > 0
   const hasRecalcSelection = () =>
     recalcTouched() &&
     ALGORITHMS.some(
       (algo) => recalcMatrix()[algo].whole || recalcMatrix()[algo].pieces,
     )
 
-  // 只有需要读文件时才显示源目录（要转换，或勾了重算矩阵）
+  // 只有需要读文件时才显示源目录：目标格式缺哈希必须补算，或勾了重算矩阵。
+  // 同格式另存为只是复制字节，不需要源文件。
   const needSourceDir = () =>
-    targetDiffers() ||
+    (targetFormats().length > 0 && !conversionSupported()) ||
     (operationSupported("recalculate") && hasRecalcSelection())
 
   const applyMode = () =>
@@ -977,6 +971,14 @@ const TorrentPreview = () => {
 
   const applyLabel = () => {
     if (applyMode() === "convert") {
+      // 只选了当前格式：不改内容，只是另存一份
+      if (
+        conversionSupported() &&
+        targetFormats().length === 1 &&
+        targetFormats()[0] === torrentInfo()?.format
+      ) {
+        return t("home.transfer_seed.save_as")
+      }
       if (conversionSupported()) {
         return t("home.transfer_seed.convert_and_save")
       }
@@ -1799,6 +1801,21 @@ const TorrentPreview = () => {
                         </For>
                       </VStack>
 
+                      {/* 选了目标格式就是「产出一份新文件」，这里给出保存目录，
+                          同格式也能另存为 */}
+                      <Show when={targetFormats().length > 0}>
+                        <Box>
+                          <Text fontSize="$sm" mb="$1">
+                            {t("home.transfer_seed.destination")}
+                          </Text>
+                          <FolderChooseInput
+                            id="seed-preview-convert-destination"
+                            value={destination()}
+                            onChange={setDestination}
+                          />
+                        </Box>
+                      </Show>
+
                       {/* 目标格式无法直接编码时说明「为什么要读文件」，
                         避免矩阵全显示 in seed 却要求补算时的困惑 */}
                       <Show when={targetDiffers() && !conversionSupported()}>
@@ -1827,9 +1844,6 @@ const TorrentPreview = () => {
 
                     <Show when={operationSupported("recalculate")}>
                       <Box>
-                        <Text fontSize="$sm" mb="$1">
-                          {t("home.transfer_seed.recalc_matrix")}
-                        </Text>
                         <HashMatrixTable
                           matrix={recalcMatrix()}
                           onChange={(algo, scope, checked) =>
