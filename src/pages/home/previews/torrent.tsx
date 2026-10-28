@@ -870,8 +870,10 @@ const TorrentPreview = () => {
     )
   }
 
-  // 缺哈希时只有显式选择了源目录才允许转换（由后端读文件补算）
-  const canConvert = () => conversionSupported() || !!recalcSourceDir().trim()
+  // 缺哈希时只要有可用的源目录就允许转换（后端读文件补算）。
+  // 这里必须用 effectiveRecalcSourceDir：输入框显示的就是它（默认回落到
+  // 种子所在目录），用空信号判断会出现「界面上明明有目录，按钮却是灰的」。
+  const canConvert = () => conversionSupported() || !!effectiveRecalcSourceDir()
 
   // 整个编辑区（转换 + 注释 + 保存）默认折叠
   const editDisclosure = createDisclosure()
@@ -988,9 +990,11 @@ const TorrentPreview = () => {
             (reason) => `${format.toUpperCase()}: ${reason}`,
           ),
         )
-      return [...reasons, t("home.transfer_seed.rehash_need_source_dir")].join(
-        "\n",
-      )
+      // 只有确实没有可用目录时才提示「去选源目录」，否则输入框里已经有值
+      if (!effectiveRecalcSourceDir()) {
+        reasons.push(t("home.transfer_seed.rehash_need_source_dir"))
+      }
+      return reasons.join("\n")
     }
     if (applyMode() === "recalculate") {
       return t("home.transfer_seed.select_at_least_one")
