@@ -185,6 +185,10 @@ export interface SeedInfo extends Partial<TorrentInfo> {
     edit?: boolean
     recalculate?: boolean
   }
+  /** 种子整体已带的整文件哈希算法（BT 的 pieces 无法拆到文件上，需要种子级标记） */
+  available_hashes?: SeedHashAlgorithm[]
+  /** 种子整体已带的分片哈希算法 */
+  available_piece_hashes?: SeedHashAlgorithm[]
 }
 
 export interface SeedParseResult {

@@ -666,18 +666,19 @@ const TorrentPreview = () => {
 
   // 种子内是否已带某个算法的整文件哈希 / 分片哈希。
   // 兼容两种来源：种子自身 hashes.pieces，以及旧格式顶层的 piece_hashes。
+  // 空文件不参与判断：BT 允许 0 字节文件，它们本来就没有哈希
   const hasHashIn = (
     info: SeedInfo | null | undefined,
     algo: SeedHashAlgorithm,
   ) => {
-    const files = info?.files || []
+    const files = (info?.files || []).filter((file) => file.size > 0)
     return files.length > 0 && files.every((file) => !!file.hashes?.[algo])
   }
   const hasPiecesIn = (
     info: SeedInfo | null | undefined,
     algo: SeedHashAlgorithm,
   ) => {
-    const files = info?.files || []
+    const files = (info?.files || []).filter((file) => file.size > 0)
     return (
       files.length > 0 &&
       files.every((file) => {
@@ -687,10 +688,20 @@ const TorrentPreview = () => {
       })
     )
   }
-  const seedHasHash = (algo: SeedHashAlgorithm) =>
-    hasHashIn(torrentInfo(), algo)
+  // 优先看种子级标记：BT 的 pieces 是整包的，跨文件时无法拆到单个文件上
+  const hasHash = (
+    info: SeedInfo | null | undefined,
+    algo: SeedHashAlgorithm,
+  ) => (info?.available_hashes || []).includes(algo) || hasHashIn(info, algo)
+  const hasPieces = (
+    info: SeedInfo | null | undefined,
+    algo: SeedHashAlgorithm,
+  ) =>
+    (info?.available_piece_hashes || []).includes(algo) ||
+    hasPiecesIn(info, algo)
+  const seedHasHash = (algo: SeedHashAlgorithm) => hasHash(torrentInfo(), algo)
   const seedHasPieces = (algo: SeedHashAlgorithm) =>
-    hasPiecesIn(torrentInfo(), algo)
+    hasPieces(torrentInfo(), algo)
 
   // 目标格式是否真的「缺哈希」。矩阵全显示 in seed 时仍可能无法直接转换，
   // 那是结构性原因（如 piece 跨文件），不该再提示「补算缺失哈希」
@@ -707,14 +718,11 @@ const TorrentPreview = () => {
   // （转换时原样保留），缺的留空，等用户显式要求再读文件补算。
   const initRecalcMatrix = (info: SeedInfo) => {
     const matrix: SeedHashMatrix = {
-      md5: { whole: hasHashIn(info, "md5"), pieces: hasPiecesIn(info, "md5") },
-      sha1: {
-        whole: hasHashIn(info, "sha1"),
-        pieces: hasPiecesIn(info, "sha1"),
-      },
+      md5: { whole: hasHash(info, "md5"), pieces: hasPieces(info, "md5") },
+      sha1: { whole: hasHash(info, "sha1"), pieces: hasPieces(info, "sha1") },
       sha256: {
-        whole: hasHashIn(info, "sha256"),
-        pieces: hasPiecesIn(info, "sha256"),
+        whole: hasHash(info, "sha256"),
+        pieces: hasPieces(info, "sha256"),
       },
     }
     setRecalcMatrix(matrix)
@@ -1017,6 +1025,13 @@ const TorrentPreview = () => {
     }
     return ""
   }
+
+  // 悬浮提示：禁用时给原因；可点但需要重新读文件时，说明「为什么要读文件」
+  const applyHint = () =>
+    applyBlockedReason() ||
+    (targetDiffers() && !conversionSupported()
+      ? t("home.transfer_seed.convert_rehash_notice")
+      : "")
 
   const request = () => ({
     seed_data: torrentData(),
@@ -1842,18 +1857,6 @@ const TorrentPreview = () => {
                           onChange={setDestination}
                         />
                       </Box>
-
-                      {/* 目标格式无法直接编码时说明「为什么要读文件」，
-                        避免矩阵全显示 in seed 却要求补算时的困惑 */}
-                      <Show when={targetDiffers() && !conversionSupported()}>
-                        <Text
-                          fontSize="$xs"
-                          color="$warning11"
-                          css={{ whiteSpace: "pre-line" }}
-                        >
-                          {t("home.transfer_seed.convert_rehash_notice")}
-                        </Text>
-                      </Show>
                     </VStack>
 
                     <Show when={operationSupported("recalculate")}>
@@ -1904,10 +1907,7 @@ const TorrentPreview = () => {
                   </Box>
 
                   <HStack justifyContent="flex-end">
-                    <Tooltip
-                      label={applyBlockedReason()}
-                      disabled={!applyBlockedReason()}
-                    >
+                    <Tooltip label={applyHint()} disabled={!applyHint()}>
                       <Box display="inline-block">
                         <Button
                           loading={
