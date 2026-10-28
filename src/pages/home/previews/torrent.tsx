@@ -810,13 +810,13 @@ const TorrentPreview = () => {
   // 缺哈希时只有显式选择了源目录才允许转换（由后端读文件补算）
   const canConvert = () => conversionSupported() || !!recalcSourceDir().trim()
 
-  // 转换区默认折叠，需要时展开
-  const convertDisclosure = createDisclosure()
+  // 整个编辑区（转换 + 注释 + 保存）默认折叠
+  const editDisclosure = createDisclosure()
 
-  // 选了目标格式但该格式缺哈希时，自动展开，方便填源目录
+  // 选了缺哈希的目标格式时自动展开，方便填源目录
   createEffect(() => {
     if (targetDiffers() && !conversionSupported()) {
-      convertDisclosure.onOpen()
+      editDisclosure.onOpen()
     }
   })
 
@@ -1265,6 +1265,54 @@ const TorrentPreview = () => {
     }
   }
 
+  // ── 保存方式：快速上传 / 离线下载 / 中转保存 合并为「下拉 + 保存」 ──
+  type SaveMethod = "rapid" | "offline" | "transfer"
+  const [saveMethod, setSaveMethod] = createSignal<SaveMethod>("rapid")
+  const availableSaveMethods = (): SaveMethod[] => {
+    const list: SaveMethod[] = []
+    if (
+      operationSupported("rapid_upload") &&
+      canRapidSave() &&
+      hasRequiredHashes()
+    ) {
+      list.push("rapid")
+    }
+    if (operationSupported("offline_download")) list.push("offline")
+    if (operationSupported("transfer")) list.push("transfer")
+    return list
+  }
+  createEffect(() => {
+    const list = availableSaveMethods()
+    if (!list.includes(saveMethod())) setSaveMethod(list[0] || "rapid")
+  })
+  const canSave = () =>
+    availableSaveMethods().length > 0 && selectedFiles().length > 0
+  const runSave = () => {
+    const method = saveMethod()
+    if (method === "rapid") void runOperation("rapid")
+    else if (method === "offline") openOfflineDialog()
+    else void runOperation("transit")
+  }
+
+  // 驱动能力详情：悬浮徽标里一次性展示，避免单独占一行
+  const driverDetails = () => {
+    const parts: string[] = []
+    if (destinationProvider()) {
+      parts.push(
+        `${t("home.transfer_seed.destination_driver")}: ${destinationProvider()}`,
+      )
+    }
+    if (driverSupportsText()) {
+      parts.push(
+        `${t("home.transfer_seed.driver_supports")}: ${driverSupportsText()}`,
+      )
+    }
+    if (requiredHashesText()) parts.push(requiredHashesText())
+    if (availableHashesText()) parts.push(availableHashesText())
+    if (rapidUnavailableReason()) parts.push(rapidUnavailableReason())
+    return parts.join(" · ")
+  }
+
   return (
     <VStack spacing="$4" w="$full" p="$4">
       <Show when={loading()}>
@@ -1283,11 +1331,12 @@ const TorrentPreview = () => {
             flexWrap="wrap"
             gap="$2"
           >
-            <VStack alignItems="flex-start" spacing="$1">
-              <Heading size="sm" css={{ wordBreak: "break-all" }}>
-                {objStore.obj.name}
-              </Heading>
+            <VStack alignItems="flex-start" spacing="$1" flex="1" minW="0">
+              {/* 文件名 + 格式/大小/文件数/日期同一行 */}
               <HStack spacing="$2" alignItems="center" flexWrap="wrap">
+                <Heading size="sm" css={{ wordBreak: "break-all" }}>
+                  {objStore.obj.name}
+                </Heading>
                 <Badge colorScheme="info">{formatDisplayName()}</Badge>
                 <Text fontSize="$xs" color="$neutral10">
                   {formatFileSize(torrentInfo()!.total_size)} ·{" "}
@@ -1299,6 +1348,16 @@ const TorrentPreview = () => {
                   </Show>
                 </Text>
               </HStack>
+              {/* 注释放在原来的大小/日期位置，不再单独加标题 */}
+              <Show when={torrentInfo()?.comment}>
+                <Text
+                  fontSize="$sm"
+                  color="$neutral11"
+                  css={{ whiteSpace: "pre-line" }}
+                >
+                  {torrentInfo()!.comment}
+                </Text>
+              </Show>
             </VStack>
             <HStack spacing="$2">
               <Show when={torrentInfo()!.has_cas}>
@@ -1420,107 +1479,83 @@ const TorrentPreview = () => {
             </For>
           </Box>
 
-          {/* 下载 / 秒传区 */}
+          {/* 保存区：目标路径 + 驱动信息 + 保存方式，压成一行 */}
           <Show when={!isShare()}>
             <Divider />
             <HStack spacing="$2" alignItems="center" flexWrap="wrap">
               <Text fontSize="$sm" flexShrink={0}>
                 {t("home.transfer_seed.destination")}
               </Text>
-              <Box flex="1" minW={{ "@initial": "$full", "@md": "$72" }}>
+              <Box flex="1" minW={{ "@initial": "$full", "@md": "$64" }}>
                 <FolderChooseInput
                   id="seed-preview-destination"
                   value={destination()}
                   onChange={setDestination}
                 />
               </Box>
-              <Button
-                loading={operation() === "rapid"}
-                disabled={
-                  !operationSupported("rapid_upload") ||
-                  selectedFiles().length === 0
-                }
-                onClick={() => runOperation("rapid")}
-              >
-                {t("home.transfer_seed.rapid_save")}
-              </Button>
-              <Button
-                variant="outline"
-                loading={operation() === "offline"}
-                disabled={
-                  !operationSupported("offline_download") ||
-                  selectedFiles().length === 0
-                }
-                onClick={openOfflineDialog}
-              >
-                {t("home.toolbar.offline_download")}
-              </Button>
-              <Button
-                variant="outline"
-                loading={operation() === "transit"}
-                disabled={
-                  !operationSupported("transfer") ||
-                  selectedFiles().length === 0
-                }
-                onClick={() => runOperation("transit")}
-              >
-                {t("home.transfer_seed.transit_save")}
-              </Button>
-            </HStack>
-            <HStack spacing="$2" alignItems="center" flexWrap="wrap">
-              <Show when={destinationProvider()}>
-                <Badge colorScheme="info">
-                  {t("home.transfer_seed.destination_driver")}:{" "}
-                  {destinationProvider()}
+
+              {/* 驱动能力收进悬浮徽标，避免单独占一行 */}
+              <Tooltip label={driverDetails()} maxW="420px">
+                <Badge colorScheme="info" cursor="help">
+                  {destinationProvider() ||
+                    t("home.transfer_seed.destination_driver")}
                 </Badge>
-              </Show>
-              <Show when={driverSupportsText()}>
-                <Badge colorScheme="neutral">
-                  {t("home.transfer_seed.driver_supports")}:{" "}
-                  {driverSupportsText()}
-                </Badge>
-              </Show>
+              </Tooltip>
               <Show when={saveCapabilities()}>
-                <Badge
-                  colorScheme={
-                    canRapidSave() && hasRequiredHashes()
-                      ? "success"
-                      : "warning"
-                  }
+                <Tooltip
+                  label={rapidUnavailableReason()}
+                  disabled={!rapidUnavailableReason()}
                 >
-                  {canRapidSave() && hasRequiredHashes()
-                    ? t("home.transfer_seed.rapid_available")
-                    : t("home.transfer_seed.rapid_unavailable")}
-                </Badge>
-              </Show>
-              <Show when={requiredHashesText()}>
-                <Badge colorScheme="accent">{requiredHashesText()}</Badge>
-              </Show>
-              <Show when={availableHashesText()}>
-                <Badge
-                  colorScheme={hasRequiredHashes() ? "success" : "warning"}
-                >
-                  {availableHashesText()}
-                </Badge>
-              </Show>
-              <Show when={rapidUnavailableReason()}>
-                <Tooltip label={rapidUnavailableReason()}>
-                  <Badge colorScheme="danger" cursor="help">
-                    <HStack spacing="$1">
-                      <BsInfoCircle />
-                      <span>{t("home.transfer_seed.unavailable_reason")}</span>
-                    </HStack>
+                  <Badge
+                    colorScheme={
+                      canRapidSave() && hasRequiredHashes()
+                        ? "success"
+                        : "warning"
+                    }
+                    cursor={rapidUnavailableReason() ? "help" : undefined}
+                  >
+                    {canRapidSave() && hasRequiredHashes()
+                      ? t("home.transfer_seed.rapid_available")
+                      : t("home.transfer_seed.rapid_unavailable")}
                   </Badge>
                 </Tooltip>
               </Show>
               <Checkbox
+                size="sm"
                 checked={updateChannel()}
                 onChange={() => setUpdateChannel(!updateChannel())}
               >
                 {t("home.transfer_seed.update_channel")}
               </Checkbox>
+
+              <Box w={{ "@initial": "$full", "@md": "$40" }}>
+                <SelectWrapper
+                  value={saveMethod()}
+                  onChange={(value) => setSaveMethod(value as SaveMethod)}
+                  options={availableSaveMethods().map((method) => ({
+                    value: method,
+                    label:
+                      method === "rapid"
+                        ? t("home.transfer_seed.rapid_save")
+                        : method === "offline"
+                          ? t("home.toolbar.offline_download")
+                          : t("home.transfer_seed.transit_save"),
+                  }))}
+                />
+              </Box>
+              <Button
+                loading={operation() === "rapid" || operation() === "transit"}
+                disabled={!canSave()}
+                onClick={runSave}
+              >
+                {t("global.save")}
+              </Button>
             </HStack>
-            <Show when={operationSupported("transfer")}>
+            <Show
+              when={
+                operationSupported("transfer") && saveMethod() === "transfer"
+              }
+            >
               <HStack spacing="$2" alignItems="center" flexWrap="wrap">
                 <Text fontSize="$sm" flexShrink={0}>
                   {t("home.transfer_seed.transit_path")}
@@ -1544,50 +1579,33 @@ const TorrentPreview = () => {
             }
           >
             <Divider />
-            <VStack alignItems="stretch" spacing="$3">
-              {/* 已保存的注释：只读展示，编辑框在下方按钮旁边 */}
-              <Box>
-                <Text fontSize="$sm" fontWeight="$semibold" mb="$1">
-                  {t("home.transfer_seed.overall_comment")}
+            <Box>
+              {/* 整个编辑区（转换 + 注释 + 保存）统一折叠 */}
+              <HStack justifyContent="space-between" alignItems="center">
+                <Text fontSize="$sm" fontWeight="$semibold">
+                  {t("home.transfer_seed.edit_and_save")}
                 </Text>
-                <Text
-                  fontSize="$sm"
-                  color={torrentInfo()?.comment ? "$neutral11" : "$neutral9"}
-                  css={{ whiteSpace: "pre-line" }}
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  onClick={editDisclosure.onToggle}
                 >
-                  {torrentInfo()?.comment ||
-                    t("home.transfer_seed.comment_empty")}
-                </Text>
-              </Box>
-
-              <Text fontSize="$sm" fontWeight="$semibold">
-                {t("home.transfer_seed.edit_and_save")}
-              </Text>
-
-              <Box>
-                <HStack justifyContent="space-between" alignItems="center">
-                  <HStack spacing="$2" alignItems="center" flexWrap="wrap">
-                    <Text fontSize="$sm">
-                      {t("home.transfer_seed.convert_to")}
+                  {editDisclosure.isOpen()
+                    ? t("home.transfer_seed.collapse")
+                    : t("home.transfer_seed.expand")}
+                </Button>
+              </HStack>
+              <Show when={editDisclosure.isOpen()}>
+                <VStack alignItems="stretch" spacing="$3" mt="$2">
+                  <Box>
+                    <Text fontSize="$sm" mb="$1">
+                      {t("home.transfer_seed.convert_to")}{" "}
+                      <Text as="span" fontSize="$xs" color="$neutral10">
+                        {targetFormats()
+                          .map((format) => FORMAT_DISPLAY[format] || format)
+                          .join(" / ")}
+                      </Text>
                     </Text>
-                    <Text fontSize="$xs" color="$neutral10">
-                      {targetFormats()
-                        .map((format) => FORMAT_DISPLAY[format] || format)
-                        .join(" / ")}
-                    </Text>
-                  </HStack>
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    onClick={convertDisclosure.onToggle}
-                  >
-                    {convertDisclosure.isOpen()
-                      ? t("home.transfer_seed.collapse")
-                      : t("home.transfer_seed.expand")}
-                  </Button>
-                </HStack>
-                <Show when={convertDisclosure.isOpen()}>
-                  <VStack alignItems="stretch" spacing="$2" mt="$2">
                     <HStack spacing="$2" alignItems="center" flexWrap="wrap">
                       <For each={["torrent", "cas", "oss"] as SeedFormat[]}>
                         {(format) => {
@@ -1688,41 +1706,43 @@ const TorrentPreview = () => {
                         </Text>
                       </Box>
                     </Show>
-                  </VStack>
-                </Show>
-              </Box>
-
-              <Box>
-                <Text fontSize="$sm" mb="$1">
-                  {t("home.transfer_seed.comment_edit")}
-                </Text>
-                <Textarea
-                  rows={3}
-                  placeholder={t("home.transfer_seed.comment_placeholder")}
-                  value={editComment()}
-                  onInput={(event) => setEditComment(event.currentTarget.value)}
-                />
-              </Box>
-
-              <HStack justifyContent="flex-end">
-                <Tooltip
-                  label={applyBlockedReason()}
-                  disabled={!applyBlockedReason()}
-                >
-                  <Box display="inline-block">
-                    <Button
-                      loading={
-                        operation() !== "" && operation() === applyMode()
-                      }
-                      disabled={!applyEnabled()}
-                      onClick={applyChanges}
-                    >
-                      {applyLabel()}
-                    </Button>
                   </Box>
-                </Tooltip>
-              </HStack>
-            </VStack>
+
+                  <Box>
+                    <Text fontSize="$sm" mb="$1">
+                      {t("home.transfer_seed.comment_edit")}
+                    </Text>
+                    <Textarea
+                      rows={3}
+                      placeholder={t("home.transfer_seed.comment_placeholder")}
+                      value={editComment()}
+                      onInput={(event) =>
+                        setEditComment(event.currentTarget.value)
+                      }
+                    />
+                  </Box>
+
+                  <HStack justifyContent="flex-end">
+                    <Tooltip
+                      label={applyBlockedReason()}
+                      disabled={!applyBlockedReason()}
+                    >
+                      <Box display="inline-block">
+                        <Button
+                          loading={
+                            operation() !== "" && operation() === applyMode()
+                          }
+                          disabled={!applyEnabled()}
+                          onClick={applyChanges}
+                        >
+                          {applyLabel()}
+                        </Button>
+                      </Box>
+                    </Tooltip>
+                  </HStack>
+                </VStack>
+              </Show>
+            </Box>
           </Show>
         </VStack>
       </Show>
