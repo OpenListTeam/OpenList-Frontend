@@ -493,6 +493,9 @@ const TorrentPreview = () => {
     sha1: { whole: false, pieces: false },
     sha256: { whole: false, pieces: false },
   })
+  // 用户是否手动改过矩阵。只有手动改过才进入「重算并保存」，
+  // 否则打开种子时「已带哈希」的默认勾选会被误判成重算任务。
+  const [recalcTouched, setRecalcTouched] = createSignal(false)
   const [updateChannel, setUpdateChannel] = createSignal(false)
   const [saveCapabilities, setSaveCapabilities] =
     createSignal<SeedSaveCapabilities | null>(null)
@@ -705,6 +708,8 @@ const TorrentPreview = () => {
       },
     }
     setRecalcMatrix(matrix)
+    // 初始化不算用户操作：只是把种子现状显示出来，不能因此进入「重算并保存」
+    setRecalcTouched(false)
   }
 
   const setRecalcHash = (
@@ -712,6 +717,7 @@ const TorrentPreview = () => {
     scope: keyof SeedHashSelection,
     checked: boolean,
   ) => {
+    setRecalcTouched(true)
     setRecalcMatrix((current) => ({
       ...current,
       [algo]: { ...current[algo], [scope]: checked },
@@ -877,11 +883,11 @@ const TorrentPreview = () => {
     }
   })
 
-  // 所选目标格式必需、且与生成种子一致的强制哈希算法
+  // 所选目标格式必需的哈希算法：只要格式被选中就强制，
+  // 不再要求「与当前格式不同」——否则对已经是 torrent 的种子勾 BT 就失效
   const forcedHashAlgo = (algorithm: SeedHashAlgorithm) =>
-    targetDiffers() &&
-    ((algorithm === "sha1" && targetFormats().includes("torrent")) ||
-      (algorithm === "md5" && targetFormats().includes("cas")))
+    (algorithm === "sha1" && targetFormats().includes("torrent")) ||
+    (algorithm === "md5" && targetFormats().includes("cas"))
 
   // 选中格式后自动勾上必需哈希（torrent → SHA1，CAS → MD5）；
   // 取消该格式时把「自动勾上的」还原成种子自身的状态（而不是一律清空），
@@ -890,10 +896,8 @@ const TorrentPreview = () => {
   createEffect(() => {
     const formats = targetFormats()
     const required: SeedHashAlgorithm[] = []
-    if (targetDiffers()) {
-      if (formats.includes("torrent")) required.push("sha1")
-      if (formats.includes("cas")) required.push("md5")
-    }
+    if (formats.includes("torrent")) required.push("sha1")
+    if (formats.includes("cas")) required.push("md5")
     const dropped = autoForcedAlgos.filter((algo) => !required.includes(algo))
     if (dropped.length > 0) {
       setRecalcMatrix((previous) => {
@@ -930,6 +934,7 @@ const TorrentPreview = () => {
     )
   }
   const hasRecalcSelection = () =>
+    recalcTouched() &&
     ALGORITHMS.some(
       (algo) => recalcMatrix()[algo].whole || recalcMatrix()[algo].pieces,
     )
