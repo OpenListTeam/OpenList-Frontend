@@ -297,7 +297,6 @@
     "item_authors": "Authors/Cast (JSON array)",
     "rating_label": "Rating (0-10)",
     "summary": "Summary",
-    "plot": "Overview",
     "plot_placeholder": "No summary yet — you can write one",
     "plot_helper": "Scraping fills this automatically; it is what the media detail page shows.",
     "cover_upload": "Upload cover",

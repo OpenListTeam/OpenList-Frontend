@@ -1086,10 +1086,6 @@ const VideoDetail = (props: { id: string; onBack: () => void }) => {
   // 原子地设置「播放哪一集」+「进入播放」，避免两次分开的 URL 写入互相覆盖
   const playEpisode = (ep: EpisodeInfo | null) => {
     if (!ep) return route.startPlay(0)
-    if (isDiscImage(ep.file_name)) {
-      notify.error(t("media.video.iso_title"))
-      return
-    }
     const pos = episodes().findIndex((e) => e.file_name === ep.file_name)
     route.startPlay(pos >= 0 ? pos + 1 : 0)
   }

@@ -171,13 +171,32 @@ export const adminUpdateMediaItem = (
 ) => r.post("/admin/media/items/update", item) as Promise<Resp<null>>
 
 /** 上传自定义封面（jpg/png/gif/webp，≤8MB），返回 thumb:/... 形式的 cover 值 */
-export const adminUploadMediaCover = (id: number, file: File) => {
+export const adminUploadMediaCover = (
+  id: number,
+  file: File,
+  deferred = false,
+) => {
   const form = new FormData()
   form.append("id", String(id))
   form.append("file", file)
+  if (deferred) form.append("deferred", "true")
   return r.post("/admin/media/items/cover", form, {
     headers: { "Content-Type": "multipart/form-data" },
   }) as Promise<Resp<{ cover: string }>>
+}
+
+/** 回收尚未被媒体条目引用的暂存封面 */
+export const adminDiscardMediaCover = async (id: number, cover: string) => {
+  const form = new FormData()
+  form.append("id", String(id))
+  form.append("discard", cover)
+  const resp = await (r.post("/admin/media/items/cover", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }) as Promise<Resp<null>>)
+  if (resp.code !== 200) {
+    throw new Error(resp.message || "Cover cleanup failed")
+  }
+  return resp
 }
 
 /** 删除媒体条目 */

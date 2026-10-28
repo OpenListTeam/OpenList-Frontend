@@ -86,13 +86,15 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
     })),
   ]
 
-  const isAvailable = (id: string) => targets().some((t) => t.id === id)
+  const isAvailable = (id: string) =>
+    targets().some((t) => t.id === id && !t.disabled)
 
   const [target, setTarget] = createSignal(
     // 上次选的是「浏览器」但这个文件不支持时，退到第一个本地播放器
     isAvailable(stored)
       ? stored
-      : (targets().find((t) => !t.browser)?.id ?? "browser"),
+      : (targets().find((t) => !t.browser && !t.disabled)?.id ??
+          (props.browserUnsupported ? "" : "browser")),
   )
   const [open, setOpen] = createSignal(false)
   const [directURL, setDirectURL] = createSignal<string | null>(null)
@@ -102,6 +104,7 @@ export const MediaPlayButton = (props: MediaPlayButtonProps) => {
 
   const current = () => players().find((p) => p.id === target())
   const label = () => {
+    if (!target()) return "选择播放器"
     if (target() !== "browser") return "播放器播放"
     // 不支持浏览器播放又没有本地播放器时，按钮语义是「去选一个播放器」
     return props.browserUnsupported ? "选择播放器" : "浏览器播放"

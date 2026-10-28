@@ -52,6 +52,7 @@ import {
   seedUpdate,
 } from "~/utils"
 import { FolderChooseInput, HashMatrixTable, SelectWrapper } from "~/components"
+import { seedConversionNeedsFiles } from "~/utils/seed_conversion"
 import axios from "axios"
 import bencode from "bencode"
 import crypto from "crypto-js"
@@ -891,7 +892,16 @@ const TorrentPreview = () => {
   }
 
   // 缺哈希时只要保存目录可用就允许转换（后端从该目录读文件补算）
-  const canConvert = () => conversionSupported() || !!effectiveRecalcSourceDir()
+  const conversionNeedsFiles = () =>
+    seedConversionNeedsFiles(
+      torrentInfo(),
+      targetFormats(),
+      selectedFiles(),
+      recalcTouched() ? recalcMatrix() : undefined,
+    )
+  const canConvert = () =>
+    selectedFiles().length > 0 &&
+    (!conversionNeedsFiles() || !!effectiveRecalcSourceDir())
 
   // 整个编辑区（转换 + 注释 + 保存）默认折叠
   const editDisclosure = createDisclosure()
@@ -979,13 +989,13 @@ const TorrentPreview = () => {
     if (applyMode() === "convert") {
       // 只选了当前格式：不改内容，只是另存一份
       if (
-        conversionSupported() &&
+        !conversionNeedsFiles() &&
         targetFormats().length === 1 &&
         targetFormats()[0] === torrentInfo()?.format
       ) {
         return t("home.transfer_seed.save_as")
       }
-      if (conversionSupported()) {
+      if (!conversionNeedsFiles()) {
         return t("home.transfer_seed.convert_and_save")
       }
       // 缺哈希才说「补算缺失哈希」，否则是结构问题，如实说「从文件重算」
@@ -1029,7 +1039,7 @@ const TorrentPreview = () => {
   // 悬浮提示：禁用时给原因；可点但需要重新读文件时，说明「为什么要读文件」
   const applyHint = () =>
     applyBlockedReason() ||
-    (targetDiffers() && !conversionSupported()
+    (targetDiffers() && conversionNeedsFiles()
       ? t("home.transfer_seed.convert_rehash_notice")
       : "")
 
@@ -1095,14 +1105,17 @@ const TorrentPreview = () => {
                   formats: targetFormats(),
                   // 转换时一并保存注释，避免先保存再转换两次请求
                   comment: editComment(),
-                  // 无法直接转换时，用源目录里的文件补算缺失哈希
-                  compute_missing: !conversionSupported(),
-                  file_base_path: !conversionSupported()
+                  hash_matrix: recalcTouched() ? recalcMatrix() : undefined,
+                  compute_missing: conversionNeedsFiles(),
+                  file_base_path: conversionNeedsFiles()
                     ? effectiveRecalcSourceDir()
                     : undefined,
                 })
               : await seedUpdate({
                   ...request(),
+                  remove_files: info.files
+                    .filter((_, index) => !selectedFiles().includes(index))
+                    .map((file) => file.path),
                   recalc_files:
                     name === "recalculate"
                       ? selectedFiles().map((index) => ({
@@ -1120,12 +1133,7 @@ const TorrentPreview = () => {
                   },
                 })
       handleResp(resp, (data) => {
-        // 转换产物是「另一个文件」，不覆盖当前预览的种子内容，只同步注释
-        if (name === "convert") {
-          setTorrentInfo((current) =>
-            current ? { ...current, comment: editComment() } : current,
-          )
-        } else {
+        if (name !== "convert") {
           applyResult(data)
         }
         const results = Array.isArray(data?.results) ? data.results : []

@@ -6,6 +6,7 @@ import {
   For,
   onMount,
   onCleanup,
+  untrack,
 } from "solid-js"
 import { Dynamic } from "solid-js/web"
 import {
@@ -40,6 +41,8 @@ import { resolveMediaCover } from "~/utils/media_cover"
 import { OpenWithPlayer } from "~/components/OpenWithPlayer"
 import { useT } from "~/hooks"
 import { mediaEnabled, mediaSidebarOpen } from "~/store/media"
+import { me } from "~/store/user"
+import { createMediaFavoriteStore } from "~/utils/media_favorite"
 import { mediaOverlayZ } from "../ui"
 
 /**
@@ -209,6 +212,7 @@ export const togglePlay = () => {
  * 视频开始播放时调用，避免视频声音和音乐叠在一起。
  */
 export const pauseMusic = () => {
+  ++trackRequestId
   const audio = initAudio()
   if (!audio.paused) audio.pause()
   if (playerState().playing) {
@@ -269,42 +273,40 @@ const parseLRC = (lrc: string): LyricLine[] => {
  * 依赖用 memo 收窄到「曲目 id」：playerState 每次 timeupdate 都会换新对象，
  * 直接在 effect 里读 playerState() 会导致每秒几十次请求。
  */
+const [favoriteRevision, setFavoriteRevision] = createSignal(0)
+const trackFavorites = createMediaFavoriteStore(() =>
+  setFavoriteRevision((revision) => revision + 1),
+)
+
 const useTrackFavorite = () => {
   const t = useT()
   const id = createMemo(() => {
     const s = playerState()
     return s.playlist[s.currentIndex]?.id
   })
-  const [favorite, setFavorite] = createSignal(false)
-  let reqId = 0
+  const key = createMemo(() => {
+    const cur = id()
+    return cur ? JSON.stringify([me().id ?? 0, cur]) : null
+  })
+  const favorite = () => {
+    favoriteRevision()
+    const curKey = key()
+    return curKey ? trackFavorites.favorite(curKey) : false
+  }
   createEffect(() => {
     const cur = id()
-    const mine = ++reqId
-    if (!cur) {
-      setFavorite(false)
-      return
+    const curKey = key()
+    if (cur && curKey) {
+      untrack(() => trackFavorites.load(curKey, cur, getMediaUserData))
     }
-    getMediaUserData([cur])
-      .then((resp) => {
-        if (mine !== reqId) return
-        if (resp.code !== 200 || !resp.data) return
-        const row = resp.data.find((d) => d.item_id === cur)
-        setFavorite(!!row?.is_favorite)
-      })
-      .catch(() => {
-        /* 访客 / 未登录：忽略 */
-      })
   })
   const toggle = async () => {
     const cur = id()
-    if (!cur) return
-    const next = !favorite()
-    setFavorite(next)
-    const resp = await setMediaFavorite(cur, next)
-    if (resp.code !== 200) {
-      setFavorite(!next)
-      notify.error(t("media.browser.favorite_failed") + ": " + resp.message)
-    }
+    const curKey = key()
+    if (!cur || !curKey) return
+    await trackFavorites.toggle(curKey, cur, setMediaFavorite, (message) => {
+      notify.error(t("media.browser.favorite_failed") + ": " + message)
+    })
   }
   return { favorite, toggle }
 }

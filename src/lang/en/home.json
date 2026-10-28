@@ -206,7 +206,6 @@
     "convert_and_save": "Convert and save",
     "recalculate_and_save": "Recalculate and save",
     "hash_algorithm": "Algorithm",
-    "required_short": "required",
     "hash_matrix_forced": "{{algos}} is forced by the selected format.",
     "output_path": "Output path",
     "comment": "Comment",

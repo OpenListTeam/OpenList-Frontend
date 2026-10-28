@@ -450,11 +450,11 @@ const MusicLibrary = () => {
     }
   })()
   const [category, setCategory] = createSignal<MusicCategory>(storedCategory)
-  // 艺术家分类下的二级选择：为空表示显示艺术家列表
-  const [selectedArtist, setSelectedArtist] = createSignal("")
+  // null 表示艺术家列表；空字符串表示已选择「未知艺术家」
+  const [selectedArtist, setSelectedArtist] = createSignal<string | null>(null)
   const changeCategory = (mode: MusicCategory) => {
     setCategory(mode)
-    setSelectedArtist("")
+    setSelectedArtist(null)
     setPage(1)
     try {
       localStorage.setItem(MUSIC_CATEGORY_KEY, mode)
@@ -484,7 +484,7 @@ const MusicLibrary = () => {
   const [albumData] = createResource(
     () => {
       if (category() === "song") return null
-      if (category() === "artist" && !selectedArtist()) return null
+      if (category() === "artist" && selectedArtist() === null) return null
       return {
         page: page(),
         page_size: pageSize,
@@ -492,7 +492,7 @@ const MusicLibrary = () => {
         order_by: orderBy(),
         order_dir: orderDir(),
         folder_path: browseMode() === "folder" ? selectedFolder() : undefined,
-        album_artist: selectedArtist() || undefined,
+        album_artist: selectedArtist() ?? undefined,
       }
     },
     async (params) => {
@@ -506,7 +506,7 @@ const MusicLibrary = () => {
   // 艺术家列表：仅「按艺术家」且未选中具体艺术家时拉取
   const [artistData] = createResource(
     () =>
-      category() === "artist" && !selectedArtist()
+      category() === "artist" && selectedArtist() === null
         ? {
             page: page(),
             page_size: pageSize,
@@ -559,7 +559,7 @@ const MusicLibrary = () => {
   const tracks = () => (trackData()?.content as MediaItem[]) ?? []
   const total = () => {
     if (category() === "song") return trackData()?.total ?? 0
-    if (category() === "artist" && !selectedArtist())
+    if (category() === "artist" && selectedArtist() === null)
       return artistData()?.total ?? 0
     return albumData()?.total ?? 0
   }
@@ -904,7 +904,7 @@ const MusicLibrary = () => {
             </Show>
 
             {/* 艺术家视图：艺术家列表（选中后回到专辑网格） */}
-            <Show when={category() === "artist" && !selectedArtist()}>
+            <Show when={category() === "artist" && selectedArtist() === null}>
               <Show
                 when={!artistData.loading}
                 fallback={
@@ -1036,10 +1036,10 @@ const MusicLibrary = () => {
             <Show
               when={
                 category() === "album" ||
-                (category() === "artist" && !!selectedArtist())
+                (category() === "artist" && selectedArtist() !== null)
               }
             >
-              <Show when={selectedArtist()}>
+              <Show when={selectedArtist() !== null}>
                 <div
                   style={{
                     display: "flex",
@@ -1050,7 +1050,7 @@ const MusicLibrary = () => {
                 >
                   <button
                     onClick={() => {
-                      setSelectedArtist("")
+                      setSelectedArtist(null)
                       setPage(1)
                     }}
                     style={mediaBackBtn(isDark())}
@@ -1064,7 +1064,7 @@ const MusicLibrary = () => {
                       color: isDark() ? "#e2e8f0" : "#1e293b",
                     }}
                   >
-                    {selectedArtist()}
+                    {selectedArtist() || t("media.music.unknown_artist")}
                   </span>
                 </div>
               </Show>

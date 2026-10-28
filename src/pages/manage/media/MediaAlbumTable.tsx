@@ -31,16 +31,27 @@ import {
   createMemo,
   createResource,
   createSignal,
+  onCleanup,
 } from "solid-js"
 import type { AlbumInfo, MediaItem } from "~/types"
 import { useT } from "~/hooks"
 import { notify } from "~/utils"
 import { resolveMediaCover } from "~/utils/media_cover"
 import {
+  commitMediaCoverDraft,
+  createMediaEditGuard,
+  hydrateMediaAlbumDraft,
+  mediaAlbumPatch,
+  mediaAlbumScope,
+  prepareMediaCoverDraft,
+  type MediaAlbumDraft,
+  type MediaCoverDraft,
+} from "~/utils/media_edit"
+import {
+  adminDiscardMediaCover,
   adminGetAlbumItems,
   adminGetMediaAlbums,
   adminUpdateMediaAlbum,
-  adminUpdateMediaItem,
   adminUploadMediaCover,
 } from "~/utils/media_api"
 
@@ -74,11 +85,13 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
   const [saving, setSaving] = createSignal(false)
   const [uploading, setUploading] = createSignal(false)
   const [firstTrackId, setFirstTrackId] = createSignal(0)
-  // 上传封面会立刻写进首曲（接口按单条生效）；用户取消弹窗时要改回去，
-  // 否则这张专辑会变成「只有一首有封面」的不一致状态
-  const [originalCover, setOriginalCover] = createSignal("")
-  const [uploadedCover, setUploadedCover] = createSignal(false)
-  const [draft, setDraft] = createSignal({
+  const [coverDraft, setCoverDraft] = createSignal<MediaCoverDraft | null>(null)
+  const albumEditor = createMediaEditGuard()
+  const coverReader = createMediaEditGuard()
+  const trackRequest = createMediaEditGuard()
+  const dirty = new Set<keyof MediaAlbumDraft>()
+  let editingScanPathId = 0
+  const [draft, setDraft] = createSignal<MediaAlbumDraft>({
     name: "",
     artist: "",
     cover: "",
@@ -86,6 +99,24 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
     genre: "",
     plot: "",
   })
+
+  const changeDraft = (field: keyof MediaAlbumDraft, value: string) => {
+    if (saving()) return
+    dirty.add(field)
+    if (field === "cover") {
+      coverReader.next()
+      setUploading(false)
+      setCoverDraft(null)
+    }
+    setDraft((d) => ({ ...d, [field]: value }))
+  }
+
+  const resetTracks = () => {
+    trackRequest.next()
+    setExpandedKey(null)
+    setTracks([])
+    setTracksLoading(false)
+  }
 
   const albumKey = (al: AlbumInfo) => `${al.album_name}\u0000${al.album_artist}`
 
@@ -95,7 +126,17 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
     props.keyword
     props.pageSize
     setPage(1)
-    setExpandedKey(null)
+    resetTracks()
+  })
+  createEffect(() => {
+    page()
+    props.refreshToken
+    resetTracks()
+  })
+  onCleanup(() => {
+    albumEditor.next()
+    coverReader.next()
+    trackRequest.next()
   })
 
   const [data, { refetch }] = createResource(
@@ -127,27 +168,33 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
   const toggleAlbum = async (al: AlbumInfo) => {
     const key = albumKey(al)
     if (expandedKey() === key) {
-      setExpandedKey(null)
-      setTracks([])
+      resetTracks()
       return
     }
+    const version = trackRequest.next()
+    const scope = mediaAlbumScope(al, props.scanPathId)
     setExpandedKey(key)
     setTracks([])
     setTracksLoading(true)
     try {
-      const resp = await adminGetAlbumItems({
-        album_name: al.album_name,
-        album_artist: al.album_artist,
-        scan_path_id: al.scan_path_id || undefined,
-      })
+      const resp = await adminGetAlbumItems(scope)
+      if (!trackRequest.isCurrent(version)) return
       if (resp.code === 200) setTracks(resp.data)
       else notify.error(resp.message)
+    } catch (error) {
+      if (trackRequest.isCurrent(version)) notify.error(String(error))
     } finally {
-      setTracksLoading(false)
+      if (trackRequest.isCurrent(version)) setTracksLoading(false)
     }
   }
 
   const openAlbumEditor = async (al: AlbumInfo) => {
+    if (saving()) return
+    const version = albumEditor.next()
+    coverReader.next()
+    setUploading(false)
+    dirty.clear()
+    editingScanPathId = props.scanPathId
     setEditing(al)
     setDraft({
       name: al.album_name,
@@ -158,100 +205,104 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
       plot: "",
     })
     setFirstTrackId(0)
-    setOriginalCover(al.cover)
-    setUploadedCover(false)
+    setCoverDraft(null)
     setShowModal(true)
-    // 取首曲作为「曲目号/类型/简介」的默认值，同时拿到上传封面时要用的 item id
-    const resp = await adminGetAlbumItems({
-      album_name: al.album_name,
-      album_artist: al.album_artist,
-      scan_path_id: al.scan_path_id || undefined,
-    })
-    if (resp.code !== 200 || resp.data.length === 0) return
-    const first = resp.data[0]
-    setFirstTrackId(first.id)
-    setDraft((d) => ({
-      ...d,
-      cover: d.cover || first.cover,
-      genre: first.genre || "",
-      plot: first.plot || first.description || "",
-      release_date: d.release_date || first.release_date || "",
-    }))
+    try {
+      const resp = await adminGetAlbumItems(
+        mediaAlbumScope(al, editingScanPathId),
+      )
+      if (!albumEditor.isCurrent(version)) return
+      if (resp.code !== 200 || resp.data.length === 0) {
+        notify.error(resp.message || t("media.admin.album_no_tracks"))
+        return
+      }
+      const first = resp.data[0]
+      setFirstTrackId(first.id)
+      setDraft((d) => hydrateMediaAlbumDraft(d, first, dirty))
+    } catch (error) {
+      if (albumEditor.isCurrent(version)) notify.error(String(error))
+    }
   }
 
   const pickAndUploadCover = async () => {
-    const id = firstTrackId()
-    if (!id) {
+    if (saving() || uploading()) return
+    if (!firstTrackId()) {
       notify.error(t("media.admin.album_no_tracks"))
       return
     }
+    const version = coverReader.next()
     const file = await new Promise<File | null>((resolve) => {
       const input = document.createElement("input")
       input.type = "file"
       input.accept = "image/jpeg,image/png,image/gif,image/webp"
       input.onchange = () => resolve(input.files?.[0] ?? null)
+      input.oncancel = () => resolve(null)
       input.click()
     })
-    if (!file) return
+    if (!file || !coverReader.isCurrent(version) || saving()) return
     setUploading(true)
     try {
-      const resp = await adminUploadMediaCover(id, file)
-      if (resp.code === 200 && resp.data?.cover) {
-        setDraft((d) => ({ ...d, cover: resp.data.cover }))
-        setUploadedCover(true)
-        notify.success(t("media.admin.cover_uploaded"))
-      } else {
-        notify.error(t("media.admin.cover_upload_failed") + ": " + resp.message)
+      const selected = await prepareMediaCoverDraft(file)
+      if (!coverReader.isCurrent(version)) return
+      dirty.add("cover")
+      setCoverDraft(selected)
+      setDraft((d) => ({ ...d, cover: selected.preview }))
+    } catch (error) {
+      if (coverReader.isCurrent(version)) {
+        notify.error(
+          t("media.admin.cover_upload_failed") + ": " + String(error),
+        )
       }
     } finally {
-      setUploading(false)
+      if (coverReader.isCurrent(version)) setUploading(false)
     }
   }
 
-  // 关闭弹窗：如果本次已经上传过封面但没保存，把首曲的封面改回去
-  const closeModal = async () => {
+  const closeModal = () => {
+    if (saving()) return
+    albumEditor.next()
+    coverReader.next()
+    setUploading(false)
     setShowModal(false)
-    if (!uploadedCover()) return
-    setUploadedCover(false)
-    const id = firstTrackId()
-    if (!id) return
-    try {
-      // 更新接口是 PATCH 语义，只传 cover 不会动其它字段
-      await adminUpdateMediaItem({ id, cover: originalCover() })
-    } catch {
-      /* 回滚失败不阻塞关闭，用户可再上传一次覆盖 */
-    }
+    setEditing(null)
+    setCoverDraft(null)
   }
 
   const handleSave = async () => {
     const al = editing()
-    if (!al) return
+    if (!al || saving() || uploading() || !firstTrackId()) return
+    const current = draft()
     setSaving(true)
     try {
-      const resp = await adminUpdateMediaAlbum({
-        album_name: al.album_name,
-        album_artist: al.album_artist,
-        scan_path_id: al.scan_path_id || undefined,
-        new_album_name: draft().name,
-        new_album_artist: draft().artist,
-        cover: draft().cover,
-        release_date: draft().release_date,
-        genre: draft().genre,
-        plot: draft().plot,
-      })
+      const scope = mediaAlbumScope(al, editingScanPathId)
+      const changed = new Set(dirty)
+      const resp = await commitMediaCoverDraft(
+        firstTrackId(),
+        current.cover,
+        coverDraft(),
+        adminUploadMediaCover,
+        (cover) =>
+          adminUpdateMediaAlbum({
+            ...scope,
+            ...mediaAlbumPatch({ ...current, cover }, changed),
+          }),
+        adminDiscardMediaCover,
+      )
       if (resp.code === 200) {
         notify.success(
           t("media.admin.album_saved", { count: resp.data.affected }),
         )
-        setUploadedCover(false)
+        albumEditor.next()
         setShowModal(false)
         setEditing(null)
-        setExpandedKey(null)
-        setTracks([])
+        setCoverDraft(null)
+        resetTracks()
         refetch()
       } else {
         notify.error(t("media.admin.save_failed") + ": " + resp.message)
       }
+    } catch (error) {
+      notify.error(t("media.admin.save_failed") + ": " + String(error))
     } finally {
       setSaving(false)
     }
@@ -529,11 +580,9 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
                     <Input
                       placeholder="https://… 或 thumb:/imgs/…"
                       value={draft().cover}
+                      disabled={saving()}
                       onInput={(e) =>
-                        setDraft((d) => ({
-                          ...d,
-                          cover: e.currentTarget.value,
-                        }))
+                        changeDraft("cover", e.currentTarget.value)
                       }
                     />
                     <HStack spacing="$2">
@@ -550,7 +599,8 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
                         size="xs"
                         variant="ghost"
                         colorScheme="neutral"
-                        onClick={() => setDraft((d) => ({ ...d, cover: "" }))}
+                        disabled={saving()}
+                        onClick={() => changeDraft("cover", "")}
                       >
                         {t("media.admin.cover_clear")}
                       </Button>
@@ -567,17 +617,17 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
                   <FormLabel>{t("media.admin.album_name")}</FormLabel>
                   <Input
                     value={draft().name}
-                    onInput={(e) =>
-                      setDraft((d) => ({ ...d, name: e.currentTarget.value }))
-                    }
+                    disabled={saving()}
+                    onInput={(e) => changeDraft("name", e.currentTarget.value)}
                   />
                 </FormControl>
                 <FormControl flex="1" minW="160px">
                   <FormLabel>{t("media.admin.album_artist")}</FormLabel>
                   <Input
                     value={draft().artist}
+                    disabled={saving()}
                     onInput={(e) =>
-                      setDraft((d) => ({ ...d, artist: e.currentTarget.value }))
+                      changeDraft("artist", e.currentTarget.value)
                     }
                   />
                 </FormControl>
@@ -588,9 +638,8 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
                   <FormLabel>{t("media.admin.item_genre")}</FormLabel>
                   <Input
                     value={draft().genre}
-                    onInput={(e) =>
-                      setDraft((d) => ({ ...d, genre: e.currentTarget.value }))
-                    }
+                    disabled={saving()}
+                    onInput={(e) => changeDraft("genre", e.currentTarget.value)}
                   />
                 </FormControl>
                 <FormControl w="160px">
@@ -598,11 +647,9 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
                   <Input
                     placeholder="YYYY-MM-DD"
                     value={draft().release_date}
+                    disabled={saving()}
                     onInput={(e) =>
-                      setDraft((d) => ({
-                        ...d,
-                        release_date: e.currentTarget.value,
-                      }))
+                      changeDraft("release_date", e.currentTarget.value)
                     }
                   />
                 </FormControl>
@@ -613,21 +660,21 @@ export const MediaAlbumTable = (props: MediaAlbumTableProps) => {
                 <Textarea
                   rows={4}
                   value={draft().plot}
-                  onInput={(e) =>
-                    setDraft((d) => ({ ...d, plot: e.currentTarget.value }))
-                  }
+                  disabled={saving()}
+                  onInput={(e) => changeDraft("plot", e.currentTarget.value)}
                 />
               </FormControl>
             </VStack>
           </ModalBody>
           <ModalFooter>
             <HStack spacing="$2">
-              <Button variant="ghost" onClick={closeModal}>
+              <Button variant="ghost" disabled={saving()} onClick={closeModal}>
                 {t("global.cancel")}
               </Button>
               <Button
                 colorScheme="accent"
                 loading={saving()}
+                disabled={uploading() || !firstTrackId()}
                 onClick={handleSave}
               >
                 {t("global.save")}

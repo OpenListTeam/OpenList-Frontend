@@ -71,6 +71,7 @@ import {
   adminDeleteInvalidMedia,
   adminDeleteMediaItem,
   adminDeleteMediaScanPath,
+  adminDiscardMediaCover,
   adminExportMediaDB,
   adminGenerateStrm,
   adminGetMediaConfigs,
@@ -88,6 +89,12 @@ import {
 import { ThumbnailSettings } from "./ThumbnailSettings"
 import { MediaAlbumTable } from "./MediaAlbumTable"
 import { resolveMediaCover } from "~/utils/media_cover"
+import {
+  commitMediaCoverDraft,
+  createMediaEditGuard,
+  prepareMediaCoverDraft,
+  type MediaCoverDraft,
+} from "~/utils/media_edit"
 
 /**
  * 类型标签预置。tv=true 的标签会让后端把该扫描路径下所有视频当作剧集入库
@@ -187,6 +194,10 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
   const [editAuthors, setEditAuthors] = createSignal<string[]>([])
   const [editEpisodes, setEditEpisodes] = createSignal<EpisodeInfo[]>([])
   const [coverUploading, setCoverUploading] = createSignal(false)
+  const [itemSaving, setItemSaving] = createSignal(false)
+  const [coverDraft, setCoverDraft] = createSignal<MediaCoverDraft | null>(null)
+  const itemCoverReader = createMediaEditGuard()
+  onCleanup(() => itemCoverReader.next())
   // 音乐默认按专辑聚合，切到「按曲目」才展示平铺列表
   const [albumView, setAlbumView] = createSignal(true)
   const albumMode = () => props.mediaType === "music" && albumView()
@@ -696,15 +707,36 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
 
   // ============== 条目操作 ==============
   const openEditItem = (item: MediaItem) => {
+    if (itemSaving()) return
+    itemCoverReader.next()
+    setCoverUploading(false)
+    setCoverDraft(null)
     setEditingItem({ ...item })
     setEditAuthors(parseAuthors(item.authors))
     setEditEpisodes(parseEpisodes(item.episodes))
     setShowEditModal(true)
   }
 
+  const closeEditItem = () => {
+    if (itemSaving()) return
+    itemCoverReader.next()
+    setCoverUploading(false)
+    setShowEditModal(false)
+    setEditingItem(null)
+    setCoverDraft(null)
+  }
+
+  const changeItemCover = (cover: string) => {
+    if (itemSaving()) return
+    itemCoverReader.next()
+    setCoverUploading(false)
+    setCoverDraft(null)
+    setEditingItem((item) => (item ? { ...item, cover } : item))
+  }
+
   const handleSaveItem = async () => {
     const current = editingItem()
-    if (!current) return
+    if (!current || itemSaving() || coverUploading()) return
     const payload: Partial<MediaItem> & { id: number } = {
       ...current,
       authors: JSON.stringify(editAuthors().filter((a) => a.trim() !== "")),
@@ -713,15 +745,29 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     if (current.is_folder) {
       payload.episodes = JSON.stringify(editEpisodes())
     }
-    const resp = await adminUpdateMediaItem(payload)
-    if (resp.code === 200) {
-      notify.success(t("media.admin.save_ok"))
-      setShowEditModal(false)
-      setEditingItem(null)
-      refetchItems()
-      setAlbumRefreshToken((n) => n + 1)
-    } else {
-      notify.error(t("media.admin.save_failed") + ": " + resp.message)
+    setItemSaving(true)
+    try {
+      const resp = await commitMediaCoverDraft(
+        current.id,
+        current.cover,
+        coverDraft(),
+        adminUploadMediaCover,
+        (cover) => adminUpdateMediaItem({ ...payload, cover }),
+        adminDiscardMediaCover,
+      )
+      if (resp.code === 200) {
+        notify.success(t("media.admin.save_ok"))
+        setShowEditModal(false)
+        setEditingItem(null)
+        refetchItems()
+        setAlbumRefreshToken((n) => n + 1)
+      } else {
+        notify.error(t("media.admin.save_failed") + ": " + resp.message)
+      }
+    } catch (error) {
+      notify.error(t("media.admin.save_failed") + ": " + String(error))
+    } finally {
+      setItemSaving(false)
     }
   }
 
@@ -736,31 +782,33 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     })
   }
 
-  // 上传自定义封面：后端落盘到缩略图目录，返回 thumb:/... 形式的 cover
   const pickAndUploadCover = async () => {
     const item = editingItem()
-    if (!item) return
+    if (!item || itemSaving() || coverUploading()) return
+    const version = itemCoverReader.next()
     const file = await new Promise<File | null>((resolve) => {
       const input = document.createElement("input")
       input.type = "file"
       input.accept = "image/jpeg,image/png,image/gif,image/webp"
       input.onchange = () => resolve(input.files?.[0] ?? null)
+      input.oncancel = () => resolve(null)
       input.click()
     })
-    if (!file) return
+    if (!file || !itemCoverReader.isCurrent(version) || itemSaving()) return
     setCoverUploading(true)
     try {
-      const resp = await adminUploadMediaCover(item.id, file)
-      if (resp.code === 200 && resp.data?.cover) {
-        setEditingItem((cur) => ({ ...cur!, cover: resp.data.cover }))
-        notify.success(t("media.admin.cover_uploaded"))
-      } else {
-        notify.error(t("media.admin.cover_upload_failed") + ": " + resp.message)
+      const selected = await prepareMediaCoverDraft(file)
+      if (!itemCoverReader.isCurrent(version)) return
+      setCoverDraft(selected)
+      setEditingItem((cur) => ({ ...cur!, cover: selected.preview }))
+    } catch (error) {
+      if (itemCoverReader.isCurrent(version)) {
+        notify.error(
+          t("media.admin.cover_upload_failed") + ": " + String(error),
+        )
       }
-    } catch (e) {
-      notify.error(t("media.admin.cover_upload_failed"))
     } finally {
-      setCoverUploading(false)
+      if (itemCoverReader.isCurrent(version)) setCoverUploading(false)
     }
   }
 
@@ -1669,11 +1717,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
       </Modal>
 
       {/* 条目编辑弹窗 */}
-      <Modal
-        opened={showEditModal()}
-        onClose={() => setShowEditModal(false)}
-        size="xl"
-      >
+      <Modal opened={showEditModal()} onClose={closeEditItem} size="xl">
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>{t("media.admin.edit_item_title")}</ModalHeader>
@@ -1718,12 +1762,8 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                     <Input
                       placeholder="https://… 或 thumb:/imgs/… 或 data:image/…"
                       value={editingItem()?.cover ?? ""}
-                      onInput={(e) =>
-                        setEditingItem((item) => ({
-                          ...item!,
-                          cover: e.currentTarget.value,
-                        }))
-                      }
+                      disabled={itemSaving()}
+                      onInput={(e) => changeItemCover(e.currentTarget.value)}
                     />
                     <HStack spacing="$2">
                       <Button
@@ -1739,9 +1779,8 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                         size="xs"
                         variant="ghost"
                         colorScheme="neutral"
-                        onClick={() =>
-                          setEditingItem((item) => ({ ...item!, cover: "" }))
-                        }
+                        disabled={itemSaving()}
+                        onClick={() => changeItemCover("")}
                       >
                         {t("media.admin.cover_clear")}
                       </Button>
@@ -2176,10 +2215,19 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
           </ModalBody>
           <ModalFooter>
             <HStack spacing="$2">
-              <Button variant="ghost" onClick={() => setShowEditModal(false)}>
+              <Button
+                variant="ghost"
+                disabled={itemSaving()}
+                onClick={closeEditItem}
+              >
                 {t("global.cancel")}
               </Button>
-              <Button colorScheme="accent" onClick={handleSaveItem}>
+              <Button
+                colorScheme="accent"
+                loading={itemSaving()}
+                disabled={coverUploading()}
+                onClick={handleSaveItem}
+              >
                 {t("global.save")}
               </Button>
             </HStack>
