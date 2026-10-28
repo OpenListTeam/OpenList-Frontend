@@ -451,7 +451,8 @@ const TorrentPreview = () => {
     pathname().split("/").slice(0, -1).join("/") || "/",
   )
   const [destinationProvider, setDestinationProvider] = createSignal("")
-  const [targetFormat, setTargetFormat] = createSignal<SeedFormat>("oss")
+  // 转换目标支持多选，默认等于当前格式（不转换）
+  const [targetFormats, setTargetFormats] = createSignal<SeedFormat[]>(["oss"])
   const [editComment, setEditComment] = createSignal("")
   const [operation, setOperation] = createSignal("")
   const [transitPath, setTransitPath] = createSignal("")
@@ -737,7 +738,7 @@ const TorrentPreview = () => {
         setTorrentInfo(info)
         setEditComment(info.comment || "")
         // 目标格式默认对齐当前格式，避免一打开就处于「需要转换」状态
-        if (info.format) setTargetFormat(info.format as SeedFormat)
+        if (info.format) setTargetFormats([info.format as SeedFormat])
         setSelectedFiles(info.files.map((_, index) => index))
         initRecalcMatrix(info)
         void autoCASDirectAccess(info)
@@ -745,7 +746,7 @@ const TorrentPreview = () => {
         const legacy = parseLocalTorrent(new Uint8Array(buffer))
         setTorrentInfo({ ...legacy, format: "torrent" })
         setSelectedFiles(legacy.files.map((_, index) => index))
-        setTargetFormat("torrent")
+        setTargetFormats(["torrent"])
       } else {
         throw new Error(parsed.message)
       }
@@ -789,9 +790,21 @@ const TorrentPreview = () => {
     operationName: keyof NonNullable<SeedInfo["capabilities"]>,
   ) => torrentInfo()?.capabilities?.[operationName] === true
 
-  const conversionSupported = () => {
-    const conversion = torrentInfo()?.conversions?.[targetFormat()]
-    return operationSupported("convert") && conversion?.feasible === true
+  const conversionSupported = () =>
+    operationSupported("convert") &&
+    targetFormats().every(
+      (format) => torrentInfo()?.conversions?.[format]?.feasible === true,
+    )
+
+  // 点击切换目标格式；至少保留一个，否则按钮失去意义
+  const toggleTargetFormat = (format: SeedFormat) => {
+    setTargetFormats((current) =>
+      current.includes(format)
+        ? current.length === 1
+          ? current
+          : current.filter((item) => item !== format)
+        : [...current, format],
+    )
   }
 
   // 缺哈希时不直接禁用转换：只要知道源目录，就可以从文件补算
@@ -800,16 +813,35 @@ const TorrentPreview = () => {
 
   // ── 统一「编辑并保存」：注释 / 转换 / 重算哈希 一个按钮完成 ──────────────
   const currentFormat = () => torrentInfo()?.format
-  const targetDiffers = () =>
-    !!currentFormat() && targetFormat() !== currentFormat()
+  const targetDiffers = () => {
+    const current = currentFormat()
+    const targets = targetFormats()
+    return !!current && (targets.length !== 1 || targets[0] !== current)
+  }
   const hasRecalcSelection = () =>
     ALGORITHMS.some(
       (algo) => recalcMatrix()[algo].whole || recalcMatrix()[algo].pieces,
     )
-  // 只有需要读文件时才显示源目录
+  // 种子内是否已带某个算法的整文件哈希 / 分片哈希
+  const seedHasHash = (algo: SeedHashAlgorithm) => {
+    const files = torrentInfo()?.files || []
+    return files.length > 0 && files.every((file) => !!file.hashes?.[algo])
+  }
+  const seedHasPieces = (algo: SeedHashAlgorithm) => {
+    const files = torrentInfo()?.files || []
+    return (
+      files.length > 0 &&
+      files.every((file) => {
+        const pieces =
+          file.hashes?.pieces?.[algo] || file.piece_hashes?.[algo] || []
+        return pieces.length > 0
+      })
+    )
+  }
+
+  // 只有需要读文件时才显示源目录（要转换，或勾了重算矩阵）
   const needSourceDir = () =>
     targetDiffers() ||
-    (!conversionSupported() && operationSupported("convert")) ||
     (operationSupported("recalculate") && hasRecalcSelection())
 
   const applyMode = () =>
@@ -898,7 +930,7 @@ const TorrentPreview = () => {
             : name === "convert"
               ? await seedConvert({
                   ...request(),
-                  format: targetFormat(),
+                  formats: targetFormats(),
                   // 转换时一并保存注释，避免先保存再转换两次请求
                   comment: editComment(),
                   // 无法直接转换时，用源目录里的文件补算缺失哈希
@@ -926,7 +958,8 @@ const TorrentPreview = () => {
                   },
                 })
       handleResp(resp, (data) => {
-        applyResult(data)
+        // 转换产物是「另一个文件」，不覆盖当前预览的种子内容
+        if (name !== "convert") applyResult(data)
         const results = Array.isArray(data?.results) ? data.results : []
         const failures = results.filter(
           (result: { method?: string; error?: string }) =>
@@ -1446,18 +1479,6 @@ const TorrentPreview = () => {
 
               <Box>
                 <Text fontSize="$sm" mb="$1">
-                  {t("home.transfer_seed.overall_comment")}
-                </Text>
-                <Textarea
-                  rows={3}
-                  placeholder={t("home.transfer_seed.comment_placeholder")}
-                  value={editComment()}
-                  onInput={(event) => setEditComment(event.currentTarget.value)}
-                />
-              </Box>
-
-              <Box>
-                <Text fontSize="$sm" mb="$1">
                   {t("home.transfer_seed.convert_to")}
                 </Text>
                 <HStack spacing="$2" alignItems="center" flexWrap="wrap">
@@ -1486,12 +1507,16 @@ const TorrentPreview = () => {
                           <Button
                             size="sm"
                             variant={
-                              targetFormat() === format ? "solid" : "subtle"
+                              targetFormats().includes(format)
+                                ? "solid"
+                                : "subtle"
                             }
                             colorScheme={
-                              targetFormat() === format ? "accent" : "neutral"
+                              targetFormats().includes(format)
+                                ? "accent"
+                                : "neutral"
                             }
-                            onClick={() => setTargetFormat(format)}
+                            onClick={() => toggleTargetFormat(format)}
                           >
                             {FORMAT_DISPLAY[format] || format.toUpperCase()}
                             <Text
@@ -1507,6 +1532,9 @@ const TorrentPreview = () => {
                     }}
                   </For>
                 </HStack>
+                <Text fontSize="$xs" color="$neutral10" mt="$1">
+                  {t("home.transfer_seed.convert_multi_hint")}
+                </Text>
               </Box>
 
               <Show when={operationSupported("recalculate")}>
@@ -1514,72 +1542,65 @@ const TorrentPreview = () => {
                   <Text fontSize="$sm" mb="$1">
                     {t("home.transfer_seed.recalc_matrix")}
                   </Text>
-                  <Box
-                    border="1px solid $neutral6"
-                    borderRadius="$md"
-                    overflow="hidden"
-                  >
-                    <HStack px="$3" py="$2" spacing="$2" bgColor="$neutral3">
-                      <Text flex="1" fontSize="$xs" color="$neutral11">
-                        {t("home.transfer_seed.hash_algorithm")}
-                      </Text>
-                      <Text w="$24" fontSize="$xs" color="$neutral11">
-                        {t("home.transfer_seed.whole")}
-                      </Text>
-                      <Text w="$24" fontSize="$xs" color="$neutral11">
-                        {t("home.transfer_seed.pieces")}
-                      </Text>
-                    </HStack>
+                  <HStack spacing="$2" flexWrap="wrap" alignItems="center">
                     <For each={ALGORITHMS}>
-                      {(algo, index) => (
-                        <HStack
-                          px="$3"
-                          py="$2"
-                          spacing="$2"
-                          alignItems="center"
-                          borderTop={
-                            index() === 0 ? undefined : "1px solid $neutral5"
-                          }
-                        >
-                          <Text flex="1" fontSize="$sm" fontWeight="$medium">
-                            {algo.toUpperCase()}
-                          </Text>
-                          <Checkbox
-                            w="$24"
-                            size="sm"
-                            checked={recalcMatrix()[algo].whole}
-                            onChange={(event: {
-                              currentTarget: HTMLInputElement
-                            }) =>
-                              setRecalcHash(
-                                algo,
-                                "whole",
-                                event.currentTarget.checked,
-                              )
-                            }
+                      {(algo) => {
+                        const missing = () =>
+                          !seedHasHash(algo) || !seedHasPieces(algo)
+                        return (
+                          <HStack
+                            spacing="$2"
+                            px="$2"
+                            py="$1"
+                            border="1px solid $neutral6"
+                            borderRadius="$md"
                           >
-                            {t("home.transfer_seed.whole")}
-                          </Checkbox>
-                          <Checkbox
-                            w="$24"
-                            size="sm"
-                            checked={recalcMatrix()[algo].pieces}
-                            onChange={(event: {
-                              currentTarget: HTMLInputElement
-                            }) =>
-                              setRecalcHash(
-                                algo,
-                                "pieces",
-                                event.currentTarget.checked,
-                              )
-                            }
-                          >
-                            {t("home.transfer_seed.pieces")}
-                          </Checkbox>
-                        </HStack>
-                      )}
+                            <Text fontSize="$xs" fontWeight="$semibold">
+                              {algo.toUpperCase()}
+                            </Text>
+                            <Checkbox
+                              size="sm"
+                              checked={recalcMatrix()[algo].whole}
+                              onChange={(event: {
+                                currentTarget: HTMLInputElement
+                              }) =>
+                                setRecalcHash(
+                                  algo,
+                                  "whole",
+                                  event.currentTarget.checked,
+                                )
+                              }
+                            >
+                              {t("home.transfer_seed.whole")}
+                            </Checkbox>
+                            <Checkbox
+                              size="sm"
+                              checked={recalcMatrix()[algo].pieces}
+                              onChange={(event: {
+                                currentTarget: HTMLInputElement
+                              }) =>
+                                setRecalcHash(
+                                  algo,
+                                  "pieces",
+                                  event.currentTarget.checked,
+                                )
+                              }
+                            >
+                              {t("home.transfer_seed.pieces")}
+                            </Checkbox>
+                            <Text
+                              fontSize="$xs"
+                              color={missing() ? "$warning11" : "$success11"}
+                            >
+                              {missing()
+                                ? t("home.transfer_seed.hash_recompute")
+                                : t("home.transfer_seed.hash_exists")}
+                            </Text>
+                          </HStack>
+                        )
+                      }}
                     </For>
-                  </Box>
+                  </HStack>
                   <Text fontSize="$xs" color="$neutral10" mt="$1">
                     {t("home.transfer_seed.recalc_selected_hint")}
                   </Text>
@@ -1601,6 +1622,18 @@ const TorrentPreview = () => {
                   </Text>
                 </Box>
               </Show>
+
+              <Box>
+                <Text fontSize="$sm" mb="$1">
+                  {t("home.transfer_seed.overall_comment")}
+                </Text>
+                <Textarea
+                  rows={3}
+                  placeholder={t("home.transfer_seed.comment_placeholder")}
+                  value={editComment()}
+                  onInput={(event) => setEditComment(event.currentTarget.value)}
+                />
+              </Box>
 
               <HStack justifyContent="flex-end">
                 <Button

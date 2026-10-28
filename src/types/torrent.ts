@@ -211,6 +211,8 @@ export interface SeedOperationRequest {
   path?: string
   selected_files?: number[]
   format?: SeedFormat
+  /** 转换目标格式（多选）；为空时使用 format */
+  formats?: SeedFormat[]
   transit_path?: string
   tool?: string
   delete_policy?: string
