@@ -1244,7 +1244,9 @@ const TorrentPreview = () => {
     const file = torrentInfo()?.files[index]
     if (!file) return
     const rel = file.path.replace(/^\//, "")
-    const candidates = [destination(), effectiveRecalcSourceDir()]
+    // 依次尝试：种子所在目录、保存目录、源目录
+    const seedDir = pathname().split("/").slice(0, -1).join("/") || "/"
+    const candidates = [seedDir, destination(), effectiveRecalcSourceDir()]
       .map((dir) => (dir || "").replace(/\/$/, ""))
       .filter((dir, i, all) => dir !== "" && all.indexOf(dir) === i)
       .map((dir) => `${dir}/${rel}`)
