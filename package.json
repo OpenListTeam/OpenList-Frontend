@@ -68,7 +68,7 @@
     "@egjs/view360": "4.0.0-beta.7",
     "@embedpdf/snippet": "^2.15.1",
     "@hope-ui/solid": "github:OpenListTeam/hope-ui#264b7511e37dc6e5a5fb8f67f8801d94a058a700",
-    "@mediabunny/ac3": "^1.40.1",
+    "@mediabunny/ac3": "^1.63.0",
     "@jellyfin/libass-wasm": "^4.2.4",
     "@monaco-editor/loader": "1.7.0",
     "@solid-primitives/i18n": "^2.2.1",

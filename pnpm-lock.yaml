@@ -24,8 +24,8 @@ importers:
         specifier: ^4.2.4
         version: 4.2.4
       '@mediabunny/ac3':
-        specifier: ^1.40.1
-        version: 1.61.6(mediabunny@1.63.0)
+        specifier: ^1.63.0
+        version: 1.63.0(mediabunny@1.63.0)
       '@monaco-editor/loader':
         specifier: 1.7.0
         version: 1.7.0
@@ -1246,8 +1246,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@mediabunny/ac3@1.61.6':
-    resolution: {integrity: sha512-APLHtzRuKu3UQFgUreenV1yDGUROVuMae9wJYfTEuNGgXVdR41FXkO4szg8S9ZV59HhHw2MxNg/XX4dp0RBVsw==}
+  '@mediabunny/ac3@1.63.0':
+    resolution: {integrity: sha512-WX6hJyoevNZ3jRK3Hgd8FaFuyD+Of8ZdZGKJiDl2xE4VZlyCZRmuONx0xgOnrSZaz8pDrBtMw+T1tEEm6aPV1A==}
     peerDependencies:
       mediabunny: ^1.0.0
 
@@ -4713,7 +4713,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@mediabunny/ac3@1.61.6(mediabunny@1.63.0)':
+  '@mediabunny/ac3@1.63.0(mediabunny@1.63.0)':
     dependencies:
       mediabunny: 1.63.0
 
