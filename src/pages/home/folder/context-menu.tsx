@@ -98,14 +98,13 @@ export const ContextMenu = () => {
         <ItemContent name="share" />
       </Item>
       <Item
-        hidden={() =>
-          isShare() ||
-          !haveSelected() ||
-          selectedObjs().some((obj) => obj.is_dir)
-        }
+        // 目录也可以生成种子：后端会递归展开目录下的所有文件
+        hidden={() => isShare() || !haveSelected()}
         onClick={() => {
+          const objs = selectedObjs()
           bus.emit("generate_transfer_seed", {
-            paths: selectedObjs().map((obj) => pathJoin(pathname(), obj.name)),
+            paths: objs.map((obj) => pathJoin(pathname(), obj.name)),
+            hasDir: objs.some((obj) => obj.is_dir),
           })
         }}
       >

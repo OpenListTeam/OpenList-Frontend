@@ -6,6 +6,7 @@ import {
   For,
   onMount,
   onCleanup,
+  untrack,
 } from "solid-js"
 import { Dynamic } from "solid-js/web"
 import {
@@ -19,15 +20,20 @@ import {
   TbPlayerSkipForwardFilled,
   TbRepeat,
   TbRepeatOnce,
+  TbStar,
+  TbStarFilled,
   TbVolume,
   TbVolumeOff,
   TbX,
 } from "solid-icons/tb"
 import {
   getMediaProgress,
+  getMediaUserData,
   getSignedProxyUrl,
   saveMediaProgress,
+  setMediaFavorite,
 } from "~/utils/media_api"
+import { notify } from "~/utils"
 import type { MediaItem } from "~/types"
 import { formatDuration, getMediaName } from "~/types"
 import { accentBar, accentGradient } from "~/utils/accent"
@@ -35,6 +41,9 @@ import { resolveMediaCover } from "~/utils/media_cover"
 import { OpenWithPlayer } from "~/components/OpenWithPlayer"
 import { useT } from "~/hooks"
 import { mediaEnabled, mediaSidebarOpen } from "~/store/media"
+import { me } from "~/store/user"
+import { createMediaFavoriteStore } from "~/utils/media_favorite"
+import { mediaOverlayZ } from "../ui"
 
 /**
  * 全局音乐播放器：播放状态、音频元素、全屏歌词页与底部播放条。
@@ -198,6 +207,19 @@ export const togglePlay = () => {
   }
 }
 
+/**
+ * 暂停音乐但保留播放列表（不关闭底部播放条）。
+ * 视频开始播放时调用，避免视频声音和音乐叠在一起。
+ */
+export const pauseMusic = () => {
+  ++trackRequestId
+  const audio = initAudio()
+  if (!audio.paused) audio.pause()
+  if (playerState().playing) {
+    setPlayerState((s) => ({ ...s, playing: false }))
+  }
+}
+
 export const playNext = () => {
   const { playlist, currentIndex, loopMode } = playerState()
   if (playlist.length === 0) return
@@ -245,8 +267,165 @@ const parseLRC = (lrc: string): LyricLine[] => {
 }
 
 // ==================== 全屏歌词页 ====================
+/**
+ * 当前播放曲目的收藏状态（底栏与歌词页共用）。
+ *
+ * 依赖用 memo 收窄到「曲目 id」：playerState 每次 timeupdate 都会换新对象，
+ * 直接在 effect 里读 playerState() 会导致每秒几十次请求。
+ */
+const [favoriteRevision, setFavoriteRevision] = createSignal(0)
+const trackFavorites = createMediaFavoriteStore(() =>
+  setFavoriteRevision((revision) => revision + 1),
+)
+
+const useTrackFavorite = () => {
+  const t = useT()
+  const id = createMemo(() => {
+    const s = playerState()
+    return s.playlist[s.currentIndex]?.id
+  })
+  const key = createMemo(() => {
+    const cur = id()
+    return cur ? JSON.stringify([me().id ?? 0, cur]) : null
+  })
+  const favorite = () => {
+    favoriteRevision()
+    const curKey = key()
+    return curKey ? trackFavorites.favorite(curKey) : false
+  }
+  createEffect(() => {
+    const cur = id()
+    const curKey = key()
+    if (cur && curKey) {
+      untrack(() => trackFavorites.load(curKey, cur, getMediaUserData))
+    }
+  })
+  const toggle = async () => {
+    const cur = id()
+    const curKey = key()
+    if (!cur || !curKey) return
+    await trackFavorites.toggle(curKey, cur, setMediaFavorite, (message) => {
+      notify.error(t("media.browser.favorite_failed") + ": " + message)
+    })
+  }
+  return { favorite, toggle }
+}
+
+/**
+ * 可拖动的进度条。
+ *
+ * 之前只有 onClick、可视高度 3~4px：手机上一是点不准，二是根本拖不动。
+ * 这里改用 Pointer Events（鼠标/触摸一套逻辑）+ 指针捕获，
+ * 并把可交互区域用 padding 撑到 ~24px；拖动期间用本地比例覆盖播放进度，
+ * 避免和音频 timeupdate 抢位置导致滑块回弹。
+ */
+const SeekBar = (props: {
+  height?: number
+  padding?: string
+  trackColor?: string
+  onSeek: (seconds: number) => void
+}) => {
+  let trackRef: HTMLDivElement | undefined
+  const [dragging, setDragging] = createSignal(false)
+  const [dragRatio, setDragRatio] = createSignal<number | null>(null)
+
+  const ratio = () => {
+    const dragging = dragRatio()
+    if (dragging !== null) return dragging
+    const { currentTime, duration } = playerState()
+    return duration > 0 ? Math.min(1, currentTime / duration) : 0
+  }
+
+  const seekByClientX = (clientX: number) => {
+    const el = trackRef
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    if (rect.width <= 0) return
+    const r = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+    setDragRatio(r)
+    const duration = playerState().duration
+    if (duration > 0) props.onSeek(r * duration)
+  }
+
+  return (
+    <div
+      style={{
+        padding: props.padding ?? "10px 0",
+        cursor: "pointer",
+        "touch-action": "none",
+        "user-select": "none",
+      }}
+      onPointerDown={(e) => {
+        e.preventDefault()
+        setDragging(true)
+        e.currentTarget.setPointerCapture?.(e.pointerId)
+        seekByClientX(e.clientX)
+      }}
+      onPointerMove={(e) => {
+        if (!dragging()) return
+        seekByClientX(e.clientX)
+      }}
+      onPointerUp={(e) => {
+        setDragging(false)
+        setDragRatio(null)
+        e.currentTarget.releasePointerCapture?.(e.pointerId)
+      }}
+      onPointerCancel={() => {
+        setDragging(false)
+        setDragRatio(null)
+      }}
+    >
+      <div
+        ref={trackRef}
+        style={{
+          height: `${props.height ?? 4}px`,
+          background: props.trackColor ?? "rgba(255,255,255,0.15)",
+          "border-radius": "2px",
+          position: "relative",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${ratio() * 100}%`,
+            background: accentBar(),
+            "border-radius": "2px",
+            transition: dragging() ? "none" : "width 0.4s linear",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: `${ratio() * 100}%`,
+            width: "12px",
+            height: "12px",
+            "border-radius": "50%",
+            background: "#fff",
+            transform: "translate(-50%, -50%)",
+            "box-shadow": "0 1px 4px rgba(0,0,0,0.45)",
+            opacity: dragging() ? 1 : 0.9,
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
 const LyricsPage = () => {
   const t = useT()
+  const { favorite, toggle: toggleFavorite } = useTrackFavorite()
+  // 窄屏（手机竖屏）必须换成纵向布局：左右两栏里左栏固定 340px 且不可压缩，
+  // 加上外层 40px 内边距，390px 的屏幕根本放不下，歌词那一栏会被挤到可视区外，
+  // 表现就是「有封面、没歌词」。
+  const [isNarrow, setIsNarrow] = createSignal(false)
+  onMount(() => {
+    const mq = window.matchMedia("(max-width: 767px)")
+    const update = () => setIsNarrow(mq.matches)
+    update()
+    mq.addEventListener("change", update)
+    onCleanup(() => mq.removeEventListener("change", update))
+  })
   // 使用函数形式访问 signal，保持响应式
   const currentItem = () => {
     const s = playerState()
@@ -338,7 +517,8 @@ const LyricsPage = () => {
       style={{
         position: "fixed",
         inset: "0",
-        "z-index": "200",
+        // 必须盖住站点 Header（吸附时 z-index 1000），否则顶部「收起」按钮点不到
+        "z-index": mediaOverlayZ,
         display: "flex",
         "flex-direction": "column",
         overflow: "hidden",
@@ -374,7 +554,7 @@ const LyricsPage = () => {
           display: "flex",
           "align-items": "center",
           "justify-content": "space-between",
-          padding: "20px 28px",
+          padding: isNarrow() ? "12px 16px" : "20px 28px",
         }}
       >
         <button
@@ -418,34 +598,37 @@ const LyricsPage = () => {
           "z-index": "1",
           flex: "1",
           display: "flex",
-          gap: "40px",
-          "align-items": "stretch",
+          // 窄屏：上封面、下歌词；宽屏：左封面、右歌词
+          "flex-direction": isNarrow() ? "column" : "row",
+          gap: isNarrow() ? "6px" : "40px",
+          "align-items": isNarrow() ? "stretch" : "stretch",
           overflow: "hidden",
-          padding: "0 40px",
+          padding: isNarrow() ? "0 16px" : "0 40px",
           width: "100%",
           "max-width": "1150px",
           margin: "0 auto",
+          "min-height": "0",
         }}
       >
-        {/* 左侧：封面 + 信息 + 控制 */}
+        {/* 左侧：封面 + 信息 + 控制（窄屏为顶部一块，让出下方空间给歌词） */}
         <div
           style={{
-            width: "340px",
+            width: isNarrow() ? "100%" : "340px",
             "flex-shrink": "0",
             display: "flex",
             "flex-direction": "column",
             "align-items": "center",
             "justify-content": "center",
-            gap: "20px",
-            padding: "0 20px 80px",
+            gap: isNarrow() ? "10px" : "20px",
+            padding: isNarrow() ? "0 0 6px" : "0 20px 80px",
           }}
         >
           {/* 旋转唱片 */}
           <div
             style={{
               position: "relative",
-              width: "220px",
-              height: "220px",
+              width: isNarrow() ? "132px" : "220px",
+              height: isNarrow() ? "132px" : "220px",
             }}
           >
             {/* 唱片外圈 */}
@@ -524,11 +707,11 @@ const LyricsPage = () => {
             <div
               style={{
                 color: "white",
-                "font-size": "20px",
+                "font-size": isNarrow() ? "17px" : "20px",
                 "font-weight": "700",
                 "letter-spacing": "-0.02em",
-                "margin-bottom": "6px",
-                "max-width": "280px",
+                "margin-bottom": isNarrow() ? "2px" : "6px",
+                "max-width": isNarrow() ? "100%" : "280px",
                 overflow: "hidden",
                 "text-overflow": "ellipsis",
                 "white-space": "nowrap",
@@ -537,45 +720,27 @@ const LyricsPage = () => {
               {getMediaName(currentItem()!)}
             </div>
             <div
-              style={{ color: "rgba(255,255,255,0.55)", "font-size": "14px" }}
+              style={{
+                color: "rgba(255,255,255,0.55)",
+                "font-size": isNarrow() ? "12px" : "14px",
+              }}
             >
               {currentItem()?.album_artist || t("media.music.unknown_artist")}
             </div>
           </div>
 
           {/* 进度条 */}
-          <div style={{ width: "100%", "max-width": "280px" }}>
-            <div
-              style={{
-                height: "4px",
-                background: "rgba(255,255,255,0.15)",
-                "border-radius": "2px",
-                cursor: "pointer",
-                position: "relative",
-                "margin-bottom": "8px",
+          <div
+            style={{
+              width: "100%",
+              "max-width": isNarrow() ? "100%" : "280px",
+            }}
+          >
+            <SeekBar
+              onSeek={(seconds) => {
+                initAudio().currentTime = seconds
               }}
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                const ratio = (e.clientX - rect.left) / rect.width
-                const audio = initAudio()
-                audio.currentTime = ratio * playerState().duration
-              }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  background: accentBar(),
-                  "border-radius": "2px",
-                  width: `${
-                    playerState().duration > 0
-                      ? (playerState().currentTime / playerState().duration) *
-                        100
-                      : 0
-                  }%`,
-                  transition: "width 0.5s linear",
-                }}
-              />
-            </div>
+            />
             <div
               style={{
                 display: "flex",
@@ -593,7 +758,11 @@ const LyricsPage = () => {
 
           {/* 播放控制 */}
           <div
-            style={{ display: "flex", "align-items": "center", gap: "16px" }}
+            style={{
+              display: "flex",
+              "align-items": "center",
+              gap: isNarrow() ? "12px" : "16px",
+            }}
           >
             <button
               onClick={() => {
@@ -624,13 +793,13 @@ const LyricsPage = () => {
             <button
               onClick={togglePlay}
               style={{
-                width: "52px",
-                height: "52px",
+                width: isNarrow() ? "46px" : "52px",
+                height: isNarrow() ? "46px" : "52px",
                 "border-radius": "50%",
                 background: accentGradient(),
                 border: "none",
                 color: "white",
-                "font-size": "20px",
+                "font-size": isNarrow() ? "18px" : "20px",
                 cursor: "pointer",
                 display: "flex",
                 "align-items": "center",
@@ -655,7 +824,25 @@ const LyricsPage = () => {
             >
               <TbPlayerSkipForwardFilled size={18} />
             </button>
-            <div style={{ width: "32px" }} />
+            {/* 收藏当前歌曲：与底栏、详情页同一份状态 */}
+            <button
+              onClick={toggleFavorite}
+              style={{
+                ...lyricsCtrlBtn,
+                color: favorite() ? "#fbbf24" : "#94a3b8",
+              }}
+              title={
+                favorite()
+                  ? t("media.video.favorited")
+                  : t("media.video.favorite")
+              }
+              aria-label={t("media.video.favorite")}
+            >
+              <Dynamic
+                component={favorite() ? TbStarFilled : TbStar}
+                size={18}
+              />
+            </button>
           </div>
         </div>
 
@@ -664,11 +851,13 @@ const LyricsPage = () => {
           style={{
             flex: "1",
             "min-width": "0",
-            "max-width": "680px",
+            // flex 子项必须允许收缩，否则歌词容器会被内容撑高、把自身推出可视区
+            "min-height": "0",
+            "max-width": isNarrow() ? "100%" : "680px",
             display: "flex",
             "flex-direction": "column",
             overflow: "hidden",
-            padding: "20px 0 100px 0",
+            padding: isNarrow() ? "0 0 8px 0" : "20px 0 100px 0",
           }}
         >
           <Show
@@ -701,8 +890,8 @@ const LyricsPage = () => {
                   "overflow-y": "auto",
                   "overflow-x": "hidden",
                   "scroll-behavior": "smooth",
-                  "padding-top": "36vh",
-                  "padding-bottom": "40vh",
+                  "padding-top": isNarrow() ? "22vh" : "36vh",
+                  "padding-bottom": isNarrow() ? "28vh" : "40vh",
                   "scrollbar-width": "none",
                 }}
               >
@@ -726,17 +915,23 @@ const LyricsPage = () => {
                         }}
                         title={t("media.player.jump_to_line")}
                         style={{
-                          "min-height": "52px",
+                          "min-height": isNarrow() ? "42px" : "52px",
                           display: "flex",
                           "align-items": "center",
                           "justify-content": "center",
-                          gap: "12px",
+                          gap: isNarrow() ? "8px" : "12px",
                           cursor: "pointer",
                           "max-width": "100%",
                           padding: "4px 8px",
                           "text-align": "center",
                           "font-size":
-                            i() === currentLyricIndex() ? "22px" : "16px",
+                            i() === currentLyricIndex()
+                              ? isNarrow()
+                                ? "19px"
+                                : "22px"
+                              : isNarrow()
+                                ? "15px"
+                                : "16px",
                           "font-weight":
                             i() === currentLyricIndex() ? "700" : "400",
                           color:
@@ -854,6 +1049,9 @@ export const MusicPlayer = () => {
   const barLeft = () =>
     mediaEnabled() && mediaSidebarOpen() && isDesktop() ? "216px" : "0"
 
+  // 底栏收藏：与详情页/列表共用同一份 userdata
+  const { favorite, toggle: toggleFavorite } = useTrackFavorite()
+
   // ===== 底栏滚动歌词：复用 parseLRC，外部 .lrc 优先于内嵌歌词 =====
   // 仅在歌词文本变化时才重新解析（依赖 currentIndex / externalLyrics / 当前 item.lyrics）
   const miniLyricLines = createMemo(() => {
@@ -872,14 +1070,6 @@ export const MusicPlayer = () => {
       else break
     }
     return idx
-  }
-
-  const handleSeek = (e: MouseEvent) => {
-    const bar = e.currentTarget as HTMLDivElement
-    const rect = bar.getBoundingClientRect()
-    const ratio = (e.clientX - rect.left) / rect.width
-    const audio = initAudio()
-    audio.currentTime = ratio * playerState().duration
   }
 
   const handleVolume = (e: MouseEvent) => {
@@ -935,51 +1125,38 @@ export const MusicPlayer = () => {
             "border-top": "1px solid rgba(255,255,255,0.07)",
           }}
         >
-          {/* 进度条（可点击） */}
-          <div
-            style={{
-              height: "3px",
-              background: "rgba(255,255,255,0.08)",
-              cursor: "pointer",
-              position: "relative",
+          {/* 进度条（可拖动；手机端也能拖） */}
+          <SeekBar
+            height={3}
+            padding="7px 0"
+            trackColor="rgba(255,255,255,0.08)"
+            onSeek={(seconds) => {
+              initAudio().currentTime = seconds
             }}
-            onClick={handleSeek}
-          >
-            <div
-              style={{
-                height: "100%",
-                background: accentBar(),
-                width: `${
-                  playerState().duration > 0
-                    ? (playerState().currentTime / playerState().duration) * 100
-                    : 0
-                }%`,
-                transition: "width 0.5s linear",
-                "border-radius": "0 2px 2px 0",
-              }}
-            />
-          </div>
+          />
 
           {/* 控制区 */}
           <div
             style={{
               display: "flex",
               "align-items": "center",
-              height: "68px",
-              padding: "0 20px",
-              gap: "12px",
+              height: isDesktop() ? "68px" : "60px",
+              padding: isDesktop() ? "0 20px" : "0 12px",
+              gap: isDesktop() ? "12px" : "8px",
             }}
           >
             {/* 左：封面 + 歌曲信息（点击展开歌词） */}
-            {/* 取消 flex:1，改为有限宽度，把剩余空间让给中间的歌词条 */}
+            {/* 桌面端用有限宽度，把剩余空间让给中间的歌词条；
+                手机端没有歌词条，改为占满剩余宽度，否则右侧控件会被挤出屏幕 */}
             <div
               style={{
                 display: "flex",
                 "align-items": "center",
-                gap: "12px",
-                width: "260px",
+                gap: isDesktop() ? "12px" : "8px",
+                width: isDesktop() ? "260px" : "auto",
+                flex: isDesktop() ? "0 0 260px" : "1 1 auto",
                 "min-width": "0",
-                "flex-shrink": "0",
+                "flex-shrink": isDesktop() ? "0" : "1",
                 cursor: "pointer",
               }}
               onClick={() =>
@@ -988,8 +1165,8 @@ export const MusicPlayer = () => {
             >
               <div
                 style={{
-                  width: "46px",
-                  height: "46px",
+                  width: isDesktop() ? "46px" : "38px",
+                  height: isDesktop() ? "46px" : "38px",
                   "border-radius": "8px",
                   overflow: "hidden",
                   "flex-shrink": "0",
@@ -1049,82 +1226,85 @@ export const MusicPlayer = () => {
                 - flex:1 占据剩余空间；min-width:0 保证 ellipsis 生效
                 - 点击同样可展开全屏歌词页
                 - 双行：上方为当前行（高亮），下方为下一行预览
-                - 没有歌词时显示淡占位以保持布局稳定 */}
-            <div
-              onClick={() =>
-                setPlayerState((s) => ({ ...s, showLyrics: true }))
-              }
-              title={t("media.player.view_full_lyrics")}
-              style={{
-                flex: "1",
-                "min-width": "0",
-                display: "flex",
-                "flex-direction": "column",
-                "justify-content": "center",
-                gap: "2px",
-                cursor: "pointer",
-                padding: "0 14px",
-                "text-align": "center",
-                "user-select": "none",
-              }}
-            >
-              <Show
-                when={miniLyricLines().length > 0}
-                fallback={
+                - 没有歌词时显示淡占位以保持布局稳定
+                - 手机端不渲染：屏幕太窄，留着会把播放控制挤出可视区 */}
+            <Show when={isDesktop()}>
+              <div
+                onClick={() =>
+                  setPlayerState((s) => ({ ...s, showLyrics: true }))
+                }
+                title={t("media.player.view_full_lyrics")}
+                style={{
+                  flex: "1",
+                  "min-width": "0",
+                  display: "flex",
+                  "flex-direction": "column",
+                  "justify-content": "center",
+                  gap: "2px",
+                  cursor: "pointer",
+                  padding: "0 14px",
+                  "text-align": "center",
+                  "user-select": "none",
+                }}
+              >
+                <Show
+                  when={miniLyricLines().length > 0}
+                  fallback={
+                    <div
+                      style={{
+                        color: "rgba(148,163,184,0.4)",
+                        "font-size": "13px",
+                        "white-space": "nowrap",
+                        overflow: "hidden",
+                        "text-overflow": "ellipsis",
+                      }}
+                    >
+                      <TbMusic
+                        size={13}
+                        style={{
+                          "vertical-align": "-2px",
+                          "margin-right": "4px",
+                        }}
+                      />
+                      {t("media.player.no_lyrics")}
+                    </div>
+                  }
+                >
                   <div
                     style={{
-                      color: "rgba(148,163,184,0.4)",
-                      "font-size": "13px",
+                      color: "#f1f5f9",
+                      "font-size": "14px",
+                      "font-weight": "500",
+                      "white-space": "nowrap",
+                      overflow: "hidden",
+                      "text-overflow": "ellipsis",
+                      "letter-spacing": "-0.01em",
+                      transition: "color 0.3s",
+                    }}
+                  >
+                    {currentMiniLyricIdx() >= 0
+                      ? miniLyricLines()[currentMiniLyricIdx()].text || "♪"
+                      : miniLyricLines()[0]?.text || "♪"}
+                  </div>
+                  <div
+                    style={{
+                      color: "rgba(148,163,184,0.55)",
+                      "font-size": "12px",
                       "white-space": "nowrap",
                       overflow: "hidden",
                       "text-overflow": "ellipsis",
                     }}
                   >
-                    <TbMusic
-                      size={13}
-                      style={{
-                        "vertical-align": "-2px",
-                        "margin-right": "4px",
-                      }}
-                    />
-                    {t("media.player.no_lyrics")}
+                    {(() => {
+                      const lines = miniLyricLines()
+                      const i = currentMiniLyricIdx()
+                      const next = i >= 0 ? lines[i + 1] : lines[1]
+                      return next?.text ?? ""
+                    })()}
                   </div>
-                }
-              >
-                <div
-                  style={{
-                    color: "#f1f5f9",
-                    "font-size": "14px",
-                    "font-weight": "500",
-                    "white-space": "nowrap",
-                    overflow: "hidden",
-                    "text-overflow": "ellipsis",
-                    "letter-spacing": "-0.01em",
-                    transition: "color 0.3s",
-                  }}
-                >
-                  {currentMiniLyricIdx() >= 0
-                    ? miniLyricLines()[currentMiniLyricIdx()].text || "♪"
-                    : miniLyricLines()[0]?.text || "♪"}
-                </div>
-                <div
-                  style={{
-                    color: "rgba(148,163,184,0.55)",
-                    "font-size": "12px",
-                    "white-space": "nowrap",
-                    overflow: "hidden",
-                    "text-overflow": "ellipsis",
-                  }}
-                >
-                  {(() => {
-                    const lines = miniLyricLines()
-                    const i = currentMiniLyricIdx()
-                    const next = i >= 0 ? lines[i + 1] : lines[1]
-                    return next?.text ?? ""
-                  })()}
-                </div>
-              </Show>
-            </div>
+                </Show>
+              </div>
+            </Show>
 
             {/* 中：播放控制 */}
             <div
@@ -1182,7 +1362,8 @@ export const MusicPlayer = () => {
               >
                 <TbPlayerSkipForwardFilled size={16} />
               </button>
-              <Show when={currentItem()}>
+              {/* 「本地播放器」入口在手机上先隐藏：窄屏放不下 */}
+              <Show when={isDesktop() ? currentItem() : undefined}>
                 {(cur) => (
                   <div
                     style={{
@@ -1201,30 +1382,32 @@ export const MusicPlayer = () => {
               </Show>
             </div>
 
-            {/* 右：时间 + 循环 + 音量 */}
+            {/* 右：时间 + 循环 + 收藏 + 音量（手机端只隐藏时间和音量，循环/收藏保留） */}
             <div
               style={{
                 display: "flex",
                 "align-items": "center",
-                gap: "10px",
+                gap: isDesktop() ? "10px" : "4px",
                 "flex-shrink": "0",
               }}
             >
-              {/* 时间 */}
-              <div
-                style={{
-                  color: "#475569",
-                  "font-size": "12px",
-                  "white-space": "nowrap",
-                  "font-variant-numeric": "tabular-nums",
-                }}
-              >
-                {formatDuration(Math.floor(playerState().currentTime))}
-                <span style={{ margin: "0 3px", opacity: "0.4" }}>/</span>
-                {formatDuration(Math.floor(playerState().duration))}
-              </div>
+              <Show when={isDesktop()}>
+                {/* 时间 */}
+                <div
+                  style={{
+                    color: "#475569",
+                    "font-size": "12px",
+                    "white-space": "nowrap",
+                    "font-variant-numeric": "tabular-nums",
+                  }}
+                >
+                  {formatDuration(Math.floor(playerState().currentTime))}
+                  <span style={{ margin: "0 3px", opacity: "0.4" }}>/</span>
+                  {formatDuration(Math.floor(playerState().duration))}
+                </div>
+              </Show>
 
-              {/* 循环模式 */}
+              {/* 循环模式：手机端也必须能切（顺序 / 单曲 / 列表 / 随机） */}
               <button
                 onClick={cycleLoop}
                 style={ctrlBtnStyle}
@@ -1233,46 +1416,72 @@ export const MusicPlayer = () => {
                 <Dynamic component={loopIcon()} size={16} />
               </button>
 
-              {/* 音量 */}
-              <div
-                style={{ display: "flex", "align-items": "center", gap: "6px" }}
+              {/* 收藏当前歌曲 */}
+              <button
+                onClick={toggleFavorite}
+                style={{
+                  ...ctrlBtnStyle,
+                  color: favorite() ? "#fbbf24" : ctrlBtnStyle.color,
+                }}
+                title={
+                  favorite()
+                    ? t("media.video.favorited")
+                    : t("media.video.favorite")
+                }
+                aria-label={t("media.video.favorite")}
               >
-                <span
-                  style={{
-                    color: "#475569",
-                    "font-size": "14px",
-                    "flex-shrink": "0",
-                  }}
-                >
-                  <Dynamic
-                    component={
-                      playerState().volume <= 0 ? TbVolumeOff : TbVolume
-                    }
-                    size={16}
-                  />
-                </span>
+                <Dynamic
+                  component={favorite() ? TbStarFilled : TbStar}
+                  size={16}
+                />
+              </button>
+
+              <Show when={isDesktop()}>
+                {/* 音量 */}
                 <div
                   style={{
-                    width: "72px",
-                    height: "4px",
-                    background: "rgba(255,255,255,0.1)",
-                    "border-radius": "2px",
-                    cursor: "pointer",
-                    position: "relative",
-                    "flex-shrink": "0",
+                    display: "flex",
+                    "align-items": "center",
+                    gap: "6px",
                   }}
-                  onClick={handleVolume}
                 >
+                  <span
+                    style={{
+                      color: "#475569",
+                      "font-size": "14px",
+                      "flex-shrink": "0",
+                    }}
+                  >
+                    <Dynamic
+                      component={
+                        playerState().volume <= 0 ? TbVolumeOff : TbVolume
+                      }
+                      size={16}
+                    />
+                  </span>
                   <div
                     style={{
-                      height: "100%",
-                      background: accentBar(),
+                      width: "72px",
+                      height: "4px",
+                      background: "rgba(255,255,255,0.1)",
                       "border-radius": "2px",
-                      width: `${playerState().volume * 100}%`,
+                      cursor: "pointer",
+                      position: "relative",
+                      "flex-shrink": "0",
                     }}
-                  />
+                    onClick={handleVolume}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        background: accentBar(),
+                        "border-radius": "2px",
+                        width: `${playerState().volume * 100}%`,
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
+              </Show>
 
               {/* 关闭底部播放器 */}
               <button

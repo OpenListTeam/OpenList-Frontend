@@ -9,7 +9,7 @@ import {
 import { For, createSignal } from "solid-js"
 import { FaSolidAngleDown } from "solid-icons/fa"
 import { getPlatform, notify } from "~/utils"
-import { getMediaStreamUrl } from "~/utils/media_api"
+import { getMediaStreamUrl, resolveMediaUrl } from "~/utils/media_api"
 import { playersForPlatform, renderPlayerScheme } from "~/utils/players"
 
 interface OpenWithPlayerProps {
@@ -48,7 +48,8 @@ export const OpenWithPlayer = (props: OpenWithPlayerProps) => {
         notify.error(resp.message || "获取直链失败")
         return null
       }
-      return resp.data.url
+      // 外部播放器必须拿到绝对地址：后端在回环 host 场景会返回 /d/... 相对路径
+      return resolveMediaUrl(resp.data.url)
     }
     if (!props.itemId) {
       notify.error("缺少媒体信息")
@@ -62,7 +63,7 @@ export const OpenWithPlayer = (props: OpenWithPlayerProps) => {
       notify.error(resp.message || "获取直链失败")
       return null
     }
-    return resp.data.url
+    return resolveMediaUrl(resp.data.url)
   }
 
   // 悬浮 / 点击触发器时预取直链，保证真正选择播放器时能同步跳转

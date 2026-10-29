@@ -20,7 +20,7 @@ export const handleResp = <T>(
       } else {
         bus.emit(
           "to",
-          `/@login?redirect=${encodeURIComponent(location.pathname)}`,
+          `/@login?redirect=${encodeURIComponent(location.pathname + location.search + location.hash)}`,
         )
       }
       return

@@ -286,15 +286,17 @@ export const Tasks = (props: TasksProps) => {
           <Button colorScheme="accent" loading={loading()} onClick={refresh}>
             {t(`global.refresh`)}
           </Button>
-          <Button
-            loading={retryFailedLoading()}
-            onClick={async () => {
-              const resp = await retryFailed()
-              handleResp(resp, () => refresh())
-            }}
-          >
-            {t(`tasks.retry_failed`)}
-          </Button>
+          <Show when={props.type !== "seed_save"}>
+            <Button
+              loading={retryFailedLoading()}
+              onClick={async () => {
+                const resp = await retryFailed()
+                handleResp(resp, () => refresh())
+              }}
+            >
+              {t(`tasks.retry_failed`)}
+            </Button>
+          </Show>
           <Button
             colorScheme="danger"
             loading={clearDoneLoading()}

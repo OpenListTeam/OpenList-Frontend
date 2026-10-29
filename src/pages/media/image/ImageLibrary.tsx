@@ -1,12 +1,23 @@
-﻿import { createSignal, Show, For, onCleanup, onMount } from "solid-js"
+﻿import {
+  createResource,
+  createSignal,
+  Show,
+  For,
+  onCleanup,
+  onMount,
+} from "solid-js"
 import { accent } from "~/utils/accent"
 import { MediaLayout } from "../MediaLayout"
 import { MediaBrowser } from "../MediaBrowser"
 import type { MediaItem } from "~/types"
 import { getMediaName } from "~/types"
-import { createSignedProxyUrl, mediaItemPath } from "~/utils/media_api"
+import {
+  createSignedProxyUrl,
+  getMediaExif,
+  mediaItemPath,
+} from "~/utils/media_api"
 import { useT } from "~/hooks"
-import { formatMediaSize } from "../ui"
+import { formatMediaSize, mediaOverlayZ } from "../ui"
 
 // ==================== 图片预览器 ====================
 const ImageViewer = (props: {
@@ -18,6 +29,15 @@ const ImageViewer = (props: {
   const [currentIndex, setCurrentIndex] = createSignal(props.initialIndex)
   const [isFullscreen, setIsFullscreen] = createSignal(false)
   const [scale, setScale] = createSignal(1)
+  // 照片信息（EXIF）：按需拉取，面板打开时才请求，避免翻图时无谓地读文件
+  const [showInfo, setShowInfo] = createSignal(false)
+  const [exif] = createResource(
+    () => (showInfo() ? current().id : undefined),
+    async (id) => {
+      const resp = await getMediaExif(id)
+      return resp.code === 200 ? resp.data : null
+    },
+  )
 
   const current = () => props.items[currentIndex()]
   // 使用签名后的 /p 代理地址（带 force 避免 302 到外部存储的 CORS 问题），路径已做 URL 编码
@@ -38,6 +58,7 @@ const ImageViewer = (props: {
     else if (e.key === "ArrowRight") next()
     else if (e.key === "Escape") props.onClose()
     else if (e.key === "f" || e.key === "F") toggleFullscreen()
+    else if (e.key === "i" || e.key === "I") setShowInfo((v) => !v)
   }
 
   const toggleFullscreen = () => {
@@ -63,7 +84,8 @@ const ImageViewer = (props: {
       style={{
         position: "fixed",
         inset: "0",
-        "z-index": "300",
+        // 必须盖住站点 Header（吸附时 z-index 1000），否则顶部关闭按钮点不到
+        "z-index": mediaOverlayZ,
         background: "rgba(0,0,0,0.95)",
         display: "flex",
         "flex-direction": "column",
@@ -103,6 +125,18 @@ const ImageViewer = (props: {
           >
             {currentIndex() + 1} / {props.items.length}
           </span>
+          <button
+            onClick={() => setShowInfo((v) => !v)}
+            style={{
+              ...viewerBtnStyle,
+              ...(showInfo()
+                ? { background: "rgba(255,255,255,0.25)", color: "white" }
+                : {}),
+            }}
+            title={t("media.image.info")}
+          >
+            ℹ
+          </button>
           <button
             onClick={toggleFullscreen}
             style={viewerBtnStyle}
@@ -218,6 +252,144 @@ const ImageViewer = (props: {
       >
         ›
       </button>
+
+      {/* 照片信息面板（EXIF） */}
+      <Show when={showInfo()}>
+        <div
+          style={{
+            position: "absolute",
+            left: "16px",
+            bottom: "88px",
+            width: "300px",
+            "max-width": "calc(100vw - 32px)",
+            padding: "14px",
+            "border-radius": "10px",
+            background: "rgba(15,23,42,0.92)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            color: "#e2e8f0",
+            "font-size": "12px",
+            "z-index": "1",
+            "backdrop-filter": "blur(8px)",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            style={{
+              display: "flex",
+              "align-items": "center",
+              "justify-content": "space-between",
+              "margin-bottom": "10px",
+            }}
+          >
+            <span style={{ "font-size": "13px", "font-weight": "600" }}>
+              {t("media.image.info")}
+            </span>
+            <button
+              onClick={() => setShowInfo(false)}
+              style={{ ...viewerBtnStyle, width: "22px", height: "22px" }}
+            >
+              ✕
+            </button>
+          </div>
+          <Show
+            when={!exif.loading}
+            fallback={
+              <div style={{ color: "rgba(255,255,255,0.5)" }}>
+                {t("media.book.loading")}
+              </div>
+            }
+          >
+            <Show
+              when={exif()}
+              fallback={
+                <div style={{ color: "rgba(255,255,255,0.5)" }}>
+                  {t("media.image.exif_empty")}
+                </div>
+              }
+            >
+              {(data) => {
+                const rows = () => {
+                  const e = data()
+                  const params = [
+                    e.exposure,
+                    e.aperture,
+                    e.iso ? `ISO ${e.iso}` : "",
+                    e.focal_length,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
+                  return [
+                    [t("media.image.exif_camera"), e.camera],
+                    [t("media.image.exif_lens"), e.lens],
+                    [t("media.image.exif_params"), params],
+                    [t("media.image.exif_taken_at"), e.taken_at],
+                    [
+                      t("media.image.exif_size"),
+                      e.width && e.height ? `${e.width} × ${e.height}` : "",
+                    ],
+                    [t("media.image.exif_software"), e.software],
+                  ].filter(([, v]) => !!v) as [string, string][]
+                }
+                return (
+                  <>
+                    <For each={rows()}>
+                      {(row) => (
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "10px",
+                            padding: "3px 0",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: "64px",
+                              "flex-shrink": "0",
+                              color: "rgba(255,255,255,0.45)",
+                            }}
+                          >
+                            {row[0]}
+                          </span>
+                          <span style={{ "word-break": "break-all" }}>
+                            {row[1]}
+                          </span>
+                        </div>
+                      )}
+                    </For>
+                    <Show when={data().latitude && data().longitude}>
+                      <a
+                        href={`https://www.openstreetmap.org/?mlat=${data().latitude}&mlon=${data().longitude}#map=15/${data().latitude}/${data().longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: "block",
+                          "margin-top": "8px",
+                          color: "#7dd3fc",
+                          "font-size": "12px",
+                        }}
+                      >
+                        📍 {data().latitude!.toFixed(5)},{" "}
+                        {data().longitude!.toFixed(5)} ·{" "}
+                        {t("media.image.exif_open_map")}
+                      </a>
+                    </Show>
+                    <Show
+                      when={
+                        !data().available &&
+                        !(data().latitude && data().longitude)
+                      }
+                    >
+                      <div style={{ color: "rgba(255,255,255,0.5)" }}>
+                        {t("media.image.exif_empty")}
+                      </div>
+                    </Show>
+                  </>
+                )
+              }}
+            </Show>
+          </Show>
+        </div>
+      </Show>
 
       {/* 底部缩略图条 */}
       <div

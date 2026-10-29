@@ -1,4 +1,5 @@
 {
+  "no_permission": "Administrator permission is required",
   "sidemenu": {
     "dashboard": "Dashboard",
     "settings": "Settings",
@@ -18,6 +19,7 @@
     "copy": "Copy",
     "move": "Move",
     "decompress": "Decompress",
+    "seed_tasks": "Seed Tasks",
     "backup-restore": "Backup & Restore",
     "home": "Home",
     "indexes": "Indexes",
@@ -92,9 +94,11 @@
     "mode_base64": "Base64 (database)",
     "mode_runtime": "Runtime directory (default, data/imgs)",
     "mode_local": "Local file (mounted VFS)",
+    "mode_samedir": "Same folder as the media file",
     "mode_base64_tips": "Thumbnails are stored in the database as Base64. No extra file storage is needed, but the database grows.",
     "mode_runtime_tips": "Thumbnails are stored under the program data directory, data/imgs by default. No mounted storage is required.",
     "mode_local_tips": "Thumbnails are written to a VFS path under a mounted storage, which must be writable (e.g. /imgs).",
+    "mode_samedir_tips": "Covers are written next to the media file as <original file name>.jpg (e.g. song.flac.jpg), without touching the original file. No mounted storage required.",
     "thumb_path": "Storage path",
     "thumb_path_tips_runtime": "Path relative to the program data directory, imgs by default (data/imgs)",
     "thumb_path_tips_local": "VFS path relative to the mount root /, e.g. /imgs or /.thumbnail",
