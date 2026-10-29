@@ -24,8 +24,8 @@ importers:
         specifier: ^4.2.4
         version: 4.2.4
       '@mediabunny/ac3':
-        specifier: ^1.40.1
-        version: 1.61.6(mediabunny@1.61.6)
+        specifier: ^1.63.0
+        version: 1.63.0(mediabunny@1.63.0)
       '@monaco-editor/loader':
         specifier: 1.7.0
         version: 1.7.0
@@ -108,8 +108,8 @@ importers:
         specifier: ^8.11.1
         version: 8.11.1
       mediabunny:
-        specifier: ^1.40.1
-        version: 1.61.6
+        specifier: ^1.63.0
+        version: 1.63.0
       mitt:
         specifier: ^3.0.1
         version: 3.0.1
@@ -1258,8 +1258,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@mediabunny/ac3@1.61.6':
-    resolution: {integrity: sha512-APLHtzRuKu3UQFgUreenV1yDGUROVuMae9wJYfTEuNGgXVdR41FXkO4szg8S9ZV59HhHw2MxNg/XX4dp0RBVsw==}
+  '@mediabunny/ac3@1.63.0':
+    resolution: {integrity: sha512-WX6hJyoevNZ3jRK3Hgd8FaFuyD+Of8ZdZGKJiDl2xE4VZlyCZRmuONx0xgOnrSZaz8pDrBtMw+T1tEEm6aPV1A==}
     peerDependencies:
       mediabunny: ^1.0.0
 
@@ -2756,8 +2756,8 @@ packages:
   mdast-util-to-string@4.0.0:
     resolution: {integrity: sha512-0H44vDimn51F0YwvxSJSm0eCDOJTRlmN0R1yBh4HLj9wiV1Dn0QoXGbvFAWj2hSItVTlCmBF1hqKlIyUBVFLPg==}
 
-  mediabunny@1.61.6:
-    resolution: {integrity: sha512-VHEZ53/7jGl4dQ+uOdndsZufFYwEUFWv9UXgvrGun3OapyzoqI9iaPOD7z3xxY/nAttLZBNwswgJzMtGJAquOQ==}
+  mediabunny@1.63.0:
+    resolution: {integrity: sha512-6958wlfDtass/zNcuSuGzUzFT9ciwEFd5AzDa02EQdPmifB4URcTcZoyQ//Ln5e47Z6EC3EJuKr3MM037w89OA==}
 
   meow@13.2.0:
     resolution: {integrity: sha512-pxQJQzB6djGPXh08dacEloMFopsOqGVRKFPYvPOt9XDZ1HasbgDZA74CJGreSU4G3Ak7EFJGoiH2auq+yXISgA==}
@@ -4747,9 +4747,9 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@mediabunny/ac3@1.61.6(mediabunny@1.61.6)':
+  '@mediabunny/ac3@1.63.0(mediabunny@1.63.0)':
     dependencies:
-      mediabunny: 1.61.6
+      mediabunny: 1.63.0
 
   '@mermaid-js/parser@2.0.1':
     dependencies:
@@ -6322,7 +6322,7 @@ snapshots:
     dependencies:
       '@types/mdast': 4.0.4
 
-  mediabunny@1.61.6:
+  mediabunny@1.63.0:
     dependencies:
       '@types/dom-mediacapture-transform': 0.1.12
       '@types/dom-webcodecs': 0.1.13
