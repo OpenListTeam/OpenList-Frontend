@@ -9,7 +9,7 @@
   "description": "A new AList Fork to Anti Trust Crisis",
   "packageManager": "pnpm@11.28.7",
   "engines": {
-    "node": ">=22.6"
+    "node": ">=22.23.4"
   },
   "repository": {
     "type": "git",
