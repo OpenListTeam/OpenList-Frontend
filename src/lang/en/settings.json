@@ -231,6 +231,8 @@
   "sso_oidc_username_key": "SSO oidc username key",
   "sso_organization_name": "SSO organization name",
   "sso_postmessage_origin": "Sso postmessage origin",
+  "storage_details_cooldown_seconds": "Storage details refresh cooldown (seconds)",
+  "storage_details_timeout_seconds": "Storage details background timeout (seconds)",
   "text_types": "Text types",
   "token": "Token",
   "transcode_cache_max_gb": "Segment cache limit (GB)",
