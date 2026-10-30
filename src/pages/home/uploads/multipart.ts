@@ -219,7 +219,12 @@ export const MultipartUpload: Upload = async (
         return
       }
       if (resp && resp.code !== 429 && resp.code !== 409) {
-        throw new Error(resp.message)
+        // once an attempt has failed, the snapshot carries the storage's own
+        // error; servers that predate reporting it only said "window closed"
+        const failure = resp.data?.state?.startsWith("failed")
+          ? resp.data.error
+          : undefined
+        throw new Error(failure || resp.message)
       }
       if (!resp) {
         // a rapid upload may have completed the session while this chunk was
