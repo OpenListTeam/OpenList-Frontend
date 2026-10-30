@@ -1,6 +1,6 @@
 import { getSettingNumber, password } from "~/store"
-import { Resp } from "~/types"
-import { r } from "~/utils"
+import { FsGetResp, Resp } from "~/types"
+import { fsGet, r } from "~/utils"
 import { seedUploadHeaders, SetUpload, Upload } from "./types"
 import { calculateHash } from "./util"
 import { StreamUpload } from "./stream"
@@ -219,7 +219,12 @@ export const MultipartUpload: Upload = async (
         return
       }
       if (resp && resp.code !== 429 && resp.code !== 409) {
-        throw new Error(resp.message)
+        // once an attempt has failed, the snapshot carries the storage's own
+        // error; servers that predate reporting it only said "window closed"
+        const failure = resp.data?.state?.startsWith("failed")
+          ? resp.data.error
+          : undefined
+        throw new Error(failure || resp.message)
       }
       if (!resp) {
         // a rapid upload may have completed the session while this chunk was
@@ -322,8 +327,15 @@ export const MultipartUpload: Upload = async (
       continue // transient blip while the driver finishes — keep polling
     }
     if (st.code === 404) {
-      // completed sessions are removed right after they are reaped; with all
-      // chunks acknowledged this means the upload finished
+      // completed sessions are removed once reaped, but so are superseded and
+      // aborted ones: only call it done when the file is actually in place
+      const obj = await mpRequest<FsGetResp>(fsGet(uploadPath, password()))
+      if (!obj) {
+        continue // transient blip while checking — ask again
+      }
+      if (obj.code !== 200 || obj.data.size !== file.size) {
+        throw new Error("upload session ended before completion")
+      }
       setUpload("progress", 100)
       return
     }
