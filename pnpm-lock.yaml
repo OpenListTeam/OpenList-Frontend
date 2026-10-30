@@ -24,8 +24,8 @@ importers:
         specifier: ^4.2.4
         version: 4.2.4
       '@mediabunny/ac3':
-        specifier: ^1.40.1
-        version: 1.61.6(mediabunny@1.61.6)
+        specifier: ^1.65.0
+        version: 1.65.0(mediabunny@1.61.6)
       '@monaco-editor/loader':
         specifier: 1.7.0
         version: 1.7.0
@@ -1258,8 +1258,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@mediabunny/ac3@1.61.6':
-    resolution: {integrity: sha512-APLHtzRuKu3UQFgUreenV1yDGUROVuMae9wJYfTEuNGgXVdR41FXkO4szg8S9ZV59HhHw2MxNg/XX4dp0RBVsw==}
+  '@mediabunny/ac3@1.65.0':
+    resolution: {integrity: sha512-xHvE9wIfCzIzzP5XTIr5BDdrE6F5Yty2nDjDKg/hHYws2XGMjqg+7mg1ZoDaS1jzpeaXfTjT8OfVmMTMsvVTQA==}
     peerDependencies:
       mediabunny: ^1.0.0
 
@@ -2564,6 +2564,10 @@ packages:
 
   katex@0.16.47:
     resolution: {integrity: sha512-Eeo8Ys1doU1z+x8AZsPpQu+p/QcZBI5PeOo7QGQdy2x2m0MU/hYagBbGOmXwr5KVbEfVuWv9LpnQWeehogurjg==}
+    hasBin: true
+
+  katex@0.18.10:
+    resolution: {integrity: sha512-/B6p9eY9DX7aHBfpkHdpirDTZ5QH9xTwL9y837PWuzuv41O5jFdqNQwVQEQsimY0/iVNkwBY4+4hMfhQ7d4Dbw==}
     hasBin: true
 
   katex@0.19.1:
@@ -4751,7 +4755,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@mediabunny/ac3@1.61.6(mediabunny@1.61.6)':
+  '@mediabunny/ac3@1.65.0(mediabunny@1.61.6)':
     dependencies:
       mediabunny: 1.61.6
 
@@ -6089,6 +6093,10 @@ snapshots:
     dependencies:
       commander: 8.3.0
 
+  katex@0.18.10:
+    dependencies:
+      commander: 15.0.0
+
   katex@0.19.1:
     dependencies:
       commander: 15.0.0
@@ -6357,7 +6365,7 @@ snapshots:
       dompurify: 3.4.15
       elkjs: 0.9.3
       es-toolkit: 1.50.0
-      katex: 0.18.2
+      katex: 0.18.10
       khroma: 2.1.0
       marked: 16.4.2
       roughjs: 4.6.6
