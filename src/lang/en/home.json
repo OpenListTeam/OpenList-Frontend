@@ -353,7 +353,9 @@
     "show_gallery_thumbnails_options": {
       "none": "None",
       "visible": "Visible"
-    }
+    },
+    "share_default_max_accessed": "Default share max access count (0 = unlimited)",
+    "share_default_expires": "Default share expiration (e.g. +1d, empty = never)"
   },
   "package_download": {
     "current_status": "Current Status",

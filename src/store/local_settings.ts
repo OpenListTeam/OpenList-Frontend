@@ -89,6 +89,15 @@ export const initialLocalSettings = [
     type: "select",
     options: ["none", "visible"],
   },
+  {
+    key: "share_default_max_accessed",
+    default: "0",
+    type: "number",
+  },
+  {
+    key: "share_default_expires",
+    default: "",
+  },
 ]
 export type LocalSetting = (typeof initialLocalSettings)[number]
 for (const setting of initialLocalSettings) {
