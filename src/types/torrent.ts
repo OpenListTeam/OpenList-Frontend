@@ -126,6 +126,10 @@ export interface SeedGenerateRequest {
   share_files?: string[]
   direct_files?: string[]
   output_path?: string
+  /** 目录展开后保留目录结构；默认 false（拍平成文件名） */
+  preserve_structure?: boolean
+  /** 每个文件生成一个种子；默认 false（全部合并成一个） */
+  split?: boolean
 }
 
 export interface SeedArtifact {
@@ -181,6 +185,10 @@ export interface SeedInfo extends Partial<TorrentInfo> {
     edit?: boolean
     recalculate?: boolean
   }
+  /** 种子整体已带的整文件哈希算法（BT 的 pieces 无法拆到文件上，需要种子级标记） */
+  available_hashes?: SeedHashAlgorithm[]
+  /** 种子整体已带的分片哈希算法 */
+  available_piece_hashes?: SeedHashAlgorithm[]
 }
 
 export interface SeedParseResult {
@@ -207,6 +215,8 @@ export interface SeedOperationRequest {
   path?: string
   selected_files?: number[]
   format?: SeedFormat
+  /** 转换目标格式（多选）；为空时使用 format */
+  formats?: SeedFormat[]
   transit_path?: string
   tool?: string
   delete_policy?: string
@@ -214,6 +224,12 @@ export interface SeedOperationRequest {
   recalc_files?: Array<{ path: string; source_path: string }>
   hash_matrix?: SeedHashMatrix
   options?: Record<string, unknown>
+  /** 转换时是否从文件补算缺失哈希 */
+  compute_missing?: boolean
+  /** 补算哈希时源文件所在目录 */
+  file_base_path?: string
+  /** 转换时一并写入的整体注释 */
+  comment?: string
 }
 
 export interface SeedOperationResult {

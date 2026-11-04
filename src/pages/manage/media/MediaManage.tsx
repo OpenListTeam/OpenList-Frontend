@@ -51,6 +51,7 @@ import {
   onCleanup,
 } from "solid-js"
 import type {
+  EpisodeInfo,
   MediaConfig,
   MediaItem,
   MediaScanPath,
@@ -58,6 +59,7 @@ import type {
   MediaType,
   Storage,
 } from "~/types"
+import { parseAuthors, parseEpisodes } from "~/types"
 import { notify, r } from "~/utils"
 import { useT } from "~/hooks"
 import { TbAlertTriangle } from "solid-icons/tb"
@@ -69,6 +71,7 @@ import {
   adminDeleteInvalidMedia,
   adminDeleteMediaItem,
   adminDeleteMediaScanPath,
+  adminDiscardMediaCover,
   adminExportMediaDB,
   adminGenerateStrm,
   adminGetMediaConfigs,
@@ -81,9 +84,34 @@ import {
   adminStartMediaScrape,
   adminUpdateMediaItem,
   adminUpdateMediaScanPath,
+  adminUploadMediaCover,
 } from "~/utils/media_api"
 import { ThumbnailSettings } from "./ThumbnailSettings"
+import { MediaAlbumTable } from "./MediaAlbumTable"
 import { resolveMediaCover } from "~/utils/media_cover"
+import {
+  commitMediaCoverDraft,
+  createMediaEditGuard,
+  prepareMediaCoverDraft,
+  type MediaCoverDraft,
+} from "~/utils/media_edit"
+
+/**
+ * 类型标签预置。tv=true 的标签会让后端把该扫描路径下所有视频当作剧集入库
+ * （Emby 里按「电视剧」展示）；其余按电影处理。判定规则见后端
+ * internal/media.VideoTypeForTypeTag，改这里时请保持两边一致。
+ */
+const TYPE_TAG_PRESETS: { value: string; tv: boolean }[] = [
+  { value: "电影", tv: false },
+  { value: "电视剧", tv: true },
+  { value: "动漫", tv: true },
+  { value: "综艺", tv: true },
+  { value: "纪录片", tv: true },
+  { value: "美剧", tv: true },
+  { value: "日剧", tv: true },
+  { value: "韩剧", tv: true },
+  { value: "国产剧", tv: true },
+]
 
 interface MediaManagePageProps {
   mediaType: MediaType
@@ -162,6 +190,19 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
   const [searchInput, setSearchInput] = createSignal("")
   const [editingItem, setEditingItem] = createSignal<MediaItem | null>(null)
   const [showEditModal, setShowEditModal] = createSignal(false)
+  // 作者/选集不走纯文本：弹窗里用列表编辑，保存时再合并回 JSON 字符串
+  const [editAuthors, setEditAuthors] = createSignal<string[]>([])
+  const [editEpisodes, setEditEpisodes] = createSignal<EpisodeInfo[]>([])
+  const [coverUploading, setCoverUploading] = createSignal(false)
+  const [itemSaving, setItemSaving] = createSignal(false)
+  const [coverDraft, setCoverDraft] = createSignal<MediaCoverDraft | null>(null)
+  const itemCoverReader = createMediaEditGuard()
+  onCleanup(() => itemCoverReader.next())
+  // 音乐默认按专辑聚合，切到「按曲目」才展示平铺列表
+  const [albumView, setAlbumView] = createSignal(true)
+  const albumMode = () => props.mediaType === "music" && albumView()
+  // 保存单曲后自增，通知专辑视图重新聚合（否则封面/曲目数还是旧值）
+  const [albumRefreshToken, setAlbumRefreshToken] = createSignal(0)
 
   // 搜索防抖
   let searchTimer: ReturnType<typeof setTimeout> | undefined
@@ -286,6 +327,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
       name: "",
       path: "/",
       path_merge: false,
+      merge_depth: 0,
       type_tag: "",
       content_tags: "",
       enable_scrape: true,
@@ -560,7 +602,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     try {
       const blob = await adminExportMediaDB(props.mediaType)
       const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)
-      await handleBlobExport(blob, `media_export_${props.mediaType}_${ts}.json`)
+      await handleBlobExport(blob, `media_export_${props.mediaType}_${ts}.zip`)
     } catch (e: any) {
       notify.error(t("media.admin.export_failed") + ": " + (e?.message || e))
     }
@@ -576,7 +618,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
       const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)
       await handleBlobExport(
         blob,
-        `media_export_${props.mediaType}_${safeName}_${ts}.json`,
+        `media_export_${props.mediaType}_${safeName}_${ts}.zip`,
       )
     } catch (e: any) {
       notify.error(t("media.admin.export_failed") + ": " + (e?.message || e))
@@ -587,7 +629,7 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
     new Promise((resolve) => {
       const input = document.createElement("input")
       input.type = "file"
-      input.accept = "application/json,.json"
+      input.accept = "application/zip,.zip,application/json,.json"
       input.onchange = () => {
         resolve(input.files && input.files[0] ? input.files[0] : null)
       }
@@ -664,16 +706,109 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
   }
 
   // ============== 条目操作 ==============
+  const openEditItem = (item: MediaItem) => {
+    if (itemSaving()) return
+    itemCoverReader.next()
+    setCoverUploading(false)
+    setCoverDraft(null)
+    setEditingItem({ ...item })
+    setEditAuthors(parseAuthors(item.authors))
+    setEditEpisodes(parseEpisodes(item.episodes))
+    setShowEditModal(true)
+  }
+
+  const closeEditItem = () => {
+    if (itemSaving()) return
+    itemCoverReader.next()
+    setCoverUploading(false)
+    setShowEditModal(false)
+    setEditingItem(null)
+    setCoverDraft(null)
+  }
+
+  const changeItemCover = (cover: string) => {
+    if (itemSaving()) return
+    itemCoverReader.next()
+    setCoverUploading(false)
+    setCoverDraft(null)
+    setEditingItem((item) => (item ? { ...item, cover } : item))
+  }
+
   const handleSaveItem = async () => {
-    if (!editingItem()) return
-    const resp = await adminUpdateMediaItem(editingItem()!)
-    if (resp.code === 200) {
-      notify.success(t("media.admin.save_ok"))
-      setShowEditModal(false)
-      setEditingItem(null)
-      refetchItems()
-    } else {
-      notify.error(t("media.admin.save_failed") + ": " + resp.message)
+    const current = editingItem()
+    if (!current || itemSaving() || coverUploading()) return
+    const payload: Partial<MediaItem> & { id: number } = {
+      ...current,
+      authors: JSON.stringify(editAuthors().filter((a) => a.trim() !== "")),
+    }
+    // 合集条目才提交选集：普通文件条目的空数组会覆盖掉已有选集
+    if (current.is_folder) {
+      payload.episodes = JSON.stringify(editEpisodes())
+    }
+    setItemSaving(true)
+    try {
+      const resp = await commitMediaCoverDraft(
+        current.id,
+        current.cover,
+        coverDraft(),
+        adminUploadMediaCover,
+        (cover) => adminUpdateMediaItem({ ...payload, cover }),
+        adminDiscardMediaCover,
+      )
+      if (resp.code === 200) {
+        notify.success(t("media.admin.save_ok"))
+        setShowEditModal(false)
+        setEditingItem(null)
+        refetchItems()
+        setAlbumRefreshToken((n) => n + 1)
+      } else {
+        notify.error(t("media.admin.save_failed") + ": " + resp.message)
+      }
+    } catch (error) {
+      notify.error(t("media.admin.save_failed") + ": " + String(error))
+    } finally {
+      setItemSaving(false)
+    }
+  }
+
+  // 选集排序：编号为 0 的按原有顺序排在后面，其余按编号升序
+  const moveEpisode = (index: number, delta: number) => {
+    setEditEpisodes((list) => {
+      const next = [...list]
+      const target = index + delta
+      if (target < 0 || target >= next.length) return list
+      ;[next[index], next[target]] = [next[target], next[index]]
+      return next
+    })
+  }
+
+  const pickAndUploadCover = async () => {
+    const item = editingItem()
+    if (!item || itemSaving() || coverUploading()) return
+    const version = itemCoverReader.next()
+    const file = await new Promise<File | null>((resolve) => {
+      const input = document.createElement("input")
+      input.type = "file"
+      input.accept = "image/jpeg,image/png,image/gif,image/webp"
+      input.onchange = () => resolve(input.files?.[0] ?? null)
+      input.oncancel = () => resolve(null)
+      input.click()
+    })
+    if (!file || !itemCoverReader.isCurrent(version) || itemSaving()) return
+    setCoverUploading(true)
+    try {
+      const selected = await prepareMediaCoverDraft(file)
+      if (!itemCoverReader.isCurrent(version)) return
+      setCoverDraft(selected)
+      setEditingItem((cur) => ({ ...cur!, cover: selected.preview }))
+    } catch (error) {
+      if (itemCoverReader.isCurrent(version)) {
+        notify.error(
+          t("media.admin.cover_upload_failed") + ": " + String(error),
+        )
+      }
+    } finally {
+      if (itemCoverReader.isCurrent(version)) setCoverUploading(false)
     }
   }
 
@@ -938,7 +1073,9 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                           color={sp.path_merge ? "$success11" : "$neutral11"}
                         >
                           {sp.path_merge
-                            ? t("media.admin.yes")
+                            ? (sp.merge_depth ?? 0) > 0
+                              ? `${t("media.admin.yes")} (${sp.merge_depth})`
+                              : t("media.admin.yes")
                             : t("media.admin.no")}
                         </Text>
                       </Td>
@@ -1087,6 +1224,27 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                   }
                 }}
               />
+              {/* 音乐：按专辑 / 按曲目切换 */}
+              <Show when={props.mediaType === "music"}>
+                <HStack spacing="$1" alignItems="center">
+                  <Button
+                    size="xs"
+                    variant={albumView() ? "solid" : "outline"}
+                    colorScheme="accent"
+                    onClick={() => setAlbumView(true)}
+                  >
+                    {t("media.admin.view_albums")}
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant={!albumView() ? "solid" : "outline"}
+                    colorScheme="accent"
+                    onClick={() => setAlbumView(false)}
+                  >
+                    {t("media.admin.view_tracks")}
+                  </Button>
+                </HStack>
+              </Show>
               <HStack spacing="$1" alignItems="center">
                 <Text fontSize="$sm" color="$neutral11">
                   {t("media.admin.per_page")}
@@ -1132,218 +1290,229 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
             </HStack>
           </VStack>
 
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>{t("media.admin.col_file_name")}</Th>
-                <Th>{t("media.admin.col_name")}</Th>
-                <Th>{t("media.admin.col_cover")}</Th>
-                <Th>{t("media.admin.col_scan_path")}</Th>
-                <Th>{t("media.admin.col_release_date")}</Th>
-                <Th>{t("media.admin.col_rating")}</Th>
-                <Th>{t("media.admin.col_hidden")}</Th>
-                <Th>{t("media.admin.col_actions")}</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              <Show
-                when={!itemsData.loading}
-                fallback={
-                  <Tr>
-                    <Td colSpan={8}>
-                      <HStack justifyContent="center" py="$8">
-                        <Spinner />
-                      </HStack>
-                    </Td>
-                  </Tr>
-                }
-              >
+          {/* 音乐专辑视图：按 album_name + album_artist 聚合，展开后编辑单曲 */}
+          <Show when={albumMode()}>
+            <MediaAlbumTable
+              scanPathId={filterScanPathId()}
+              keyword={filterKeyword()}
+              pageSize={pageSize()}
+              getScanPathName={getScanPathName}
+              onEditTrack={openEditItem}
+              refreshToken={albumRefreshToken()}
+            />
+          </Show>
+
+          <Show when={!albumMode()}>
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>{t("media.admin.col_file_name")}</Th>
+                  <Th>{t("media.admin.col_name")}</Th>
+                  <Th>{t("media.admin.col_cover")}</Th>
+                  <Th>{t("media.admin.col_scan_path")}</Th>
+                  <Th>{t("media.admin.col_release_date")}</Th>
+                  <Th>{t("media.admin.col_rating")}</Th>
+                  <Th>{t("media.admin.col_hidden")}</Th>
+                  <Th>{t("media.admin.col_actions")}</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
                 <Show
-                  when={items().length > 0}
+                  when={!itemsData.loading}
                   fallback={
                     <Tr>
                       <Td colSpan={8}>
-                        <Text textAlign="center" color="$neutral11" py="$8">
-                          {t("media.admin.no_items")}
-                        </Text>
+                        <HStack justifyContent="center" py="$8">
+                          <Spinner />
+                        </HStack>
                       </Td>
                     </Tr>
                   }
                 >
-                  <For each={items()}>
-                    {(item) => (
+                  <Show
+                    when={items().length > 0}
+                    fallback={
                       <Tr>
-                        <Td maxW="200px">
-                          <span
-                            title={item.file_name}
-                            style={{
-                              display: "block",
-                              "font-size": "12px",
-                              overflow: "hidden",
-                              "text-overflow": "ellipsis",
-                              "white-space": "nowrap",
-                            }}
-                          >
-                            {item.file_name}
-                          </span>
-                        </Td>
-                        <Td maxW="180px">
-                          <span
-                            style={{
-                              display: "block",
-                              "font-size": "14px",
-                              "font-weight": "500",
-                              overflow: "hidden",
-                              "text-overflow": "ellipsis",
-                              "white-space": "nowrap",
-                            }}
-                          >
-                            {item.scraped_name || item.file_name}
-                          </span>
-                        </Td>
-                        <Td>
-                          <Show
-                            when={item.cover}
-                            fallback={
-                              <Box
-                                w="48px"
-                                h="64px"
-                                rounded="$md"
-                                bgColor="$neutral3"
-                                display="flex"
-                                alignItems="center"
-                                justifyContent="center"
-                              >
-                                <Text fontSize="$xl">{props.icon}</Text>
-                              </Box>
-                            }
-                          >
-                            <img
-                              src={resolveMediaCover(item.cover)}
-                              loading="lazy"
-                              alt={item.scraped_name || item.file_name}
-                              style={{
-                                width: "48px",
-                                height: "64px",
-                                "object-fit": "cover",
-                                "border-radius": "6px",
-                                border: "1px solid rgba(128,128,128,0.25)",
-                                "background-color": "rgba(128,128,128,0.08)",
-                              }}
-                            />
-                          </Show>
-                        </Td>
-                        <Td>
-                          <Text fontSize="$xs" color="$neutral11">
-                            {getScanPathName(item.scan_path_id)}
+                        <Td colSpan={8}>
+                          <Text textAlign="center" color="$neutral11" py="$8">
+                            {t("media.admin.no_items")}
                           </Text>
-                        </Td>
-                        <Td>
-                          <Text fontSize="$xs" color="$neutral11">
-                            {item.release_date?.slice(0, 10) || "-"}
-                          </Text>
-                        </Td>
-                        <Td>
-                          <Text fontSize="$xs" color="$neutral11">
-                            {item.rating > 0 ? item.rating.toFixed(1) : "-"}
-                          </Text>
-                        </Td>
-                        <Td>
-                          <Switch
-                            checked={item.hidden}
-                            onChange={async (e) => {
-                              await adminUpdateMediaItem({
-                                ...item,
-                                hidden: e.currentTarget.checked,
-                              })
-                              refetchItems()
-                            }}
-                          />
-                        </Td>
-                        <Td>
-                          <HStack spacing="$1">
-                            <Button
-                              size="xs"
-                              variant="ghost"
-                              onClick={() => {
-                                setEditingItem({ ...item })
-                                setShowEditModal(true)
-                              }}
-                            >
-                              {t("media.admin.edit")}
-                            </Button>
-                            <Button
-                              size="xs"
-                              variant="ghost"
-                              colorScheme="danger"
-                              onClick={() =>
-                                handleDeleteItem(
-                                  item.id,
-                                  item.scraped_name || item.file_name,
-                                )
-                              }
-                            >
-                              {t("global.delete")}
-                            </Button>
-                          </HStack>
                         </Td>
                       </Tr>
-                    )}
-                  </For>
+                    }
+                  >
+                    <For each={items()}>
+                      {(item) => (
+                        <Tr>
+                          <Td maxW="200px">
+                            <span
+                              title={item.file_name}
+                              style={{
+                                display: "block",
+                                "font-size": "12px",
+                                overflow: "hidden",
+                                "text-overflow": "ellipsis",
+                                "white-space": "nowrap",
+                              }}
+                            >
+                              {item.file_name}
+                            </span>
+                          </Td>
+                          <Td maxW="180px">
+                            <span
+                              style={{
+                                display: "block",
+                                "font-size": "14px",
+                                "font-weight": "500",
+                                overflow: "hidden",
+                                "text-overflow": "ellipsis",
+                                "white-space": "nowrap",
+                              }}
+                            >
+                              {item.scraped_name || item.file_name}
+                            </span>
+                          </Td>
+                          <Td>
+                            <Show
+                              when={item.cover}
+                              fallback={
+                                <Box
+                                  w="48px"
+                                  h="64px"
+                                  rounded="$md"
+                                  bgColor="$neutral3"
+                                  display="flex"
+                                  alignItems="center"
+                                  justifyContent="center"
+                                >
+                                  <Text fontSize="$xl">{props.icon}</Text>
+                                </Box>
+                              }
+                            >
+                              <img
+                                src={resolveMediaCover(item.cover)}
+                                loading="lazy"
+                                alt={item.scraped_name || item.file_name}
+                                style={{
+                                  width: "48px",
+                                  height: "64px",
+                                  "object-fit": "cover",
+                                  "border-radius": "6px",
+                                  border: "1px solid rgba(128,128,128,0.25)",
+                                  "background-color": "rgba(128,128,128,0.08)",
+                                }}
+                              />
+                            </Show>
+                          </Td>
+                          <Td>
+                            <Text fontSize="$xs" color="$neutral11">
+                              {getScanPathName(item.scan_path_id)}
+                            </Text>
+                          </Td>
+                          <Td>
+                            <Text fontSize="$xs" color="$neutral11">
+                              {item.release_date?.slice(0, 10) || "-"}
+                            </Text>
+                          </Td>
+                          <Td>
+                            <Text fontSize="$xs" color="$neutral11">
+                              {item.rating > 0 ? item.rating.toFixed(1) : "-"}
+                            </Text>
+                          </Td>
+                          <Td>
+                            <Switch
+                              checked={item.hidden}
+                              onChange={async (e) => {
+                                await adminUpdateMediaItem({
+                                  ...item,
+                                  hidden: e.currentTarget.checked,
+                                })
+                                refetchItems()
+                              }}
+                            />
+                          </Td>
+                          <Td>
+                            <HStack spacing="$1">
+                              <Button
+                                size="xs"
+                                variant="ghost"
+                                onClick={() => openEditItem(item)}
+                              >
+                                {t("media.admin.edit")}
+                              </Button>
+                              <Button
+                                size="xs"
+                                variant="ghost"
+                                colorScheme="danger"
+                                onClick={() =>
+                                  handleDeleteItem(
+                                    item.id,
+                                    item.scraped_name || item.file_name,
+                                  )
+                                }
+                              >
+                                {t("global.delete")}
+                              </Button>
+                            </HStack>
+                          </Td>
+                        </Tr>
+                      )}
+                    </For>
+                  </Show>
                 </Show>
-              </Show>
-            </Tbody>
-          </Table>
+              </Tbody>
+            </Table>
 
-          {/* 分页 */}
-          <Show when={total() > 0}>
-            <HStack
-              justifyContent="center"
-              alignItems="center"
-              spacing="$2"
-              py="$3"
-              borderTop="1px solid $neutral4"
-            >
-              <Button
-                size="xs"
-                variant="ghost"
-                disabled={page() <= 1}
-                onClick={() => setPage(1)}
+            {/* 分页 */}
+            <Show when={total() > 0}>
+              <HStack
+                justifyContent="center"
+                alignItems="center"
+                spacing="$2"
+                py="$3"
+                borderTop="1px solid $neutral4"
               >
-                «
-              </Button>
-              <Button
-                size="xs"
-                variant="ghost"
-                disabled={page() <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                {t("media.admin.prev_page")}
-              </Button>
-              <Text fontSize="$sm" color="$neutral11">
-                {t("media.admin.page_info", {
-                  page: page(),
-                  totalPages: totalPages(),
-                  total: total(),
-                })}
-              </Text>
-              <Button
-                size="xs"
-                variant="ghost"
-                disabled={page() >= totalPages()}
-                onClick={() => setPage((p) => Math.min(totalPages(), p + 1))}
-              >
-                {t("media.admin.next_page")}
-              </Button>
-              <Button
-                size="xs"
-                variant="ghost"
-                disabled={page() >= totalPages()}
-                onClick={() => setPage(totalPages())}
-              >
-                »
-              </Button>
-            </HStack>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  disabled={page() <= 1}
+                  onClick={() => setPage(1)}
+                >
+                  «
+                </Button>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  disabled={page() <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  {t("media.admin.prev_page")}
+                </Button>
+                <Text fontSize="$sm" color="$neutral11">
+                  {t("media.admin.page_info", {
+                    page: page(),
+                    totalPages: totalPages(),
+                    total: total(),
+                  })}
+                </Text>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  disabled={page() >= totalPages()}
+                  onClick={() => setPage((p) => Math.min(totalPages(), p + 1))}
+                >
+                  {t("media.admin.next_page")}
+                </Button>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  disabled={page() >= totalPages()}
+                  onClick={() => setPage(totalPages())}
+                >
+                  »
+                </Button>
+              </HStack>
+            </Show>
           </Show>
         </Box>
       </Show>
@@ -1411,6 +1580,30 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                     }))
                   }
                 />
+                {/* 预置选项：点击一键填入。电视剧类标签会让该路径下所有视频在 Emby 中按剧集展示 */}
+                <HStack spacing="$2" mt="$2" flexWrap="wrap">
+                  <For each={TYPE_TAG_PRESETS}>
+                    {(preset) => (
+                      <Button
+                        size="xs"
+                        variant={
+                          editingScanPath()?.type_tag === preset.value
+                            ? "solid"
+                            : "outline"
+                        }
+                        colorScheme={preset.tv ? "accent" : "neutral"}
+                        onClick={() =>
+                          setEditingScanPath((sp) => ({
+                            ...sp!,
+                            type_tag: preset.value,
+                          }))
+                        }
+                      >
+                        {preset.value}
+                      </Button>
+                    )}
+                  </For>
+                </HStack>
                 <FormHelperText>
                   {t("media.admin.type_tag_helper")}
                 </FormHelperText>
@@ -1468,10 +1661,39 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
                     }
                   />
                 </FormControl>
+                {/* 合并深度：只对视频生效 */}
+                <Show
+                  when={
+                    props.mediaType === "video" &&
+                    (editingScanPath()?.path_merge ?? false)
+                  }
+                >
+                  <FormControl
+                    display="flex"
+                    alignItems="center"
+                    gap="$2"
+                    w="auto"
+                  >
+                    <FormLabel m="0">{t("media.admin.merge_depth")}</FormLabel>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={16}
+                      w="72px"
+                      value={String(editingScanPath()?.merge_depth ?? 0)}
+                      onChange={(e) => {
+                        const n = parseInt(e.currentTarget.value, 10)
+                        setEditingScanPath((sp) => ({
+                          ...sp!,
+                          merge_depth: Number.isFinite(n)
+                            ? Math.max(0, Math.min(16, n))
+                            : 0,
+                        }))
+                      }}
+                    />
+                  </FormControl>
+                </Show>
               </HStack>
-              <Text fontSize="$xs" color="$neutral11">
-                {t("media.admin.media_type_fixed", { type: props.title })}
-              </Text>
             </VStack>
           </ModalBody>
           <ModalFooter>
@@ -1495,83 +1717,517 @@ export const MediaManagePage = (props: MediaManagePageProps) => {
       </Modal>
 
       {/* 条目编辑弹窗 */}
-      <Modal
-        opened={showEditModal()}
-        onClose={() => setShowEditModal(false)}
-        size="lg"
-      >
+      <Modal opened={showEditModal()} onClose={closeEditItem} size="xl">
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>{t("media.admin.edit_item_title")}</ModalHeader>
           <ModalCloseButton />
-          <ModalBody>
-            <VStack spacing="$3" alignItems="stretch">
-              <For
-                each={[
-                  { key: "scraped_name", label: t("media.admin.item_name") },
-                  { key: "cover", label: t("media.admin.item_cover_url") },
-                  {
-                    key: "release_date",
-                    label: t("media.admin.item_release_date"),
-                  },
-                  { key: "genre", label: t("media.admin.item_genre") },
-                  { key: "authors", label: t("media.admin.item_authors") },
-                ]}
-              >
-                {(field) => (
-                  <FormControl>
-                    <FormLabel>{field.label}</FormLabel>
-                    <Input
-                      value={
-                        ((editingItem() as any)?.[field.key] as string) ?? ""
+          <ModalBody maxH="72vh" overflowY="auto">
+            <VStack spacing="$4" alignItems="stretch">
+              {/* 封面：URL / 上传二选一，都写回 cover 字段 */}
+              <FormControl>
+                <FormLabel>{t("media.admin.item_cover_url")}</FormLabel>
+                <HStack spacing="$3" alignItems="flex-start">
+                  <Box
+                    w="72px"
+                    h="96px"
+                    flexShrink={0}
+                    rounded="$md"
+                    overflow="hidden"
+                    border="1px solid $neutral4"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    bgColor="$neutral2"
+                  >
+                    <Show
+                      when={editingItem()?.cover}
+                      fallback={
+                        <Text fontSize="$xs" color="$neutral10">
+                          -
+                        </Text>
                       }
+                    >
+                      <img
+                        src={resolveMediaCover(editingItem()!.cover)}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          "object-fit": "cover",
+                        }}
+                      />
+                    </Show>
+                  </Box>
+                  <VStack spacing="$2" alignItems="stretch" flex="1" minW="0">
+                    <Input
+                      placeholder="https://… 或 thumb:/imgs/… 或 data:image/…"
+                      value={editingItem()?.cover ?? ""}
+                      disabled={itemSaving()}
+                      onInput={(e) => changeItemCover(e.currentTarget.value)}
+                    />
+                    <HStack spacing="$2">
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        colorScheme="accent"
+                        loading={coverUploading()}
+                        onClick={pickAndUploadCover}
+                      >
+                        {t("media.admin.cover_upload")}
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        colorScheme="neutral"
+                        disabled={itemSaving()}
+                        onClick={() => changeItemCover("")}
+                      >
+                        {t("media.admin.cover_clear")}
+                      </Button>
+                    </HStack>
+                  </VStack>
+                </HStack>
+              </FormControl>
+
+              {/* 基础信息：名称独占一行剩余宽度，其余字段固定宽度对齐 */}
+              <HStack spacing="$3" alignItems="flex-end" flexWrap="wrap">
+                <FormControl flex="1" minW="200px">
+                  <FormLabel>{t("media.admin.item_name")}</FormLabel>
+                  <Input
+                    value={editingItem()?.scraped_name ?? ""}
+                    onInput={(e) =>
+                      setEditingItem((item) => ({
+                        ...item!,
+                        scraped_name: e.currentTarget.value,
+                      }))
+                    }
+                  />
+                </FormControl>
+                <FormControl w="160px">
+                  <FormLabel>{t("media.admin.item_release_date")}</FormLabel>
+                  <Input
+                    placeholder="YYYY-MM-DD"
+                    value={editingItem()?.release_date ?? ""}
+                    onInput={(e) =>
+                      setEditingItem((item) => ({
+                        ...item!,
+                        release_date: e.currentTarget.value,
+                      }))
+                    }
+                  />
+                </FormControl>
+              </HStack>
+
+              <HStack spacing="$3" alignItems="flex-end" flexWrap="wrap">
+                <FormControl flex="1" minW="160px">
+                  <FormLabel>{t("media.admin.item_genre")}</FormLabel>
+                  <Input
+                    value={editingItem()?.genre ?? ""}
+                    onInput={(e) =>
+                      setEditingItem((item) => ({
+                        ...item!,
+                        genre: e.currentTarget.value,
+                      }))
+                    }
+                  />
+                </FormControl>
+                <FormControl w="110px">
+                  <FormLabel>{t("media.admin.rating_label")}</FormLabel>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    value={editingItem()?.rating ?? 0}
+                    onInput={(e) =>
+                      setEditingItem((item) => ({
+                        ...item!,
+                        rating: parseFloat(e.currentTarget.value) || 0,
+                      }))
+                    }
+                  />
+                </FormControl>
+                <FormControl w="180px">
+                  <FormLabel>{t("media.admin.external_id")}</FormLabel>
+                  <Input
+                    placeholder="tmdb:123 / discogs:456"
+                    value={editingItem()?.external_id ?? ""}
+                    onInput={(e) =>
+                      setEditingItem((item) => ({
+                        ...item!,
+                        external_id: e.currentTarget.value,
+                      }))
+                    }
+                  />
+                </FormControl>
+                <FormControl w="80px">
+                  <FormLabel>{t("media.admin.hidden_item")}</FormLabel>
+                  <Switch
+                    checked={editingItem()?.hidden ?? false}
+                    onChange={(e) =>
+                      setEditingItem((item) => ({
+                        ...item!,
+                        hidden: e.currentTarget.checked,
+                      }))
+                    }
+                  />
+                </FormControl>
+              </HStack>
+
+              {/* 简介：详情页展示的就是这一段（scraper 写入 plot）。
+                  老数据里内容可能在 description，读的时候一起兜底。 */}
+              <FormControl>
+                <FormLabel>{t("media.admin.summary")}</FormLabel>
+                <Textarea
+                  rows={5}
+                  placeholder={t("media.admin.plot_placeholder")}
+                  value={
+                    editingItem()?.plot || editingItem()?.description || ""
+                  }
+                  onInput={(e) =>
+                    setEditingItem((item) => ({
+                      ...item!,
+                      plot: e.currentTarget.value,
+                    }))
+                  }
+                />
+                <FormHelperText>{t("media.admin.plot_helper")}</FormHelperText>
+              </FormControl>
+
+              {/* 作者 / 演员：列表编辑，保存时合并成 JSON 数组 */}
+              <FormControl>
+                <FormLabel>{t("media.admin.item_authors")}</FormLabel>
+                <VStack spacing="$2" alignItems="stretch">
+                  <For each={editAuthors()}>
+                    {(author, i) => (
+                      <HStack spacing="$2">
+                        <Input
+                          value={author}
+                          onInput={(e) =>
+                            setEditAuthors((list) =>
+                              list.map((a, idx) =>
+                                idx === i() ? e.currentTarget.value : a,
+                              ),
+                            )
+                          }
+                        />
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          colorScheme="danger"
+                          onClick={() =>
+                            setEditAuthors((list) =>
+                              list.filter((_, idx) => idx !== i()),
+                            )
+                          }
+                        >
+                          {t("global.delete")}
+                        </Button>
+                      </HStack>
+                    )}
+                  </For>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    colorScheme="neutral"
+                    w="fit-content"
+                    onClick={() => setEditAuthors((list) => [...list, ""])}
+                  >
+                    {t("media.admin.authors_add")}
+                  </Button>
+                </VStack>
+              </FormControl>
+
+              {/* 视频专属 */}
+              <Show when={props.mediaType === "video"}>
+                <HStack spacing="$3" flexWrap="wrap" alignItems="flex-end">
+                  <FormControl w="200px">
+                    <FormLabel>{t("media.admin.video_type")}</FormLabel>
+                    <Select
+                      value={editingItem()?.video_type || "auto"}
+                      onChange={(v) =>
+                        setEditingItem((item) => ({
+                          ...item!,
+                          video_type: v === "auto" ? "" : v,
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                        <SelectIcon />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectListbox>
+                          <For
+                            each={[
+                              {
+                                v: "auto",
+                                label: t("media.admin.video_type_auto"),
+                              },
+                              {
+                                v: "movie",
+                                label: t("media.admin.video_type_movie"),
+                              },
+                              {
+                                v: "tv",
+                                label: t("media.admin.video_type_tv"),
+                              },
+                            ]}
+                          >
+                            {(opt) => (
+                              <SelectOption value={opt.v}>
+                                <SelectOptionText>{opt.label}</SelectOptionText>
+                                <SelectOptionIndicator />
+                              </SelectOption>
+                            )}
+                          </For>
+                        </SelectListbox>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormControl w="90px">
+                    <FormLabel>{t("media.admin.season")}</FormLabel>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={editingItem()?.season ?? 0}
                       onInput={(e) =>
                         setEditingItem((item) => ({
                           ...item!,
-                          [field.key]: e.currentTarget.value,
+                          season: parseInt(e.currentTarget.value, 10) || 0,
                         }))
                       }
                     />
                   </FormControl>
-                )}
-              </For>
-              <FormControl>
-                <FormLabel>{t("media.admin.rating_label")}</FormLabel>
-                <Input
-                  type="number"
-                  min="0"
-                  max="10"
-                  step="0.1"
-                  value={editingItem()?.rating ?? 0}
-                  onInput={(e) =>
-                    setEditingItem((item) => ({
-                      ...item!,
-                      rating: parseFloat(e.currentTarget.value),
-                    }))
-                  }
-                />
-              </FormControl>
-              <FormControl>
-                <FormLabel>{t("media.admin.summary")}</FormLabel>
-                <Textarea
-                  rows={3}
-                  value={editingItem()?.description ?? ""}
-                  onInput={(e) =>
-                    setEditingItem((item) => ({
-                      ...item!,
-                      description: e.currentTarget.value,
-                    }))
-                  }
-                />
-              </FormControl>
+                  <FormControl w="90px">
+                    <FormLabel>{t("media.admin.episode")}</FormLabel>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={editingItem()?.episode ?? 0}
+                      onInput={(e) =>
+                        setEditingItem((item) => ({
+                          ...item!,
+                          episode: parseInt(e.currentTarget.value, 10) || 0,
+                        }))
+                      }
+                    />
+                  </FormControl>
+                  <FormControl w="120px">
+                    <FormLabel>{t("media.admin.duration_seconds")}</FormLabel>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={editingItem()?.duration ?? 0}
+                      onInput={(e) =>
+                        setEditingItem((item) => ({
+                          ...item!,
+                          duration: parseInt(e.currentTarget.value, 10) || 0,
+                        }))
+                      }
+                    />
+                  </FormControl>
+                </HStack>
+              </Show>
+
+              {/* 音乐专属 */}
+              <Show when={props.mediaType === "music"}>
+                <HStack spacing="$3" flexWrap="wrap" alignItems="stretch">
+                  <FormControl flex="1" minW="180px">
+                    <FormLabel>{t("media.admin.album_name")}</FormLabel>
+                    <Input
+                      value={editingItem()?.album_name ?? ""}
+                      onInput={(e) =>
+                        setEditingItem((item) => ({
+                          ...item!,
+                          album_name: e.currentTarget.value,
+                        }))
+                      }
+                    />
+                  </FormControl>
+                  <FormControl flex="1" minW="160px">
+                    <FormLabel>{t("media.admin.album_artist")}</FormLabel>
+                    <Input
+                      value={editingItem()?.album_artist ?? ""}
+                      onInput={(e) =>
+                        setEditingItem((item) => ({
+                          ...item!,
+                          album_artist: e.currentTarget.value,
+                        }))
+                      }
+                    />
+                  </FormControl>
+                  <FormControl w="100px">
+                    <FormLabel>{t("media.admin.track_number")}</FormLabel>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={editingItem()?.track_number ?? 0}
+                      onInput={(e) =>
+                        setEditingItem((item) => ({
+                          ...item!,
+                          track_number:
+                            parseInt(e.currentTarget.value, 10) || 0,
+                        }))
+                      }
+                    />
+                  </FormControl>
+                  <FormControl w="120px">
+                    <FormLabel>{t("media.admin.duration_seconds")}</FormLabel>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={editingItem()?.duration ?? 0}
+                      onInput={(e) =>
+                        setEditingItem((item) => ({
+                          ...item!,
+                          duration: parseInt(e.currentTarget.value, 10) || 0,
+                        }))
+                      }
+                    />
+                  </FormControl>
+                </HStack>
+              </Show>
+
+              {/* 书籍专属 */}
+              <Show when={props.mediaType === "book"}>
+                <HStack spacing="$3" flexWrap="wrap" alignItems="stretch">
+                  <FormControl flex="1" minW="180px">
+                    <FormLabel>{t("media.admin.publisher")}</FormLabel>
+                    <Input
+                      value={editingItem()?.publisher ?? ""}
+                      onInput={(e) =>
+                        setEditingItem((item) => ({
+                          ...item!,
+                          publisher: e.currentTarget.value,
+                        }))
+                      }
+                    />
+                  </FormControl>
+                  <FormControl w="200px">
+                    <FormLabel>ISBN</FormLabel>
+                    <Input
+                      value={editingItem()?.isbn ?? ""}
+                      onInput={(e) =>
+                        setEditingItem((item) => ({
+                          ...item!,
+                          isbn: e.currentTarget.value,
+                        }))
+                      }
+                    />
+                  </FormControl>
+                </HStack>
+              </Show>
+
+              {/* 合集子项（选集）：编号 / 标题可改，顺序即播放列表顺序 */}
+              <Show
+                when={editingItem()?.is_folder && editEpisodes().length > 0}
+              >
+                <FormControl>
+                  <FormLabel>
+                    {t("media.admin.episodes_title", {
+                      count: editEpisodes().length,
+                    })}
+                  </FormLabel>
+                  <FormHelperText mb="$2">
+                    {t("media.admin.episodes_helper")}
+                  </FormHelperText>
+                  <VStack spacing="$2" alignItems="stretch">
+                    <For each={editEpisodes()}>
+                      {(ep, i) => (
+                        <HStack spacing="$2" alignItems="center">
+                          <Input
+                            type="number"
+                            min="0"
+                            w="72px"
+                            flexShrink={0}
+                            value={ep.index}
+                            onInput={(e) =>
+                              setEditEpisodes((list) =>
+                                list.map((item, idx) =>
+                                  idx === i()
+                                    ? {
+                                        ...item,
+                                        index:
+                                          parseInt(e.currentTarget.value, 10) ||
+                                          0,
+                                      }
+                                    : item,
+                                ),
+                              )
+                            }
+                          />
+                          <Input
+                            flex="1"
+                            minW="0"
+                            value={ep.title}
+                            onInput={(e) =>
+                              setEditEpisodes((list) =>
+                                list.map((item, idx) =>
+                                  idx === i()
+                                    ? { ...item, title: e.currentTarget.value }
+                                    : item,
+                                ),
+                              )
+                            }
+                          />
+                          <HStack spacing="$0" flexShrink={0}>
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              colorScheme="neutral"
+                              title={t("media.admin.episode_up")}
+                              disabled={i() === 0}
+                              onClick={() => moveEpisode(i(), -1)}
+                            >
+                              ↑
+                            </Button>
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              colorScheme="neutral"
+                              title={t("media.admin.episode_down")}
+                              disabled={i() === editEpisodes().length - 1}
+                              onClick={() => moveEpisode(i(), 1)}
+                            >
+                              ↓
+                            </Button>
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              colorScheme="danger"
+                              onClick={() =>
+                                setEditEpisodes((list) =>
+                                  list.filter((_, idx) => idx !== i()),
+                                )
+                              }
+                            >
+                              ✕
+                            </Button>
+                          </HStack>
+                        </HStack>
+                      )}
+                    </For>
+                  </VStack>
+                </FormControl>
+              </Show>
             </VStack>
           </ModalBody>
           <ModalFooter>
             <HStack spacing="$2">
-              <Button variant="ghost" onClick={() => setShowEditModal(false)}>
+              <Button
+                variant="ghost"
+                disabled={itemSaving()}
+                onClick={closeEditItem}
+              >
                 {t("global.cancel")}
               </Button>
-              <Button colorScheme="accent" onClick={handleSaveItem}>
+              <Button
+                colorScheme="accent"
+                loading={itemSaving()}
+                disabled={coverUploading()}
+                onClick={handleSaveItem}
+              >
                 {t("global.save")}
               </Button>
             </HStack>

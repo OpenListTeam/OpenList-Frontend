@@ -20,7 +20,7 @@ import {
   SimpleGrid,
   Divider,
 } from "@hope-ui/solid"
-import { SelectWrapper, FolderChooseInput } from "~/components"
+import { SelectWrapper, FolderChooseInput, HashMatrixTable } from "~/components"
 import { useFetch, usePath, useRouter, useT } from "~/hooks"
 import {
   offlineDownload,
@@ -127,6 +127,11 @@ export const TransferSeedGenerator = () => {
   const [directFiles, setDirectFiles] = createSignal<string[]>([])
   const [outputPath, setOutputPath] = createSignal("")
   const [seedName, setSeedName] = createSignal("")
+  // 生成方式：默认合并成一个种子；拆分时每个文件一个种子
+  const [splitMode, setSplitMode] = createSignal(false)
+  // 目录展开后是否保留目录结构（默认不保留，拍平成文件名）
+  const [preserveStructure, setPreserveStructure] = createSignal(false)
+  const [hasDir, setHasDir] = createSignal(false)
   const [fileComments, setFileComments] = createSignal<Record<string, string>>(
     {},
   )
@@ -153,6 +158,12 @@ export const TransferSeedGenerator = () => {
       sha256: value.sha256,
     }
   })
+
+  // 所选容器格式强制要求的哈希算法（torrent 需要 SHA1，CAS 需要 MD5）
+  const forcedAlgorithms = (): SeedHashAlgorithm[] => [
+    ...(formats().includes("torrent") ? (["sha1"] as SeedHashAlgorithm[]) : []),
+    ...(formats().includes("cas") ? (["md5"] as SeedHashAlgorithm[]) : []),
+  ]
 
   const setHashScope = (
     algorithm: SeedHashAlgorithm,
@@ -237,8 +248,20 @@ export const TransferSeedGenerator = () => {
     }
   }
 
-  const openHandler = (payload: { paths: string[] }) => {
+  // 默认种子名：单文件/单目录用它的名字，多选合并固定 "torrent"（与后端一致）
+  const defaultSeedName = () => {
+    const list = paths()
+    if (list.length !== 1) return "torrent"
+    const base = list[0].replace(/\/+$/, "").split("/").pop() || list[0]
+    const dot = base.lastIndexOf(".")
+    return dot > 0 ? base.slice(0, dot) : base
+  }
+
+  const openHandler = (payload: { paths: string[]; hasDir?: boolean }) => {
     setPaths(payload.paths)
+    setHasDir(!!payload.hasDir)
+    setSplitMode(false)
+    setPreserveStructure(false)
     setOutputPath(pathname())
     setSeedName("")
     setCapabilities(null)
@@ -272,6 +295,9 @@ export const TransferSeedGenerator = () => {
         direct_files: directFiles(),
         output_path: outputPath(),
         name: seedName().trim() || undefined,
+        // 目录展开后是否保留结构；拆分模式每个文件单独一个种子
+        preserve_structure: preserveStructure(),
+        split: splitMode(),
       })
       handleResp(resp, (data: SeedGenerateResult) => {
         if (data?.task || data?.async) {
@@ -287,6 +313,34 @@ export const TransferSeedGenerator = () => {
 
   const capabilityFiles = () => capabilities()?.files ?? []
   const reuseOnly = () => capabilities()?.hash_reuse_only === true
+
+  // 列表展示用文件名（完整路径放到第二行）
+  const fileNameOf = (path?: string) => {
+    const value = (path || "").replace(/\/+$/, "")
+    return value.split("/").pop() || value
+  }
+
+  // 可批量勾选的文件（不可用的单独禁用，不参与全选）
+  const shareSelectable = () =>
+    capabilityFiles()
+      .filter((file) => file.share_available !== false)
+      .map((file) => file.source_path || file.path)
+  const directSelectable = () =>
+    capabilityFiles()
+      .filter((file) => file.direct_source_available !== false)
+      .map((file) => file.source_path || file.path)
+  const allShareSelected = () => {
+    const list = shareSelectable()
+    return list.length > 0 && list.every((path) => shareFiles().includes(path))
+  }
+  const allDirectSelected = () => {
+    const list = directSelectable()
+    return list.length > 0 && list.every((path) => directFiles().includes(path))
+  }
+  const toggleAllShare = (checked: boolean) =>
+    setShareFiles(checked ? Array.from(new Set(shareSelectable())) : [])
+  const toggleAllDirect = (checked: boolean) =>
+    setDirectFiles(checked ? Array.from(new Set(directSelectable())) : [])
 
   // Hashes shared by every selected file: only those can be turned into a
   // seed without downloading the content again.
@@ -417,67 +471,38 @@ export const TransferSeedGenerator = () => {
               <Text fontSize="$sm" fontWeight="$semibold" mb="$2">
                 {t("home.transfer_seed.hash_matrix")}
               </Text>
-              <SimpleGrid columns={{ "@initial": 1, "@md": 3 }} gap="$3">
-                <For each={["md5", "sha1", "sha256"] as SeedHashAlgorithm[]}>
-                  {(algorithm) => {
-                    const forced = () =>
-                      (algorithm === "sha1" && formats().includes("torrent")) ||
-                      (algorithm === "md5" && formats().includes("cas"))
-                    return (
-                      <VStack
-                        alignItems="flex-start"
-                        spacing="$1"
-                        border="1px solid $neutral7"
-                        borderRadius="$md"
-                        p="$2"
-                      >
-                        <Text fontWeight="$semibold">
-                          {algorithm.toUpperCase()}
-                        </Text>
-                        <Checkbox
-                          checked={effectiveMatrix()[algorithm].whole}
-                          disabled={
-                            forced() ||
-                            (reuseOnly() &&
-                              !availableWholeHashes().has(algorithm))
-                          }
-                          onChange={(event) =>
-                            setHashScope(
-                              algorithm,
-                              "whole",
-                              event.currentTarget.checked,
-                            )
-                          }
-                        >
-                          {t("home.transfer_seed.whole")}
-                        </Checkbox>
-                        <Checkbox
-                          checked={effectiveMatrix()[algorithm].pieces}
-                          disabled={
-                            forced() ||
-                            (reuseOnly() &&
-                              !availablePieceHashes().has(algorithm))
-                          }
-                          onChange={(event) =>
-                            setHashScope(
-                              algorithm,
-                              "pieces",
-                              event.currentTarget.checked,
-                            )
-                          }
-                        >
-                          {t("home.transfer_seed.pieces")}
-                        </Checkbox>
-                        <Show when={forced()}>
-                          <Text fontSize="$xs" color="$neutral10">
-                            {t("home.transfer_seed.required_by_format")}
-                          </Text>
-                        </Show>
-                      </VStack>
-                    )
-                  }}
-                </For>
-              </SimpleGrid>
+              <HashMatrixTable
+                matrix={effectiveMatrix()}
+                onChange={(algorithm, scope, checked) =>
+                  setHashScope(algorithm, scope, checked)
+                }
+                isForced={(algorithm) => forcedAlgorithms().includes(algorithm)}
+                requiredBy={(algorithm) => {
+                  const list: string[] = []
+                  if (algorithm === "sha1" && formats().includes("torrent")) {
+                    list.push("BitTorrent")
+                  }
+                  if (algorithm === "md5" && formats().includes("cas")) {
+                    list.push("CAS")
+                  }
+                  return list
+                }}
+                isWholeDisabled={(algorithm) =>
+                  reuseOnly() && !availableWholeHashes().has(algorithm)
+                }
+                isPiecesDisabled={(algorithm) =>
+                  reuseOnly() && !availablePieceHashes().has(algorithm)
+                }
+              />
+              <Show when={forcedAlgorithms().length > 0}>
+                <Text fontSize="$xs" color="$neutral10" mt="$1">
+                  {t("home.transfer_seed.hash_matrix_forced", {
+                    algos: forcedAlgorithms()
+                      .map((algorithm) => algorithm.toUpperCase())
+                      .join(", "),
+                  })}
+                </Text>
+              </Show>
             </Box>
 
             <SimpleGrid columns={{ "@initial": 1, "@md": 2 }} gap="$3">
@@ -503,22 +528,75 @@ export const TransferSeedGenerator = () => {
                 </Text>
                 <Input
                   id="transfer-seed-name"
-                  placeholder={t("home.transfer_seed.seed_name_placeholder")}
+                  placeholder={defaultSeedName()}
                   value={seedName()}
+                  disabled={splitMode()}
                   onInput={(e) => setSeedName(e.currentTarget.value)}
                 />
-              </Box>
-              <Box>
-                <Text fontSize="$sm" mb="$1">
-                  {t("home.transfer_seed.output_path")}
+                <Text fontSize="$xs" color="$neutral10" mt="$1">
+                  {splitMode()
+                    ? t("home.transfer_seed.seed_name_split_hint")
+                    : t("home.transfer_seed.seed_name_tips", {
+                        name: defaultSeedName(),
+                      })}
                 </Text>
-                <FolderChooseInput
-                  id="transfer-seed-output"
-                  value={outputPath()}
-                  onChange={setOutputPath}
-                />
               </Box>
             </SimpleGrid>
+
+            <Box>
+              <Text fontSize="$sm" mb="$1">
+                {t("home.transfer_seed.output_path")}
+              </Text>
+              <FolderChooseInput
+                id="transfer-seed-output"
+                value={outputPath()}
+                onChange={setOutputPath}
+              />
+            </Box>
+
+            <Box>
+              <Text fontSize="$sm" mb="$1">
+                {t("home.transfer_seed.generate_mode")}
+              </Text>
+              <HStack spacing="$4" alignItems="center" flexWrap="wrap">
+                <Box flex="1" minW={{ "@initial": "$full", "@md": "$64" }}>
+                  <SelectWrapper
+                    value={splitMode() ? "split" : "merge"}
+                    onChange={(value) => setSplitMode(value === "split")}
+                    options={[
+                      {
+                        value: "merge",
+                        label: t("home.transfer_seed.mode_merge"),
+                      },
+                      {
+                        value: "split",
+                        label: t("home.transfer_seed.mode_split"),
+                      },
+                    ]}
+                  />
+                </Box>
+                <Show when={hasDir()}>
+                  <Checkbox
+                    checked={preserveStructure()}
+                    disabled={splitMode()}
+                    onChange={(event) =>
+                      setPreserveStructure(event.currentTarget.checked)
+                    }
+                  >
+                    {t("home.transfer_seed.preserve_structure")}
+                  </Checkbox>
+                </Show>
+              </HStack>
+              <Text fontSize="$xs" color="$neutral10" mt="$1">
+                {splitMode()
+                  ? t("home.transfer_seed.mode_split_tips")
+                  : t("home.transfer_seed.mode_merge_tips")}
+                <Show when={hasDir() && !splitMode()}>
+                  {" "}
+                  {t("home.transfer_seed.preserve_structure_tips")}
+                </Show>
+              </Text>
+            </Box>
 
             <Box>
               <Text fontSize="$sm" mb="$1">
@@ -579,6 +657,29 @@ export const TransferSeedGenerator = () => {
                     )}
                   </Badge>
                 </HStack>
+                {/* 一键全选：逐个勾选在文件多时太费劲 */}
+                <HStack spacing="$4" flexWrap="wrap" mb="$2">
+                  <Checkbox
+                    size="sm"
+                    checked={allShareSelected()}
+                    disabled={!shareSelectable().length}
+                    onChange={(event) =>
+                      toggleAllShare(event.currentTarget.checked)
+                    }
+                  >
+                    {t("home.transfer_seed.select_all_share")}
+                  </Checkbox>
+                  <Checkbox
+                    size="sm"
+                    checked={allDirectSelected()}
+                    disabled={!directSelectable().length}
+                    onChange={(event) =>
+                      toggleAllDirect(event.currentTarget.checked)
+                    }
+                  >
+                    {t("home.transfer_seed.select_all_direct")}
+                  </Checkbox>
+                </HStack>
                 <For each={capabilityFiles()}>
                   {(file) => {
                     const directAvailable = () =>
@@ -587,20 +688,39 @@ export const TransferSeedGenerator = () => {
                     return (
                       <VStack
                         alignItems="stretch"
-                        spacing="$2"
-                        mb="$3"
-                        p="$2"
-                        border="1px solid $neutral6"
-                        borderRadius="$md"
+                        spacing="$1"
+                        py="$3"
+                        borderTop="1px solid $neutral5"
                       >
-                        <HStack justifyContent="space-between" flexWrap="wrap">
-                          <Text fontSize="$sm" css={{ wordBreak: "break-all" }}>
-                            {file.source_path || file.path}
+                        <HStack justifyContent="space-between" spacing="$3">
+                          <Text
+                            fontSize="$sm"
+                            fontWeight="$medium"
+                            flex="1"
+                            minW="0"
+                            css={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {fileNameOf(file.path)}
                           </Text>
-                          <Text fontSize="$xs" color="$neutral10">
+                          <Text
+                            fontSize="$xs"
+                            color="$neutral10"
+                            flexShrink={0}
+                          >
                             {formatFileSize(file.size || 0)}
                           </Text>
                         </HStack>
+                        <Text
+                          fontSize="$xs"
+                          color="$neutral10"
+                          css={{ wordBreak: "break-all" }}
+                        >
+                          {file.source_path || file.path}
+                        </Text>
                         <HStack spacing="$1" flexWrap="wrap">
                           <For
                             each={
@@ -656,7 +776,12 @@ export const TransferSeedGenerator = () => {
                             )}
                           </For>
                         </HStack>
-                        <HStack spacing="$4" flexWrap="wrap">
+                        <HStack
+                          spacing="$3"
+                          flexWrap="wrap"
+                          alignItems="center"
+                          pt="$1"
+                        >
                           <Checkbox
                             size="sm"
                             checked={shareFiles().includes(
@@ -687,18 +812,20 @@ export const TransferSeedGenerator = () => {
                           >
                             {t("home.transfer_seed.include_direct_source")}
                           </Checkbox>
+                          <Input
+                            size="xs"
+                            flex="1"
+                            minW="$40"
+                            placeholder={t("home.transfer_seed.file_comment")}
+                            value={fileComments()[file.path] || ""}
+                            onInput={(event) =>
+                              setFileComments((current) => ({
+                                ...current,
+                                [file.path]: event.currentTarget.value,
+                              }))
+                            }
+                          />
                         </HStack>
-                        <Input
-                          size="sm"
-                          placeholder={t("home.transfer_seed.file_comment")}
-                          value={fileComments()[file.path] || ""}
-                          onInput={(event) =>
-                            setFileComments((current) => ({
-                              ...current,
-                              [file.path]: event.currentTarget.value,
-                            }))
-                          }
-                        />
                       </VStack>
                     )
                   }}

@@ -108,7 +108,10 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
   )
 
   // URL 查询参数（持久化页码、便于浏览器前进/后退恢复浏览状态）
-  const [searchParams, setSearchParams] = useSearchParams<{ page?: string }>()
+  const [searchParams, setSearchParams] = useSearchParams<{
+    page?: string
+    q?: string
+  }>()
 
   // 视图模式按媒体类型持久化，切回页面时保持上次选择
   const viewStorageKey = `media-view-mode-${props.mediaType}`
@@ -141,7 +144,13 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
     return Number.isFinite(p) && p > 0 ? p : 1
   })()
   const [page, setPageRaw] = createSignal(initialPage)
-  const [keyword, setKeyword] = createSignal("")
+  // keyword 是「已提交」的搜索词，真正驱动请求；输入框里正在敲的内容放在 draftKeyword，
+  // 只有点击搜索按钮 / 回车才会提交。否则每敲一个字母就触发一次请求并重渲染，
+  // 会打断中文输入法的组合输入（拼音还没选字就被刷掉了）。
+  const [keyword, setKeywordRaw] = createSignal(searchParams.q ?? "")
+  const [draftKeyword, setDraftKeyword] = createSignal(searchParams.q ?? "")
+  // 输入法组合中（拼音未上屏）时，回车是用来选字的，不能当作提交
+  const [composing, setComposing] = createSignal(false)
   const [selectedFolder, setSelectedFolder] = createSignal("")
   const [selectedScanPathId, setSelectedScanPathId] = createSignal<number>(0)
   const [selectedTypeTag, setSelectedTypeTag] = createSignal("")
@@ -160,6 +169,22 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
     )
   }
 
+  // 提交搜索：写入 URL（返回 / 刷新后搜索词不丢），并回到第一页
+  const submitSearch = () => {
+    const kw = draftKeyword().trim()
+    setKeywordRaw(kw)
+    setPageRaw(1)
+    setPageInput("1")
+    setSearchParams(
+      { q: kw || undefined, page: undefined },
+      { replace: false, scroll: false },
+    )
+  }
+  const clearSearch = () => {
+    setDraftKeyword("")
+    submitSearch()
+  }
+
   // 监听 URL 变化（浏览器前进/后退时同步内部 state）
   createEffect(() => {
     const p = parseInt(searchParams.page ?? "1", 10)
@@ -167,6 +192,12 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
     if (valid !== page()) {
       setPageRaw(valid)
       setPageInput(String(valid))
+    }
+    // 浏览器前进 / 后退改变了 q 时，同步搜索词和输入框
+    const q = searchParams.q ?? ""
+    if (q !== keyword()) {
+      setKeywordRaw(q)
+      setDraftKeyword(q)
     }
   })
 
@@ -493,26 +524,65 @@ export const MediaBrowser = (props: MediaBrowserProps) => {
 
         <div style={{ flex: "1" }} />
 
-        {/* 搜索 */}
-        <input
-          type="text"
-          placeholder={t("media.browser.search_placeholder")}
-          value={keyword()}
-          onInput={(e) => {
-            setKeyword(e.currentTarget.value)
-            setPage(1)
-          }}
-          style={{
-            background: searchBg(),
-            border: `1px solid ${searchBorder()}`,
-            "border-radius": "8px",
-            color: searchColor(),
-            padding: "6px 12px",
-            "font-size": "13px",
-            outline: "none",
-            width: "160px",
-          }}
-        />
+        {/* 搜索：输入只更新草稿，点击按钮 / 回车才提交，避免打断中文输入法 */}
+        <div style={{ display: "flex", gap: "6px", "align-items": "center" }}>
+          <input
+            type="text"
+            placeholder={t("media.browser.search_placeholder")}
+            value={draftKeyword()}
+            onInput={(e) => setDraftKeyword(e.currentTarget.value)}
+            onCompositionStart={() => setComposing(true)}
+            onCompositionEnd={() => setComposing(false)}
+            onKeyDown={(e) => {
+              // 输入法选字时的回车不触发搜索
+              if (e.key === "Enter" && !composing() && !e.isComposing) {
+                e.preventDefault()
+                submitSearch()
+              }
+            }}
+            style={{
+              background: searchBg(),
+              border: `1px solid ${searchBorder()}`,
+              "border-radius": "8px",
+              color: searchColor(),
+              padding: "6px 12px",
+              "font-size": "13px",
+              outline: "none",
+              width: "160px",
+            }}
+          />
+          <Show when={draftKeyword() || keyword()}>
+            <button
+              onClick={clearSearch}
+              title={t("media.browser.clear_search")}
+              style={{
+                background: btnInactiveBg(),
+                border: `1px solid ${btnInactiveBorder()}`,
+                "border-radius": "6px",
+                color: btnInactiveColor(),
+                padding: "5px 8px",
+                "font-size": "12px",
+                cursor: "pointer",
+              }}
+            >
+              ✕
+            </button>
+          </Show>
+          <button
+            onClick={submitSearch}
+            style={{
+              background: btnActiveBg,
+              border: `1px solid ${btnActiveBorder}`,
+              "border-radius": "6px",
+              color: btnActiveColor,
+              padding: "5px 12px",
+              "font-size": "12px",
+              cursor: "pointer",
+            }}
+          >
+            {t("media.browser.search")}
+          </button>
+        </div>
 
         {/* 视图切换 */}
         <div style={{ display: "flex", gap: "4px" }}>

@@ -6,6 +6,8 @@
   "move": "Move file from a storage to another storage",
   "decompress": "Download and decompress an archive file",
   "decompress_upload": "Upload extracted files into target storage",
+  "seed_generate": "Generate seed (hash calculation)",
+  "seed_save": "Save seed / rapid upload",
   "done": "Completed",
   "undone": "Running",
   "clear_succeeded": "Clear Succeeded",

@@ -27,7 +27,7 @@ import {
   FaSolidDatabase,
   FaSolidPuzzlePiece,
 } from "solid-icons/fa"
-import { TbArchive, TbSeeding } from "solid-icons/tb"
+import { TbArchive, TbHash, TbSeeding } from "solid-icons/tb"
 
 export type SideMenuItem = SideMenuItemProps & {
   component?: Component
@@ -177,6 +177,13 @@ export const side_menu_items: SideMenuItem[] = [
         to: "/@manage/tasks/decompress",
         role: UserRole.GENERAL,
         component: lazy(() => import("./tasks/Decompress")),
+      },
+      {
+        title: "manage.sidemenu.seed_tasks",
+        icon: TbHash,
+        to: "/@manage/tasks/seed",
+        role: UserRole.GENERAL,
+        component: lazy(() => import("./tasks/Seed")),
       },
     ],
   },

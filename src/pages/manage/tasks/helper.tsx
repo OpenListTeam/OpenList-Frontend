@@ -112,3 +112,24 @@ export const getDecompressUploadNameAnalyzer = (): TaskNameAnalyzer => {
     },
   }
 }
+
+// 后端任务名：
+//   generate seed for <文件名>          （单文件）
+//   generate seed for <N> files        （多文件）
+export const getSeedGenerateNameAnalyzer = (): TaskNameAnalyzer => {
+  return {
+    regex: /^generate seed for (.+)$/,
+    title: (matches) => matches[1],
+    attrs: {},
+  }
+}
+
+// 后端任务名：
+//   save seed <种子名> / transfer seed <种子名> / rapid upload <文件名>
+export const getSeedSaveNameAnalyzer = (): TaskNameAnalyzer => {
+  return {
+    regex: /^(?:save seed|transfer seed|rapid upload) (.+)$/,
+    title: (matches) => matches[1],
+    attrs: {},
+  }
+}

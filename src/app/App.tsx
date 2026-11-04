@@ -209,57 +209,48 @@ const App: Component = () => {
                     </MustUser>
                   }
                 />
-                {/* 媒体库页面：顶栏复用 main 的 Header，侧栏为可收起抽屉 */}
+                {/* 媒体库页面：顶栏复用 main 的 Header，侧栏为可收起抽屉。
+                    鉴权必须和文件浏览一致（MustUser）：未登录且访客被禁用时 /me 返回 401，
+                    要跳到登录页。早前用 UserOrGuest 会静默降级成访客身份继续渲染，
+                    结果接口全 401、页面只显示「暂无内容」。 */}
                 <Route
                   path="/@media/video/*"
                   element={
-                    <UserOrGuest>
+                    <MustUser>
                       <MediaShell>
-                        <Suspense fallback={null}>
-                          <MusicPlayer />
-                        </Suspense>
                         <VideoLibrary />
                       </MediaShell>
-                    </UserOrGuest>
+                    </MustUser>
                   }
                 />
                 <Route
                   path="/@media/music/*"
                   element={
-                    <UserOrGuest>
+                    <MustUser>
                       <MediaShell>
-                        <Suspense fallback={null}>
-                          <MusicPlayer />
-                        </Suspense>
                         <MusicLibrary />
                       </MediaShell>
-                    </UserOrGuest>
+                    </MustUser>
                   }
                 />
                 <Route
                   path="/@media/image/*"
                   element={
-                    <UserOrGuest>
+                    <MustUser>
                       <MediaShell>
-                        <Suspense fallback={null}>
-                          <MusicPlayer />
-                        </Suspense>
                         <ImageLibrary />
                       </MediaShell>
-                    </UserOrGuest>
+                    </MustUser>
                   }
                 />
                 <Route
                   path="/@media/books/*"
                   element={
-                    <UserOrGuest>
+                    <MustUser>
                       <MediaShell>
-                        <Suspense fallback={null}>
-                          <MusicPlayer />
-                        </Suspense>
                         <BookLibrary />
                       </MediaShell>
-                    </UserOrGuest>
+                    </MustUser>
                   }
                 />
                 <Route
@@ -298,6 +289,14 @@ const App: Component = () => {
           </Switch>
         </Box>
       </HStack>
+      {/* 全局音乐播放器：必须挂在路由之外。挂在路由里时切换页面（例如从音乐库回到
+          文件列表）组件会被卸载，底部播放条随之消失；而 Audio 元素是模块级的，
+          声音还在放 —— 表现就是「歌在响、播放条没了」。 */}
+      <Show when={mediaEnabled()}>
+        <Suspense fallback={null}>
+          <MusicPlayer />
+        </Suspense>
+      </Show>
     </>
   )
 }

@@ -46,6 +46,17 @@ export const mediaBackBtn = (isDark: boolean) => ({
   "margin-bottom": "24px",
 })
 
+/**
+ * 媒体库全屏层（视频播放器 / 音乐全屏页 / 阅读器 / 看图）的层级。
+ *
+ * 必须高于站点 Header（"吸附到页面顶部" 时 z-index 为 $sticky = 1000）
+ * 与顶部的路由进度条（$banner = 1100）：否则全屏层顶部左侧的
+ * 返回 / 收起 / 关闭按钮会被 Header 盖住，点击落到 Header 上而失效。
+ * 同时要低于下拉菜单（$dropdown = 1400）和通知（$notification = 1800），
+ * 保证播放器里的「本地播放器」菜单、toast 提示仍能正常显示。
+ */
+export const mediaOverlayZ = "var(--hope-zIndices-overlay)"
+
 export const mediaChip = (isDark: boolean) => ({
   background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
   "border-radius": "999px",

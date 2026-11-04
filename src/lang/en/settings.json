@@ -85,8 +85,12 @@
   "media_enabled-tips": "Master switch. When off, all media pages, APIs and protocol endpoints return 404, exactly like the media library is not installed.",
   "media_google_books_key": "Google Books API Key",
   "media_google_books_key-tips": "Google Books API key. Optional, but the quota is lower without one. Apply at https://developers.google.com/books/docs/v1/using#APIKey",
+  "media_overwrite_cover": "Overwrite existing covers when scraping",
+  "media_overwrite_cover-tips": "Off by default: covers embedded in files or set manually win, scraping only fills empty ones. Turn on to let scraped covers replace them.",
   "media_proxy_cover": "Proxy external covers",
   "media_proxy_cover-tips": "Proxy external cover images (TMDB, Douban, ...) through the server. Useful when image domains are unreachable; off by default.",
+  "media_skip_file_metadata": "Do not read media file contents",
+  "media_skip_file_metadata-tips": "When on, scanning and scraping never read file contents (music ID3/Vorbis tags, embedded book covers, image EXIF) and rely on file and folder names only. Off by default.",
   "media_scrape_concurrency": "Scrape concurrency",
   "media_scrape_concurrency-tips": "How many media items are scraped in parallel. Raise it for faster scraping, lower it when you hit API rate limits.",
   "media_scrape_language": "Preferred metadata language",
@@ -126,7 +130,8 @@
   "media_thumbnail_modes": {
     "base64": "Base64 (Database)",
     "local": "Mounted directory (VFS)",
-    "runtime": "Runtime directory (data)"
+    "runtime": "Runtime directory (data)",
+    "samedir": "Same folder as the media file"
   },
   "media_thumbnail_path": "Thumbnail storage path",
   "media_thumbnail_path-tips": "Only editable in Mounted directory (VFS) mode. Runtime directory mode always uses data/imgs; Base64 mode stores covers in the database.",
