@@ -2,7 +2,7 @@ import { getSettingNumber, password } from "~/store"
 import { Resp } from "~/types"
 import { r } from "~/utils"
 import { seedUploadHeaders, SetUpload, Upload } from "./types"
-import { calculateHash } from "./util"
+import { calculateFileIdentity, calculateHash } from "./util"
 import { StreamUpload } from "./stream"
 
 type MultipartState =
@@ -93,6 +93,11 @@ export const MultipartUpload: Upload = async (
   const initHeaders: Record<string, string | number> = {
     "File-Path": encodeURIComponent(uploadPath),
     "X-File-Size": file.size,
+    // proves to the server that an interrupted session belongs to this very
+    // file, which is what lets a reload pick up where it left off. Sent
+    // unconditionally: the file hashes below only exist when the user asked
+    // for a rapid upload, and most storages do not support one at all
+    "X-File-Identity": await calculateFileIdentity(file),
     // suggest slicing by the same size the fallback decision was made with;
     // the server clamps to [1MB, admin ceiling] and echoes chunk_size back
     "X-Chunk-Size": fallbackThreshold,
