@@ -193,10 +193,11 @@ export const usePath = () => {
   }
 
   const handleErr = (msg: string, code?: number) => {
+    const message = typeof msg === "string" ? msg : "Request failed"
     if (code === 403) {
       ObjStore.setState(State.NeedPassword)
       if (retry_pass) {
-        notify.error(msg)
+        notify.error(message)
       }
     } else {
       const basePath = me().base_path
@@ -204,14 +205,14 @@ export const usePath = () => {
         first_fetch &&
         basePath != "/" &&
         pathname().includes(basePath) &&
-        msg.endsWith("object not found")
+        message.endsWith("object not found")
       ) {
         first_fetch = false
         to(pathname().replace(basePath, ""))
         return
       }
       if (code === undefined || code >= 0) {
-        ObjStore.setErr(msg)
+        ObjStore.setErr(message)
       }
     }
   }
