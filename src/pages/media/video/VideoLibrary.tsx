@@ -452,6 +452,9 @@ const VideoPlayer = (props: {
       volume: 1.0,
       autoplay: true,
       autoSize: false,
+      // 底栏（进度/播放/音量/全屏）常显：默认 autoHide 在鼠标静止几秒后
+      // 会整条淡出，用户看到的是「没有底栏控件」，双击进全屏才又出现。
+      autoHide: false,
       loop: false,
       flip: true,
       playbackRate: true,

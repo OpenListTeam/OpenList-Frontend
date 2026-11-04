@@ -834,6 +834,59 @@ const MusicLibrary = () => {
                     {item.label}
                   </button>
                 ))}
+                {/* 视图快捷切换：⊞ 卡片（专辑）/ ☰ 列表（歌曲）。
+                    原来的三档分类按钮语义是「按什么分组」，用户想找的是
+                    「卡片/列表」，这里补一对图标按钮，点一下就能回到卡片模式。 */}
+                <button
+                  onClick={() => changeCategory("album")}
+                  title={t("media.music.by_album")}
+                  aria-label={t("media.music.by_album")}
+                  style={{
+                    background:
+                      category() === "album" ? btnActiveBg : "transparent",
+                    border: `1px solid ${
+                      category() === "album"
+                        ? btnActiveBorder
+                        : btnInactiveBorder()
+                    }`,
+                    "border-radius": "6px",
+                    color:
+                      category() === "album"
+                        ? btnActiveColor
+                        : btnInactiveColor(),
+                    padding: "5px 10px",
+                    "font-size": "13px",
+                    "line-height": "1",
+                    cursor: "pointer",
+                  }}
+                >
+                  ⊞
+                </button>
+                <button
+                  onClick={() => changeCategory("song")}
+                  title={t("media.music.by_song")}
+                  aria-label={t("media.music.by_song")}
+                  style={{
+                    background:
+                      category() === "song" ? btnActiveBg : "transparent",
+                    border: `1px solid ${
+                      category() === "song"
+                        ? btnActiveBorder
+                        : btnInactiveBorder()
+                    }`,
+                    "border-radius": "6px",
+                    color:
+                      category() === "song"
+                        ? btnActiveColor
+                        : btnInactiveColor(),
+                    padding: "5px 10px",
+                    "font-size": "13px",
+                    "line-height": "1",
+                    cursor: "pointer",
+                  }}
+                >
+                  ☰
+                </button>
               </div>
             </div>
 
