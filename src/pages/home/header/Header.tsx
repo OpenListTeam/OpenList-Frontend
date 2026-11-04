@@ -90,6 +90,7 @@ export const Header = (props: { flush?: boolean } = {}) => {
       {...stickyProps}
       bgColor="$background"
       class="header"
+      role="banner"
       w="$full"
       // shadow="$md"
     >
