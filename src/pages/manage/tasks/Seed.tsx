@@ -14,7 +14,10 @@ const Seed = () => {
   useManageTitle("manage.sidemenu.seed_tasks")
   return (
     <VStack w="$full" alignItems="start" spacing="$4">
-      <TypeTasks type="seed_generate" nameAnalyzer={getSeedGenerateNameAnalyzer()} />
+      <TypeTasks
+        type="seed_generate"
+        nameAnalyzer={getSeedGenerateNameAnalyzer()}
+      />
       <TypeTasks type="seed_save" nameAnalyzer={getSeedSaveNameAnalyzer()} />
     </VStack>
   )
