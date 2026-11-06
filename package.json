@@ -9,7 +9,7 @@
   "description": "A new AList Fork to Anti Trust Crisis",
   "packageManager": "pnpm@11.28.11",
   "engines": {
-    "node": ">=22.6"
+    "node": ">=26.13.0"
   },
   "repository": {
     "type": "git",
@@ -44,7 +44,7 @@
     "@types/bencode": "^4.0.0",
     "@types/crypto-js": "^4.2.2",
     "@types/mark.js": "^8.11.12",
-    "@types/node": "^24.19.2",
+    "@types/node": "^26.6.6",
     "@types/qrcode": "^1.5.6",
     "@types/sha256": "^0.2.2",
     "@types/streamsaver": "^2.0.5",
