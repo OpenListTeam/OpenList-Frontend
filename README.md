@@ -11,7 +11,7 @@
 You can use [the build script](./build.sh).
 
 ```plaintext
-Usage: ./build.sh [--dev|--release] [--compress|--no-compress] [--enforce-tag] [--skip-i18n] [--lite]
+Usage: ./build.sh [--dev|--release] [--compress|--no-compress] [--enforce-tag] [--skip-i18n]
 
 Options (will overwrite environment setting):
   --dev         Build development version
@@ -20,7 +20,6 @@ Options (will overwrite environment setting):
   --no-compress Skip compression
   --enforce-tag Force git tag requirement for both dev and release builds
   --skip-i18n   Skip i18n build step
-  --lite        Build lite version
 
 Environment variables:
   OPENLIST_FRONTEND_BUILD_MODE=dev|release (default: dev)
