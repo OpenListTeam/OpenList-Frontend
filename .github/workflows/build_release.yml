@@ -133,25 +133,6 @@ jobs:
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
 
-      - name: Move regular build
-        run: |
-          mkdir -p regular-dist
-          mv dist/* regular-dist/
-
-      - name: Build Lite Release
-        run: |
-          chmod +x build.sh
-          ./build.sh --release --compress --lite
-        env:
-          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
-          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
-
-      - name: Move lite build and restore regular build
-        run: |
-          mkdir -p lite-dist
-          mv dist/* lite-dist/
-          mv regular-dist/* dist/
-
       - name: Upload Release Assets
         run: |
           # Delete local tag, or gh cli will complain about it.
@@ -161,7 +142,7 @@ jobs:
             --notes-file "${{ github.workspace }}-CHANGELOG.txt" \
             --prerelease=${{ steps.check_pre_release.outputs.is_pre_release }} \
             ${{ steps.get_current_tag.outputs.current_tag }} \
-            dist/openlist-frontend-dist-v*.tar.gz lite-dist/openlist-frontend-dist-lite-v*.tar.gz dist/i18n.tar.gz
+            dist/openlist-frontend-dist-v*.tar.gz dist/i18n.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -169,10 +150,6 @@ jobs:
         run: |
           # Delete the generated dist tarball
           rm -f dist/openlist-frontend-dist-v*.tar.gz
-          rm -f lite-dist/openlist-frontend-dist-lite-v*.tar.gz
-          # Copy the lite version
-          mkdir dist/lite
-          cp -r lite-dist/. dist/lite/
 
           if ! jq -e '.name and .version' package.json > /dev/null; then
             echo "Error: Invalid package.json"
