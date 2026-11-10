@@ -35,7 +35,7 @@ import {
   ShareInfo,
 } from "~/types"
 import { createStore } from "solid-js/store"
-import { getSetting, me, selectedObjs } from "~/store"
+import { getSetting, local, me, selectedObjs } from "~/store"
 import { TbRefresh } from "solid-icons/tb"
 import { SelectOptions, MultiPathInput } from "~/components"
 
@@ -47,8 +47,6 @@ export const Share = () => {
     if (name === "share") {
       batch(() => {
         setLink("")
-        setExpireString("")
-        setExpireValid(true)
         const paths = selectedObjs().map((obj) => {
           const split =
             pathname().endsWith("/") || obj.name.startsWith("/") ? "" : "/"
@@ -58,7 +56,10 @@ export const Share = () => {
           files: paths,
           expires: null,
           pwd: "",
-          max_accessed: 0,
+          max_accessed: Math.max(
+            0,
+            parseInt(local["share_default_max_accessed"]) || 0,
+          ),
           order_by: OrderBy.None,
           order_direction: OrderDirection.None,
           extract_folder: ExtractFolder.None,
@@ -66,6 +67,7 @@ export const Share = () => {
           readme: "",
           header: "",
         } as ShareType)
+        applyExpireString(local["share_default_expires"]?.trim() ?? "")
       })
       onOpen()
     }
@@ -79,6 +81,21 @@ export const Share = () => {
   const [expireString, setExpireString] = createSignal("")
   const [expireValid, setExpireValid] = createSignal(true)
   const [share, setShare] = createStore<ShareType>({} as ShareType)
+  const applyExpireString = (value: string) => {
+    setExpireString(value)
+    if (value === "") {
+      setExpireValid(true)
+      setShare("expires", null)
+      return
+    }
+    const date = getExpireDate(value)
+    if (isNaN(date.getTime())) {
+      setExpireValid(false)
+    } else {
+      setExpireValid(true)
+      setShare("expires", date.toISOString())
+    }
+  }
   const [okLoading, ok] = useFetch((): PResp<ShareInfo> => {
     return r.post(`/share/create`, share)
   })
@@ -236,21 +253,7 @@ export const Share = () => {
                   invalid={!expireValid()}
                   value={expireString()}
                   placeholder="yyyy-MM-dd HH:mm:ss or +1w1d1H1m1s1ms"
-                  onInput={(e) => {
-                    setExpireString(e.currentTarget.value)
-                    if (e.currentTarget.value === "") {
-                      setExpireValid(true)
-                      setShare("expires", null)
-                      return
-                    }
-                    const date = getExpireDate(e.currentTarget.value)
-                    if (isNaN(date.getTime())) {
-                      setExpireValid(false)
-                    } else {
-                      setExpireValid(true)
-                      setShare("expires", date.toISOString())
-                    }
-                  }}
+                  onInput={(e) => applyExpireString(e.currentTarget.value)}
                 />
                 <Text size="sm">{t("shares.readme")}</Text>
                 <Textarea
