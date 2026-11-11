@@ -59,7 +59,7 @@
     "remark-rehype": "^11.1.2",
     "typescript": "^5.9.3",
     "unified": "^11.0.5",
-    "vite": "^8.3.5",
+    "vite": "^8.3.8",
     "vite-plugin-dynamic-base": "^1.4.1",
     "vite-plugin-solid": "^2.11.15",
     "vite-plugin-static-copy": "^3.4.0"
