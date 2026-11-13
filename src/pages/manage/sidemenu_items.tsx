@@ -129,7 +129,10 @@ export const side_menu_items: SideMenuItem[] = [
     icon: OcWorkflow2,
     to: "/@manage/tasks",
     role: UserRole.GENERAL,
-    backend: ["go"],
+    // ts-worker 后端已实现 copy / move / offline_download 三类任务的
+    // 执行器与 /api/task/* 接口，因此任务页对其开放；尚未实现的类型
+    // （upload / decompress / seed）在子项上单独限制为 go。
+    backend: ["go", "ts-worker"],
     children: [
       {
         title: "manage.sidemenu.offline_download",
@@ -155,6 +158,7 @@ export const side_menu_items: SideMenuItem[] = [
         icon: BsCloudUploadFill,
         to: "/@manage/tasks/upload",
         role: UserRole.GENERAL,
+        backend: ["go"],
         component: lazy(() => import("./tasks/Upload")),
       },
       {
@@ -176,6 +180,7 @@ export const side_menu_items: SideMenuItem[] = [
         icon: TbArchive,
         to: "/@manage/tasks/decompress",
         role: UserRole.GENERAL,
+        backend: ["go"],
         component: lazy(() => import("./tasks/Decompress")),
       },
       {
@@ -183,6 +188,7 @@ export const side_menu_items: SideMenuItem[] = [
         icon: TbHash,
         to: "/@manage/tasks/seed",
         role: UserRole.GENERAL,
+        backend: ["go"],
         component: lazy(() => import("./tasks/Seed")),
       },
     ],
