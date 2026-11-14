@@ -11,7 +11,8 @@ export const getPath = (
 ): JSX.Element => {
   const fullPath = (device === "/" ? "" : device) + path
   const prefix = me().base_path === "/" ? "" : me().base_path
-  const accessible = fullPath.startsWith(prefix)
+  const accessible =
+    prefix === "" || fullPath === prefix || fullPath.startsWith(prefix + "/")
   const [underline, setUnderline] = createSignal(false)
   return accessible && asLink ? (
     <a
