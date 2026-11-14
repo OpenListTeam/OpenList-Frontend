@@ -2,6 +2,7 @@ import { createSignal, JSX } from "solid-js"
 import { me } from "~/store"
 import { TaskNameAnalyzer } from "./Tasks"
 import { useT } from "~/hooks"
+import { base_path } from "~/utils"
 
 export const getPath = (
   device: string,
@@ -17,7 +18,7 @@ export const getPath = (
       style={underline() ? "text-decoration: underline" : ""}
       onMouseOver={() => setUnderline(true)}
       onMouseOut={() => setUnderline(false)}
-      href={fullPath.slice(prefix.length)}
+      href={base_path + fullPath.slice(prefix.length)}
     >
       {fullPath}
     </a>
