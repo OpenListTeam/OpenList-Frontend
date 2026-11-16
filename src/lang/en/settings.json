@@ -15,6 +15,8 @@
   "decompress_download_task_threads_num": "Decompress download task threads num",
   "decompress_upload_task_threads_num": "Decompress upload task threads num",
   "default_page_size": "Default page size",
+  "download_link_base": "Download link base URL",
+  "download_link_base-tips": "Base URL used when copying download links, including any sub-path. Must start with http:// or https://. Leave empty to use the current site origin.",
   "external_previews": "External previews",
   "favicon": "Favicon",
   "filename_char_mapping": "Filename char mapping",

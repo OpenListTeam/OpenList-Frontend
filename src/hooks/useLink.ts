@@ -1,4 +1,4 @@
-import { objStore, selectedObjs, State, me } from "~/store"
+import { objStore, selectedObjs, State, me, getSetting } from "~/store"
 import { Obj, ArchiveObj } from "~/types"
 import {
   base_path,
@@ -7,6 +7,7 @@ import {
   pathDir,
   pathJoin,
   standardizePath,
+  resolveDownloadLinkBase,
 } from "~/utils"
 import { useRouter, useUtil } from "."
 import { cookieStorage } from "@solid-primitives/storage"
@@ -20,6 +21,7 @@ export const getLinkByDirAndObj = (
   type: URLType = "direct",
   isShare: boolean,
   encodeAll?: boolean,
+  linkBase?: string,
 ) => {
   if (type !== "preview")
     dir = isShare
@@ -30,6 +32,9 @@ export const getLinkByDirAndObj = (
   let path = `${dir}/${obj.name}`
   path = encodePath(path, encodeAll)
   let host = api
+  if (linkBase && !isShare && type === "direct") {
+    host = linkBase
+  }
   let prefix = isShare ? "/sd" : type === "direct" ? "/d" : "/p"
   if (type === "preview") {
     prefix = ""
@@ -66,7 +71,12 @@ export const getLinkByDirAndObj = (
 // get download link by current state and pathname
 export const useLink = () => {
   const { pathname, isShare } = useRouter()
-  const getLinkByObj = (obj: Obj, type?: URLType, encodeAll?: boolean) => {
+  const getLinkByObj = (
+    obj: Obj,
+    type?: URLType,
+    encodeAll?: boolean,
+    linkBase?: string,
+  ) => {
     let dir: string
     if (objStore.state === State.File) {
       dir = pathDir(pathname())
@@ -77,14 +87,23 @@ export const useLink = () => {
     } else {
       dir = pathname()
     }
-    return getLinkByDirAndObj(dir, obj, type, isShare(), encodeAll)
+    return getLinkByDirAndObj(dir, obj, type, isShare(), encodeAll, linkBase)
   }
   const rawLink = (obj: Obj, encodeAll?: boolean) => {
     return getLinkByObj(obj, "direct", encodeAll)
   }
+  const copyRawLink = (obj: Obj, encodeAll?: boolean) => {
+    return getLinkByObj(
+      obj,
+      "direct",
+      encodeAll,
+      resolveDownloadLinkBase(getSetting("download_link_base"), api),
+    )
+  }
   return {
     getLinkByObj: getLinkByObj,
     rawLink: rawLink,
+    copyRawLink: copyRawLink,
     proxyLink: (obj: Obj, encodeAll?: boolean) => {
       return getLinkByObj(obj, "proxy", encodeAll)
     },
@@ -98,7 +117,7 @@ export const useLink = () => {
 }
 
 export const useSelectedLink = () => {
-  const { previewPage, rawLink: rawUrl } = useLink()
+  const { previewPage, rawLink: rawUrl, copyRawLink } = useLink()
   const rawLinks = (encodeAll?: boolean) => {
     return selectedObjs()
       .filter((obj) => !obj.is_dir)
@@ -114,22 +133,28 @@ export const useSelectedLink = () => {
     rawLinksText: (encodeAll?: boolean) => {
       return rawLinks(encodeAll).join("\n")
     },
+    copyLinksText: (encodeAll?: boolean) => {
+      return selectedObjs()
+        .filter((obj) => !obj.is_dir)
+        .map((obj) => copyRawLink(obj, encodeAll))
+        .join("\n")
+    },
   }
 }
 
 export const useCopyLink = () => {
   const { copy } = useUtil()
-  const { previewPagesText, rawLinksText } = useSelectedLink()
-  const { currentObjLink } = useLink()
+  const { previewPagesText, copyLinksText } = useSelectedLink()
+  const { copyRawLink } = useLink()
   return {
     copySelectedPreviewPage: () => {
       copy(previewPagesText())
     },
     copySelectedRawLink: (encodeAll?: boolean) => {
-      copy(rawLinksText(encodeAll))
+      copy(copyLinksText(encodeAll))
     },
     copyCurrentRawLink: (encodeAll?: boolean) => {
-      copy(currentObjLink(encodeAll))
+      copy(copyRawLink(objStore.obj, encodeAll))
     },
   }
 }
