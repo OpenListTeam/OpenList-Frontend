@@ -1,3 +1,4 @@
+import { sha256 } from "hash-wasm"
 import { UploadFileProps } from "./types"
 import type { WorkerMessage } from "./hash-worker"
 import HashWorker from "./hash-worker?worker&inline"
@@ -63,6 +64,35 @@ export const File2Upload = (file: File): UploadFileProps => {
     speed: 0,
     status: "pending",
   }
+}
+
+// How much of the head and of the tail goes into the file identity below.
+const IDENTITY_SAMPLE = 1024 * 1024
+
+/**
+ * A cheap fingerprint of a file, used by the multipart uploader to prove to
+ * the server that an interrupted session may be resumed: same path and size
+ * alone cannot tell two files apart, and resuming into the wrong session
+ * would splice both contents together.
+ *
+ * Sampling the head and the tail keeps this affordable for huge files — the
+ * slices are allowed to overlap, so a file smaller than two samples is simply
+ * covered twice, which needs no special case. Hashing goes through hash-wasm
+ * rather than crypto.subtle, which is unavailable over plain HTTP.
+ */
+export const calculateFileIdentity = async (file: File): Promise<string> => {
+  const head = new Uint8Array(
+    await file.slice(0, Math.min(IDENTITY_SAMPLE, file.size)).arrayBuffer(),
+  )
+  const tail = new Uint8Array(
+    await file.slice(Math.max(0, file.size - IDENTITY_SAMPLE)).arrayBuffer(),
+  )
+  const meta = new TextEncoder().encode(`|${file.size}|${file.lastModified}`)
+  const buf = new Uint8Array(head.length + tail.length + meta.length)
+  buf.set(head, 0)
+  buf.set(tail, head.length)
+  buf.set(meta, head.length + tail.length)
+  return await sha256(buf)
 }
 
 export const calculateHash = async (
