@@ -1,9 +1,4 @@
 import { joinBase } from "~/utils"
-import {
-  name as pkgName,
-  version as pkgVersion,
-  dependencies as pkgDeps,
-} from "../../package.json"
 
 export const useCDN = () => {
   const static_path = joinBase("static")
@@ -21,55 +16,21 @@ export const useCDN = () => {
     // return `https://cdn.jsdelivr.net/npm/${name}@${version}/${path}`
   }
 
-  // Read version from package.json dependencies (strips ^ ~ prefixes)
-  const dep = (name: string) => {
-    const ver = (pkgDeps as Record<string, string>)[name]
-    if (!ver)
-      throw new Error(
-        `[useCDN] "${name}" not found in package.json dependencies`,
-      )
-    return ver.replace(/^[^\d]*/, "")
-  }
-
   const res = (path: string) => {
     return `${resource}/${path}`
   }
 
-  const monacoPath = () => {
-    return import.meta.env.VITE_LITE === "true"
-      ? npm("monaco-editor", dep("monaco-editor"), "min/vs")
-      : `${static_path}/monaco-editor/vs`
-  }
+  const monacoPath = () => `${static_path}/monaco-editor/vs`
 
-  const katexCSSPath = () => {
-    return import.meta.env.VITE_LITE === "true"
-      ? npm("katex", dep("katex"), "dist/katex.min.css")
-      : `${static_path}/katex/katex.min.css`
-  }
+  const katexCSSPath = () => `${static_path}/katex/katex.min.css`
 
-  const mermaidJSPath = () => {
-    return import.meta.env.VITE_LITE === "true"
-      ? npm("mermaid", dep("mermaid"), "dist/mermaid.min.js")
-      : `${static_path}/mermaid/mermaid.min.js`
-  }
+  const mermaidJSPath = () => `${static_path}/mermaid/mermaid.min.js`
 
-  const libHeifPath = () => {
-    return import.meta.env.VITE_LITE === "true"
-      ? npm(pkgName, pkgVersion, "dist/static/libheif")
-      : `${static_path}/libheif`
-  }
+  const libHeifPath = () => `${static_path}/libheif`
 
-  const libAssPath = () => {
-    return import.meta.env.VITE_LITE === "true"
-      ? npm(pkgName, pkgVersion, "dist/static/libass-wasm")
-      : `${static_path}/libass-wasm`
-  }
+  const libAssPath = () => `${static_path}/libass-wasm`
 
-  const fontsPath = () => {
-    return import.meta.env.VITE_LITE === "true"
-      ? npm(pkgName, pkgVersion, "dist/static/fonts")
-      : `${static_path}/fonts`
-  }
+  const fontsPath = () => `${static_path}/fonts`
 
   // Office preview libs — always served from resource CDN (not bundled locally)
   const pptBasePath = () => res("ppt.js")

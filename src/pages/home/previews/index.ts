@@ -120,17 +120,12 @@ const previews: Preview[] = [
     component: lazy(() => import("./plist")),
     prior: true,
   },
-
-  ...(import.meta.env.VITE_LITE === "true"
-    ? []
-    : [
-        {
-          key: "pdf",
-          exts: ["pdf"],
-          component: lazy(() => import("./pdf")),
-          prior: true,
-        },
-      ]),
+  {
+    key: "pdf",
+    exts: ["pdf"],
+    component: lazy(() => import("./pdf")),
+    prior: true,
+  },
   {
     key: "ppt",
     exts: ["pptx"],
