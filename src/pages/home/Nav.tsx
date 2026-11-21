@@ -85,7 +85,9 @@ export const Nav = () => {
                 currentPage={isLast()}
                 as={isLast() ? undefined : Link}
                 href={joinBase(href)}
-                onMouseEnter={() => setPathAs(path)}
+                onMouseEnter={() => {
+                  if (!isLast()) setPathAs(path)
+                }}
               >
                 {text()}
               </BreadcrumbLink>

@@ -138,8 +138,7 @@ const SearchResult = (props: { node: SearchNode; keywords: string }) => {
       cursor="pointer"
       px="$2"
       as={LinkWithBase}
-      href={`${props.node.path}?from=search`}
-      // encode
+      href={`${encodePath(props.node.path)}?from=search`}
       onMouseEnter={() => {
         setPathAs(props.node.path, props.node.is_dir)
       }}
@@ -237,7 +236,7 @@ const Search = () => {
             node.parent = "/" + node.parent
           }
         }
-        node.path = encodePath(pathJoin(node.parent, node.name))
+        node.path = pathJoin(node.parent, node.name)
       })
       setData(data)
     })
