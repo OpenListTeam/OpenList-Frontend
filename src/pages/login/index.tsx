@@ -309,9 +309,17 @@ const Login = () => {
           </Flex>
         </Show>
         <HStack w="$full" spacing="$2">
+          <Button
+            colorScheme="primary"
+            w="$full"
+            loading={loading()}
+            onClick={Login}
+          >
+            {t("login.login")}
+          </Button>
           <Show when={!useauthn()}>
             <Button
-              colorScheme="primary"
+              colorScheme="neutral"
               w="$full"
               onClick={() => {
                 if (needOpt()) {
@@ -325,9 +333,6 @@ const Login = () => {
               {t("login.clear")}
             </Button>
           </Show>
-          <Button w="$full" loading={loading()} onClick={Login}>
-            {t("login.login")}
-          </Button>
         </HStack>
         <Show when={ldapLoginEnabled}>
           <Checkbox
