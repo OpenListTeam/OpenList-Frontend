@@ -47,7 +47,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/sha256": "^0.2.2",
     "@types/streamsaver": "^2.0.5",
-    "@vitejs/plugin-legacy": "^8.2.3",
+    "@vitejs/plugin-legacy": "^8.2.4",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "mermaid": "^12.3.0",
