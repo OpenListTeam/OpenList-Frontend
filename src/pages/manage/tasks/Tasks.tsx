@@ -43,7 +43,18 @@ export interface TaskViewAttribute {
   curFetchTime: number
   prevFetchTime?: number
   prevProgress?: number
+  // smoothed speed (bytes/s) used to estimate the remaining time
+  speedBps?: number
 }
+
+interface SpeedSample {
+  time: number
+  bytes: number
+}
+
+// keep the estimation window long enough to absorb the coarse (1%) progress
+// reports of the backend, but short enough to follow speed changes
+const SPEED_SAMPLE_WINDOW = 30 * 1000
 
 export interface TaskLocalContainer {
   local: TaskLocal
@@ -107,6 +118,32 @@ export const Tasks = (props: TasksProps) => {
       return (orderReverse() ? -1 : 1) * sorter[orderBy()](a, b)
     }
   })
+  // per-task samples of the transferred bytes, so the remaining time can be
+  // estimated over a window instead of a single polling interval
+  const speedSamples: Record<string, SpeedSample[] | undefined> = {}
+  const sampleSpeed = (id: string, time: number, bytes: number) => {
+    let samples = speedSamples[id]
+    if (!samples) {
+      samples = []
+      speedSamples[id] = samples
+    }
+    const last = samples[samples.length - 1]
+    // a shrinking counter means the task has been restarted
+    if (last && last.bytes > bytes) {
+      samples.length = 0
+    }
+    samples.push({ time, bytes })
+    while (samples.length > 2 && time - samples[0].time > SPEED_SAMPLE_WINDOW) {
+      samples.shift()
+    }
+    if (samples.length < 2) return undefined
+    const first = samples[0]
+    const latest = samples[samples.length - 1]
+    const timeDelta = (latest.time - first.time) / 1000
+    const bytesDelta = latest.bytes - first.bytes
+    if (timeDelta <= 0 || bytesDelta <= 0) return undefined
+    return bytesDelta / timeDelta
+  }
   const refresh = async () => {
     const resp = await get()
     handleResp(resp, (data) => {
@@ -123,6 +160,7 @@ export const Tasks = (props: TasksProps) => {
         prevProgressMap[task.id] = task.prevProgress
         taskLocalMap[task.id] = task.local
       }
+      const aliveIds = new Set<string>()
       setTasks(
         data
           ?.map((task) => {
@@ -139,16 +177,29 @@ export const Tasks = (props: TasksProps) => {
               selected: false,
               expanded: false,
             }
+            aliveIds.add(task.id)
+            const transferredBytes =
+              task.total_bytes > 0
+                ? (task.total_bytes * task.progress) / 100
+                : undefined
             return {
               ...task,
               curFetchTime: fetchTime,
               prevFetchTime: prevFetchTime,
               prevProgress: prevProgress,
+              speedBps:
+                transferredBytes === undefined
+                  ? undefined
+                  : sampleSpeed(task.id, fetchTime, transferredBytes),
               local: taskLocal,
             }
           })
           .sort(curSorter()) ?? [],
       )
+      // drop samples of tasks that are no longer listed
+      Object.keys(speedSamples).forEach((id) => {
+        if (!aliveIds.has(id)) delete speedSamples[id]
+      })
     })
   }
   refresh()

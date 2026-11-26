@@ -114,6 +114,24 @@ const getTimeStr = (millisecond: number) => {
   return `${toTimeNumber(hour)}:${toTimeNumber(min)}:${toTimeNumber(sec)}`
 }
 
+const getSizeStr = (bytes: number) => {
+  if (bytes <= 0) return "0B"
+  const units = ["B", "KB", "MB", "GB", "TB", "PB"]
+  let value = bytes
+  let unit = 0
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024
+    unit++
+  }
+  return `${value.toFixed(unit === 0 ? 0 : 2)}${units[unit]}`
+}
+
+const getPercentStr = (progress: number) => {
+  if (progress >= 100) return "100"
+  // keep one decimal for the beginning of a task, where every byte matters
+  return progress < 10 ? progress.toFixed(1) : Math.floor(progress).toString()
+}
+
 export const Task = (props: TaskAttribute & TasksProps & TaskLocalSetter) => {
   const t = useT()
   const operateName = props.done === "undone" ? "cancel" : "delete"
@@ -170,6 +188,35 @@ export const Task = (props: TaskAttribute & TasksProps & TaskLocalSetter) => {
       ((props.progress - props.prevProgress) * props.total_bytes) / 100
     speedText = parseSpeedText(timeDelta, lengthDelta)
   }
+  // progress details rendered in the expanded panel
+  const totalBytes = props.total_bytes > 0 ? props.total_bytes : 0
+  const progress =
+    props.progress < 0 ? 0 : props.progress > 100 ? 100 : props.progress
+  const transferredBytes = (totalBytes * progress) / 100
+  const percentText = `${getPercentStr(progress)}%`
+  const sizeStr = `${getSizeStr(transferredBytes)}/${getSizeStr(totalBytes)}`
+  const progressText =
+    totalBytes > 0 ? `${sizeStr} | ${percentText}` : percentText
+  let remainingText = "-"
+  if (totalBytes > 0 && props.state === TaskStateEnum.Running) {
+    const remainingBytes = totalBytes - transferredBytes
+    if (remainingBytes <= 0) {
+      remainingText = getTimeStr(0)
+    } else {
+      // prefer the smoothed speed of the sampling window, fall back to the
+      // average speed of the whole task (e.g. right after it started)
+      let speedBps = props.speedBps ?? 0
+      if (speedBps <= 0 && startTime !== -1) {
+        const elapsedSeconds = (props.curFetchTime - startTime) / 1000
+        if (elapsedSeconds > 0) {
+          speedBps = transferredBytes / elapsedSeconds
+        }
+      }
+      if (speedBps > 0 && Number.isFinite(speedBps)) {
+        remainingText = getTimeStr((remainingBytes / speedBps) * 1000)
+      }
+    }
+  }
   return (
     <Show when={!deleted()}>
       <HStack w="$full" p="$2">
@@ -211,7 +258,7 @@ export const Task = (props: TaskAttribute & TasksProps & TaskLocalSetter) => {
           trackColor="$info3"
           rounded="$full"
           size="sm"
-          value={props.progress}
+          value={progress}
           mr="$1"
         >
           <ProgressIndicator color="$info8" rounded="$md" />
@@ -301,6 +348,24 @@ export const Task = (props: TaskAttribute & TasksProps & TaskLocalSetter) => {
                 {getTimeStr(endTime - startTime)}
               </GridItem>
             </Show>
+            <Show when={props.done === "undone" && startTime !== -1}>
+              <GridItem
+                color="$neutral9"
+                textAlign="right"
+                css={{ whiteSpace: "nowrap" }}
+              >
+                {t(`tasks.attr.time_remaining`)}
+              </GridItem>
+              <GridItem color="$neutral9">{remainingText}</GridItem>
+            </Show>
+            <GridItem
+              color="$neutral9"
+              textAlign="right"
+              css={{ whiteSpace: "nowrap" }}
+            >
+              {t(`tasks.attr.progress`)}
+            </GridItem>
+            <GridItem color="$neutral9">{progressText}</GridItem>
             <Show when={matches !== null}>
               <For each={Object.entries(props.nameAnalyzer.attrs)}>
                 {(entry) => {

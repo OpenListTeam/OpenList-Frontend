@@ -61,6 +61,7 @@
       "password": "Extraction Password"
     },
     "time_elapsed": "Time Elapsed",
+    "time_remaining": "Time Remaining",
     "status": "Status",
     "err": "Error"
   },
