@@ -10,6 +10,7 @@ import {
 } from "~/store"
 import { ObjType, PResp } from "~/types"
 import {
+  encodePath,
   ext,
   handleResp,
   notify,
@@ -68,24 +69,22 @@ const Preview = () => {
   const videos = createMemo(() =>
     objStore.objs.filter((obj) => obj.type === ObjType.VIDEO),
   )
+  // 文件名必须作为单个路径段编码：否则名字里的 # 会被当成 URL fragment，
+  // ? 会被当成查询串，导致跳到错误的路径（例如「a#b.mp4」变成「/dir/a」）。
+  const videoHref = (name: string) =>
+    pathJoin(pathDir(location.pathname), encodePath(name)) +
+    "?auto_fullscreen=" +
+    player.fullscreen
   const next_video = () => {
     const index = videos().findIndex((f) => f.name === objStore.obj.name)
     if (index < videos().length - 1) {
-      navigate(
-        pathJoin(pathDir(location.pathname), videos()[index + 1].name) +
-          "?auto_fullscreen=" +
-          player.fullscreen,
-      )
+      navigate(videoHref(videos()[index + 1].name))
     }
   }
   const previous_video = () => {
     const index = videos().findIndex((f) => f.name === objStore.obj.name)
     if (index > 0) {
-      navigate(
-        pathJoin(pathDir(location.pathname), videos()[index - 1].name) +
-          "?auto_fullscreen=" +
-          player.fullscreen,
-      )
+      navigate(videoHref(videos()[index - 1].name))
     }
   }
   let player: Artplayer

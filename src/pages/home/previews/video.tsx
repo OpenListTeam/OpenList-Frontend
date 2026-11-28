@@ -3,7 +3,7 @@ import { createMemo, createSignal, onCleanup, onMount } from "solid-js"
 import { useRouter, useLink } from "~/hooks"
 import { getMainColor, getSettingBool, objStore } from "~/store"
 import { ObjType } from "~/types"
-import { ext, pathDir, pathJoin, safeJsonParse } from "~/utils"
+import { encodePath, ext, pathDir, pathJoin, safeJsonParse } from "~/utils"
 import Artplayer from "artplayer"
 import { type Option } from "artplayer/types/option"
 import { type Setting } from "artplayer/types/setting"
@@ -60,24 +60,22 @@ const Preview = () => {
   const videos = createMemo(() =>
     objStore.objs.filter((obj) => obj.type === ObjType.VIDEO),
   )
+  // 文件名必须作为单个路径段编码：否则名字里的 # 会被当成 URL fragment，
+  // ? 会被当成查询串，导致跳到错误的路径（例如「a#b.mp4」变成「/dir/a」）。
+  const videoHref = (name: string) =>
+    pathJoin(pathDir(location.pathname), encodePath(name)) +
+    "?auto_fullscreen=" +
+    player.fullscreen
   const next_video = () => {
     const index = videos().findIndex((f) => f.name === objStore.obj.name)
     if (index < videos().length - 1) {
-      navigate(
-        pathJoin(pathDir(location.pathname), videos()[index + 1].name) +
-          "?auto_fullscreen=" +
-          player.fullscreen,
-      )
+      navigate(videoHref(videos()[index + 1].name))
     }
   }
   const previous_video = () => {
     const index = videos().findIndex((f) => f.name === objStore.obj.name)
     if (index > 0) {
-      navigate(
-        pathJoin(pathDir(location.pathname), videos()[index - 1].name) +
-          "?auto_fullscreen=" +
-          player.fullscreen,
-      )
+      navigate(videoHref(videos()[index - 1].name))
     }
   }
   // 组件卸载标记：onMount 里的异步操作结束后据此决定是否继续初始化播放器
