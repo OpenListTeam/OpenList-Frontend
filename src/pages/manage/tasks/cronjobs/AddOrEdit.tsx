@@ -21,7 +21,15 @@ import {
   Textarea,
   VStack,
 } from "@hope-ui/solid"
-import { createMemo, createSignal, For, Match, Show, Switch } from "solid-js"
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  Match,
+  Show,
+  Switch,
+} from "solid-js"
 import { createStore } from "solid-js/store"
 import { CronSpecsEditor, FolderChooseInput, MaybeLoading } from "~/components"
 import { ResponsiveGrid } from "~/pages/manage/common/ResponsiveGrid"
@@ -139,6 +147,12 @@ const AddOrEdit = () => {
   const [selectedType, setSelectedType] = createSignal<string>("")
   /** 任务参数按 schema 保存为响应式对象，不同类型的字段不同。 */
   const [args, setArgs] = createStore<CronJobArgs>({})
+  /**
+   * 从后端读到的原始参数。
+   * 编辑时 schema 与参数可能先后到达：
+   * 参数先到时暂存于此，等 schema 到达后再按字段回填，避免异步竞态导致参数丢失。
+   */
+  let pendingArgs: CronJobArgs | null = null
   /** 通用基础字段。 */
   const [form, setForm] = createStore({
     name: "",
@@ -166,60 +180,86 @@ const AddOrEdit = () => {
     return result
   }
 
+  /**
+   * 用后端参数回填表单。
+   * schema 尚未加载时先暂存，待类型列表到达后由响应式 effect 再回填一次，
+   * 避免"参数已到、schema 未到"时按空字段集算出空参数。
+   */
+  const applyArgs = (
+    type: string,
+    rawArgs: CronJobArgs,
+    typeInfos: CronJobTypeInfo[],
+  ) => {
+    const info = typeInfos.find((item) => item.type === type)
+    if (!info) {
+      // schema 未就绪时暂存；未注册描述的类型同样按原始参数保留（参数区不渲染）。
+      pendingArgs = rawArgs
+      setArgs(rawArgs)
+      return
+    }
+    pendingArgs = null
+    const nextArgs: CronJobArgs = {}
+    for (const field of info.fields) {
+      nextArgs[field.name] = argToFormValue(field, rawArgs[field.name])
+    }
+    setArgs(nextArgs)
+  }
+
+  /** 类型列表异步到达后补一次回填；已在 init 中回填过则为空操作。 */
+  createEffect(() => {
+    const type = selectedType()
+    const infos = types()
+    if (pendingArgs === null || infos.length === 0) return
+    applyArgs(type, pendingArgs, infos)
+  })
+
   /** 切换类型时重建参数，避免旧类型字段残留在新任务里。 */
   const changeType = (value: string) => {
     const info = types().find((item) => item.type === value)
     if (!info) return
     setSelectedType(value)
     setArgs(createArgs(info))
+    // 换了类型就不再回填旧类型暂存的参数。
+    pendingArgs = null
   }
 
   /** 初始化：新建时取第一个类型；编辑时取原任务并把数组参数还原为表单文本。 */
   const init = async () => {
-    let typeInfos: CronJobTypeInfo[] = []
     const typeResp = await getTypes()
+    let typeInfos: CronJobTypeInfo[] = []
     handleResp(typeResp, (data) => {
       typeInfos = data
       setTypes(data)
     })
 
-    if (editId !== null) {
-      const jobResp = await getJob()
-      handleResp(jobResp, (job) => {
-        setSelectedType(job.type)
-        // 后端 Args 以 JSON 字符串返回；先解析成对象，未注册描述的类型也能保留原参数。
-        let rawArgs: CronJobArgs = {}
-        try {
-          rawArgs =
-            typeof job.args === "string"
-              ? JSON.parse(job.args || "{}")
-              : job.args
-        } catch {
-          rawArgs = {}
-        }
-        const info = typeInfos.find((item) => item.type === job.type)
-        if (!info) {
-          // 未注册描述的类型也能保留原参数，但参数区不会渲染。
-          setArgs(rawArgs)
-          return
-        }
-        const nextArgs: CronJobArgs = {}
-        for (const field of info.fields) {
-          nextArgs[field.name] = argToFormValue(field, rawArgs[field.name])
-        }
-        setArgs(nextArgs)
-        setJobSpecs(
-          job.cron_specs && job.cron_specs.length > 0 ? job.cron_specs : [],
-        )
-        setForm({
-          name: job.name,
-          enabled: job.enabled,
-        })
-      })
-    } else if (typeInfos.length > 0) {
-      setSelectedType(typeInfos[0].type)
-      setArgs(createArgs(typeInfos[0]))
+    if (editId === null) {
+      if (typeInfos.length > 0) {
+        setSelectedType(typeInfos[0].type)
+        setArgs(createArgs(typeInfos[0]))
+      }
+      return
     }
+
+    const jobResp = await getJob()
+    handleResp(jobResp, (job) => {
+      setSelectedType(job.type)
+      // 后端 Args 以 JSON 字符串返回；先解析成对象，未注册描述的类型也能保留原参数。
+      let rawArgs: CronJobArgs = {}
+      try {
+        rawArgs =
+          typeof job.args === "string" ? JSON.parse(job.args || "{}") : job.args
+      } catch {
+        rawArgs = {}
+      }
+      applyArgs(job.type, rawArgs, typeInfos)
+      setJobSpecs(
+        job.cron_specs && job.cron_specs.length > 0 ? job.cron_specs : [],
+      )
+      setForm({
+        name: job.name,
+        enabled: job.enabled,
+      })
+    })
   }
   init()
 

@@ -173,11 +173,7 @@ const CronJobs = () => {
 
       <Box w="$full">
         {/* cron_sync 是同步编排任务；具体文件复制仍在 copy 任务列表中展示。 */}
-        <TypeTasks
-          type="cron_sync"
-          canRetry
-          nameAnalyzer={syncNameAnalyzer()}
-        />
+        <TypeTasks type="cron_sync" nameAnalyzer={syncNameAnalyzer()} />
       </Box>
     </VStack>
   )

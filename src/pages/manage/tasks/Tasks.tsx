@@ -286,7 +286,7 @@ export const Tasks = (props: TasksProps) => {
           <Button colorScheme="accent" loading={loading()} onClick={refresh}>
             {t(`global.refresh`)}
           </Button>
-          <Show when={props.type !== "seed_save"}>
+          <Show when={props.type !== "seed_save" && props.type !== "cron_sync"}>
             <Button
               loading={retryFailedLoading()}
               onClick={async () => {
@@ -318,7 +318,7 @@ export const Tasks = (props: TasksProps) => {
             {t(`tasks.clear_succeeded`)}
           </Button>
         </Show>
-        <Show when={props.canRetry}>
+        <Show when={props.canRetry === true || props.type === "seed_save"}>
           <Button
             colorScheme="primary"
             loading={retrySelectedLoading()}
