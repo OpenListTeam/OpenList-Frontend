@@ -2,6 +2,7 @@ import { createSignal, JSX } from "solid-js"
 import { me } from "~/store"
 import { TaskNameAnalyzer } from "./Tasks"
 import { useT } from "~/hooks"
+import { base_path } from "~/utils"
 
 export const getPath = (
   device: string,
@@ -10,14 +11,15 @@ export const getPath = (
 ): JSX.Element => {
   const fullPath = (device === "/" ? "" : device) + path
   const prefix = me().base_path === "/" ? "" : me().base_path
-  const accessible = fullPath.startsWith(prefix)
+  const accessible =
+    prefix === "" || fullPath === prefix || fullPath.startsWith(prefix + "/")
   const [underline, setUnderline] = createSignal(false)
   return accessible && asLink ? (
     <a
       style={underline() ? "text-decoration: underline" : ""}
       onMouseOver={() => setUnderline(true)}
       onMouseOut={() => setUnderline(false)}
-      href={fullPath.slice(prefix.length)}
+      href={base_path + fullPath.slice(prefix.length)}
     >
       {fullPath}
     </a>
