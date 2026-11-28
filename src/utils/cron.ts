@@ -1,0 +1,312 @@
+/**
+ * cron 表达式的前端解析与执行时间预览计算。
+ * 语义与后端 pkg/cron 保持一致：标准 5 字段（分 时 日 月 周），
+ * 支持 *、单个值、范围（1-5）、列表（1,2,3）和步进（如 "任意/5"、"1-10/2"）。
+ */
+
+export interface CronField {
+  min: number
+  max: number
+  values: Set<number>
+  /** 该字段是否以 "*" 开头；判断通配必须依据语法而不是命中集合是否覆盖完整范围。 */
+  wildcard: boolean
+}
+
+export interface ParsedCron {
+  minute: CronField
+  hour: CronField
+  dayOfMonth: CronField
+  month: CronField
+  dayOfWeek: CronField
+}
+
+/**
+ * 向后搜索上限，与后端 pkg/cron 保持一致。
+ * 最稀疏的合法规则是闰日 "0 0 29 2 *"：非闰年不命中，跨世纪最长间隔达 8 年
+ * （例如 2096-02-29 之后要等到 2104-02-29），按 8 年 + 一天搜索。
+ */
+const MAX_SEARCH_MINUTES = (8 * 366 + 1) * 24 * 60
+
+const parseCronField = (
+  field: string,
+  min: number,
+  max: number,
+): CronField | null => {
+  const values = new Set<number>()
+  // 与后端一致：只有以 "*" 开头的字段（含 */5 这类步进）才算通配。
+  const wildcard = field.startsWith("*")
+  for (const part of field.split(",")) {
+    if (part === "") return null
+    const slash = part.indexOf("/")
+    const expr = slash >= 0 ? part.slice(0, slash) : part
+    const stepText = slash >= 0 ? part.slice(slash + 1) : ""
+    let low: number
+    let high: number
+    if (expr === "*" || expr === "?") {
+      low = min
+      high = max
+    } else if (expr.includes("-")) {
+      const [a, b] = expr.split("-").map(Number)
+      if (
+        !Number.isInteger(a) ||
+        !Number.isInteger(b) ||
+        a < min ||
+        b > max ||
+        a > b
+      ) {
+        return null
+      }
+      low = a
+      high = b
+    } else {
+      const v = Number(expr)
+      if (!Number.isInteger(v) || v < min || v > max) return null
+      low = v
+      high = v
+    }
+    let step = 1
+    if (stepText !== "") {
+      step = Number(stepText)
+      if (!Number.isInteger(step) || step <= 0) return null
+    }
+    for (let v = low; v <= high; v += step) values.add(v)
+  }
+  if (values.size === 0) return null
+  return { min, max, values, wildcard }
+}
+
+export const parseCronSpec = (spec: string): ParsedCron | null => {
+  const fields = spec.trim().split(/\s+/)
+  if (fields.length !== 5) return null
+  const minute = parseCronField(fields[0], 0, 59)
+  const hour = parseCronField(fields[1], 0, 23)
+  const dayOfMonth = parseCronField(fields[2], 1, 31)
+  const month = parseCronField(fields[3], 1, 12)
+  const dayOfWeek = parseCronField(fields[4], 0, 7)
+  if (!minute || !hour || !dayOfMonth || !month || !dayOfWeek) return null
+  // crontab 中 7 也表示周日，统一归一为 0 并移除 7，
+  // 保证 DOW 的命中集合始终落在 0..6，便于判断是否通配。
+  if (dayOfWeek.values.has(7)) {
+    dayOfWeek.values.add(0)
+    dayOfWeek.values.delete(7)
+  }
+  return { minute, hour, dayOfMonth, month, dayOfWeek }
+}
+
+const matches = (parsed: ParsedCron, t: Date): boolean => {
+  // 与后端一致：DOM 和 DOW 同时受限时任一命中即可；
+  // 其中一方以 "*" 开头（通配）时按 AND 处理，只有另一方生效。
+  // 必须使用解析时记录的通配语法，而不是"命中集合是否覆盖完整范围"：
+  // "1-31" 覆盖全部日期但仍是受限字段，需要与受限的 DOW 做 OR 组合。
+  const dayMatches =
+    parsed.dayOfMonth.wildcard || parsed.dayOfWeek.wildcard
+      ? parsed.dayOfMonth.values.has(t.getDate()) &&
+        parsed.dayOfWeek.values.has(t.getDay())
+      : parsed.dayOfMonth.values.has(t.getDate()) ||
+        parsed.dayOfWeek.values.has(t.getDay())
+  return (
+    parsed.minute.values.has(t.getMinutes()) &&
+    parsed.hour.values.has(t.getHours()) &&
+    parsed.month.values.has(t.getMonth() + 1) &&
+    dayMatches
+  )
+}
+
+/** 单条表达式严格晚于 after 的下一次触发时间；最多向后搜索 8 年，与后端一致。 */
+const nextAfter = (parsed: ParsedCron, after: Date): Date | null => {
+  const next = new Date(after)
+  next.setSeconds(0, 0)
+  next.setMinutes(next.getMinutes() + 1)
+  for (let i = 0; i < MAX_SEARCH_MINUTES; i++) {
+    if (matches(parsed, next)) return next
+    next.setMinutes(next.getMinutes() + 1)
+  }
+  return null
+}
+
+/**
+ * 计算一组表达式未来 count 次执行时间（去重、按时间升序）。
+ * 每轮把游标推进到最早命中点再算下一轮，最多 count 轮；因此关闭或年份跨度大的
+ * 规则也只会为下一轮付一次长搜索，重复轮次不会把 8 年窗口跑满。
+ */
+export const nextRunTimes = (
+  specs: string[],
+  after: Date,
+  count: number,
+): Date[] => {
+  const parsedList: ParsedCron[] = []
+  for (const spec of specs) {
+    const parsed = parseCronSpec(spec)
+    if (parsed) parsedList.push(parsed)
+  }
+  const result: Date[] = []
+  const seen = new Set<number>()
+  let cursor = after
+  while (result.length < count) {
+    let best: Date | null = null
+    for (const parsed of parsedList) {
+      const next = nextAfter(parsed, cursor)
+      if (next && (!best || next.getTime() < best.getTime())) best = next
+    }
+    if (!best) break
+    if (!seen.has(best.getTime())) {
+      seen.add(best.getTime())
+      result.push(best)
+    }
+    cursor = best
+  }
+  return result
+}
+
+/** 执行时间预览的格式化输出，例如 2026-09-15 15:49。 */
+export const formatRunTime = (date: Date): string => {
+  const full = (v: number) => (v < 10 ? `0${v}` : `${v}`)
+  return (
+    `${date.getFullYear()}-${full(date.getMonth() + 1)}-${full(
+      date.getDate(),
+    )} ` + `${full(date.getHours())}:${full(date.getMinutes())}`
+  )
+}
+
+/** 执行周期预设行类型。 */
+export type SpecRowKind =
+  "monthly" | "weekly" | "daily" | "everyNHours" | "everyN" | "custom"
+
+export interface SpecRow {
+  kind: SpecRowKind
+  /** monthly：每月第几天（1-31）。 */
+  day: number
+  /** weekly：星期几（0=周日 … 6=周六）。 */
+  weekday: number
+  /** 小时（0-23）。 */
+  hour: number
+  /** 分钟（0-59）。 */
+  minute: number
+  /** everyN：间隔分钟数；everyNHours：间隔小时数。 */
+  n: number
+  /** custom：原始表达式。 */
+  expr: string
+}
+
+export const defaultSpecRow = (): SpecRow => ({
+  kind: "everyN",
+  day: 1,
+  weekday: 1,
+  hour: 0,
+  minute: 0,
+  n: 30,
+  expr: "",
+})
+
+/** 预设行 → cron 表达式。 */
+export const rowToCron = (row: SpecRow): string => {
+  switch (row.kind) {
+    case "monthly":
+      return `${row.minute} ${row.hour} ${row.day} * *`
+    case "weekly":
+      return `${row.minute} ${row.hour} * * ${row.weekday}`
+    case "daily":
+      return `${row.minute} ${row.hour} * * *`
+    case "everyNHours":
+      return `${row.minute} */${row.n} * * *`
+    case "everyN":
+      return `*/${row.n} * * * *`
+    default:
+      return row.expr.trim()
+  }
+}
+
+/** cron 表达式 → 预设行；能匹配预设形态的归一为预设，否则按自定义保留原文。 */
+export const cronToRow = (spec: string): SpecRow => {
+  const fields = spec.trim().split(/\s+/)
+  const single = (field: string | undefined) =>
+    field !== undefined && /^\d+$/.test(field) ? Number(field) : null
+  if (fields.length === 5) {
+    const [minute, hour, dom, month, dow] = fields
+    const stepOf = (field: string) =>
+      field.startsWith("*/") ? Number(field.slice(2)) : null
+    const m = single(minute)
+    const h = single(hour)
+    const d = single(dom)
+    const w = single(dow)
+    // 每N分钟：*/N * * * *
+    const minuteStep = stepOf(minute)
+    if (
+      minuteStep !== null &&
+      Number.isInteger(minuteStep) &&
+      minuteStep > 0 &&
+      hour === "*" &&
+      dom === "*" &&
+      month === "*" &&
+      dow === "*"
+    ) {
+      return { ...defaultSpecRow(), kind: "everyN", n: minuteStep }
+    }
+    // 每N小时：M */N * * *
+    const hourStep = stepOf(hour)
+    if (
+      m !== null &&
+      hourStep !== null &&
+      Number.isInteger(hourStep) &&
+      hourStep > 0 &&
+      dom === "*" &&
+      month === "*" &&
+      dow === "*"
+    ) {
+      return {
+        ...defaultSpecRow(),
+        kind: "everyNHours",
+        n: hourStep,
+        minute: m,
+      }
+    }
+    // 每天：M H * * *
+    if (
+      m !== null &&
+      h !== null &&
+      dom === "*" &&
+      month === "*" &&
+      dow === "*"
+    ) {
+      return {
+        ...defaultSpecRow(),
+        kind: "daily",
+        hour: h,
+        minute: m,
+      }
+    }
+    // 每月：M H D * *
+    if (
+      m !== null &&
+      h !== null &&
+      d !== null &&
+      month === "*" &&
+      dow === "*"
+    ) {
+      return {
+        ...defaultSpecRow(),
+        kind: "monthly",
+        day: d,
+        hour: h,
+        minute: m,
+      }
+    }
+    // 每周：M H * * W
+    if (
+      m !== null &&
+      h !== null &&
+      dom === "*" &&
+      month === "*" &&
+      w !== null
+    ) {
+      return {
+        ...defaultSpecRow(),
+        kind: "weekly",
+        weekday: w === 7 ? 0 : w,
+        hour: h,
+        minute: m,
+      }
+    }
+  }
+  return { ...defaultSpecRow(), kind: "custom", expr: spec.trim() }
+}

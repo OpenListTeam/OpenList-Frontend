@@ -1,4 +1,5 @@
 import br from "./br.json"
+import cronjobs from "./cronjobs.json"
 import drivers from "./drivers.json"
 import global from "./global.json"
 import home from "./home.json"
@@ -19,6 +20,7 @@ import users from "./users.json"
 
 export const dict = {
   br,
+  cronjobs,
   drivers,
   global,
   home,
