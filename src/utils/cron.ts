@@ -8,6 +8,8 @@ export interface CronField {
   min: number
   max: number
   values: Set<number>
+  /** 该字段是否以 "*" 开头；判断通配必须依据语法而不是命中集合是否覆盖完整范围。 */
+  wildcard: boolean
 }
 
 export interface ParsedCron {
@@ -18,12 +20,21 @@ export interface ParsedCron {
   dayOfWeek: CronField
 }
 
+/**
+ * 向后搜索上限，与后端 pkg/cron 保持一致。
+ * 最稀疏的合法规则是闰日 "0 0 29 2 *"：非闰年不命中，跨世纪最长间隔达 8 年
+ * （例如 2096-02-29 之后要等到 2104-02-29），按 8 年 + 一天搜索。
+ */
+const MAX_SEARCH_MINUTES = (8 * 366 + 1) * 24 * 60
+
 const parseCronField = (
   field: string,
   min: number,
   max: number,
 ): CronField | null => {
   const values = new Set<number>()
+  // 与后端一致：只有以 "*" 开头的字段（含 */5 这类步进）才算通配。
+  const wildcard = field.startsWith("*")
   for (const part of field.split(",")) {
     if (part === "") return null
     const slash = part.indexOf("/")
@@ -61,7 +72,7 @@ const parseCronField = (
     for (let v = low; v <= high; v += step) values.add(v)
   }
   if (values.size === 0) return null
-  return { min, max, values }
+  return { min, max, values, wildcard }
 }
 
 export const parseCronSpec = (spec: string): ParsedCron | null => {
@@ -84,11 +95,11 @@ export const parseCronSpec = (spec: string): ParsedCron | null => {
 
 const matches = (parsed: ParsedCron, t: Date): boolean => {
   // 与后端一致：DOM 和 DOW 同时受限时任一命中即可；
-  // 其中一方为通配（覆盖完整范围）时按 AND 处理，只有另一方生效。
-  const domFull = parsed.dayOfMonth.values.size === 31
-  const dowFull = parsed.dayOfWeek.values.size === 7
+  // 其中一方以 "*" 开头（通配）时按 AND 处理，只有另一方生效。
+  // 必须使用解析时记录的通配语法，而不是"命中集合是否覆盖完整范围"：
+  // "1-31" 覆盖全部日期但仍是受限字段，需要与受限的 DOW 做 OR 组合。
   const dayMatches =
-    domFull || dowFull
+    parsed.dayOfMonth.wildcard || parsed.dayOfWeek.wildcard
       ? parsed.dayOfMonth.values.has(t.getDate()) &&
         parsed.dayOfWeek.values.has(t.getDay())
       : parsed.dayOfMonth.values.has(t.getDate()) ||
@@ -101,19 +112,23 @@ const matches = (parsed: ParsedCron, t: Date): boolean => {
   )
 }
 
-/** 单条表达式严格晚于 after 的下一次触发时间；最多向后搜索一年。 */
+/** 单条表达式严格晚于 after 的下一次触发时间；最多向后搜索 8 年，与后端一致。 */
 const nextAfter = (parsed: ParsedCron, after: Date): Date | null => {
   const next = new Date(after)
   next.setSeconds(0, 0)
   next.setMinutes(next.getMinutes() + 1)
-  for (let i = 0; i < 527040; i++) {
+  for (let i = 0; i < MAX_SEARCH_MINUTES; i++) {
     if (matches(parsed, next)) return next
     next.setMinutes(next.getMinutes() + 1)
   }
   return null
 }
 
-/** 计算一组表达式未来 count 次执行时间（去重、按时间升序）。 */
+/**
+ * 计算一组表达式未来 count 次执行时间（去重、按时间升序）。
+ * 每轮把游标推进到最早命中点再算下一轮，最多 count 轮；因此关闭或年份跨度大的
+ * 规则也只会为下一轮付一次长搜索，重复轮次不会把 8 年窗口跑满。
+ */
 export const nextRunTimes = (
   specs: string[],
   after: Date,
